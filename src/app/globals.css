@@ -1,26 +1,86 @@
+
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --color-background: #0C0C0C;
+  --color-accent: #C8A97E;
+  --color-text-light: #F9F6F2;
+  --color-text-white: #FFFFFF;
+  --color-card: #141414;
+  --color-border: rgba(255, 255, 255, 0.06);
+
+  --font-manier: 'Manier', system-ui, sans-serif;
+  --font-inter: 'Inter', system-ui, sans-serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-background);
+  color: var(--color-text-light);
+  font-family: var(--font-inter);
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  overflow-x: hidden;
 }
+
+/* Base styles for all clickable elements */
+button,
+a,
+[role="button"],
+[onclick] {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+button:hover:not(:disabled),
+a:hover,
+[role="button"]:hover,
+[onclick]:hover {
+  opacity: 0.9;
+}
+
+.font-manier {
+  font-family: var(--font-manier);
+}
+
+.font-inter {
+  font-family: var(--font-inter);
+}
+
+.bg-background {
+  background-color: var(--color-background);
+}
+
+.bg-accent {
+  background-color: var(--color-accent);
+}
+
+.bg-card {
+  background-color: var(--color-card);
+}
+
+.text-accent {
+  color: var(--color-accent);
+}
+
+.text-text-light {
+  color: var(--color-text-light);
+}
+
+.text-white {
+  color: var(--color-text-white);
+}
+
+.border-accent-border {
+  border-color: var(--color-border);
+}
+
+.glass-effect {
+  background: var(--color-border);
+  backdrop-filter: blur(0.1px);
+}
+
