@@ -133,7 +133,7 @@ export default function CreatorOnboardingStep7() {
       });
       const json = await res.json();
       if (json.success) {
-        router.push('/dashboard');
+        router.push('/welcome');
       } else {
         setSaveError(json.error || 'Something went wrong. Please try again.');
         window.scrollTo({ top: 0, behavior: 'smooth' });

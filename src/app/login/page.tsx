@@ -31,7 +31,7 @@ export default function LoginPage() {
         // NextAuth wraps the error message thrown in authorize()
         setError(result.error);
       } else {
-        router.push('/dashboard');
+        router.push('/welcome');
         router.refresh();
       }
     } catch (err) {

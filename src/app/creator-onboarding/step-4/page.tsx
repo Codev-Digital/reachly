@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import CreatorNavbar from '@/components/CreatorNavbar';
 
@@ -86,7 +86,10 @@ export default function CreatorOnboardingStep4() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8 lg:py-10">
           <div className="flex items-center justify-between overflow-x-auto pb-2">
             {[['Welcome','completed'],['Profile','completed'],['Sessions','completed'],['Pricing','active'],['Availability','upcoming'],['Verification','upcoming'],['Go Live','upcoming']].map(([label, status], i) => (
-              <><StepItem key={i} num={i+1} label={label} status={status as any} />{i < 6 && <div className={`flex-1 h-px mx-1 sm:mx-2 ${['completed','active'].includes(status) && i < 3 ? 'bg-[#C8A97E]' : 'bg-[rgba(200,169,126,0.2)]'}`} />}</>
+              <React.Fragment key={i}>
+                <StepItem num={i+1} label={label} status={status as any} />
+                {i < 6 && <div className={`flex-1 h-px mx-1 sm:mx-2 ${['completed','active'].includes(status) && i < 3 ? 'bg-[#C8A97E]' : 'bg-[rgba(200,169,126,0.2)]'}`} />}
+              </React.Fragment>
             ))}
           </div>
         </div>
