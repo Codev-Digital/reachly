@@ -78,7 +78,7 @@ export default function SetPasswordPage() {
     try {
       const res = await setPassword(email, password, confirmPassword);
       if (res.success) {
-        router.push('/dashboard');
+        router.push('/welcome');
       } else {
         setError(res.error || 'Failed to set password');
       }
