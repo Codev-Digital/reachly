@@ -363,76 +363,120 @@ export default function Home() {
             </h2>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
-            {categories.map((cat, i) => (
-              <Link key={i} href="#" className="group relative aspect-[4/5] rounded-xl overflow-hidden">
-                <img src={cat.img} alt={cat.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                <div className="absolute inset-0 bg-gradient-to-t from-[rgba(12,12,12,0.9)] via-[rgba(12,12,12,0.4)] to-transparent" />
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-[rgba(200,169,126,0.2)] border border-[rgba(200,169,126,0.5)] flex items-center justify-center">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="1.5">
-                    {cat.icon === 'heart' && <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />}
-                    {cat.icon === 'microscope' && (
-                      <>
-                        <circle cx="12" cy="8" r="4" />
-                        <path d="M12 14v3" />
-                        <path d="M8 20h8" />
-                      </>
-                    )}
-                    {cat.icon === 'dumbbell' && (
-                      <>
-                        <rect x="4" y="10" width="4" height="4" rx="1" />
-                        <rect x="16" y="10" width="4" height="4" rx="1" />
-                        <line x1="8" y1="12" x2="16" y2="12" strokeWidth="2" />
-                      </>
-                    )}
-                    {cat.icon === 'award' && (
-                      <>
-                        <circle cx="12" cy="8" r="5" />
-                        <path d="M8 21l4-2 4 2" />
-                        <path d="M12 13v8" />
-                      </>
-                    )}
-                    {cat.icon === 'briefcase' && (
-                      <>
-                        <rect x="2" y="9" width="20" height="11" rx="2" />
-                        <path d="M8 9V7a4 4 0 0 1 8 0v2" />
-                      </>
-                    )}
-                    {cat.icon === 'book' && (
-                      <>
-                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-                      </>
-                    )}
-                    {cat.icon === 'camera' && (
-                      <>
-                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                        <circle cx="12" cy="13" r="4" />
-                      </>
-                    )}
-                    {cat.icon === 'utensils' && (
-                      <>
-                        <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2" />
-                        <path d="M7 2v20" />
-                        <path d="M21 15V2c-2.8 0-5 2.2-5 5s2.2 5 5 5v8" />
-                        <path d="M16 7c0 2.8 2.2 5 5 5" />
-                      </>
-                    )}
-                  </svg>
-                </div>
-                <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-center">
-                  <h3 className="font-serif text-xl sm:text-2xl font-bold text-[#F9F6F2] mb-1">{cat.name}</h3>
-                  <p className="font-sans text-xs text-[#F9F6F2] opacity-60">140+ creators</p>
-                </div>
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 text-[#C8A97E] font-sans text-sm opacity-0 group-hover:opacity-100 transition-opacity">
-                  <span>Explore</span>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="2">
-                    <path d="M5 12h14M12 5l7 7-7 7" />
-                  </svg>
-                </div>
-              </Link>
-            ))}
-          </div>
+       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
+  {categories.map((cat, i) => (
+    <Link
+      key={i}
+      href="#"
+      className="group relative aspect-[4/5] rounded-xl overflow-hidden"
+    >
+      {/* Image with blur effect */}
+      <img
+        src={cat.img}
+        alt={cat.name}
+        className="w-full h-full object-cover scale-105 group-hover:scale-110 transition-transform duration-300 blur-[1px] group-hover:blur-0"
+      />
+
+      {/* Dark + glass overlay */}
+      <div className="absolute inset-0 bg-gradient-to-t from-[rgba(12,12,12,0.92)] via-[rgba(12,12,12,0.45)] to-transparent backdrop-blur-[1px]" />
+
+      {/* Icon */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-[rgba(200,169,126,0.2)] border border-[rgba(200,169,126,0.5)] flex items-center justify-center backdrop-blur-sm">
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="#C8A97E"
+          strokeWidth="1.5"
+        >
+          {cat.icon === 'heart' && (
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+          )}
+
+          {cat.icon === 'microscope' && (
+            <>
+              <circle cx="12" cy="8" r="4" />
+              <path d="M12 14v3" />
+              <path d="M8 20h8" />
+            </>
+          )}
+
+          {cat.icon === 'dumbbell' && (
+            <>
+              <rect x="4" y="10" width="4" height="4" rx="1" />
+              <rect x="16" y="10" width="4" height="4" rx="1" />
+              <line x1="8" y1="12" x2="16" y2="12" strokeWidth="2" />
+            </>
+          )}
+
+          {cat.icon === 'award' && (
+            <>
+              <circle cx="12" cy="8" r="5" />
+              <path d="M8 21l4-2 4 2" />
+              <path d="M12 13v8" />
+            </>
+          )}
+
+          {cat.icon === 'briefcase' && (
+            <>
+              <rect x="2" y="9" width="20" height="11" rx="2" />
+              <path d="M8 9V7a4 4 0 0 1 8 0v2" />
+            </>
+          )}
+
+          {cat.icon === 'book' && (
+            <>
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+            </>
+          )}
+
+          {cat.icon === 'camera' && (
+            <>
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+              <circle cx="12" cy="13" r="4" />
+            </>
+          )}
+
+          {cat.icon === 'utensils' && (
+            <>
+              <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2" />
+              <path d="M7 2v20" />
+              <path d="M21 15V2c-2.8 0-5 2.2-5 5s2.2 5 5 5v8" />
+              <path d="M16 7c0 2.8 2.2 5 5 5" />
+            </>
+          )}
+        </svg>
+      </div>
+
+      {/* Text block (reduced spacing) */}
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-center">
+        <h3 className="font-serif text-xl sm:text-2xl font-bold text-[#F9F6F2] leading-tight mb-0.5">
+          {cat.name}
+        </h3>
+        <p className="font-sans text-xs text-[#F9F6F2] opacity-60">
+          140+ creators
+        </p>
+      </div>
+
+      {/* Explore CTA */}
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1 text-[#C8A97E] font-sans text-sm opacity-0 group-hover:opacity-100 transition-opacity">
+        <span>Explore</span>
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="#C8A97E"
+          strokeWidth="2"
+        >
+          <path d="M5 12h14M12 5l7 7-7 7" />
+        </svg>
+      </div>
+    </Link>
+  ))}
+</div>
         </div>
       </section>
 
