@@ -36,7 +36,7 @@ export default function CreatorNavbar() {
                       For Creators
                     </Link>
                     <Link 
-                      href="#" 
+                      href="/about" 
                       className={`font-sans text-sm transition-colors ${pathname === '/about' ? 'text-[#C8A97E]' : 'text-[#F9F6F2] hover:text-[#C8A97E]'}`}
                     >
                       About
