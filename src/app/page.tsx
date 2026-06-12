@@ -1,8 +1,12 @@
+'use client';
+
 import Link from 'next/link';
+import { useState } from 'react';
 import CreatorNavbar from '@/components/CreatorNavbar';
 import Footer from '@/components/Footer';
 
 export default function Home() {
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
   const topCreators = [
     { img: '/ayeza jhan.png', name: 'Ayeza Khan', role: 'Actress' },
     { img: '/fawad khan.png', name: 'Fawad Khan', role: 'Actor' },
@@ -484,37 +488,50 @@ export default function Home() {
       <section className="py-16 sm:py-20 border-t border-[rgba(255,255,255,0.08)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-12">
-            <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#F9F6F2] mb-3">
+            <h2 className="font-serif text-3xl sm:text-4xl font-bold text-[#C8A97E]">
               Why Reachly
             </h2>
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">
             {[
-              { icon: 'shield', title: 'Verified Creators Only', desc: 'All creators are verified to ensure authenticity and quality.' },
-              { icon: 'lock', title: 'Secure 1-on-1 Sessions', desc: 'Your conversations are private and encrypted end-to-end.' },
-              { icon: 'clock', title: 'Flexible Scheduling', desc: 'Book sessions at times that work best for your schedule.' },
-              { icon: 'star', title: 'Money-Back Guarantee', desc: 'Not satisfied? Get a full refund within 24 hours.' },
+              { icon: 'badge', title: 'Verified Creators Only', desc: 'Every creator on our platform is identity-verified and vetted for quality. No fake profiles, no empty promises, only real expertise you can trust.' },
+              { icon: 'shield', title: 'Secure Local Payments', desc: 'Pay with JazzCash, EasyPaisa, or your bank card. Your money is held securely until the session is completed. Full refunds if a creator cancels.' },
+              { icon: 'clock', title: 'Flexible Scheduling', desc: 'Book sessions that fit your life. Most creators offer evening and weekend slots. Reschedule up to 24 hours before your call with no penalty.' },
+              { icon: 'bank', title: 'Money-Back Guarantee', desc: 'Not satisfied with your session? Report it within 24 hours and we will issue a full refund, no questions asked. Your trust is our priority.' },
             ].map((item, i) => (
-              <div key={i} className="bg-[#141414] border border-[rgba(200,169,126,0.15)] rounded-xl p-6">
-                <div className="w-12 h-12 mb-4 rounded-full bg-[rgba(200,169,126,0.1)] flex items-center justify-center">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="1.5">
-                    {item.icon === 'shield' && (
-                      <><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></>
+              <div key={i} className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-lg p-6">
+                <div className="w-14 h-14 mb-4 flex items-center justify-center">
+                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="1">
+                    {item.icon === 'badge' && (
+                      <>
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                      </>
                     )}
-                    {item.icon === 'lock' && (
-                      <><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0110 0v4" /></>
+                    {item.icon === 'shield' && (
+                      <>
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                      </>
                     )}
                     {item.icon === 'clock' && (
-                      <><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></>
+                      <>
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
+                      </>
                     )}
-                    {item.icon === 'star' && (
-                      <><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></>
+                    {item.icon === 'bank' && (
+                      <>
+                        <path d="M3 21h18" />
+                        <path d="M3 10h18" />
+                        <path d="M5 6l7-3 7 3" />
+                        <path d="M4 10v11" />
+                        <path d="M20 10v11" />
+                      </>
                     )}
                   </svg>
                 </div>
-                <h3 className="font-serif text-lg font-semibold text-[#F9F6F2] mb-2">{item.title}</h3>
-                <p className="font-sans text-xs text-[#F9F6F2] opacity-60">{item.desc}</p>
+                <h3 className="font-serif text-2xl font-semibold text-[#F9F6F2] mb-3 inline-block border-b border-[rgba(200,169,126,0.5)] pb-1">{item.title}</h3>
+                <p className="font-sans text-sm text-[#F9F6F2] opacity-80 mt-2">{item.desc}</p>
               </div>
             ))}
           </div>
@@ -524,48 +541,31 @@ export default function Home() {
       {/* Testimonials */}
       <section className="py-16 sm:py-20 border-t border-[rgba(255,255,255,0.08)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="grid lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-1">
-              <div className="sticky top-24">
-                <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-xl p-6 mb-6">
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="1.5" className="mb-4">
-                    <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
-                  </svg>
-                  <p className="font-serif text-lg font-semibold text-[#F9F6F2] mb-4">
-                    What Our Community Says
-                  </p>
-                  <p className="font-sans text-xs text-[#F9F6F2] opacity-60">
-                    Hear from people who have had amazing experiences on Reachly.
-                  </p>
-                </div>
-                <img src="/merium in creators section.png" alt="Testimonial" className="w-full rounded-xl" />
-              </div>
-            </div>
-
-            <div className="lg:col-span-2 space-y-4">
-              {[
-                { name: 'Ahmed Khan', role: 'Software Engineer', text: 'Had an amazing session with Mahira Khan! She gave such valuable career advice. 10/10 recommend.', img: '/sara khan in creators.png' },
-                { name: 'Sara Ahmed', role: 'Entrepreneur', text: 'Booking a session was so easy, and the creator was incredibly helpful. Will book again!', img: '/merium.png' },
-                { name: 'Ali Hassan', role: 'Student', text: 'Best investment I made for my career. Got personalized advice that I couldn\'t find anywhere else.', img: '/ahad raza mir.png' },
-              ].map((testimonial, i) => (
-                <div key={i} className="bg-[#141414] border border-[rgba(200,169,126,0.15)] rounded-xl p-6">
-                  <p className="font-sans text-sm text-[#F9F6F2] opacity-80 mb-6">{testimonial.text}</p>
-                  <div className="flex items-center gap-3">
-                    <img src={testimonial.img} alt={testimonial.name} className="w-10 h-10 rounded-full" />
-                    <div>
-                      <p className="font-serif text-sm font-semibold text-[#F9F6F2]">{testimonial.name}</p>
-                      <p className="font-sans text-xs text-[#C8A97E]">{testimonial.role}</p>
-                    </div>
-                    <div className="ml-auto flex items-center gap-1">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <svg key={star} width="12" height="12" viewBox="0 0 24 24" fill="#C8A97E">
-                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                        </svg>
-                      ))}
-                    </div>
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="relative">
+              <div className="bg-gradient-to-br from-[#C8A97E]/80 to-[#C8A97E]/60 rounded-tl-2xl rounded-tr-2xl rounded-bl-2xl rounded-br-[100px] p-8 relative">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="#0C0C0C" className="mb-4">
+                  <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
+                </svg>
+                <p className="font-sans text-sm text-[#0C0C0C] mb-8 leading-relaxed">
+                  "My session with Ayesha completely changed the way I approach content creation. Before working with her, I struggled with consistency and finding my own style. She guided me step by step, helped me understand my audience better, and gave me practical strategies that actually work. The content calendar she created made everything so much easier to manage, and I finally feel confident posting online. I've already seen better engagement on my content. Truly one of the best investments I've made for my personal brand!"
+                </p>
+                <div className="flex items-center gap-3">
+                  <img src="/merium in creators section.png" alt="Jordan L" className="w-14 h-14 rounded-full border-2 border-[#0C0C0C]" />
+                  <div>
+                    <p className="font-serif text-base font-semibold text-[#0C0C0C]">Jordan L</p>
+                    <p className="font-sans text-xs text-[#0C0C0C]/70">Los Angeles, CA</p>
                   </div>
                 </div>
-              ))}
+              </div>
+            </div>
+            <div>
+              <h2 className="font-serif text-3xl sm:text-4xl font-bold text-[#C8A97E] mb-4">
+                What Our Community Says
+              </h2>
+              <p className="font-sans text-sm text-[#F9F6F2] opacity-80">
+                Hear from creators and entrepreneurs who transformed their content strategy, built confidence, and achieved real growth through our guidance.
+              </p>
             </div>
           </div>
         </div>
@@ -573,48 +573,72 @@ export default function Home() {
 
       {/* CTA for Creators */}
       <section className="py-16 sm:py-20 border-t border-[rgba(255,255,255,0.08)]">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6">
-          <div className="relative bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-2xl overflow-hidden">
-            <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle, #C8A97E 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
-            <div className="relative p-8 sm:p-12 text-center">
-              <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#F9F6F2] mb-4">
-                Are you a creator?
-              </h2>
-              <p className="font-sans text-sm text-[#F9F6F2] opacity-60 mb-8 max-w-lg mx-auto">
-                Join Reachly and start monetizing your expertise by connecting with your audience one-on-one.
-              </p>
-              <Link href="/signup?type=creator" className="inline-block bg-[#C8A97E] text-[#0C0C0C] font-serif font-semibold px-8 py-4 rounded-full text-lg hover:opacity-90 transition-all">
-                Become a Creator
-              </Link>
-            </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <div className="relative bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-xl p-8 sm:p-12 text-center overflow-hidden">
+            {/* Dashed corners */}
+            <div className="absolute top-4 left-4 w-16 h-16 border-t-2 border-l-2 border-dashed border-[#C8A97E]/40"></div>
+            <div className="absolute bottom-4 right-4 w-16 h-16 border-b-2 border-r-2 border-dashed border-[#C8A97E]/40"></div>
+            
+            <h2 className="font-serif text-3xl sm:text-4xl font-bold text-[#C8A97E] mb-3">
+              Are you a creator?
+            </h2>
+            <p className="font-sans text-sm text-[#F9F6F2] opacity-80 mb-6">
+              Start earning with Reachly today
+            </p>
+            <Link href="/signup?type=creator" className="inline-block bg-[#C8A97E] text-[#0C0C0C] font-sans font-semibold px-8 py-3 rounded-full text-sm hover:opacity-90 transition-all">
+              Get Started
+            </Link>
           </div>
         </div>
       </section>
 
       {/* FAQ */}
       <section className="py-16 sm:py-20 border-t border-[rgba(255,255,255,0.08)]">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-12">
-            <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#F9F6F2] mb-3">
-              Frequently Asked Questions
+            <h2 className="font-serif text-3xl sm:text-4xl font-bold text-[#F9F6F2]">
+              Frequently <span className="text-[#C8A97E]">Asked Questions</span>
             </h2>
           </div>
 
-          <div className="space-y-3">
+          <div className="max-w-6xl mx-auto space-y-3">
             {[
-              { q: 'How do I book a session?', a: 'Simply browse our creators, select one you like, and book a time from their available calendar.' },
-              { q: 'What payment methods are accepted?', a: 'We accept all major credit cards, debit cards, and bank transfers.' },
-              { q: 'Can I reschedule or cancel a session?', a: 'Yes, you can reschedule or cancel up to 24 hours before your session for a full refund.' },
-              { q: 'How do creators get paid?', a: 'Creators receive payments weekly, bi-weekly, or monthly depending on their preference.' },
-              { q: 'Is my information secure?', a: 'Absolutely! We use bank-level encryption to protect all your data and conversations.' },
+              { q: 'How does the booking process work?', a: 'We provide a full range of digital marketing services, including SEO, social media marketing, content marketing, PPC advertising, email marketing, web design, and analytics.' },
+              { q: 'What payment methods do you accept?', a: 'We accept JazzCash, EasyPaisa, and all major debit/credit cards issued in Pakistan.' },
+              { q: 'Can I cancel or reschedule a session?', a: 'Yes! You can reschedule up to 24 hours before your session, or cancel for a full refund if a creator cancels.' },
+              { q: 'How are creators verified?', a: 'Every creator goes through an identity verification process and a quality review before joining our platform.' },
+              { q: 'What happens if I am not satisfied with my session?', a: 'Report it within 24 hours and we\'ll issue a full refund, no questions asked.' },
+              { q: 'How long are the sessions?', a: 'Most sessions are 30 or 60 minutes, but some creators offer shorter or longer sessions depending on their availability.' },
             ].map((faq, i) => (
-              <div key={i} className="bg-[#141414] border border-[rgba(200,169,126,0.15)] rounded-xl overflow-hidden">
-                <button className="w-full px-6 py-5 text-left flex items-center justify-between hover:bg-[rgba(200,169,126,0.05)] transition-colors">
-                  <span className="font-serif text-sm font-semibold text-[#F9F6F2]">{faq.q}</span>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="2">
-                    <polyline points="6 9 12 15 18 9" />
-                  </svg>
+              <div 
+                key={i} 
+                className={`${
+                  openFaq === i ? 'bg-[#141414] border border-[#C8A97E]' : 'bg-[#141414] border border-[rgba(255,255,255,0.2)]'
+                } rounded-lg overflow-hidden transition-all`}
+              >
+                <button 
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  className="w-full px-6 py-5 text-left flex items-center justify-between hover:bg-[rgba(200,169,126,0.05)] transition-colors"
+                >
+                  <span className={`${openFaq === i ? 'text-[#C8A97E]' : 'text-[#F9F6F2]'} font-sans text-base font-semibold`}>
+                    {faq.q}
+                  </span>
+                  {openFaq === i ? (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F9F6F2" strokeWidth="2">
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                  ) : (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F9F6F2" strokeWidth="2">
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  )}
                 </button>
+                {openFaq === i && (
+                  <div className="px-6 pb-5">
+                    <p className="font-sans text-sm text-[#F9F6F2]/80">{faq.a}</p>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -623,20 +647,24 @@ export default function Home() {
 
       {/* Final CTA */}
       <section className="py-16 sm:py-20 border-t border-[rgba(255,255,255,0.08)]">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6">
-          <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-2xl p-8 sm:p-12 flex flex-col lg:flex-row items-center gap-8">
-            <div className="flex-1">
-              <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#F9F6F2] mb-4">
-                Ready to connect?
-              </h2>
-              <p className="font-sans text-sm text-[#F9F6F2] opacity-60">
-                Join thousands of people who are already learning from their favorite creators.
-              </p>
-            </div>
-            <div className="flex-shrink-0">
-              <Link href="/welcome" className="bg-[#C8A97E] text-[#0C0C0C] font-serif font-semibold px-8 py-4 rounded-full text-lg hover:opacity-90 transition-all">
-                Get Started Today
-              </Link>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <div className="relative bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-xl p-6 sm:p-10 overflow-hidden">
+            <div className="grid md:grid-cols-2 gap-8 items-center">
+              <div>
+                <h2 className="font-serif text-2xl sm:text-3xl font-bold text-[#F9F6F2] mb-3">
+                  <span className="text-[#C8A97E]">Ready</span> to connect?
+                </h2>
+                <p className="font-sans text-sm text-[#F9F6F2]/70 mb-6">
+                  Join thousands of Pakistanis learning from their favourite creators
+                </p>
+                <Link href="/welcome" className="inline-block bg-[#C8A97E] text-[#0C0C0C] font-sans font-semibold px-8 py-3 rounded-full text-sm hover:opacity-90 transition-all">
+                  Get Started
+                </Link>
+              </div>
+              <div className="relative h-48 sm:h-64 flex items-end justify-end">
+                <img src="/sara khan.png" alt="Sara Khan" className="h-40 sm:h-56 object-contain relative z-10" />
+                <img src="/merium-footer.png" alt="Merium" className="h-40 sm:h-56 object-contain absolute bottom-0 right-16 sm:right-40 z-0" />
+              </div>
             </div>
           </div>
         </div>
