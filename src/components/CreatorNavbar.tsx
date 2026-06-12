@@ -1,25 +1,46 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import Logo from '@/app/components/Logo';
 
 export default function CreatorNavbar() {
   const router = useRouter();
+  const pathname = usePathname();
 
   return (
     <header className="border-b border-[rgba(255,255,255,0.08)] bg-[#0c0c0c]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6 lg:py-8">
         <div className="flex justify-between items-center">
           <Link href="/" className="font-serif text-2xl font-bold">
-            <span className="text-[#C8A97E]">Reach</span>
-            <span className="text-[#F9F6F2]">ly</span>
+            <span className={pathname === '/' ? 'text-[#F9F6F2]' : 'text-[#C8A97E]'}>Reach</span>
+            <span className={pathname === '/' ? 'text-[#C8A97E]' : 'text-[#F9F6F2]'}>ly</span>
           </Link>
           <div className="hidden lg:flex gap-8 xl:gap-10 items-center">
-                    <Link href="/explore-creators" className="font-sans text-[#F9F6F2] text-sm hover:text-[#C8A97E] transition-colors">Explore Creators</Link>
-                    <Link href="/how-it-works" className="font-sans text-[#F9F6F2] text-sm hover:text-[#C8A97E] transition-colors">How it Works</Link>
-                    <Link href="/creator-onboarding/step-1" className="font-sans text-[#C8A97E] text-sm hover:text-[#C8A97E]/80 transition-colors">For Creators</Link>
-                    <Link href="#" className="font-sans text-[#F9F6F2] text-sm hover:text-[#C8A97E] transition-colors">About</Link>
+                    <Link 
+                      href="/explore-creators" 
+                      className={`font-sans text-sm transition-colors ${pathname === '/explore-creators' ? 'text-[#C8A97E]' : 'text-[#F9F6F2] hover:text-[#C8A97E]'}`}
+                    >
+                      Explore Creators
+                    </Link>
+                    <Link 
+                      href="/how-it-works" 
+                      className={`font-sans text-sm transition-colors ${pathname === '/how-it-works' ? 'text-[#C8A97E]' : 'text-[#F9F6F2] hover:text-[#C8A97E]'}`}
+                    >
+                      How it Works
+                    </Link>
+                    <Link 
+                      href="/creator-onboarding/step-1" 
+                      className={`font-sans text-sm transition-colors ${pathname?.startsWith('/creator-onboarding') ? 'text-[#C8A97E]' : 'text-[#F9F6F2] hover:text-[#C8A97E]'}`}
+                    >
+                      For Creators
+                    </Link>
+                    <Link 
+                      href="#" 
+                      className={`font-sans text-sm transition-colors ${pathname === '/about' ? 'text-[#C8A97E]' : 'text-[#F9F6F2] hover:text-[#C8A97E]'}`}
+                    >
+                      About
+                    </Link>
             <div className="flex gap-3">
               <button 
                 onClick={() => router.push('/login')}
