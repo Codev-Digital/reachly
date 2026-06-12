@@ -314,9 +314,9 @@ export default function ExploreCreatorsPage() {
                     <p className="font-sans text-xs text-[#F9F6F2] opacity-50 mb-2">@kainataslam.ka</p>
                     <p className="font-sans text-xs text-[#F9F6F2] opacity-60 mb-4">Ayesha Khan is one of Pakistan's leading fashion and lifestyle content creators...</p>
                     <p className="font-sans text-sm text-[#F9F6F2] mb-3">Starting from <span className="font-semibold text-[#C8A97E]">1200</span></p>
-                    <button className="w-full bg-[#C8A97E] text-[#0C0C0C] font-sans font-semibold py-3 rounded-full hover:opacity-90 transition-all">
+                    <Link href="/creators/kainat-aslam" className="w-full block text-center bg-[#C8A97E] text-[#0C0C0C] font-sans font-semibold py-3 rounded-full hover:opacity-90 transition-all">
                       Book Now
-                    </button>
+                    </Link>
                   </div>
                 </div>
               ))}
