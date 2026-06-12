@@ -30,8 +30,8 @@ export default function CreatorNavbar() {
                       How it Works
                     </Link>
                     <Link 
-                      href="/creator-onboarding/step-1" 
-                      className={`font-sans text-sm transition-colors ${pathname?.startsWith('/creator-onboarding') ? 'text-[#C8A97E]' : 'text-[#F9F6F2] hover:text-[#C8A97E]'}`}
+                      href="/for-creators" 
+                      className={`font-sans text-sm transition-colors ${pathname === '/for-creators' ? 'text-[#C8A97E]' : 'text-[#F9F6F2] hover:text-[#C8A97E]'}`}
                     >
                       For Creators
                     </Link>

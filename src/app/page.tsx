@@ -348,9 +348,9 @@ export default function Home() {
                   <p className="font-sans text-xs text-[#F9F6F2] opacity-50 mb-2">@{creator.name.toLowerCase().replace(/\s/g, '')}</p>
                   <p className="font-sans text-xs text-[#F9F6F2] opacity-60 mb-4">{creator.name} is one of Pakistan's leading {creator.role.toLowerCase()} and lifestyle content creators...</p>
                   <p className="font-sans text-sm text-[#F9F6F2] mb-3">Starting from <span className="font-semibold text-[#C8A97E]">1200</span></p>
-                  <button className="w-full bg-[#C8A97E] text-[#0C0C0C] font-sans font-semibold py-3 rounded-full hover:opacity-90 transition-all">
+                  <Link href={`/creators/${creator.name.toLowerCase().replace(/\s/g, '')}`} className="w-full bg-[#C8A97E] text-[#0C0C0C] font-sans font-semibold py-3 rounded-full hover:opacity-90 transition-all block text-center">
                     Book Now
-                  </button>
+                  </Link>
                 </div>
               </div>
             ))}

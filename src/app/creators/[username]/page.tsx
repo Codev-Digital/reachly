@@ -1,10 +1,14 @@
 'use client';
 
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import CreatorNavbar from '@/components/CreatorNavbar';
 import Footer from '@/components/Footer';
 
 export default function CreatorProfilePage() {
+  const params = useParams();
+  const username = params.username as string;
+  
   const services = [
     {
       title: 'Style Consultation',
@@ -147,9 +151,12 @@ export default function CreatorProfilePage() {
                     </li>
                   ))}
                 </ul>
-                <button className="w-full bg-[#C8A97E] text-[#0C0C0C] font-bold font-sans px-6 py-3 rounded-full text-base hover:opacity-90 transition-all">
-                  Book This Session
-                </button>
+                <Link 
+                    href={`/creators/${username}/book-session`} 
+                    className="w-full bg-[#C8A97E] text-[#0C0C0C] font-bold font-sans px-6 py-3 rounded-full text-base hover:opacity-90 transition-all text-center block"
+                  >
+                    Book This Session
+                  </Link>
               </div>
             ))}
           </div>
