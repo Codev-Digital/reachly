@@ -492,15 +492,17 @@ export default function ForCreatorsPage() {
                 <p className="text-white/70">
                   Join thousands of creators already monetizing their expertise on Reachly
                 </p>
-              </div>
-              <div className="flex gap-4">
-                <Link href="/creator-onboarding/step-1" className="bg-[#C8A97E] text-[#0C0C0C] font-semibold px-8 py-3 rounded-full text-sm hover:opacity-90 transition-all">
+                <br />
+                <div className="flex gap-4">
+                <Link href="/creator-onboarding/step-1" className="bg-[#C8A97E] text-[#0C0C0C] font-semibold px-10 py-3 rounded-full text-sm hover:opacity-90 transition-all">
                   Apply Now
                 </Link>
               </div>
-              <div className="flex gap-4">
+              </div>
+              
+              <div className="flex gap-5">
                 <img src="/merium-footer.png" alt="Creator" className="w-32 h-32 rounded-full object-cover" />
-                <img src="/sara khan.png" alt="Creator" className="w-32 h-32 rounded-full object-cover -ml-12 border-4 border-[#0c0c0c]" />
+                <img src="/sara khan.png" alt="Creator" className="w-32 h-32 rounded-full object-cover -ml-12 " />
               </div>
             </div>
           </div>
