@@ -6,7 +6,7 @@ import CreatorNavbar from '@/components/CreatorNavbar';
 import Footer from '@/components/Footer';
 
 export default function ForCreatorsPage() {
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
 
   return (
     <div className="min-h-screen bg-[#0c0c0c] text-[#F9F6F2]">
@@ -232,24 +232,56 @@ export default function ForCreatorsPage() {
         {/* How to Get Started */}
         <section className="py-16 border-t border-[rgba(255,255,255,0.08)]">
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
-            <h2 className="font-serif text-3xl font-bold text-center mb-12">
-              How to Get Started
+            <h2 className="font-serif text-4xl font-bold text-center mb-12">
+              <span className="text-[#C8A97E]">How to Get</span> Started
             </h2>
-            <div className="flex flex-col lg:flex-row items-center justify-between gap-8 max-w-5xl mx-auto">
+            <div className="flex flex-col lg:flex-row items-center justify-between gap-12 max-w-6xl mx-auto">
               {[
-                { step: 1, title: 'Apply', desc: 'Fill out our simple application form.' },
-                { step: 2, title: 'Get verified', desc: 'Complete our quick verification process.' },
-                { step: 3, title: 'Set up your profile', desc: 'Create your profile and set your prices.' },
+                { 
+                  step: 'Step 01', 
+                  title: 'Apply', 
+                  desc: 'Fill out a short application with your social links and expertise areas.',
+                  icon: 'edit'
+                },
+                { 
+                  step: 'Step 02', 
+                  title: 'Get Verified', 
+                  desc: 'Our team reviews your application and verifies your identity within 48 hour.',
+                  icon: 'check-circle'
+                },
+                { 
+                  step: 'Step 03', 
+                  title: 'Set Up and Earn', 
+                  desc: 'Set your prices, define session types, and start accepting bookings immediately.',
+                  icon: 'setup'
+                },
               ].map((item, i) => (
-                <div key={i} className="text-center relative">
-                  <div className="w-16 h-16 rounded-full bg-[#C8A97E] text-[#0C0C0C] flex items-center justify-center font-bold text-xl mx-auto mb-4">
-                    {item.step}
+                <div key={i} className="flex-1 text-center relative">
+                  <div className="w-20 h-20 rounded-full bg-[rgba(200,169,126,0.05)] border border-[rgba(200,169,126,0.3)] flex items-center justify-center mx-auto mb-6">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="1.5">
+                      {item.icon === 'edit' && (
+                        <>
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                        </>
+                      )}
+                      {item.icon === 'check-circle' && (
+                        <>
+                          <circle cx="12" cy="12" r="10" />
+                          <path d="M9 12l2 2 4-4" />
+                        </>
+                      )}
+                      {item.icon === 'setup' && (
+                        <>
+                          <circle cx="12" cy="12" r="3" />
+                          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                        </>
+                      )}
+                    </svg>
                   </div>
-                  <h3 className="font-serif text-xl font-bold mb-2">{item.title}</h3>
-                  <p className="text-white/60 text-sm max-w-[200px]">{item.desc}</p>
-                  {i < 2 && (
-                    <div className="hidden lg:block absolute top-8 left-full w-16 h-0.5 bg-[rgba(200,169,126,0.3)]"></div>
-                  )}
+                  <p className="text-[#C8A97E] text-sm font-semibold mb-2">{item.step}</p>
+                  <h3 className="font-serif text-2xl font-bold mb-3">{item.title}</h3>
+                  <p className="text-white/70 text-base max-w-xs mx-auto">{item.desc}</p>
                 </div>
               ))}
             </div>
@@ -259,32 +291,47 @@ export default function ForCreatorsPage() {
         {/* Creator Success Stories */}
         <section className="py-16 border-t border-[rgba(255,255,255,0.08)]">
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
-            <h2 className="font-serif text-3xl font-bold text-center mb-12">
+            <h2 className="font-serif text-4xl font-bold text-center mb-12">
               Creator Success Stories
             </h2>
             <div className="grid sm:grid-cols-3 gap-6">
               {[
-                { name: 'Kainat Aslam', role: 'Fashion Creator', earnings: 'PKR 35,200' },
-                { name: 'Ahmed Khan', role: 'Business Coach', earnings: 'PKR 58,400' },
-                { name: 'Sarah Ali', role: 'Fitness Trainer', earnings: 'PKR 42,800' },
+                { 
+                  name: 'Jordan L', 
+                  role: 'Fitness Coach', 
+                  earnings: 'Earned PKR 285,000 in 3 months', 
+                  quote: "Reachly has completely transformed how I monetize my audience. I used to rely only on brand deals, but now I earn a consistent monthly income from 1-on-1 sessions. My followers love the personal connection.",
+                },
+                { 
+                  name: 'Jordan L', 
+                  role: 'Fitness Coach', 
+                  earnings: 'Earned PKR 20,000 in 3 months', 
+                  quote: "As someone who gets hundreds of DMs daily, Reachly helps me give proper attention to people who really want to learn. The platform handles scheduling, payments, and reminders. I just show up and teach.",
+                },
+                { 
+                  name: 'Jordan L', 
+                  role: 'Fitness Coach', 
+                  earnings: 'Earned PKR 350,000 in 3 months', 
+                  quote: "The best part about Reachly is how easy it makes everything. My clients book, pay, and join calls without me managing anything. I have helped over 500 women start their fitness journeys through the platform.",
+                },
               ].map((creator, i) => (
-                <div key={i} className="bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-xl p-6">
-                  <div className="flex items-center gap-4 mb-4">
-                    <img src="/merium.png" alt={creator.name} className="w-16 h-16 rounded-full" />
+                <div key={i} className="bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-xl p-8">
+                  <div className="flex items-center gap-4 mb-6">
+                    <img src="/merium in creators section.png" alt={creator.name} className="w-16 h-16 rounded-full object-cover" />
                     <div>
-                      <h3 className="font-serif text-lg font-bold">{creator.name}</h3>
-                      <p className="text-white/60 text-sm">{creator.role}</p>
+                      <h3 className="font-serif text-base font-bold">{creator.name}</h3>
+                      <p className="text-white/60 text-xs">{creator.role}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1 mb-4">
+                  <p className="text-[#C8A97E] text-2xl font-bold font-serif mb-4">{creator.earnings}</p>
+                  <p className="text-white/70 text-sm mb-4 leading-relaxed">{creator.quote}</p>
+                  <div className="flex items-center gap-1">
                     {[1,2,3,4,5].map(j => (
                       <svg key={j} width="16" height="16" viewBox="0 0 24 24" fill="#C8A97E">
                         <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                       </svg>
                     ))}
                   </div>
-                  <p className="text-[#C8A97E] text-xl font-bold font-serif mb-2">{creator.earnings}</p>
-                  <p className="text-white/50 text-xs">Earned in their first month</p>
                 </div>
               ))}
             </div>
@@ -294,44 +341,66 @@ export default function ForCreatorsPage() {
         {/* Everything You Need to Succeed */}
         <section className="py-16 border-t border-[rgba(255,255,255,0.08)]">
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
-            <h2 className="font-serif text-3xl font-bold text-center mb-12">
-              Everything You Need to Succeed
+            <h2 className="font-serif text-4xl font-bold text-center mb-12">
+              <span className="text-[#C8A97E]">Everything You Need to</span> Succeed
             </h2>
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {[
-                { name: 'Secure Payments', icon: 'shield' }, 
-                { name: 'Instant Payouts', icon: 'bank' }, 
-                { name: 'Analytics Dashboard', icon: 'chart' }, 
-                { name: 'Video Call Platform', icon: 'video' }
+                { 
+                  title: 'Smart Scheduling', 
+                  desc: 'Connect your calendar and let fans book slots that work for you.', 
+                  icon: 'clock' 
+                },
+                { 
+                  title: 'Instant Payouts', 
+                  desc: 'Withdraw your earnings weekly via bank transfer, JazzCash, or EasyPaisa.', 
+                  icon: 'folder' 
+                },
+                { 
+                  title: 'Analytics Dashboard', 
+                  desc: 'Track bookings, revenue, ratings, and growth trends in real time.', 
+                  icon: 'grid' 
+                },
+                { 
+                  title: 'Video Call Platform', 
+                  desc: 'Built-in HD video calls. No external apps needed, everything on Reachly.', 
+                  icon: 'video-plus' 
+                },
               ].map((item, i) => (
-                <div key={i} className="bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-xl p-6 text-center">
-                  <div className="w-12 h-12 rounded-full bg-[rgba(200,169,126,0.1)] border border-[rgba(200,169,126,0.3)] flex items-center justify-center mx-auto mb-4">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="2">
-                      {item.icon === 'shield' && (
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                      )}
-                      {item.icon === 'bank' && (
+                <div key={i} className="bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-xl p-8 text-center">
+                  <div className="w-14 h-14 rounded-full bg-[rgba(200,169,126,0.05)] border border-[rgba(200,169,126,0.3)] flex items-center justify-center mx-auto mb-6">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="1.5">
+                      {item.icon === 'clock' && (
                         <>
-                          <path d="M3 21h18" />
-                          <path d="M3 10h18" />
-                          <path d="M5 6l7-3 7 3" />
+                          <circle cx="12" cy="12" r="10" />
+                          <polyline points="12 6 12 12 16 14" />
                         </>
                       )}
-                      {item.icon === 'chart' && (
+                      {item.icon === 'folder' && (
                         <>
-                          <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                          <line x1="3" y1="9" x2="21" y2="9" />
+                          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
                         </>
                       )}
-                      {item.icon === 'video' && (
+                      {item.icon === 'grid' && (
+                        <>
+                          <rect x="3" y="3" width="7" height="7" />
+                          <rect x="14" y="3" width="7" height="7" />
+                          <rect x="14" y="14" width="7" height="7" />
+                          <rect x="3" y="14" width="7" height="7" />
+                        </>
+                      )}
+                      {item.icon === 'video-plus' && (
                         <>
                           <polygon points="23 7 16 12 23 17 23 7" />
                           <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+                          <line x1="12" y1="8" x2="12" y2="16" />
+                          <line x1="8" y1="12" x2="16" y2="12" />
                         </>
                       )}
                     </svg>
                   </div>
-                  <p className="text-sm">{item.name}</p>
+                  <h3 className="font-serif text-xl font-bold mb-3">{item.title}</h3>
+                  <p className="text-white/70 text-sm">{item.desc}</p>
                 </div>
               ))}
             </div>
@@ -341,37 +410,26 @@ export default function ForCreatorsPage() {
         {/* Reachly vs Others */}
         <section className="py-16 border-t border-[rgba(255,255,255,0.08)]">
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
-            <h2 className="font-serif text-3xl font-bold text-center mb-12">
-              <span className="text-[#C8A97E]">Reachly</span> vs Others
+            <h2 className="font-serif text-4xl font-bold text-center mb-12">
+              Reachly <span className="text-[#C8A97E]">vs Others</span>
             </h2>
-            <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-xl overflow-hidden max-w-4xl mx-auto">
-              <div className="grid grid-cols-3 border-b border-[rgba(255,255,255,0.1)]">
-                <div className="p-4 text-sm font-semibold">Feature</div>
-                <div className="p-4 text-sm font-semibold text-center text-[#C8A97E]">Reachly</div>
-                <div className="p-4 text-sm font-semibold text-center text-white/50">Others</div>
+            <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-xl overflow-hidden max-w-6xl mx-auto">
+              <div className="grid grid-cols-3 border-b border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.05)]">
+                <div className="p-5 text-xl font-bold font-serif">Feature</div>
+                <div className="p-5 text-xl font-bold font-serif text-center text-[#C8A97E]">Reachly</div>
+                <div className="p-5 text-xl font-bold font-serif text-center text-white/70">Others</div>
               </div>
               {[
-                'Creator payout', 'Local payment methods', 'Pakistan-first support', 'No hidden fees', 'Verified creators only'
-              ].map((feature, i) => (
+                { feature: 'Platform Fee', reachly: '15%', others: '20-30%' },
+                { feature: 'Payout Speed', reachly: 'Weekly', others: 'Monthly' },
+                { feature: 'Local Payments', reachly: 'JazzCash / EasyPaisa', others: 'Cards only' },
+                { feature: 'Verification', reachly: '48 hours', others: 'Weeks' },
+                { feature: 'Creator Support', reachly: 'Dedicated', others: 'Ticket-only' },
+              ].map((row, i) => (
                 <div key={i} className="grid grid-cols-3 border-b border-[rgba(255,255,255,0.1)] last:border-b-0">
-                  <div className="p-4 text-sm text-white/80">{feature}</div>
-                  <div className="p-4 flex items-center justify-center">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="#C8A97E">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  </div>
-                  <div className="p-4 flex items-center justify-center">
-                    {i < 3 ? (
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2">
-                        <line x1="18" y1="6" x2="6" y2="18" />
-                        <line x1="6" y1="6" x2="18" y2="18" />
-                      </svg>
-                    ) : (
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="#C8A97E">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                    )}
-                  </div>
+                  <div className="p-4 text-sm text-white/80">{row.feature}</div>
+                  <div className="p-4 text-center text-[#C8A97E] font-semibold">{row.reachly}</div>
+                  <div className="p-4 text-center text-white/60">{row.others}</div>
                 </div>
               ))}
             </div>
@@ -380,34 +438,41 @@ export default function ForCreatorsPage() {
 
         {/* Creator FAQ */}
         <section className="py-16 border-t border-[rgba(255,255,255,0.08)]">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6">
-            <h2 className="font-serif text-3xl font-bold text-center mb-12">
-              Creator <span className="text-[#C8A97E]">FAQ</span>
+          <div className="max-w-6xl mx-auto px-4 sm:px-6">
+            <h2 className="font-serif text-4xl font-bold text-center mb-12">
+              <span className="text-[#C8A97E]">Creator</span> FAQ
             </h2>
-            <div className="space-y-3">
+            <div className="space-y-4">
               {[
-                { q: 'How do I get paid?', a: 'You get paid directly to your JazzCash or EasyPaisa account. Payouts are processed weekly.' },
-                { q: 'What are the fees?', a: 'We take a 20% platform fee. You keep 80% of every session you do.' },
-                { q: 'Can anyone join as a creator?', a: 'We accept creators from all niches as long as you have a genuine following and can provide value to your clients.' },
-                { q: 'How do I set my prices?', a: 'You set your own prices! Most creators charge between PKR 1,000 and PKR 5,000 per session.' },
+                { q: 'How much does it cost to join?', a: 'Absolutely nothing. There is no signup fee, no monthly subscription, and no hidden charges. You only pay our 15% platform fee when you actually get booked.' },
+                { q: 'How do I get paid?', a: 'You get paid directly to your JazzCash or EasyPaisa account, or via bank transfer. Payouts are processed automatically every week.' },
+                { q: 'What can I offer in sessions?', a: 'Anything you are good at! One-on-one coaching, Q&A calls, portfolio reviews, personal styling, tech help—your skills are your limit.' },
+                { q: 'How long does verification take?', a: 'Our team reviews applications within 48 hours. Once verified, you can start accepting bookings immediately.' },
+                { q: 'Can I set my own prices?', a: 'Of course! You are in full control. Set any price you want for your session types, and change them anytime.' },
               ].map((faq, i) => (
-                <div key={i} className="bg-[#141414] border border-[rgba(255,255,255,0.1)] rounded-xl overflow-hidden">
-                  <button onClick={() => setOpenFaq(openFaq === i ? null : i)} className="w-full px-6 py-5 text-left flex items-center justify-between">
-                    <span className="font-semibold">{faq.q}</span>
+                <div 
+                  key={i} 
+                  className={`bg-[#141414] border rounded-xl overflow-hidden transition-all ${openFaq === i ? 'border-[#C8A97E]' : 'border-[rgba(255,255,255,0.15)]'}`}
+                >
+                  <button onClick={() => setOpenFaq(openFaq === i ? null : i)} className="w-full px-8 py-6 text-left flex items-center justify-between">
+                    <span className={`font-semibold text-lg ${openFaq === i ? 'text-[#C8A97E]' : 'text-white'}`}>
+                      {faq.q}
+                    </span>
                     {openFaq === i ? (
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F9F6F2" strokeWidth="2">
-                        <line x1="18" y1="6" x2="6" y2="18" />
-                        <line x1="6" y1="6" x2="18" y2="18" />
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="15" y1="9" x2="9" y2="15" />
+                        <line x1="9" y1="9" x2="15" y2="15" />
                       </svg>
                     ) : (
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F9F6F2" strokeWidth="2">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F9F6F2" strokeWidth="2">
                         <polyline points="6 9 12 15 18 9" />
                       </svg>
                     )}
                   </button>
                   {openFaq === i && (
-                    <div className="px-6 pb-5">
-                      <p className="text-white/70">{faq.a}</p>
+                    <div className="px-8 pb-6">
+                      <p className="text-white/80 text-base leading-relaxed">{faq.a}</p>
                     </div>
                   )}
                 </div>
@@ -422,7 +487,7 @@ export default function ForCreatorsPage() {
             <div className="bg-gradient-to-br from-[#141414] to-[#1a1a1a] border border-[rgba(200,169,126,0.3)] rounded-xl p-8 sm:p-12 flex flex-col lg:flex-row items-center justify-between gap-8">
               <div>
                 <h2 className="font-serif text-3xl font-bold mb-3">
-                  Ready to start earning?
+                  <span className="text-[#C8A97E]">Ready</span> to start earning?
                 </h2>
                 <p className="text-white/70">
                   Join thousands of creators already monetizing their expertise on Reachly
