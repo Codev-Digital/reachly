@@ -115,43 +115,48 @@ export default function ForCreatorsPage() {
         {/* Earnings Calculator */}
         <section className="py-16 border-t border-[rgba(255,255,255,0.08)]">
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
-            <h2 className="font-serif text-3xl font-bold text-center mb-10">
+            <h2 className="font-serif text-4xl font-bold text-center mb-4 text-[#C8A97E]">
               Earnings Calculator
             </h2>
-            <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-xl p-8 max-w-4xl mx-auto">
-              <div className="grid sm:grid-cols-2 gap-8 mb-8">
+            <p className="text-white/70 text-center mb-10 max-w-md mx-auto">
+              Slide to see how much you could earn based on your session price and monthly bookings
+            </p>
+            <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-xl p-8 max-w-6xl mx-auto">
+              <div className="grid sm:grid-cols-2 gap-12 mb-8">
                 <div>
-                  <label className="block text-sm text-white/70 mb-3">Price per session</label>
-                  <div className="flex items-center gap-3">
-                    <button className="px-4 py-2 bg-[rgba(200,169,126,0.1)] text-[#C8A97E] rounded-full border border-[rgba(200,169,126,0.3)]">
-                      PKR 1,200
-                    </button>
-                    <button className="px-4 py-2 bg-[#C8A97E] text-[#0C0C0C] rounded-full font-semibold">
-                      PKR 2,000
-                    </button>
-                    <button className="px-4 py-2 bg-[rgba(200,169,126,0.1)] text-[#C8A97E] rounded-full border border-[rgba(200,169,126,0.3)]">
-                      PKR 3,500
-                    </button>
+                  <label className="block text-base text-white/80 mb-4">Price per session</label>
+                  <p className="text-[#C8A97E] text-3xl font-bold font-serif mb-4">PKR 3,600</p>
+                  <div className="relative mb-2">
+                    <div className="h-1 bg-[rgba(255,255,255,0.1)] rounded-full">
+                      <div className="h-1 bg-[#C8A97E] rounded-full" style={{ width: '70%' }}></div>
+                    </div>
+                    <div className="absolute top-1/2 left-[70%] w-4 h-4 bg-white border-2 border-[#C8A97E] rounded-full transform -translate-x-1/2 -translate-y-1/2 cursor-pointer"></div>
+                  </div>
+                  <div className="flex justify-between text-xs text-white/50">
+                    <span>PKR 500</span>
+                    <span>PKR 5,000</span>
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm text-white/70 mb-3">Sessions per week</label>
-                  <div className="flex items-center gap-3">
-                    <button className="px-4 py-2 bg-[#C8A97E] text-[#0C0C0C] rounded-full font-semibold">
-                      5
-                    </button>
-                    <button className="px-4 py-2 bg-[rgba(200,169,126,0.1)] text-[#C8A97E] rounded-full border border-[rgba(200,169,126,0.3)]">
-                      10
-                    </button>
-                    <button className="px-4 py-2 bg-[rgba(200,169,126,0.1)] text-[#C8A97E] rounded-full border border-[rgba(200,169,126,0.3)]">
-                      15
-                    </button>
+                  <label className="block text-base text-white/80 mb-4">Monthly Bookings</label>
+                  <p className="text-[#C8A97E] text-3xl font-bold font-serif mb-4">20 sessions</p>
+                  <div className="relative mb-2">
+                    <div className="h-1 bg-[rgba(255,255,255,0.1)] rounded-full">
+                      <div className="h-1 bg-[#C8A97E] rounded-full" style={{ width: '40%' }}></div>
+                    </div>
+                    <div className="absolute top-1/2 left-[40%] w-4 h-4 bg-white border-2 border-[#C8A97E] rounded-full transform -translate-x-1/2 -translate-y-1/2 cursor-pointer"></div>
+                  </div>
+                  <div className="flex justify-between text-xs text-white/50">
+                    <span>1</span>
+                    <span>50</span>
                   </div>
                 </div>
               </div>
+              <div className="w-full h-px bg-[rgba(255,255,255,0.1)] mb-8"></div>
               <div className="text-center">
-                <p className="text-white/60 text-sm mb-2">Estimated monthly earnings</p>
-                <p className="text-[#C8A97E] text-4xl font-bold font-serif">PKR 40,000</p>
+                <p className="text-white/70 text-base mb-3">Your estimated monthly earnings</p>
+                <p className="text-[#C8A97E] text-4xl font-bold font-serif mb-4">PKR 61,200</p>
+                <p className="text-white/60 text-sm">After 15% platform fee. You keep 85% of every booking.</p>
               </div>
             </div>
           </div>
@@ -160,38 +165,64 @@ export default function ForCreatorsPage() {
         {/* Why Creators Love Reachly */}
         <section className="py-16 border-t border-[rgba(255,255,255,0.08)]">
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
-            <h2 className="font-serif text-3xl font-bold text-center mb-12">
-              Why Creators Love <span className="text-[#C8A97E]">Reachly</span>
+            <h2 className="font-serif text-4xl font-bold text-center mb-4">
+              <span className="text-[#C8A97E]">Why Creators Love</span> Reachly
             </h2>
+            <div className="w-48 h-px bg-[rgba(200,169,126,0.5)] mx-auto mb-12"></div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {[
-                { title: 'Keep 80%', desc: 'You keep 80% of every session you do. We only take a small platform fee.', icon: 'star' },
-                { title: 'Set your own schedule', desc: 'Choose your availability. Work when it is convenient for you.', icon: 'clock' },
-                { title: 'Grow your brand', desc: 'Build deeper connections with your audience beyond social media.', icon: 'heart' },
-                { title: 'Support', desc: '24/7 support team to help you with anything you need.', icon: 'shield' }
+                { 
+                  title: 'Keep More You Earn', 
+                  desc: '85% revenue share, the highest in Pakistan for creators like you.', 
+                  icon: 'shield-check' 
+                },
+                { 
+                  title: 'Safe and Secure', 
+                  desc: 'Identity verification and escrow payments protect you and your clients.', 
+                  icon: 'lock' 
+                },
+                { 
+                  title: 'Grow Your Brand', 
+                  desc: 'Every session is a chance to turn a client into a lifelong fan.', 
+                  icon: 'trending' 
+                },
+                { 
+                  title: 'Support', 
+                  desc: 'Our creator success team is always one message away.', 
+                  icon: 'headphones' 
+                }
               ].map((item, i) => (
-                <div key={i} className="bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-xl p-6">
-                  <div className="w-12 h-12 rounded-full bg-[rgba(200,169,126,0.1)] border border-[rgba(200,169,126,0.3)] flex items-center justify-center mb-4">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="2">
-                      {item.icon === 'star' && (
-                        <path d="M12 2l2 7h7l-5.5 4.5L17 21l-5-3.5L7 21l1.5-7.5L3 9h7l2-7z" />
-                      )}
-                      {item.icon === 'clock' && (
+                <div key={i} className="bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-xl p-8 text-center">
+                  <div className="w-16 h-16 rounded-full bg-[rgba(200,169,126,0.05)] border border-[rgba(200,169,126,0.3)] flex items-center justify-center mx-auto mb-6">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="1.5">
+                      {item.icon === 'shield-check' && (
                         <>
-                          <circle cx="12" cy="12" r="10" />
-                          <polyline points="12 6 12 12 16 14" />
+                          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                          <path d="M9 12l2 2 4-4" />
                         </>
                       )}
-                      {item.icon === 'heart' && (
-                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                      {item.icon === 'lock' && (
+                        <>
+                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                        </>
                       )}
-                      {item.icon === 'shield' && (
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                      {item.icon === 'trending' && (
+                        <>
+                          <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+                          <polyline points="17 6 23 6 23 12" />
+                        </>
+                      )}
+                      {item.icon === 'headphones' && (
+                        <>
+                          <path d="M3 18v-6a9 9 0 0 1 18 0v6" />
+                          <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z" />
+                        </>
                       )}
                     </svg>
                   </div>
-                  <h3 className="font-serif text-lg font-bold mb-2">{item.title}</h3>
-                  <p className="text-white/60 text-sm">{item.desc}</p>
+                  <h3 className="font-serif text-xl font-bold mb-3">{item.title}</h3>
+                  <p className="text-white/60 text-base">{item.desc}</p>
                 </div>
               ))}
             </div>
