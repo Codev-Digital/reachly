@@ -19,25 +19,25 @@ export default function CreatorNavbar() {
           <div className="hidden lg:flex gap-8 xl:gap-10 items-center">
                     <Link 
                       href="/explore-creators" 
-                      className={`font-sans text-sm transition-colors ${pathname === '/explore-creators' ? 'text-[#C8A97E]' : 'text-[#F9F6F2] hover:text-[#C8A97E]'}`}
+                      className={`font-inter text-base font-medium leading-none tracking-normal transition-colors ${pathname === '/explore-creators' ? 'text-[#C8A97E]' : 'text-[#F9F6F2] hover:text-[#C8A97E]'}`}
                     >
                       Explore Creators
                     </Link>
                     <Link 
                       href="/how-it-works" 
-                      className={`font-sans text-sm transition-colors ${pathname === '/how-it-works' ? 'text-[#C8A97E]' : 'text-[#F9F6F2] hover:text-[#C8A97E]'}`}
+                      className={`font-inter text-base font-medium leading-none tracking-normal transition-colors ${pathname === '/how-it-works' ? 'text-[#C8A97E]' : 'text-[#F9F6F2] hover:text-[#C8A97E]'}`}
                     >
                       How it Works
                     </Link>
                     <Link 
                       href="/for-creators" 
-                      className={`font-sans text-sm transition-colors ${pathname === '/for-creators' ? 'text-[#C8A97E]' : 'text-[#F9F6F2] hover:text-[#C8A97E]'}`}
+                      className={`font-inter text-base font-medium leading-none tracking-normal transition-colors ${pathname === '/for-creators' ? 'text-[#C8A97E]' : 'text-[#F9F6F2] hover:text-[#C8A97E]'}`}
                     >
                       For Creators
                     </Link>
                     <Link 
                       href="/about" 
-                      className={`font-sans text-sm transition-colors ${pathname === '/about' ? 'text-[#C8A97E]' : 'text-[#F9F6F2] hover:text-[#C8A97E]'}`}
+                      className={`font-inter text-base font-medium leading-none tracking-normal transition-colors ${pathname === '/about' ? 'text-[#C8A97E]' : 'text-[#F9F6F2] hover:text-[#C8A97E]'}`}
                     >
                       About
                     </Link>
