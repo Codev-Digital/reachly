@@ -81,7 +81,7 @@ function SignupForm() {
             value={formData.name}
             onChange={handleChange}
             className="w-full bg-[#141414] border border-[rgba(200,169,126,0.15)] rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 font-sans text-sm sm:text-base text-white focus:outline-none focus:border-[#C8A97E]"
-            placeholder="John Doe"
+            placeholder="Enter your full name"
             required
           />
         </div>
