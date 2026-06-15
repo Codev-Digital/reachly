@@ -8,8 +8,13 @@ import { useState } from 'react';
 const CreatorAvailability = () => {
   const [activeTab, setActiveTab] = useState('Weekly Schedule');
   const [showBlockForm, setShowBlockForm] = useState(false);
+  const [showSlotModal, setShowSlotModal] = useState(false);
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
+  const [oneTimeSlots, setOneTimeSlots] = useState([
+    { id: 1, date: 'Sat, 6 Jun 2026', startTime: '7:00 AM', endTime: '9:00 AM', reason: 'Early morning special!' },
+    { id: 2, date: 'Sat, 6 Jun 2026', startTime: '7:00 AM', endTime: '9:00 AM', reason: 'Early morning special!' },
+  ]);
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
   
   const timeOptions = [
@@ -347,6 +352,118 @@ const CreatorAvailability = () => {
               </div>
             )}
 
+            {activeTab === 'One-Time Slots' && (
+              <div className="mb-12">
+                <div className="flex items-center justify-between mb-6">
+                  <p className="font-sans text-base text-[#F9F6F2] opacity-70">Add one-off availability outside your regular schedule, for special hours or events</p>
+                  <button 
+                    onClick={() => setShowSlotModal(true)}
+                    className="bg-[#141414] border border-[rgba(200,169,126,0.3)] text-[#C8A97E] px-4 py-2 rounded-xl text-sm font-sans hover:bg-[rgba(200,169,126,0.1)] transition-all"
+                  >
+                    + Add Slot
+                  </button>
+                </div>
+                
+                <div className="space-y-4 mb-6">
+                  {oneTimeSlots.map((slot) => (
+                    <div key={slot.id} className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-2xl p-5">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start gap-4">
+                          <div className="w-12 h-12 bg-[rgba(200,169,126,0.1)] rounded-xl flex items-center justify-center flex-shrink-0">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="2">
+                              <circle cx="12" cy="12" r="5" />
+                              <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+                            </svg>
+                          </div>
+                          <div>
+                            <h4 className="font-sans text-base font-semibold text-[#F9F6F2] mb-1">{slot.date}</h4>
+                            <p className="font-sans text-sm text-[#F9F6F2] opacity-60">{slot.startTime} to {slot.endTime} · {slot.reason}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button className="text-[#F9F6F2] opacity-40 hover:opacity-70">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                            </svg>
+                          </button>
+                          <button className="text-[#F9F6F2] opacity-40 hover:opacity-70">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M3 6h18" />
+                              <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                              <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="flex justify-end">
+                  <button className="bg-[#C8A97E] text-[#0C0C0C] px-6 py-2 rounded-full text-sm font-sans font-medium hover:opacity-90 transition-all">
+                    Save Changes
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'Settings' && (
+              <div className="mb-12">
+                <div className="space-y-6">
+                  <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-2xl p-6">
+                    <h3 className="font-serif text-xl font-bold text-[#F9F6F2] mb-6">Booking Settings</h3>
+                    
+                    <div className="space-y-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-sans text-base text-[#F9F6F2] mb-1">Allow Same-Day Bookings</h4>
+                          <p className="font-sans text-sm text-[#F9F6F2] opacity-60">Allow followers to book sessions on the same day</p>
+                        </div>
+                        <div className="w-12 h-7 bg-[#C8A97E] rounded-full relative">
+                          <div className="absolute right-1 top-1 w-5 h-5 bg-[#0C0C0C] rounded-full" />
+                        </div>
+                      </div>
+                      
+                      <div className="border-t border-[rgba(255,255,255,0.1)]" />
+                      
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-sans text-base text-[#F9F6F2] mb-1">Minimum Booking Notice</h4>
+                          <p className="font-sans text-sm text-[#F9F6F2] opacity-60">How far in advance followers must book</p>
+                        </div>
+                        <select className="bg-[rgba(255,255,255,0.05)] border border-[rgba(200,169,126,0.2)] rounded-xl px-4 py-2 text-[#F9F6F2] text-sm font-sans outline-none">
+                          <option>1 hour</option>
+                          <option>2 hours</option>
+                          <option>4 hours</option>
+                          <option>1 day</option>
+                        </select>
+                      </div>
+                      
+                      <div className="border-t border-[rgba(255,255,255,0.1)]" />
+                      
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-sans text-base text-[#F9F6F2] mb-1">Maximum Days in Advance</h4>
+                          <p className="font-sans text-sm text-[#F9F6F2] opacity-60">How far in the future followers can book</p>
+                        </div>
+                        <select className="bg-[rgba(255,255,255,0.05)] border border-[rgba(200,169,126,0.2)] rounded-xl px-4 py-2 text-[#F9F6F2] text-sm font-sans outline-none">
+                          <option>14 days</option>
+                          <option>30 days</option>
+                          <option>90 days</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-end">
+                    <button className="bg-[#C8A97E] text-[#0C0C0C] px-6 py-2 rounded-full text-sm font-sans font-medium hover:opacity-90 transition-all">
+                      Save Settings
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Live Preview: Next 14 Days */}
             <div>
               <div className="flex items-center justify-between mb-6">
@@ -421,6 +538,75 @@ const CreatorAvailability = () => {
               </div>
             </div>
           </motion.main>
+          
+          {showSlotModal && (
+            <div className="fixed inset-0 bg-[rgba(0,0,0,0.7)] flex items-center justify-center z-50">
+              <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-3xl p-8 w-full max-w-md">
+                <h3 className="font-serif text-2xl font-bold text-[#F9F6F2] mb-6">Add One Time Slot</h3>
+                
+                <div className="space-y-4 mb-8">
+                  <div>
+                    <label className="text-sm font-sans text-[#F9F6F2] opacity-70 mb-2 block">Date</label>
+                    <div className="relative w-full">
+                      <input
+                        type="date"
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                      />
+                      <div className="bg-[rgba(255,255,255,0.03)] border border-[rgba(200,169,126,0.2)] rounded-xl px-4 py-3 text-[#F9F6F2] text-base font-sans flex items-center justify-between">
+                        <span>mm/dd/yyyy</span>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="2">
+                          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                          <line x1="16" y1="2" x2="16" y2="6" />
+                          <line x1="8" y1="2" x2="8" y2="6" />
+                          <line x1="3" y1="10" x2="21" y2="10" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-sans text-[#F9F6F2] opacity-70 mb-2 block">Start Time</label>
+                      <select className="w-full bg-[rgba(255,255,255,0.03)] border border-[rgba(200,169,126,0.2)] rounded-xl px-4 py-3 text-[#F9F6F2] text-base font-sans outline-none">
+                        {timeOptions.map((time, i) => (
+                          <option key={i} value={time}>{time}</option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className="text-sm font-sans text-[#F9F6F2] opacity-70 mb-2 block">End Time</label>
+                      <select className="w-full bg-[rgba(255,255,255,0.03)] border border-[rgba(200,169,126,0.2)] rounded-xl px-4 py-3 text-[#F9F6F2] text-base font-sans outline-none">
+                        {timeOptions.map((time, i) => (
+                          <option key={i} value={time}>{time}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="text-sm font-sans text-[#F9F6F2] opacity-70 mb-2 block">Reason (optional)</label>
+                    <textarea 
+                      placeholder="e.g. Special event, Early morning!"
+                      className="w-full bg-[rgba(255,255,255,0.03)] border border-[rgba(200,169,126,0.2)] rounded-xl px-4 py-3 text-[#F9F6F2] text-base font-sans outline-none resize-none h-24"
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-4">
+                  <button 
+                    onClick={() => setShowSlotModal(false)}
+                    className="flex-1 bg-[rgba(255,255,255,0.05)] text-[#F9F6F2] py-3 rounded-full text-base font-sans font-medium hover:bg-[rgba(255,255,255,0.1)] transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button className="flex-1 bg-[#C8A97E] text-[#0C0C0C] py-3 rounded-full text-base font-sans font-medium hover:opacity-90 transition-all">
+                    Add Slot
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
