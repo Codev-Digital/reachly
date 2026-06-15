@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
 
     const user = await User.findOne({ email: email.toLowerCase().trim() });
 
-    // Always return the same generic message to prevent user enumeration
+    // Use a generic message to prevent user enumeration
     if (!user || !user.password) {
       return NextResponse.json(
         { error: 'Invalid email or password' },
@@ -39,15 +39,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!user.isRegistrationComplete) {
-      return NextResponse.json(
-        {
-          error: 'Your registration is incomplete. Please finish setting up your account.',
-          redirectTo: '/set-password',
-        },
-        { status: 403 }
-      );
-    }
+    // Note: we do NOT block on isRegistrationComplete here.
+    // A user with a verified account should always be able to log in,
+    // regardless of whether they've finished onboarding.
 
     return NextResponse.json({
       success: true,

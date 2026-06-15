@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import Image from 'next/image';
 import Logo from '../components/Logo';
@@ -9,11 +9,18 @@ import HeroImage from '../components/HeroImage';
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Where to go after a successful login — honour the callbackUrl if present
+  const callbackUrl = searchParams.get('callbackUrl') || '/welcome';
+  const signupUrl = callbackUrl.startsWith('/creator-onboarding')
+    ? `/signup?type=creator&callbackUrl=${encodeURIComponent(callbackUrl)}`
+    : `/signup?callbackUrl=${encodeURIComponent(callbackUrl)}`;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,13 +35,13 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        // NextAuth wraps the error message thrown in authorize()
         setError(result.error);
       } else {
-        router.push('/welcome');
+        // Redirect to callbackUrl (e.g. /creator-onboarding/step-1) or /welcome
+        router.push(callbackUrl);
         router.refresh();
       }
-    } catch (err) {
+    } catch {
       setError('Something went wrong. Please try again.');
     } finally {
       setLoading(false);
@@ -42,7 +49,7 @@ export default function LoginPage() {
   };
 
   const handleGoogleSignIn = () => {
-    signIn('google', { callbackUrl: '/welcome' });
+    signIn('google', { callbackUrl });
   };
 
   return (
@@ -161,7 +168,7 @@ export default function LoginPage() {
             <div className="relative mt-8 sm:mt-10 lg:mt-12 max-w-md">
               <div className="absolute top-0 left-0 right-0 h-px bg-[rgba(200,169,126,0.15)]"></div>
               <p className="text-center font-sans text-[#F9F6F2] text-sm sm:text-base pt-4 sm:pt-6">
-                Don't have an account? <span className="text-[#C8A97E] font-semibold cursor-pointer" onClick={() => router.push('/welcome')}>Sign up</span>
+                Don't have an account? <span className="text-[#C8A97E] font-semibold cursor-pointer" onClick={() => router.push(signupUrl)}>Sign up</span>
               </p>
             </div>
           </div>

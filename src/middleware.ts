@@ -4,31 +4,19 @@ import { getToken } from 'next-auth/jwt';
 
 // ─── Route groups ────────────────────────────────────────────────────────────
 
-/**
- * Pages that do NOT require any session.
- * Logged-in users who try to visit these are redirected to /dashboard.
- */
-const AUTH_PAGES = ['/login', '/signup', '/welcome', '/forgot-password'];
+/** Pages only unauthenticated users should see. Logged-in → /dashboard */
+const AUTH_PAGES = ['/login', '/signup', '/forgot-password'];
 
-/**
- * Pages that belong to the signup flow.
- * These are public but only make sense when coming from signup,
- * so we let the individual page handle the redirect (via localStorage check).
- */
+/** Signup-flow pages — allowed for everyone (page itself handles guards) */
 const SIGNUP_FLOW_PAGES = ['/verify-email', '/set-password'];
 
-/**
- * Pages that require a fully authenticated AND fully registered session.
- */
+/** Routes that need a valid session (logged in, registration complete) */
 const PROTECTED_PAGES = ['/dashboard'];
 
-/**
- * Prefix for pages that require auth (dynamic segments included).
- */
-const PROTECTED_PREFIXES = ['/creator-onboarding'];
+/** Route prefixes that need a valid session */
+const PROTECTED_PREFIXES = ['/creator-onboarding', '/creators/dashboard', '/creators/bookings', '/creators/calendar', '/creators/availability', '/creators/session-types', '/creators/earnings', '/creators/profile', '/creators/reviews', '/creators/analytics', '/creators/booking-links', '/creators/notifications', '/creators/settings'];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-
 const startsWith = (pathname: string, prefixes: string[]) =>
   prefixes.some((p) => pathname.startsWith(p));
 
@@ -36,42 +24,39 @@ const exactMatch = (pathname: string, routes: string[]) =>
   routes.includes(pathname);
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
-
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Always allow Next.js internals and all /api/auth/* routes through
+  // Always pass through Next.js internals and auth API routes
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api/auth') ||
+    pathname.startsWith('/api/') ||
     pathname.startsWith('/favicon') ||
     pathname.match(/\.(svg|png|jpg|jpeg|gif|ico|webp|css|js|woff|woff2)$/)
   ) {
     return NextResponse.next();
   }
 
-  // Retrieve JWT token (works for both NextAuth credential & Google sessions)
-  const token = await getToken({
-    req: request,
-    secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET,
-  });
+  // Read JWT — try both possible secret env var names
+  const secret = process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET;
+  const token = await getToken({ req: request, secret });
 
   const isLoggedIn = !!token;
   const isComplete = !!(token as any)?.isRegistrationComplete;
 
-  // ── 1. Logged-in + complete user tries to visit an auth page ──────────────
-  //    Redirect them straight to the dashboard.
+  // ── 1. Logged-in + complete user on an auth-only page → dashboard ─────────
   if (isLoggedIn && isComplete && exactMatch(pathname, AUTH_PAGES)) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
-  // ── 2. Logged-in but INCOMPLETE user ──────────────────────────────────────
-  //    They finished Google OAuth but haven't set a password yet,
-  //    OR they came via credentials but registration was somehow partial.
-  //    Allow them only on signup-flow pages; send elsewhere → /set-password.
+  // ── 2. Logged-in but registration NOT complete ────────────────────────────
+  //    Allow: auth pages, signup-flow pages, /welcome, /creator-onboarding/*
+  //    Everything else → /set-password so they finish registration first.
   if (isLoggedIn && !isComplete) {
     const allowed =
-      exactMatch(pathname, [...AUTH_PAGES, ...SIGNUP_FLOW_PAGES]) ||
+      exactMatch(pathname, [...AUTH_PAGES, ...SIGNUP_FLOW_PAGES, '/welcome']) ||
+      startsWith(pathname, PROTECTED_PREFIXES) || // allow onboarding
       pathname.startsWith('/api');
 
     if (!allowed) {
@@ -80,8 +65,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // ── 3. NOT logged in tries to visit a protected page ──────────────────────
-  //    Send them to /login and remember where they wanted to go.
+  // ── 3. Logged-in and complete → creator-onboarding is allowed ─────────────
+  //    (falls through to rule 4 — NextResponse.next())
+
+  // ── 4. Not logged in trying to access a protected route → login ───────────
   const needsAuth =
     exactMatch(pathname, PROTECTED_PAGES) ||
     startsWith(pathname, PROTECTED_PREFIXES);
@@ -92,21 +79,12 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // ── 4. Everything else — allow through ────────────────────────────────────
+  // ── 5. Allow everything else through ──────────────────────────────────────
   return NextResponse.next();
 }
 
-// ─── Matcher ─────────────────────────────────────────────────────────────────
-// Run middleware on every route EXCEPT static files and Next.js internals.
 export const config = {
   matcher: [
-    /*
-     * Match all paths except:
-     * - _next/static  (static files)
-     * - _next/image   (image optimisation)
-     * - favicon.ico
-     * - public folder files (images, svgs, etc.)
-     */
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|ico|webp)$).*)',
   ],
 };

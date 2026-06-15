@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { signIn } from 'next-auth/react';
 import Logo from '../components/Logo';
 import HeroImage from '../components/HeroImage';
 import { setPassword, checkPasswordStrength, requestChangeEmail, verifyChangeEmail } from '@/lib/auth-client';
@@ -14,6 +15,8 @@ export default function SetPasswordPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get('callbackUrl') || '/welcome';
   const [email, setEmail] = useState('');
   
   // Change email state
@@ -78,7 +81,12 @@ export default function SetPasswordPage() {
     try {
       const res = await setPassword(email, password, confirmPassword);
       if (res.success) {
-        router.push('/welcome');
+        await signIn('credentials', {
+          redirect: false,
+          email,
+          password,
+        });
+        router.push(callbackUrl);
       } else {
         setError(res.error || 'Failed to set password');
       }

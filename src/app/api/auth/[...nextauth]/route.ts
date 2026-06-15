@@ -40,12 +40,6 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Please verify your email before signing in.');
         }
 
-        if (!user.isRegistrationComplete) {
-          throw new Error(
-            'Your registration is incomplete. Please finish setting up your account.'
-          );
-        }
-
         return {
           id: user._id.toString(),
           name: user.name,

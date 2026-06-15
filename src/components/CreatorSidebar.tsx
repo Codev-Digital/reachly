@@ -11,6 +11,8 @@ const CreatorSidebar = ({ active: propActive }: { active?: string }) => {
   useEffect(() => {
     if (propActive) {
       setActiveItem(propActive);
+    } else if (pathname?.includes('/creators/profile')) {
+      setActiveItem('Profile');
     } else if (pathname?.includes('/creators/earnings')) {
       setActiveItem('Earnings');
     } else if (pathname?.includes('/creators/session-types')) {

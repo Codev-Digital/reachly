@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Logo from '../components/Logo';
 import HeroImage from '../components/HeroImage';
 import { verifyOTP, resendOTP } from '@/lib/auth-client';
@@ -12,6 +12,8 @@ export default function VerifyEmailPage() {
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const [error, setError] = useState('');
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get('callbackUrl') || '/welcome';
   const [email, setEmail] = useState('');
 
   useEffect(() => {
@@ -23,6 +25,25 @@ export default function VerifyEmailPage() {
     }
   }, [router]);
 
+  const handlePaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData('text');
+    const digits = pastedData.replace(/\D/g, '').slice(0, 6).split('');
+    
+    const newCode = [...code];
+    digits.forEach((digit, i) => {
+      if (i < 6) {
+        newCode[i] = digit;
+      }
+    });
+    setCode(newCode);
+    
+    // Focus the next empty input or last input
+    const focusIndex = Math.min(digits.length, 5);
+    const nextInput = document.getElementById(`code-${focusIndex}`);
+    nextInput?.focus();
+  };
+
   const handleChange = (index: number, value: string) => {
     if (value.length > 1) return;
     const newCode = [...code];
@@ -32,6 +53,13 @@ export default function VerifyEmailPage() {
     if (value && index < 5) {
       const nextInput = document.getElementById(`code-${index + 1}`);
       nextInput?.focus();
+    }
+  };
+
+  const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
+    if (e.key === 'Backspace' && !code[index] && index > 0) {
+      const prevInput = document.getElementById(`code-${index - 1}`);
+      prevInput?.focus();
     }
   };
 
@@ -46,7 +74,7 @@ export default function VerifyEmailPage() {
     try {
       const res = await verifyOTP(email, otp);
       if (res.success) {
-        router.push('/set-password');
+        router.push(`/set-password?callbackUrl=${encodeURIComponent(callbackUrl)}`);
       } else {
         setError(res.error || 'Invalid code');
       }
@@ -109,6 +137,8 @@ export default function VerifyEmailPage() {
                     type="text"
                     value={digit}
                     onChange={(e) => handleChange(index, e.target.value)}
+                    onPaste={handlePaste}
+                    onKeyDown={(e) => handleKeyDown(index, e)}
                     className="w-10 h-12 sm:w-14 sm:h-16 bg-[#141414] border border-[rgba(200,169,126,0.15)] rounded-lg text-center font-serif text-xl sm:text-2xl text-white focus:outline-none focus:border-[#C8A97E]"
                     maxLength={1}
                   />

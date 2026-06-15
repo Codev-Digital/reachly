@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -18,9 +17,11 @@ export default function WelcomePage() {
             <div className="mb-8 sm:mb-12 lg:mb-16">
               <Logo />
             </div>
-            
-            <p className="font-sans text-[#C8A97E] text-xs sm:text-sm font-medium mb-3 sm:mb-4">Step 1 of 2</p>
-            
+
+            <p className="font-sans text-[#C8A97E] text-xs sm:text-sm font-medium mb-3 sm:mb-4">
+              Step 1 of 2
+            </p>
+
             <div className="mb-8 sm:mb-10 lg:mb-12">
               <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-[#C8A97E] mb-3 sm:mb-4">
                 Welcome to Reach<span className="text-white">ly</span>
@@ -32,8 +33,9 @@ export default function WelcomePage() {
 
             {/* Path Options */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-8 sm:mb-10 lg:mb-12">
-              <div 
-                className="bg-[#141414] border border-[rgba(200,169,126,0.15)] rounded-lg p-5 sm:p-6 md:p-8 cursor-pointer hover:border-opacity-50 transition-all"
+              {/* Book sessions card */}
+              <div
+                className="bg-[#141414] border border-[rgba(200,169,126,0.15)] rounded-lg p-5 sm:p-6 md:p-8 cursor-pointer hover:border-[rgba(200,169,126,0.5)] transition-all"
                 onClick={() => router.push('/signup?type=user')}
               >
                 <div className="space-y-4 sm:space-y-6">
@@ -51,17 +53,19 @@ export default function WelcomePage() {
                       I want to book sessions
                     </h3>
                     <p className="font-sans text-[#F9F6F2] text-xs sm:text-sm leading-5 sm:leading-6 opacity-80">
-                      Find creators you admire and book personalized video calls to learn, grow, and connect.
+                      Find creators you admire and book personalized video calls
+                      to learn, grow, and connect.
                     </p>
                   </div>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="sm:w-6 sm:h-6">
-                    <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="#C8A97E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="#C8A97E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </div>
               </div>
 
-              <div 
-                className="bg-[#141414] border border-[rgba(200,169,126,0.15)] rounded-lg p-5 sm:p-6 md:p-8 cursor-pointer hover:border-opacity-50 transition-all"
+              {/* Become a creator card */}
+              <div
+                className="bg-[#141414] border border-[rgba(200,169,126,0.15)] rounded-lg p-5 sm:p-6 md:p-8 cursor-pointer hover:border-[rgba(200,169,126,0.5)] transition-all"
                 onClick={() => router.push('/creator-onboarding/step-1')}
               >
                 <div className="space-y-4 sm:space-y-6">
@@ -79,11 +83,12 @@ export default function WelcomePage() {
                       I want to be a creator
                     </h3>
                     <p className="font-sans text-[#F9F6F2] text-xs sm:text-sm leading-5 sm:leading-6 opacity-80">
-                      Share your knowledge, connect with your audience, and monetize your expertise through 1-on-1 sessions.
+                      Share your knowledge, connect with your audience, and
+                      monetize your expertise through 1-on-1 sessions.
                     </p>
                   </div>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="sm:w-6 sm:h-6">
-                    <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="#C8A97E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="#C8A97E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </div>
               </div>
@@ -91,21 +96,27 @@ export default function WelcomePage() {
 
             {/* Footer */}
             <div className="relative">
-              <div className="absolute top-0 left-0 right-0 h-px bg-[rgba(200,169,126,0.15)]"></div>
+              <div className="absolute top-0 left-0 right-0 h-px bg-[rgba(200,169,126,0.15)]" />
               <p className="font-sans text-[#F9F6F2] text-sm sm:text-base pt-4 sm:pt-6 text-center">
-                Already have an account? <span className="font-semibold text-[#C8A97E] cursor-pointer" onClick={() => router.push('/login')}>Log In</span>
+                Already have an account?{' '}
+                <span
+                  className="font-semibold text-[#C8A97E] cursor-pointer hover:underline"
+                  onClick={() => router.push('/login')}
+                >
+                  Log In
+                </span>
               </p>
             </div>
           </div>
 
-          {/* Right Side - Hero Image - Visible on tablets and larger */}
+          {/* Right Side — tablets and larger */}
           <div className="hidden md:block lg:block">
             <div className="h-full min-h-[400px] md:min-h-[600px] lg:min-h-[800px]">
               <HeroImage />
             </div>
           </div>
-          
-          {/* Mobile Hero Image - Visible only on mobile */}
+
+          {/* Mobile hero */}
           <div className="block md:hidden mt-6">
             <div className="h-[350px] rounded-[20px] overflow-hidden">
               <HeroImage />

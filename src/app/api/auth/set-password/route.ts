@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
 import { checkPasswordStrength } from '@/lib/utils';
+import { signToken } from '@/lib/jwt';
 
 export async function POST(request: NextRequest) {
   try {
@@ -47,11 +48,36 @@ export async function POST(request: NextRequest) {
     user.isRegistrationComplete = true;
     await user.save();
 
-    return NextResponse.json({
+    // Create JWT token and set as HTTP-only cookie
+    const token = signToken({
+      userId: user._id.toString(),
+      email: user.email,
+      name: user.name,
+    });
+
+    const response = NextResponse.json({
       success: true,
       message: 'Password set successfully. Registration complete.',
       strength: strengthCheck.strength,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        onboardingStep: user.onboardingStep,
+        isRegistrationComplete: user.isRegistrationComplete,
+      },
     });
+
+    // Set cookie with SameSite=Lax and HttpOnly for security
+    response.cookies.set('auth_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: '/',
+    });
+
+    return response;
   } catch (error: any) {
     console.error('Set password error:', error);
     return NextResponse.json(

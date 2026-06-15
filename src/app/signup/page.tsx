@@ -11,7 +11,10 @@ import { signUp } from '@/lib/auth-client';
 function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const userType = searchParams.get('type') || 'user';
+  const callbackUrl = searchParams.get('callbackUrl') || '/welcome';
+  const userType =
+    searchParams.get('type') ||
+    (callbackUrl.startsWith('/creator-onboarding') ? 'creator' : 'user');
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -30,7 +33,7 @@ function SignupForm() {
       const res = await signUp(formData.name, formData.email);
       if (res.success) {
         localStorage.setItem('signupEmail', formData.email);
-        router.push('/verify-email');
+        router.push(`/verify-email?callbackUrl=${encodeURIComponent(callbackUrl)}`);
       } else {
         setError(res.error || 'Something went wrong');
       }
@@ -42,7 +45,7 @@ function SignupForm() {
   };
 
   const handleGoogleSignIn = () => {
-    signIn('google', { callbackUrl: '/welcome' });
+    signIn('google', { callbackUrl });
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
