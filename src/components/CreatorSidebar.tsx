@@ -11,6 +11,8 @@ const CreatorSidebar = ({ active: propActive }: { active?: string }) => {
   useEffect(() => {
     if (propActive) {
       setActiveItem(propActive);
+    } else if (pathname?.includes('/creators/session-types')) {
+      setActiveItem('Session Types');
     } else if (pathname?.includes('/creators/availability')) {
       setActiveItem('Availability');
     } else if (pathname?.includes('/creators/calendar')) {
