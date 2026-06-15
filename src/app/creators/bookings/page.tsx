@@ -19,16 +19,19 @@ interface Booking {
   status: BookingStatus;
   preSessionQuestion: string;
   reason?: string;
+  isPaid?: boolean;
 }
 
 const CreatorBookings = () => {
-  const [activeTab, setActiveTab] = useState<BookingStatus>('Upcoming');
+  const [activeTab, setActiveTab] = useState<BookingStatus>('Pending Action');
   const [selectedBookings, setSelectedBookings] = useState<string[]>([]);
   const [sessionTypeFilter, setSessionTypeFilter] = useState('All session types');
   const [statusFilter, setStatusFilter] = useState('All statuses');
   const [searchQuery, setSearchQuery] = useState('');
   const [showSessionDropdown, setShowSessionDropdown] = useState(false);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
+  const [showRescheduleModal, setShowRescheduleModal] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
 
   const tabs: { name: BookingStatus; count: number }[] = [
     { name: 'Upcoming', count: 2 },
@@ -103,16 +106,25 @@ const CreatorBookings = () => {
       preSessionQuestion: 'Need help with my Eid outfit planning. I want something traditional but modern.',
       reason: 'Follower cancelled more than 24h before - Full refund processed',
     },
+    {
+      id: 'RCH-78492036',
+      follower: 'Fatima Ali',
+      avatar: '/merium.png',
+      session: 'Confidence Coaching',
+      date: 'Tue, 2 Jun 2026',
+      time: '05:30 PM',
+      duration: '45 min',
+      amount: 'PKR 1,800',
+      status: 'Pending Action',
+      preSessionQuestion: 'I want to start a YouTube channel about Pakistani street food. How do I structure my videos and what equipment do I need?',
+      isPaid: true,
+    },
   ];
 
   const toggleBookingSelection = (id: string) => {
     setSelectedBookings(prev => 
       prev.includes(id) ? prev.filter(bookingId => bookingId !== id) : [...prev, id]
     );
-  };
-
-  const selectAll = () => {
-    setSelectedBookings(filteredBookings.map(b => b.id));
   };
 
   const clearSelection = () => {
@@ -373,9 +385,18 @@ const CreatorBookings = () => {
                         <div className="flex items-start gap-3 mb-3">
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-1">
-                              <span className={`px-3 py-1 rounded-full text-xs font-sans border ${getStatusColor(booking.status)}`}>
-                                {booking.status === 'Past' ? 'Completed' : booking.status}
+                              <span className={`px-3 py-1 rounded-full text-xs font-sans border ${
+                                booking.status === 'Pending Action' 
+                                  ? 'bg-[rgba(251,191,36,0.1)] text-[#fbbf24] border-[rgba(251,191,36,0.3)]' 
+                                  : getStatusColor(booking.status)
+                              }`}>
+                                {booking.status === 'Past' ? 'Completed' : booking.status === 'Pending Action' ? 'Pending' : booking.status}
                               </span>
+                              {booking.isPaid && (
+                                <span className="px-3 py-1 rounded-full text-xs font-sans bg-[rgba(74,222,128,0.1)] text-[#4ade80] border border-[rgba(74,222,128,0.3)]">
+                                  Paid
+                                </span>
+                              )}
                               {booking.status === 'Past' && (
                                 <span className="px-3 py-1 rounded-full text-xs font-sans bg-[rgba(200,169,126,0.1)] text-[#C8A97E] border border-[rgba(200,169,126,0.3)]">
                                   Past
@@ -417,7 +438,7 @@ const CreatorBookings = () => {
                         </div>
 
                         {booking.reason && (
-                          <div className="pt-3 border-t border-[rgba(255,255,255,0.1)]">
+                          <div className="pt-3 border-t border-[rgba(255,255,255,0.1)] mb-4">
                             <p className="text-xs font-sans text-[#F9F6F2] opacity-50">
                               Reason: {booking.reason}
                             </p>
@@ -425,6 +446,25 @@ const CreatorBookings = () => {
                         )}
 
                         <div className="flex items-center gap-3 mt-4">
+                          {booking.status === 'Pending Action' && (
+                            <>
+                              <button className="flex items-center gap-2 bg-[#141414] border border-[rgba(255,255,255,0.1)] px-4 py-1.5 rounded-full text-xs font-sans text-[#F9F6F2]">
+                                Join meet
+                              </button>
+                              <button 
+                                onClick={() => setShowRescheduleModal(true)}
+                                className="flex items-center gap-2 bg-[rgba(74,222,128,0.1)] border border-[rgba(74,222,128,0.3)] px-4 py-1.5 rounded-full text-xs font-sans text-[#4ade80]"
+                              >
+                                Accept Reschedule
+                              </button>
+                              <button 
+                                onClick={() => setShowCancelModal(true)}
+                                className="flex items-center gap-2 bg-[rgba(248,113,113,0.1)] border border-[rgba(248,113,113,0.3)] px-4 py-1.5 rounded-full text-xs font-sans text-[#f87171]"
+                              >
+                                Cancel
+                              </button>
+                            </>
+                          )}
                           {booking.status === 'Past' && (
                             <>
                               <button className="flex items-center gap-2 bg-[rgba(200,169,126,0.1)] border border-[rgba(200,169,126,0.3)] px-4 py-1.5 rounded-full text-xs font-sans text-[#C8A97E]">
@@ -473,6 +513,59 @@ const CreatorBookings = () => {
                   Copy Link
                 </button>
               </motion.div>
+            )}
+
+            {/* Modals */}
+            {/* Accept Reschedule Modal */}
+            {showRescheduleModal && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                <div className="bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-xl p-8 max-w-md w-full mx-4">
+                  <h3 className="font-serif text-2xl font-bold text-[#F9F6F2] mb-4">Accept reschedule?</h3>
+                  <p className="font-sans text-sm text-[#F9F6F2] opacity-70 mb-8">
+                    Confirm moving Fatima Ali's Confidence Coaching to Thu, 4 Jun 2026 at 06:00 PM? The follower will be notified automatically.
+                  </p>
+                  <div className="flex items-center justify-end gap-4">
+                    <button 
+                      onClick={() => setShowRescheduleModal(false)}
+                      className="bg-[#141414] border border-[rgba(255,255,255,0.1)] px-8 py-2.5 rounded-full text-sm font-sans text-[#F9F6F2]"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      onClick={() => setShowRescheduleModal(false)}
+                      className="bg-[#C8A97E] text-[#0C0C0C] px-8 py-2.5 rounded-full text-sm font-sans"
+                    >
+                      Yes, cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Cancel Booking Modal */}
+            {showCancelModal && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                <div className="bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-xl p-8 max-w-md w-full mx-4">
+                  <h3 className="font-serif text-2xl font-bold text-[#F9F6F2] mb-4">Cancel this booking?</h3>
+                  <p className="font-sans text-sm text-[#F9F6F2] opacity-70 mb-8">
+                    Are you sure you want to cancel Fatima Ali's Confidence Coaching? The follower will receive a full refund and a notification.
+                  </p>
+                  <div className="flex items-center justify-end gap-4">
+                    <button 
+                      onClick={() => setShowCancelModal(false)}
+                      className="bg-[#141414] border border-[rgba(255,255,255,0.1)] px-8 py-2.5 rounded-full text-sm font-sans text-[#F9F6F2]"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      onClick={() => setShowCancelModal(false)}
+                      className="bg-[#f87171] text-[#0C0C0C] px-8 py-2.5 rounded-full text-sm font-sans"
+                    >
+                      Yes, cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
             )}
           </motion.main>
         </div>
