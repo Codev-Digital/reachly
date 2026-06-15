@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
 import CreatorProfile from '@/models/CreatorProfile';
@@ -7,19 +9,24 @@ import { verifyToken } from '@/lib/jwt';
 
 export async function GET(request: NextRequest) {
   try {
-    const token = request.cookies.get('auth_token')?.value;
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    let email: string | undefined;
+
+    const session = await getServerSession(authOptions);
+    if (session?.user?.email) {
+      email = session.user.email;
+    } else {
+      const token = request.cookies.get('auth_token')?.value;
+      const payload = token ? verifyToken(token) : null;
+      email = payload?.email;
     }
 
-    const payload = verifyToken(token);
-    if (!payload) {
+    if (!email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     await connectDB();
 
-    const user = await User.findOne({ email: payload.email }).select(
+    const user = await User.findOne({ email }).select(
       '-password -otp -otpExpires -emailChangeOTP -emailChangeOTPExpires'
     );
 
