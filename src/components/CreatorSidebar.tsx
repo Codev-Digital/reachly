@@ -11,6 +11,8 @@ const CreatorSidebar = ({ active: propActive }: { active?: string }) => {
   useEffect(() => {
     if (propActive) {
       setActiveItem(propActive);
+    } else if (pathname?.includes('/creators/calendar')) {
+      setActiveItem('Calendar');
     } else if (pathname?.includes('/creators/bookings')) {
       setActiveItem('Bookings');
     } else if (pathname?.includes('/creators/dashboard')) {
