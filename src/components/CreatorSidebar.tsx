@@ -1,23 +1,36 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 
-const CreatorSidebar = () => {
+const CreatorSidebar = ({ active: propActive }: { active?: string }) => {
+  const pathname = usePathname();
   const [activeItem, setActiveItem] = useState('Dashboard');
 
+  useEffect(() => {
+    if (propActive) {
+      setActiveItem(propActive);
+    } else if (pathname?.includes('/creators/bookings')) {
+      setActiveItem('Bookings');
+    } else if (pathname?.includes('/creators/dashboard')) {
+      setActiveItem('Dashboard');
+    }
+  }, [propActive, pathname]);
+
   const menuItems = [
-    { name: 'Dashboard', icon: 'dashboard' },
-    { name: 'Bookings', icon: 'bookings' },
-    { name: 'Calendar', icon: 'calendar' },
-    { name: 'Availability', icon: 'availability' },
-    { name: 'Session Types', icon: 'session' },
-    { name: 'Earnings', icon: 'earnings' },
-    { name: 'Profile', icon: 'profile' },
-    { name: 'Reviews', icon: 'reviews' },
-    { name: 'Analytics', icon: 'analytics' },
-    { name: 'Booking Links', icon: 'links' },
-    { name: 'Notifications', icon: 'notifications' },
-    { name: 'Settings', icon: 'settings' },
+    { name: 'Dashboard', icon: 'dashboard', href: '/creators/dashboard' },
+    { name: 'Bookings', icon: 'bookings', href: '/creators/bookings' },
+    { name: 'Calendar', icon: 'calendar', href: '/creators/calendar' },
+    { name: 'Availability', icon: 'availability', href: '/creators/availability' },
+    { name: 'Session Types', icon: 'session', href: '/creators/session-types' },
+    { name: 'Earnings', icon: 'earnings', href: '/creators/earnings' },
+    { name: 'Profile', icon: 'profile', href: '/creators/profile' },
+    { name: 'Reviews', icon: 'reviews', href: '/creators/reviews' },
+    { name: 'Analytics', icon: 'analytics', href: '/creators/analytics' },
+    { name: 'Booking Links', icon: 'links', href: '/creators/booking-links' },
+    { name: 'Notifications', icon: 'notifications', href: '/creators/notifications' },
+    { name: 'Settings', icon: 'settings', href: '/creators/settings' },
   ];
 
   const getIcon = (icon: string) => {
@@ -121,8 +134,9 @@ const CreatorSidebar = () => {
         <h3 className="font-sans text-sm font-semibold text-[#C8A97E] mb-4">Main Menu</h3>
         <nav className="space-y-1">
           {menuItems.map((item) => (
-            <button
+            <Link
               key={item.name}
+              href={item.href}
               onClick={() => setActiveItem(item.name)}
               className={`w-full flex items-center gap-3 px-2 py-2 rounded text-left text-sm font-sans transition-all ${
                 activeItem === item.name
@@ -132,7 +146,7 @@ const CreatorSidebar = () => {
             >
               {getIcon(item.icon)}
               {item.name}
-            </button>
+            </Link>
           ))}
         </nav>
 
