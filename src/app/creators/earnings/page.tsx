@@ -161,32 +161,60 @@ const CreatorEarnings = () => {
               </div>
             </div>
 
-            <div className="bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-2xl p-5 mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-serif text-lg font-bold text-[#F9F6F2]">Earnings by Session Type</h3>
-                <p className="text-xs font-sans text-[#F9F6F2] opacity-60">PKR 85,300 - 52 bookings</p>
-              </div>
+            <div className="bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-2xl p-7 mb-6">
+              <h3 className="font-serif text-2xl font-bold text-[#C8A97E] mb-7">Earnings by Session Type</h3>
 
-              <div className="space-y-4">
-                {sessionEarnings.map((session) => (
-                  <div key={session.name}>
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-sans text-[#F9F6F2]">{session.name}</span>
-                        {session.highlight && (
-                          <span className="text-xs bg-[rgba(200,169,126,0.15)] text-[#C8A97E] px-2 py-0.5 rounded">{session.highlight}</span>
-                        )}
-                      </div>
-                      <span className="text-sm font-sans text-[#F9F6F2]">PKR {session.amount.toLocaleString()} · {session.sessions} bookings</span>
-                    </div>
-                    <div className="h-2 bg-[rgba(255,255,255,0.05)] rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-[#C8A97E] rounded-full"
-                        style={{ width: `${session.percentage}%` }}
-                      />
+              <div className="space-y-7">
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-lg font-sans text-[#F9F6F2]">Style Consultation</span>
+                    <span className="text-lg font-sans text-[#F9F6F2]">PKR 98,400 · 82 bookings</span>
+                  </div>
+                  <div className="relative h-3.5">
+                    <div className="absolute inset-0 bg-[rgba(255,255,255,0.05)] rounded-full" />
+                    <div 
+                      className="absolute left-0 top-0 bottom-0 bg-[#C8A97E] rounded-full flex items-center justify-end"
+                      style={{ width: '75%' }}
+                    >
+                      <div className="w-5 h-5 bg-[#C8A97E] rounded-full border-3 border-[#141414]" />
                     </div>
                   </div>
-                ))}
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-4">
+                      <span className="text-lg font-sans text-[#F9F6F2]">Confidence Coaching</span>
+                      <span className="text-base font-sans text-[#C8A97E] font-semibold">Best Performing</span>
+                    </div>
+                    <span className="text-lg font-sans text-[#F9F6F2]">PKR 102,300 · 57 bookings</span>
+                  </div>
+                  <div className="relative h-3.5">
+                    <div className="absolute inset-0 bg-[rgba(255,255,255,0.05)] rounded-full" />
+                    <div 
+                      className="absolute left-0 top-0 bottom-0 bg-[#C8A97E] rounded-full flex items-center justify-end"
+                      style={{ width: '100%' }}
+                    >
+                      <div className="w-5 h-5 bg-[#C8A97E] rounded-full border-3 border-[#141414]" />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-lg font-sans text-[#F9F6F2]">Content Strategy</span>
+                    <span className="text-lg font-sans text-[#F9F6F2]">PKR 86,800 · 35 bookings</span>
+                  </div>
+                  <div className="relative h-3.5">
+                    <div className="absolute inset-0 bg-[rgba(255,255,255,0.05)] rounded-full" />
+                    <div 
+                      className="absolute left-0 top-0 bottom-0 bg-[#C8A97E] rounded-full flex items-center justify-end"
+                      style={{ width: '65%' }}
+                    >
+                      <div className="w-5 h-5 bg-[#C8A97E] rounded-full border-3 border-[#141414]" />
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
