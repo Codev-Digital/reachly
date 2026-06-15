@@ -11,6 +11,8 @@ const CreatorAvailability = () => {
   const [showSlotModal, setShowSlotModal] = useState(false);
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
+  const [maxDays, setMaxDays] = useState(30);
+  const [minHours, setMinHours] = useState(4);
   const [oneTimeSlots, setOneTimeSlots] = useState([
     { id: 1, date: 'Sat, 6 Jun 2026', startTime: '7:00 AM', endTime: '9:00 AM', reason: 'Early morning special!' },
     { id: 2, date: 'Sat, 6 Jun 2026', startTime: '7:00 AM', endTime: '9:00 AM', reason: 'Early morning special!' },
@@ -409,50 +411,101 @@ const CreatorAvailability = () => {
 
             {activeTab === 'Settings' && (
               <div className="mb-12">
-                <div className="space-y-6">
+                <div className="space-y-5">
                   <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-2xl p-6">
-                    <h3 className="font-serif text-xl font-bold text-[#F9F6F2] mb-6">Booking Settings</h3>
+                    <h3 className="font-serif text-lg font-bold text-[#C8A97E] mb-3">Buffer Between Sessions</h3>
+                    <p className="font-sans text-sm text-[#F9F6F2] opacity-70 mb-4">Adds a gap between your bookings so you have time to prepare.</p>
                     
-                    <div className="space-y-6">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-sans text-base text-[#F9F6F2] mb-1">Allow Same-Day Bookings</h4>
-                          <p className="font-sans text-sm text-[#F9F6F2] opacity-60">Allow followers to book sessions on the same day</p>
-                        </div>
-                        <div className="w-12 h-7 bg-[#C8A97E] rounded-full relative">
-                          <div className="absolute right-1 top-1 w-5 h-5 bg-[#0C0C0C] rounded-full" />
-                        </div>
-                      </div>
-                      
-                      <div className="border-t border-[rgba(255,255,255,0.1)]" />
-                      
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-sans text-base text-[#F9F6F2] mb-1">Minimum Booking Notice</h4>
-                          <p className="font-sans text-sm text-[#F9F6F2] opacity-60">How far in advance followers must book</p>
-                        </div>
-                        <select className="bg-[rgba(255,255,255,0.05)] border border-[rgba(200,169,126,0.2)] rounded-xl px-4 py-2 text-[#F9F6F2] text-sm font-sans outline-none">
-                          <option>1 hour</option>
-                          <option>2 hours</option>
-                          <option>4 hours</option>
-                          <option>1 day</option>
-                        </select>
-                      </div>
-                      
-                      <div className="border-t border-[rgba(255,255,255,0.1)]" />
-                      
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-sans text-base text-[#F9F6F2] mb-1">Maximum Days in Advance</h4>
-                          <p className="font-sans text-sm text-[#F9F6F2] opacity-60">How far in the future followers can book</p>
-                        </div>
-                        <select className="bg-[rgba(255,255,255,0.05)] border border-[rgba(200,169,126,0.2)] rounded-xl px-4 py-2 text-[#F9F6F2] text-sm font-sans outline-none">
-                          <option>14 days</option>
-                          <option>30 days</option>
-                          <option>90 days</option>
-                        </select>
-                      </div>
+                    <div className="flex flex-wrap gap-2">
+                      {['No buffer', '5 min', '10 min', '15 min', '30 min'].map((buffer, index) => (
+                        <button
+                          key={index}
+                          className={`px-4 py-2 rounded-xl text-sm font-sans transition-all ${
+                            buffer === '15 min'
+                              ? 'bg-[#C8A97E] text-[#0C0C0C]'
+                              : 'bg-[rgba(255,255,255,0.05)] border border-[rgba(200,169,126,0.2)] text-[#F9F6F2] hover:bg-[rgba(255,255,255,0.1)]'
+                          }`}
+                        >
+                          {buffer}
+                        </button>
+                      ))}
                     </div>
+                  </div>
+                  
+                  <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-2xl p-6">
+                    <h3 className="font-serif text-lg font-bold text-[#C8A97E] mb-5">Booking Window</h3>
+                    
+                    <div className="space-y-5">
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="font-sans text-sm text-[#F9F6F2] opacity-80">How far in advance can followers book?</p>
+                          <span className="font-sans text-sm text-[#C8A97E] font-medium">{maxDays} days</span>
+                        </div>
+                   <input
+  type="range"
+  min="7"
+  max="90"
+  value={maxDays}
+  onChange={(e) => setMaxDays(parseInt(e.target.value))}
+  className="w-full h-2 appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#C8A97E]"
+  style={{
+    background: `linear-gradient(to right, #C8A97E 0%, #C8A97E ${((maxDays - 7) / 83) * 100}%, rgba(200,169,126,0.2) ${((maxDays - 7) / 83) * 100}%, rgba(200,169,126,0.2) 100%)`
+  }}
+/>
+                      </div>
+                      
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="font-sans text-sm text-[#F9F6F2] opacity-80">How far in advance can followers book?</p>
+                          <span className="font-sans text-sm text-[#C8A97E] font-medium">{minHours} hours</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="1"
+                          max="24"
+                          value={minHours}
+                          onChange={(e) => setMinHours(parseInt(e.target.value))}
+                          className="w-full h-2 bg-[rgba(200,169,126,0.2)] rounded-lg appearance-none cursor-pointer"
+                          style={{
+                            background: `linear-gradient(to right, #C8A97E 0%, #C8A97E ${((minHours - 1) / 23) * 100}%, rgba(200,169,126,0.2) ${((minHours - 1) / 23) * 100}%, rgba(200,169,126,0.2) 100%)`
+                          }}
+                        />
+                      </div>
+                      
+                      <p className="font-sans text-sm text-[#F9F6F2] opacity-70 mt-2">Followers can book up to {maxDays} days in advance, and at least {minHours} hours before the session starts.</p>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-2xl p-6">
+                    <h3 className="font-serif text-lg font-bold text-[#C8A97E] mb-3">Timezone</h3>
+                    <p className="font-sans text-sm text-[#F9F6F2] opacity-70 mb-4">All your availability times will be shown in this timezone.</p>
+                    
+                    <style jsx>{`
+                      select {
+                        color: #F9F6F2;
+                      }
+                      select option {
+                        background-color: #141414;
+                        color: #F9F6F2;
+                        padding: 8px 12px;
+                      }
+                      select option:checked {
+                        background-color: #C8A97E;
+                        color: #0C0C0C;
+                      }
+                      select option:hover {
+                        background-color: rgba(200,169,126,0.2);
+                      }
+                    `}</style>
+                    
+                    <select className="w-full bg-[rgba(255,255,255,0.03)] border border-[rgba(200,169,126,0.2)] rounded-xl px-4 py-3 text-sm font-sans outline-none">
+                      <option value="pkt">Pakistan Standard Time (PKT, UTC+5)</option>
+                      <option value="ist">India Standard Time (IST, UTC+5:30)</option>
+                      <option value="gst">Gulf Standard Time (GST, UTC+4)</option>
+                      <option value="ast">Arabian Standard Time (AST, UTC+3)</option>
+                      <option value="utc">Coordinated Universal Time (UTC+0)</option>
+                      <option value="eet">Eastern European Time (EET, UTC+2)</option>
+                    </select>
                   </div>
                   
                   <div className="flex justify-end">

@@ -71,6 +71,14 @@ a:hover,
   color: var(--color-text-light);
 }
 
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  background: #C8A97E;
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+}
+
 .text-white {
   color: var(--color-text-white);
 }
