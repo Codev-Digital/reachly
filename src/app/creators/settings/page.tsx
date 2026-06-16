@@ -7,6 +7,8 @@ import { useState } from 'react';
 
 export default function CreatorSettings() {
   const [activeTab, setActiveTab] = useState('Profile');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('JazzCash');
 
   const tabs = ['Profile', 'Account', 'Notifications', 'Privacy', 'Payment', 'Deactivation'];
 
@@ -272,25 +274,14 @@ export default function CreatorSettings() {
                 transition={{ delay: 0.3 }}
                 className="bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-xl p-6"
               >
-                <h3 className="font-serif text-lg font-semibold text-[#F9F6F2] mb-6">Notification Settings</h3>
-                
-                <div className="space-y-4">
-                  {[
-                    { title: 'Booking Confirmations', desc: 'Get notified when someone books your session' },
-                    { title: 'Session Reminders', desc: 'Get reminders before your sessions' },
-                    { title: 'New Reviews', desc: 'Get notified when someone leaves a review' },
-                    { title: 'Payout Updates', desc: 'Get updates on your payouts' },
-                  ].map((item, idx) => (
-                    <div key={idx} className="flex items-center justify-between py-3 border-b border-[rgba(255,255,255,0.05)] last:border-0">
-                      <div>
-                        <p className="font-sans text-sm text-[#F9F6F2] mb-1">{item.title}</p>
-                        <p className="font-sans text-xs text-[#F9F6F2] opacity-60">{item.desc}</p>
-                      </div>
-                      <div className="w-12 h-6 bg-[#C8A97E] rounded-full relative cursor-pointer">
-                        <div className="absolute right-1 top-1 w-4 h-4 bg-[#0C0C0C] rounded-full"></div>
-                      </div>
-                    </div>
-                  ))}
+                <div className="flex items-center justify-between py-3">
+                  <div>
+                    <h3 className="font-serif text-lg font-semibold text-[#F9F6F2] mb-1">Allow Notifications</h3>
+                    <p className="font-sans text-xs text-[#F9F6F2] opacity-60">Choose how and where you want to receive notifications.</p>
+                  </div>
+                  <div className="w-12 h-6 bg-[rgba(255,255,255,0.1)] rounded-full relative cursor-pointer">
+                    <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full"></div>
+                  </div>
                 </div>
               </motion.div>
             )}
@@ -329,7 +320,10 @@ export default function CreatorSettings() {
                     </button>
                   </div>
 
-                  <button className="bg-[rgba(248,113,113,0.1)] text-[#f87171] px-4 py-2 rounded-lg text-xs font-sans">
+                  <button
+                    onClick={() => setShowDeleteModal(true)}
+                    className="bg-[rgba(248,113,113,0.1)] text-[#f87171] px-4 py-2 rounded-lg text-xs font-sans"
+                  >
                     Delete Account
                   </button>
                 </div>
@@ -341,39 +335,100 @@ export default function CreatorSettings() {
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.3 }}
-                className="bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-xl p-6"
+                className="space-y-4"
               >
-                <h3 className="font-serif text-lg font-semibold text-[#F9F6F2] mb-6">Payment Methods</h3>
-                
-                <div className="space-y-4">
-                  {[
-                    { name: 'JazzCash', number: '03001234567', icon: '📱' },
-                    { name: 'Easypaisa', number: '03001234567', icon: '📱' },
-                  ].map((method, idx) => (
-                    <div key={idx} className="bg-[#0C0C0C] border border-[rgba(255,255,255,0.1)] rounded-xl p-4 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-[rgba(200,169,126,0.1)] rounded-lg flex items-center justify-center text-xl">
-                          {method.icon}
-                        </div>
-                        <div>
-                          <p className="font-sans text-sm text-[#F9F6F2] mb-1">{method.name}</p>
-                          <p className="font-sans text-xs text-[#F9F6F2] opacity-60">{method.number}</p>
-                        </div>
-                      </div>
-                      <button className="font-sans text-xs text-[#F9F6F2] opacity-60 hover:opacity-100">
-                        Edit
-                      </button>
+                <div className="bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-xl p-6">
+                  <h3 className="font-serif text-lg font-semibold text-[#F9F6F2] mb-6">Payout Method</h3>
+                  
+                  <div className="mb-4">
+                    <p className="font-sans text-xs text-[#F9F6F2] opacity-60 mb-2">Payment Method</p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {['JazzCash', 'EasyPaisa', 'Bank Transfer'].map((method) => (
+                        <button
+                          key={method}
+                          onClick={() => setSelectedPaymentMethod(method)}
+                          className={`px-3 py-1 rounded-lg text-xs font-sans transition-all border ${
+                            selectedPaymentMethod === method
+                              ? 'bg-[rgba(200,169,126,0.15)] text-[#C8A97E] border-[rgba(200,169,126,0.3)]'
+                              : 'bg-[rgba(255,255,255,0.05)] text-[#F9F6F2] opacity-70 border-transparent hover:opacity-100'
+                          }`}
+                        >
+                          {method}
+                        </button>
+                      ))}
                     </div>
-                  ))}
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="font-sans text-xs text-[#F9F6F2] opacity-60 block mb-2">Account Title</label>
+                    <input
+                      type="text"
+                      placeholder="Full name on CNIC"
+                      className="w-full bg-[#0C0C0C] border border-[rgba(255,255,255,0.1)] rounded-lg px-4 py-2 text-sm font-sans text-[#F9F6F2] placeholder-[#F9F6F2] opacity-50"
+                    />
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="font-sans text-xs text-[#F9F6F2] opacity-60 block mb-2">Registered Mobile Number</label>
+                    <div className="flex items-center gap-2">
+                      <div className="bg-[#0C0C0C] border border-[rgba(255,255,255,0.1)] rounded-lg px-3 py-2 text-xs font-sans text-[#F9F6F2] opacity-60">
+                        PK +92
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="321 4567890"
+                        className="flex-1 bg-[#0C0C0C] border border-[rgba(255,255,255,0.1)] rounded-lg px-4 py-2 text-sm font-sans text-[#F9F6F2] placeholder-[#F9F6F2] opacity-50"
+                      />
+                    </div>
+                    <p className="font-sans text-xs text-[#F9F6F2] opacity-40 mt-2">Enter the number registered with your wallet.</p>
+                  </div>
+
+                  <button className="flex items-center gap-2 bg-[#C8A97E] text-[#0C0C0C] px-6 py-2 rounded-full text-sm font-sans font-semibold">
+                    Save Payment Method
+                  </button>
                 </div>
 
-                <button className="w-full mt-6 flex items-center justify-center gap-2 bg-[rgba(200,169,126,0.1)] border border-[rgba(200,169,126,0.3)] px-4 py-3 rounded-xl text-sm font-sans text-[#C8A97E]">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <line x1="12" y1="5" x2="12" y2="19" />
-                    <line x1="5" y1="12" x2="19" y2="12" />
-                  </svg>
-                  Add Payment Method
-                </button>
+                <div className="bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-xl p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="font-serif text-lg font-semibold text-[#F9F6F2]">KYC Documents</h3>
+                  </div>
+                  
+                  <div className="space-y-3 mb-6">
+                    {[
+                      { name: 'CNIC Front', date: 'Uploaded: 2026-03-01' },
+                      { name: 'CNIC Back', date: 'Uploaded: 2026-03-01' },
+                      { name: 'Bank Statement', date: 'Uploaded: 2026-05-05' },
+                    ].map((doc, idx) => (
+                      <div key={idx} className="bg-[#0C0C0C] border border-[rgba(255,255,255,0.1)] rounded-xl p-4 flex items-center justify-between">
+                        <div>
+                          <p className="font-sans text-sm text-[#F9F6F2] mb-1">{doc.name}</p>
+                          <p className="font-sans text-xs text-[#F9F6F2] opacity-60">{doc.date}</p>
+                        </div>
+                        <span className="px-3 py-1 rounded-full text-xs font-sans bg-[rgba(74,222,128,0.1)] text-[#4ade80] border border-[rgba(74,222,128,0.3)]">
+                          Active
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <button className="flex items-center gap-2 bg-[rgba(200,169,126,0.1)] border border-[rgba(200,169,126,0.3)] px-4 py-2 rounded-full text-sm font-sans text-[#C8A97E]">
+                    Upload New Document
+                  </button>
+                </div>
+
+                <div className="bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-xl p-6">
+                  <h3 className="font-serif text-lg font-semibold text-[#F9F6F2] mb-6">Tax Information</h3>
+                  
+                  <div className="mb-2">
+                    <label className="font-sans text-xs text-[#F9F6F2] opacity-60 block mb-2">NTN Number (Optional)</label>
+                    <input
+                      type="text"
+                      placeholder="1234567-8"
+                      className="w-full bg-[#0C0C0C] border border-[rgba(255,255,255,0.1)] rounded-lg px-4 py-2 text-sm font-sans text-[#F9F6F2] placeholder-[#F9F6F2] opacity-50"
+                    />
+                  </div>
+                  <p className="font-sans text-xs text-[#F9F6F2] opacity-40">Your NTN is used for annual income reporting. Reachly does not deduct tax.</p>
+                </div>
               </motion.div>
             )}
 
@@ -391,6 +446,27 @@ export default function CreatorSettings() {
                   Deactivate Account
                 </button>
               </motion.div>
+            )}
+
+            {showDeleteModal && (
+              <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+                <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-2xl p-6 w-full max-w-md">
+                  <h2 className="font-serif text-xl font-semibold text-[#F9F6F2] mb-2">Delete your account?</h2>
+                  <p className="font-sans text-sm text-[#F9F6F2] opacity-70 mb-6">This action cannot be undone. All your data, bookings, and reviews will be permanently deleted. Are you sure?</p>
+                  
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setShowDeleteModal(false)}
+                      className="flex-1 bg-[#141414] border border-[rgba(255,255,255,0.1)] px-4 py-3 rounded-full text-sm font-sans text-[#F9F6F2]"
+                    >
+                      Cancel
+                    </button>
+                    <button className="flex-1 bg-[#f87171] text-[#0C0C0C] px-4 py-3 rounded-full text-sm font-sans font-semibold">
+                      Delete Account
+                    </button>
+                  </div>
+                </div>
+              </div>
             )}
           </motion.main>
         </div>
