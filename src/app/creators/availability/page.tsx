@@ -13,6 +13,7 @@ const CreatorAvailability = () => {
   const [toDate, setToDate] = useState('');
   const [maxDays, setMaxDays] = useState(30);
   const [minHours, setMinHours] = useState(4);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [oneTimeSlots, setOneTimeSlots] = useState([
     { id: 1, date: 'Sat, 6 Jun 2026', startTime: '7:00 AM', endTime: '9:00 AM', reason: 'Early morning special!' },
     { id: 2, date: 'Sat, 6 Jun 2026', startTime: '7:00 AM', endTime: '9:00 AM', reason: 'Early morning special!' },
@@ -33,7 +34,10 @@ const CreatorAvailability = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <div className="flex gap-8">
           {/* Reusable Sidebar */}
-          <CreatorSidebar />
+          <CreatorSidebar 
+            isOpen={isSidebarOpen} 
+            onClose={() => setIsSidebarOpen(false)}
+          />
 
           {/* Main Content */}
           <motion.main
@@ -42,6 +46,17 @@ const CreatorAvailability = () => {
             transition={{ delay: 0.2 }}
             className="flex-1"
           >
+            {/* Mobile sidebar toggle button */}
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="lg:hidden mb-4 bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-lg p-2 text-[#C8A97E]"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
+            </button>
             {/* Page Title */}
             <div className="mb-6">
               <h1 className="font-serif text-4xl font-bold text-[#C8A97E] mb-2">Manage Your Availability</h1>

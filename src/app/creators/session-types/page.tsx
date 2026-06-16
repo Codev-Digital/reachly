@@ -10,6 +10,7 @@ const CreatorSessionTypes = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showMenuIndex, setShowMenuIndex] = useState<number | null>(null);
   const [selectedDuration, setSelectedDuration] = useState(30);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const sessionTypes = [
     { id: 1, title: 'Style Consultation', duration: 30, price: 1200, description: 'A personalised style session where we analyse your wardrobe, discuss your style goals, and build a', included: ['Wardrobe analysis', 'Style goal setting', 'Personalised shopping list'], bookings: 47, rating: 4.8, active: true, priceRange: '1 to 5' },
@@ -27,7 +28,10 @@ const CreatorSessionTypes = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <div className="flex gap-8">
-          <CreatorSidebar />
+          <CreatorSidebar 
+            isOpen={isSidebarOpen} 
+            onClose={() => setIsSidebarOpen(false)}
+          />
 
           <motion.main
             initial={{ y: 20, opacity: 0 }}
@@ -35,6 +39,17 @@ const CreatorSessionTypes = () => {
             transition={{ delay: 0.2 }}
             className="flex-1"
           >
+            {/* Mobile sidebar toggle button */}
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="lg:hidden mb-4 bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-lg p-2 text-[#C8A97E]"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
+            </button>
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h1 className="font-serif text-4xl font-bold text-[#C8A97E] mb-2">Your Session Types</h1>

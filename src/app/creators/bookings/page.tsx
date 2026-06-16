@@ -32,6 +32,7 @@ const CreatorBookings = () => {
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const tabs: { name: BookingStatus; count: number }[] = [
     { name: 'Upcoming', count: 2 },
@@ -163,7 +164,10 @@ const CreatorBookings = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <div className="flex gap-8">
           {/* Reusable Sidebar */}
-          <CreatorSidebar />
+          <CreatorSidebar 
+            isOpen={isSidebarOpen} 
+            onClose={() => setIsSidebarOpen(false)}
+          />
 
           {/* Main Content */}
           <motion.main
@@ -172,6 +176,17 @@ const CreatorBookings = () => {
             transition={{ delay: 0.2 }}
             className="flex-1"
           >
+            {/* Mobile sidebar toggle button */}
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="lg:hidden mb-4 bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-lg p-2 text-[#C8A97E]"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
+            </button>
             {/* Header with search and quick actions */}
             <div className="flex items-center justify-between mb-6">
               <div className="relative flex-1 max-w-md">
