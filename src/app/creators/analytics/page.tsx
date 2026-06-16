@@ -159,67 +159,136 @@ const CreatorAnalytics = () => {
               ))}
             </div>
 
-            {/* Chart Section */}
+            {/* Tab Contents */}
             {activeTab === 'profile' && (
               <motion.div
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.4 }}
-                className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-2xl p-6 mb-6"
+                className="space-y-6"
               >
-                <div className="mb-5">
-                  <h3 className="font-serif text-xl font-bold text-[#C8A97E] mb-1">Profile Views Over Time</h3>
-                  <p className="font-sans text-sm text-[#F9F6F2] opacity-60">Add this widget to your website to visitors book session directly.</p>
-                </div>
-                
-                <div className="relative h-64 rounded-xl overflow-hidden">
-                  <svg viewBox="0 0 800 200" className="w-full h-full">
-                    <defs>
-                      <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stopColor="#C8A97E" stopOpacity="0.3" />
-                        <stop offset="100%" stopColor="#C8A97E" stopOpacity="0" />
-                      </linearGradient>
-                    </defs>
-                    <path
-                      d="M0,60 Q100,40 200,50 T400,120 T600,70 T800,50 L800,200 L0,200 Z"
-                      fill="url(#areaGradient)"
-                    />
-                    <path
-                      d="M0,60 Q100,40 200,50 T400,120 T600,70 T800,50"
-                      fill="none"
-                      stroke="#C8A97E"
-                      strokeWidth="3"
-                      strokeLinecap="round"
-                    />
-                    {/* Data Points */}
-                    <circle cx="0" cy="60" r="5" fill="#C8A97E" />
-                    <circle cx="200" cy="50" r="5" fill="#C8A97E" />
-                    <circle cx="400" cy="120" r="5" fill="#C8A97E" />
-                    <circle cx="600" cy="70" r="5" fill="#C8A97E" />
-                    <circle cx="800" cy="50" r="5" fill="#C8A97E" />
-                  </svg>
+                {/* Profile Views Chart */}
+                <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-2xl p-6">
+                  <div className="mb-5">
+                    <h3 className="font-serif text-xl font-bold text-[#C8A97E] mb-1">Profile Views Over Time</h3>
+                    <p className="font-sans text-sm text-[#F9F6F2] opacity-60">Add this widget to your website to let visitors book a session directly.</p>
+                  </div>
+                  <div className="relative h-64 rounded-xl overflow-hidden">
+                    <svg viewBox="0 0 800 200" className="w-full h-full">
+                      <defs>
+                        <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                          <stop offset="0%" stopColor="#C8A97E" stopOpacity="0.3" />
+                          <stop offset="100%" stopColor="#C8A97E" stopOpacity="0" />
+                        </linearGradient>
+                      </defs>
+                      <path
+                        d="M0,60 Q100,40 200,50 T400,120 T600,70 T800,50 L800,200 L0,200 Z"
+                        fill="url(#areaGradient)"
+                      />
+                      <path
+                        d="M0,60 Q100,40 200,50 T400,120 T600,70 T800,50"
+                        fill="none"
+                        stroke="#C8A97E"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                      />
+                      {/* Data Points */}
+                      <circle cx="0" cy="60" r="5" fill="#C8A97E" />
+                      <circle cx="200" cy="50" r="5" fill="#C8A97E" />
+                      <circle cx="400" cy="120" r="5" fill="#C8A97E" />
+                      <circle cx="600" cy="70" r="5" fill="#C8A97E" />
+                      <circle cx="800" cy="50" r="5" fill="#C8A97E" />
+                    </svg>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-[rgba(255,255,255,0.05)]">
+                    {[
+                      { source: 'Direct', value: '3,471' },
+                      { source: 'Instagram', value: '6,253' },
+                      { source: 'Search', value: '2,074' },
+                      { source: 'Other', value: '2,128' },
+                    ].map((item, idx) => (
+                      <div key={idx} className="flex items-center gap-3 p-4 bg-[rgba(255,255,255,0.02)] rounded-xl border border-[rgba(200,169,126,0.15)]">
+                        <div className="w-10 h-10 bg-[rgba(200,169,126,0.1)] rounded-full flex items-center justify-center">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="2">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="font-serif text-lg font-bold text-[#F9F6F2]">{item.value}</p>
+                          <p className="font-sans text-xs text-[#F9F6F2] opacity-60">{item.source}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-[rgba(255,255,255,0.05)]">
-                  {[
-                    { source: 'Direct', value: '3,471' },
-                    { source: 'Instagram', value: '6,253' },
-                    { source: 'Search', value: '2,074' },
-                    { source: 'Other', value: '2,128' },
-                  ].map((item, idx) => (
-                    <div key={idx} className="flex items-center gap-3 p-4 bg-[rgba(255,255,255,0.02)] rounded-xl border border-[rgba(200,169,126,0.15)]">
-                      <div className="w-10 h-10 bg-[rgba(200,169,126,0.1)] rounded-full flex items-center justify-center">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="2">
-                          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                          <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                        </svg>
+                {/* Followers by City, Highlight Stats, Performance Comparison */}
+                <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-2xl p-6">
+                  <h3 className="font-serif text-xl font-bold text-[#C8A97E] mb-5">Followers by City</h3>
+                  
+                  {/* Highlight Stats */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div className="p-5 bg-[rgba(255,255,255,0.02)] rounded-xl border border-[rgba(200,169,126,0.15)]">
+                      <p className="font-sans text-sm text-[#F9F6F2] opacity-60 mb-1">Highest Revenue Day</p>
+                      <p className="font-serif text-xl font-bold text-[#C8A97E] mb-1">PKR 7,200</p>
+                      <p className="font-sans text-xs text-[#F9F6F2] opacity-60">2026-04-15</p>
+                    </div>
+                    <div className="p-5 bg-[rgba(255,255,255,0.02)] rounded-xl border border-[rgba(200,169,126,0.15)]">
+                      <p className="font-sans text-sm text-[#F9F6F2] opacity-60 mb-1">Most Booked Session</p>
+                      <p className="font-serif text-xl font-bold text-[#C8A97E] mb-1">Style Consultation</p>
+                      <p className="font-sans text-xs text-[#F9F6F2] opacity-60">47 total bookings</p>
+                    </div>
+                    <div className="p-5 bg-[rgba(255,255,255,0.02)] rounded-xl border border-[rgba(200,169,126,0.15)]">
+                      <p className="font-sans text-sm text-[#F9F6F2] opacity-60 mb-1">Average Session Value</p>
+                      <p className="font-serif text-xl font-bold text-[#C8A97E]">PKR 1,654</p>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-[rgba(255,255,255,0.05)] pt-6">
+                    <h4 className="font-serif text-lg font-bold text-[#C8A97E] mb-5">Your Performance vs Category Average</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="p-5 bg-[rgba(255,255,255,0.02)] rounded-xl border border-[rgba(200,169,126,0.15)]">
+                        <p className="font-sans text-sm text-[#F9F6F2] opacity-60 mb-3">Rating</p>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-sans text-sm text-[#F9F6F2]">You</p>
+                            <p className="font-serif text-xl font-bold text-[#C8A97E]">4.8</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-sans text-sm text-[#F9F6F2]">Avg</p>
+                            <p className="font-serif text-xl font-bold text-[#F9F6F2]">4.2</p>
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-serif text-lg font-bold text-[#F9F6F2]">{item.value}</p>
-                        <p className="font-sans text-xs text-[#F9F6F2] opacity-60">{item.source}</p>
+                      <div className="p-5 bg-[rgba(255,255,255,0.02)] rounded-xl border border-[rgba(200,169,126,0.15)]">
+                        <p className="font-sans text-sm text-[#F9F6F2] opacity-60 mb-3">Conversion Rate</p>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-sans text-sm text-[#F9F6F2]">You</p>
+                            <p className="font-serif text-xl font-bold text-[#C8A97E]">9.9%</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-sans text-sm text-[#F9F6F2]">Avg</p>
+                            <p className="font-serif text-xl font-bold text-[#F9F6F2]">6.5%</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-5 bg-[rgba(255,255,255,0.02)] rounded-xl border border-[rgba(200,169,126,0.15)]">
+                        <p className="font-sans text-sm text-[#F9F6F2] opacity-60 mb-3">Avg Price</p>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-sans text-sm text-[#F9F6F2]">You</p>
+                            <p className="font-serif text-xl font-bold text-[#C8A97E]">PKR 1,654</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-sans text-sm text-[#F9F6F2]">Avg</p>
+                            <p className="font-serif text-xl font-bold text-[#F9F6F2]">PKR 1,200</p>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  ))}
+                  </div>
                 </div>
               </motion.div>
             )}
@@ -347,6 +416,82 @@ const CreatorAnalytics = () => {
                     ))}
                   </div>
                 </div>
+
+                {/* No Shows Stats */}
+                <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-2xl p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="font-serif text-xl font-bold text-[#C8A97E]">No Shows</h3>
+                    <div className="flex gap-2">
+                      <button className="px-4 py-2 rounded-xl text-sm font-sans bg-[rgba(200,169,126,0.15)] text-[#C8A97E] border border-[rgba(200,169,126,0.3)]">
+                        No shows
+                      </button>
+                      <button className="px-4 py-2 rounded-xl text-sm font-sans bg-[rgba(255,255,255,0.05)] text-[#F9F6F2] opacity-70 border border-transparent">
+                        Cancellations
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div className="p-5 bg-[rgba(255,255,255,0.02)] rounded-xl border border-[rgba(200,169,126,0.15)]">
+                      <p className="font-sans text-sm text-[#F9F6F2] opacity-60 mb-1">Total No Shows</p>
+                      <p className="font-serif text-2xl font-bold text-[#C8A97E]">7</p>
+                    </div>
+                    <div className="p-5 bg-[rgba(255,255,255,0.02)] rounded-xl border border-[rgba(200,169,126,0.15)]">
+                      <p className="font-sans text-sm text-[#F9F6F2] opacity-60 mb-1">No Show Rate</p>
+                      <p className="font-serif text-2xl font-bold text-[#C8A97E]">0.56%</p>
+                    </div>
+                    <div className="p-5 bg-[rgba(255,255,255,0.02)] rounded-xl border border-[rgba(200,169,126,0.15)]">
+                      <p className="font-sans text-sm text-[#F9F6F2] opacity-60 mb-1">Last No Show</p>
+                      <p className="font-serif text-2xl font-bold text-[#C8A97E]">2026-06-14</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <h4 className="font-serif text-lg font-bold text-[#C8A97E] mb-4">No Shows by Session Type</h4>
+                      <div className="space-y-4">
+                        {[
+                          { type: 'Style Consultation', count: 4, percent: 57 },
+                          { type: 'Confidence Coaching', count: 2, percent: 29 },
+                          { type: 'Content Strategy', count: 1, percent: 14 },
+                        ].map((item, idx) => (
+                          <div key={idx}>
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="font-sans text-sm text-[#F9F6F2]">{item.type}</span>
+                              <span className="font-sans text-xs text-[#F9F6F2]">{item.count}</span>
+                            </div>
+                            <div className="relative h-8 bg-[rgba(255,255,255,0.05)] rounded-md overflow-hidden border border-[rgba(255,255,255,0.1)]">
+                              <div
+                                className="absolute left-0 top-0 bottom-0 bg-[#C8A97E] rounded-md flex items-center justify-end pr-3"
+                                style={{ width: `${item.percent}%` }}
+                              >
+                                <span className="font-sans text-xs text-[#0C0C0C] font-bold">{item.percent}%</span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <h4 className="font-serif text-lg font-bold text-[#C8A97E] mb-4">Last 10 No Shows</h4>
+                      <div className="space-y-3">
+                        {[
+                          { name: 'Kashaf Shah', date: '2026-06-14', time: '11:00 AM' },
+                          { name: 'Zain Mian', date: '2026-06-13', time: '3:30 PM' },
+                          { name: 'Hoorain Qureshi', date: '2026-06-12', time: '10:00 AM' },
+                          { name: 'Samia Ahmed', date: '2026-06-11', time: '5:00 PM' },
+                          { name: 'Ayesha Khan', date: '2026-06-10', time: '12:00 PM' },
+                        ].map((item, idx) => (
+                          <div key={idx} className="flex items-center justify-between p-3 bg-[rgba(255,255,255,0.02)] rounded-lg border border-[rgba(200,169,126,0.15)]">
+                            <span className="font-sans text-sm text-[#F9F6F2]">{item.name}</span>
+                            <span className="font-sans text-xs text-[#F9F6F2] opacity-60">{item.date} at {item.time}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </motion.div>
             )}
 
@@ -421,38 +566,75 @@ const CreatorAnalytics = () => {
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.4 }}
-                className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-2xl p-6 mb-6"
+                className="space-y-6"
               >
-                <div className="mb-5">
-                  <h3 className="font-serif text-xl font-bold text-[#C8A97E] mb-1">Earnings Breakdown</h3>
-                  <p className="font-sans text-sm text-[#F9F6F2] opacity-60">See which session types drive the most revenue</p>
+                {/* Earnings Overview Chart */}
+                <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-2xl p-6">
+                  <div className="flex items-center justify-between mb-5">
+                    <div>
+                      <h3 className="font-serif text-xl font-bold text-[#F9F6F2] mb-1">Earnings Overview</h3>
+                      <p className="font-sans text-xs text-[#F9F6F2] opacity-60">Total PKR 54,842 - Daily average PKR 1,028</p>
+                    </div>
+                    <div className="flex gap-2">
+                      {['7 days', '30 days', '90 days', 'Month', 'Year'].map((period, idx) => (
+                        <button
+                          key={idx}
+                          className={`px-3 py-1 rounded-full text-xs font-sans ${
+                            period === '30 days'
+                              ? 'bg-[rgba(200,169,126,0.15)] text-[#C8A97E]'
+                              : 'bg-[rgba(255,255,255,0.05)] text-[#F9F6F2] opacity-70'
+                          }`}
+                        >
+                          {period}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="relative h-48 rounded-xl overflow-hidden">
+                    <svg viewBox="0 0 800 150" className="w-full h-full">
+                      <path
+                        d="M0,120 Q100,100 200,110 T400,70 T600,90 T800,60"
+                        fill="none"
+                        stroke="#C8A97E"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </div>
                 </div>
 
-                <div className="space-y-6">
-                  {[
-                    { name: 'Style Consultation', revenue: 'PKR 154,200', percent: 45, sessions: 93 },
-                    { name: 'Confidence Coaching', revenue: 'PKR 124,000', percent: 36, sessions: 69 },
-                    { name: 'Content Strategy', revenue: 'PKR 65,300', percent: 19, sessions: 38 },
-                  ].map((item, idx) => (
-                    <div key={idx} className="p-5 bg-[rgba(255,255,255,0.02)] rounded-xl border border-[rgba(200,169,126,0.15)]">
-                      <div className="flex items-center justify-between mb-3">
-                        <div>
-                          <h4 className="font-sans text-base font-semibold text-[#F9F6F2]">{item.name}</h4>
-                          <p className="font-sans text-sm text-[#F9F6F2] opacity-60">{item.sessions} sessions</p>
+                {/* Session Type Earnings */}
+                <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-2xl p-6">
+                  <h3 className="font-serif text-2xl font-bold text-[#C8A97E] mb-7">Earnings by Session Type</h3>
+
+                  <div className="space-y-7">
+                    {[
+                      { name: 'Style Consultation', revenue: 'PKR 98,400', bookings: 82, percent: 75, highlight: false },
+                      { name: 'Confidence Coaching', revenue: 'PKR 102,300', bookings: 57, percent: 100, highlight: true },
+                      { name: 'Content Strategy', revenue: 'PKR 86,800', bookings: 35, percent: 65, highlight: false },
+                    ].map((item, idx) => (
+                      <div key={idx}>
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-4">
+                            <span className="font-sans text-lg text-[#F9F6F2]">{item.name}</span>
+                            {item.highlight && (
+                              <span className="font-sans text-base text-[#C8A97E] font-semibold">Best Performing</span>
+                            )}
+                          </div>
+                          <span className="font-sans text-lg text-[#F9F6F2]">{item.revenue} · {item.bookings} bookings</span>
                         </div>
-                        <p className="font-serif text-xl font-bold text-[#C8A97E]">{item.revenue}</p>
+                        <div className="relative h-3.5 bg-[rgba(255,255,255,0.05)] rounded-full overflow-hidden">
+                          <div
+                            className="absolute left-0 top-0 bottom-0 bg-[#C8A97E] rounded-full flex items-center justify-end"
+                            style={{ width: `${item.percent}%` }}
+                          >
+                            <div className="w-5 h-5 bg-[#C8A97E] rounded-full border-3 border-[#141414]"></div>
+                          </div>
+                        </div>
                       </div>
-                      <div className="relative h-3 bg-[rgba(255,255,255,0.05)] rounded-full overflow-hidden">
-                        <div
-                          className="absolute left-0 top-0 bottom-0 bg-[#C8A97E] rounded-full"
-                          style={{ width: `${item.percent}%` }}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between mt-2">
-                        <span className="font-sans text-xs text-[#F9F6F2] opacity-60">{item.percent}% of revenue</span>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </motion.div>
             )}
