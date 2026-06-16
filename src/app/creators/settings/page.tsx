@@ -8,6 +8,7 @@ import { useState } from 'react';
 export default function CreatorSettings() {
   const [activeTab, setActiveTab] = useState('Profile');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showDeactivateModal, setShowDeactivateModal] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('JazzCash');
 
   const tabs = ['Profile', 'Account', 'Notifications', 'Privacy', 'Payment', 'Deactivation'];
@@ -368,20 +369,54 @@ export default function CreatorSettings() {
                     />
                   </div>
 
-                  <div className="mb-4">
-                    <label className="font-sans text-xs text-[#F9F6F2] opacity-60 block mb-2">Registered Mobile Number</label>
-                    <div className="flex items-center gap-2">
-                      <div className="bg-[#0C0C0C] border border-[rgba(255,255,255,0.1)] rounded-lg px-3 py-2 text-xs font-sans text-[#F9F6F2] opacity-60">
-                        PK +92
+                  {selectedPaymentMethod !== 'Bank Transfer' && (
+                    <div className="mb-4">
+                      <label className="font-sans text-xs text-[#F9F6F2] opacity-60 block mb-2">Registered Mobile Number</label>
+                      <div className="flex items-center gap-2">
+                        <div className="bg-[#0C0C0C] border border-[rgba(255,255,255,0.1)] rounded-lg px-3 py-2 text-xs font-sans text-[#F9F6F2] opacity-60">
+                          PK +92
+                        </div>
+                        <input
+                          type="text"
+                          placeholder="321 4567890"
+                          className="flex-1 bg-[#0C0C0C] border border-[rgba(255,255,255,0.1)] rounded-lg px-4 py-2 text-sm font-sans text-[#F9F6F2] placeholder-[#F9F6F2] opacity-50"
+                        />
                       </div>
-                      <input
-                        type="text"
-                        placeholder="321 4567890"
-                        className="flex-1 bg-[#0C0C0C] border border-[rgba(255,255,255,0.1)] rounded-lg px-4 py-2 text-sm font-sans text-[#F9F6F2] placeholder-[#F9F6F2] opacity-50"
-                      />
+                      <p className="font-sans text-xs text-[#F9F6F2] opacity-40 mt-2">Enter the number registered with your wallet.</p>
                     </div>
-                    <p className="font-sans text-xs text-[#F9F6F2] opacity-40 mt-2">Enter the number registered with your wallet.</p>
-                  </div>
+                  )}
+
+                  {selectedPaymentMethod === 'Bank Transfer' && (
+                    <>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                        <div>
+                          <label className="font-sans text-xs text-[#F9F6F2] opacity-60 block mb-2">Account Number</label>
+                          <input
+                            type="text"
+                            placeholder="e.g 0123 45678901"
+                            className="w-full bg-[#0C0C0C] border border-[rgba(255,255,255,0.1)] rounded-lg px-4 py-2 text-sm font-sans text-[#F9F6F2] placeholder-[#F9F6F2] opacity-50"
+                          />
+                        </div>
+                        <div>
+                          <label className="font-sans text-xs text-[#F9F6F2] opacity-60 block mb-2">IBAN</label>
+                          <input
+                            type="text"
+                            placeholder="PK00000..."
+                            className="w-full bg-[#0C0C0C] border border-[rgba(255,255,255,0.1)] rounded-lg px-4 py-2 text-sm font-sans text-[#F9F6F2] placeholder-[#F9F6F2] opacity-50"
+                          />
+                        </div>
+                      </div>
+                      <div className="mb-4">
+                        <label className="font-sans text-xs text-[#F9F6F2] opacity-60 block mb-2">Bank Name</label>
+                        <select className="w-full bg-[#0C0C0C] border border-[rgba(255,255,255,0.1)] rounded-lg px-4 py-2 text-sm font-sans text-[#F9F6F2] placeholder-[#F9F6F2] opacity-50">
+                          <option>Select your Bank</option>
+                          <option>HBL</option>
+                          <option>UBL</option>
+                          <option>MCB</option>
+                        </select>
+                      </div>
+                    </>
+                  )}
 
                   <button className="flex items-center gap-2 bg-[#C8A97E] text-[#0C0C0C] px-6 py-2 rounded-full text-sm font-sans font-semibold">
                     Save Payment Method
@@ -439,12 +474,18 @@ export default function CreatorSettings() {
                 transition={{ delay: 0.3 }}
                 className="bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-xl p-6"
               >
-                <h3 className="font-serif text-lg font-semibold text-[#F9F6F2] mb-2">Deactivate Account</h3>
-                <p className="font-sans text-sm text-[#F9F6F2] opacity-60 mb-6">This action cannot be undone. All your data will be permanently deleted.</p>
-                
-                <button className="bg-[#f87171] text-[#0C0C0C] px-6 py-2 rounded-full text-sm font-sans font-semibold">
-                  Deactivate Account
-                </button>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-serif text-lg font-semibold text-[#F9F6F2] mb-2">Account Deactivation</h3>
+                    <p className="font-sans text-sm text-[#F9F6F2] opacity-60 mb-6 max-w-md">Temporarily disable your creator account. Your profile will be hidden, and no new bookings can be made. Existing bookings remain active.</p>
+                  </div>
+                  <button
+                    onClick={() => setShowDeactivateModal(true)}
+                    className="bg-[rgba(248,113,113,0.1)] text-[#f87171] border border-[rgba(248,113,113,0.3)] px-4 py-2 rounded-lg text-xs font-sans"
+                  >
+                    Deactivate Account
+                  </button>
+                </div>
               </motion.div>
             )}
 
@@ -463,6 +504,46 @@ export default function CreatorSettings() {
                     </button>
                     <button className="flex-1 bg-[#f87171] text-[#0C0C0C] px-4 py-3 rounded-full text-sm font-sans font-semibold">
                       Delete Account
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {showDeactivateModal && (
+              <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+                <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-2xl p-6 w-full max-w-md">
+                  <h2 className="font-serif text-xl font-semibold text-[#F9F6F2] mb-2">Deactivate Account</h2>
+                  <p className="font-sans text-sm text-[#F9F6F2] opacity-70 mb-6">Your profile will be hidden and no new bookings accepted. You can reactivate anytime within 14 days.</p>
+                  
+                  <div className="mb-4">
+                    <label className="font-sans text-xs text-[#F9F6F2] opacity-60 block mb-2">Reason (optional)</label>
+                    <select className="w-full bg-[#0C0C0C] border border-[rgba(255,255,255,0.1)] rounded-lg px-4 py-2 text-sm font-sans text-[#F9F6F2] placeholder-[#F9F6F2] opacity-50">
+                      <option>Select a reason</option>
+                      <option>Taking a break</option>
+                      <option>Not getting enough bookings</option>
+                      <option>Other</option>
+                    </select>
+                  </div>
+                  
+                  <div className="mb-6">
+                    <label className="font-sans text-xs text-[#F9F6F2] opacity-60 block mb-2">Type DEACTIVATE to confirm</label>
+                    <input
+                      type="text"
+                      placeholder="DEACTIVATE"
+                      className="w-full bg-[#0C0C0C] border border-[rgba(255,255,255,0.1)] rounded-lg px-4 py-2 text-sm font-sans text-[#F9F6F2] placeholder-[#F9F6F2] opacity-50"
+                    />
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setShowDeactivateModal(false)}
+                      className="flex-1 bg-[#141414] border border-[rgba(255,255,255,0.1)] px-4 py-3 rounded-full text-sm font-sans text-[#F9F6F2]"
+                    >
+                      Cancel
+                    </button>
+                    <button className="flex-1 bg-[#f87171] text-[#0C0C0C] px-4 py-3 rounded-full text-sm font-sans font-semibold">
+                      Deactivate
                     </button>
                   </div>
                 </div>
