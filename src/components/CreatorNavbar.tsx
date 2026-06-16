@@ -13,8 +13,8 @@ export default function CreatorNavbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6 lg:py-8">
         <div className="flex justify-between items-center">
           <Link href="/" className="font-serif text-2xl font-bold">
-            <span className={pathname === '/' ? 'text-[#F9F6F2]' : 'text-[#C8A97E]'}>Reach</span>
-            <span className={pathname === '/' ? 'text-[#C8A97E]' : 'text-[#F9F6F2]'}>ly</span>
+            <span className="text-[#C8A97E]">Reach</span>
+            <span className="text-[#F9F6F2]">ly</span>
           </Link>
           <div className="hidden lg:flex gap-8 xl:gap-10 items-center">
                     <Link 
