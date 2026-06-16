@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import Logo from '../components/Logo';
 import HeroImage from '../components/HeroImage';
 import { setPassword, checkPasswordStrength, requestChangeEmail, verifyChangeEmail } from '@/lib/auth-client';
 
-export default function SetPasswordPage() {
+function SetPasswordForm() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -370,5 +370,19 @@ export default function SetPasswordPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SetPasswordPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#0C0C0C] flex items-center justify-center p-4 sm:p-6">
+        <div className="w-full max-w-7xl text-center">
+          <div className="animate-pulse text-[#C8A97E]">Loading...</div>
+        </div>
+      </div>
+    }>
+      <SetPasswordForm />
+    </Suspense>
   );
 }

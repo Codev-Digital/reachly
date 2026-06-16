@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Logo from '../components/Logo';
 import HeroImage from '../components/HeroImage';
 import { verifyOTP, resendOTP } from '@/lib/auth-client';
 
-export default function VerifyEmailPage() {
+function VerifyEmailForm() {
   const router = useRouter();
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
@@ -29,7 +29,7 @@ export default function VerifyEmailPage() {
     e.preventDefault();
     const pastedData = e.clipboardData.getData('text');
     const digits = pastedData.replace(/\D/g, '').slice(0, 6).split('');
-    
+
     const newCode = [...code];
     digits.forEach((digit, i) => {
       if (i < 6) {
@@ -37,7 +37,7 @@ export default function VerifyEmailPage() {
       }
     });
     setCode(newCode);
-    
+
     // Focus the next empty input or last input
     const focusIndex = Math.min(digits.length, 5);
     const nextInput = document.getElementById(`code-${focusIndex}`);
@@ -49,7 +49,7 @@ export default function VerifyEmailPage() {
     const newCode = [...code];
     newCode[index] = value;
     setCode(newCode);
-    
+
     if (value && index < 5) {
       const nextInput = document.getElementById(`code-${index + 1}`);
       nextInput?.focus();
@@ -112,7 +112,7 @@ export default function VerifyEmailPage() {
             <div className="mb-8 sm:mb-10 lg:mb-12">
               <Logo />
             </div>
-            
+
             <div className="mb-8 sm:mb-10 lg:mb-12">
               <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-3 sm:mb-4">
                 Verify your email
@@ -174,7 +174,7 @@ export default function VerifyEmailPage() {
               <HeroImage />
             </div>
           </div>
-          
+
           {/* Mobile Hero Image - Visible only on mobile */}
           <div className="block md:hidden mt-6">
             <div className="h-[350px] rounded-[20px] overflow-hidden">
@@ -184,5 +184,19 @@ export default function VerifyEmailPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#0C0C0C] flex items-center justify-center p-4 sm:p-6">
+        <div className="w-full max-w-7xl text-center">
+          <div className="animate-pulse text-[#C8A97E]">Loading...</div>
+        </div>
+      </div>
+    }>
+      <VerifyEmailForm />
+    </Suspense>
   );
 }
