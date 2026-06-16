@@ -11,10 +11,10 @@ export default function CreatorBookingLinks() {
   const [showSourceDropdown, setShowSourceDropdown] = useState(false);
 
   const shareTemplates = [
-    { name: 'Instagram Bio', icon: 'instagram', text: 'Be a personal stylist on Reach.ly' },
-    { name: 'Instagram Story', icon: 'instagramStory', text: 'Book a personal stylist call with me on Reach.ly' },
-    { name: 'WhatsApp Status', icon: 'whatsapp', text: 'Book a personal stylist call with me on Reach.ly' },
-    { name: 'X/Twitter', icon: 'twitter', text: 'Be a personal stylist on Reach.ly' },
+    { name: 'Instagram Bio', icon: 'instagram', text: 'Book a personal style session with me on Reachly! DM me' },
+    { name: 'Instagram Story', icon: 'instagramStory', text: 'Swipe up to book a 1-on-1 session with me! Style consu...' },
+    { name: 'WhatsApp Status', icon: 'whatsapp', text: 'Book a personal style session with me on Reachly! Style advice...' },
+    { name: 'X/Twitter', icon: 'twitter', text: 'Book a personal style session with me on Reachly. DM me' },
   ];
 
   const trackableLinks = [
@@ -80,53 +80,13 @@ export default function CreatorBookingLinks() {
 
             {/* Title */}
             <div className="mb-6">
-              <h1 className="font-serif text-3xl font-bold text-[#F9F6F2] mb-2">Booking Link & Promo Tools</h1>
+              <h1 className="font-serif text-3xl font-bold text-[#C8A97E] mb-2">Booking Link & Promo Tools</h1>
               <p className="font-sans text-sm text-[#F9F6F2] opacity-60">Share your booking page and grow your audience.</p>
-            </div>
-
-            {/* Tabs */}
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <button className="flex items-center gap-2 bg-[#141414] border border-[rgba(255,255,255,0.1)] px-5 py-2 rounded-lg text-sm font-sans text-[#F9F6F2]">
-                  Mark all as read
-                </button>
-                <div className="relative">
-                  <button
-                    onClick={() => setShowSourceDropdown(!showSourceDropdown)}
-                    className="flex items-center justify-between gap-2 bg-[#141414] border border-[rgba(200,169,126,0.3)] text-[#F9F6F2] px-4 py-2 rounded-xl text-sm font-sans min-w-[140px] hover:border-[#C8A97E] transition-all"
-                  >
-                    {activeTab}
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <polyline points="6 9 12 15 18 9" />
-                    </svg>
-                  </button>
-                  {showSourceDropdown && (
-                    <div className="absolute top-full left-0 right-0 mt-1 bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-xl overflow-hidden z-10 shadow-lg">
-                      {['All Types', 'Active', 'Inactive'].map((tab) => (
-                        <button
-                          key={tab}
-                          onClick={() => {
-                            setActiveTab(tab);
-                            setShowSourceDropdown(false);
-                          }}
-                          className={`w-full text-left px-4 py-3 text-sm font-sans transition-colors ${
-                            activeTab === tab
-                              ? 'bg-[#C8A97E] text-[#0C0C0C]'
-                              : 'text-[#F9F6F2] hover:bg-[rgba(200,169,126,0.1)]'
-                          }`}
-                        >
-                          {tab}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
             </div>
 
             {/* Your Booking Link Section */}
             <div className="bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-xl p-5 mb-6">
-              <h3 className="font-serif text-lg font-semibold text-[#F9F6F2] mb-4">Your Booking Link</h3>
+              <h3 className="font-serif text-lg font-semibold text-[#C8A97E] mb-4">Your Booking Link</h3>
               <div className="flex items-center gap-3">
                 <div className="flex-1 bg-[#0C0C0C] border border-[rgba(255,255,255,0.1)] rounded-lg px-4 py-3 text-sm font-sans text-[#F9F6F2] flex items-center gap-2">
                   <span className="opacity-60">reachly.ph/</span>
@@ -142,10 +102,10 @@ export default function CreatorBookingLinks() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               {/* QR Code */}
               <div className="bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-xl p-5">
-                <h3 className="font-serif text-lg font-semibold text-[#F9F6F2] mb-4">QR Code</h3>
+                <h3 className="font-serif text-2xl font-bold text-[#C8A97E] mb-4">QR Code</h3>
                 <div className="flex items-center gap-4">
-                  <div className="w-32 h-32 bg-white rounded-lg p-2 flex items-center justify-center">
-                    <svg width="100" height="100" viewBox="0 0 100 100">
+                  <div className="w-40 h-40 bg-white rounded-lg p-2 flex items-center justify-center">
+                    <svg width="140" height="140" viewBox="0 0 100 100">
                       <rect width="100" height="100" fill="#ffffff" />
                       {/* QR code pattern */}
                       {Array.from({ length: 10 }).map((_, i) =>
@@ -163,10 +123,10 @@ export default function CreatorBookingLinks() {
                     </svg>
                   </div>
                   <div className="flex-1">
-                    <p className="font-sans text-sm text-[#F9F6F2] opacity-70 mb-4">
+                    <p className="font-sans text-base text-[#F9F6F2] mb-4">
                       Print this QR code on business cards, flyers, or display it at events. Followers can scan to book instantly.
                     </p>
-                    <button className="flex items-center gap-2 bg-[rgba(200,169,126,0.1)] border border-[rgba(200,169,126,0.3)] px-4 py-2 rounded-full text-xs font-sans text-[#C8A97E]">
+                    <button className="flex items-center gap-2 bg-[#C8A97E] text-[#0C0C0C] px-4 py-2 rounded-lg text-sm font-sans">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                         <polyline points="7 10 12 15 17 10" />
@@ -179,12 +139,12 @@ export default function CreatorBookingLinks() {
               </div>
 
               {/* Share Templates */}
-              <div className="bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-xl p-5">
-                <h3 className="font-serif text-lg font-semibold text-[#F9F6F2] mb-4">Share Templates</h3>
-                <div className="grid grid-cols-2 gap-3">
+              <div className="bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-xl p-2">
+                <h3 className="font-serif text-2xl font-bold text-[#C8A97E] mb-4">Share Templates</h3>
+                <div className="grid grid-cols-9 md:grid-cols-4 gap-3">
                   {shareTemplates.map((template, idx) => (
-                    <div key={idx} className="bg-[#0C0C0C] border border-[rgba(255,255,255,0.1)] rounded-lg p-4">
-                      <div className="flex items-center justify-center w-10 h-10 bg-[rgba(255,255,255,0.05)] rounded-full mb-3 mx-auto">
+                    <div key={idx} className="bg-[#0C0C0C] border border-[rgba(200,169,126,0.2)] rounded-lg p-2 flex flex-col items-center">
+                      <div className="flex items-center justify-center w-10 h-10 bg-[rgba(200,169,126,0.1)] rounded-full mb-3">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="2">
                           {template.icon === 'instagram' && (
                             <>
@@ -213,7 +173,8 @@ export default function CreatorBookingLinks() {
                           )}
                         </svg>
                       </div>
-                      <p className="font-sans text-xs text-[#F9F6F2] text-center opacity-60 mb-3">{template.text}</p>
+                      <p className="font-sans text-xs text-[#F9F6F2] text-center opacity-70 mb-3">{template.name}</p>
+                      <p className="font-sans text-xs text-[#F9F6F2] opacity-60 text-center mb-3 flex-grow">{template.text}</p>
                       <button className="w-full flex items-center justify-center gap-2 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] px-3 py-2 rounded-full text-xs font-sans text-[#F9F6F2] opacity-70 hover:opacity-100">
                         Copy
                       </button>
@@ -227,10 +188,10 @@ export default function CreatorBookingLinks() {
             <div className="bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-xl p-5 mb-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="font-serif text-lg font-semibold text-[#F9F6F2] mb-1">Embed Widget</h3>
+                  <h3 className="font-serif text-2xl font-bold text-[#C8A97E] mb-1">Embed Widget</h3>
                   <p className="font-sans text-sm text-[#F9F6F2] opacity-60">Add this widget to your website to visitors book session directly.</p>
                 </div>
-                <button className="flex items-center gap-2 bg-[rgba(200,169,126,0.1)] border border-[rgba(200,169,126,0.3)] px-4 py-2 rounded-lg text-sm font-sans text-[#C8A97E]">
+                <button className="flex items-center gap-2 bg-[#C8A97E] text-[#0C0C0C] px-4 py-2 rounded-lg text-sm font-sans">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
                     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
@@ -244,7 +205,7 @@ export default function CreatorBookingLinks() {
             <div className="bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-xl p-5 mb-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h3 className="font-serif text-lg font-semibold text-[#F9F6F2] mb-1">Generate Trackable Links</h3>
+                  <h3 className="font-serif text-2xl font-bold text-[#C8A97E] mb-1">Generate Trackable Links</h3>
                   <p className="font-sans text-sm text-[#F9F6F2] opacity-60">Track performance across platforms with custom campaigns links</p>
                 </div>
               </div>
@@ -266,21 +227,21 @@ export default function CreatorBookingLinks() {
                     {showSourceDropdown && (
                       <div className="absolute top-full left-0 right-0 mt-1 bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-xl overflow-hidden z-10 shadow-lg">
                         {sources.map((source) => (
-                          <button
-                            key={source}
-                            onClick={() => {
-                              setSourceFilter(source);
-                              setShowSourceDropdown(false);
-                            }}
-                            className={`w-full text-left px-4 py-3 text-sm font-sans transition-colors ${
-                              sourceFilter === source
-                                ? 'bg-[#C8A97E] text-[#0C0C0C]'
-                                : 'text-[#F9F6F2] hover:bg-[rgba(200,169,126,0.1)]'
-                            }`}
-                          >
-                            {source}
-                          </button>
-                        ))}
+                        <button
+                          key={source}
+                          onClick={() => {
+                            setSourceFilter(source);
+                            setShowSourceDropdown(false);
+                          }}
+                          className={`w-full text-left px-4 py-3 text-sm font-sans transition-colors ${
+                            sourceFilter === source
+                              ? 'bg-[#C8A97E] text-[#0C0C0C]'
+                              : 'text-[#F9F6F2] hover:bg-[rgba(200,169,126,0.1)]'
+                          }`}
+                        >
+                          {source}
+                        </button>
+                      ))}
                       </div>
                     )}
                   </div>
@@ -300,14 +261,14 @@ export default function CreatorBookingLinks() {
 
               {/* Trackable Links List */}
               <div className="border border-[rgba(255,255,255,0.1)] rounded-lg overflow-hidden">
-                <div className="grid grid-cols-3 gap-4 px-4 py-3 border-b border-[rgba(255,255,255,0.1)] text-xs font-sans text-[#F9F6F2] opacity-60">
+                <div className="grid grid-cols-4 gap-4 px-4 py-3 border-b border-[rgba(255,255,255,0.1)] text-xs font-sans text-[#F9F6F2] opacity-60">
                   <span>Source</span>
                   <span>Trackable Links</span>
                   <span className="text-right">Clicks</span>
                   <span className="text-right">Action</span>
                 </div>
                 {trackableLinks.map((link, idx) => (
-                  <div key={idx} className="grid grid-cols-3 gap-4 px-4 py-3 items-center border-b border-[rgba(255,255,255,0.1)] last:border-0">
+                  <div key={idx} className="grid grid-cols-4 gap-4 px-4 py-3 items-center border-b border-[rgba(255,255,255,0.1)] last:border-0">
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 bg-[rgba(255,255,255,0.05)] rounded-full flex items-center justify-center">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="2">
@@ -350,7 +311,7 @@ export default function CreatorBookingLinks() {
             <div className="bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-xl p-5">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h3 className="font-serif text-lg font-semibold text-[#F9F6F2] mb-1">Generate Trackable Links</h3>
+                  <h3 className="font-serif text-2xl font-bold text-[#C8A97E] mb-1">Promo Codes</h3>
                   <p className="font-sans text-sm text-[#F9F6F2] opacity-60">Create and manage promo codes for your sessions.</p>
                 </div>
                 <button className="flex items-center gap-2 bg-[rgba(200,169,126,0.1)] border border-[rgba(200,169,126,0.3)] px-4 py-2 rounded-lg text-sm font-sans text-[#C8A97E]">
@@ -366,7 +327,7 @@ export default function CreatorBookingLinks() {
                 {promoCodes.map((code, idx) => (
                   <div key={idx} className="bg-[#0C0C0C] border border-[rgba(255,255,255,0.1)] rounded-lg p-4">
                     <div className="flex items-center justify-between mb-3">
-                      <span className="font-serif text-xl font-bold text-[#F9F6F2]">{code.name}</span>
+                      <span className="font-serif text-xl font-bold text-[#C8A97E]">{code.name}</span>
                       <span className="px-3 py-1 rounded-full text-xs font-sans bg-[rgba(74,222,128,0.1)] text-[#4ade80] border border-[rgba(74,222,128,0.3)]">
                         {code.status}
                       </span>
@@ -374,8 +335,8 @@ export default function CreatorBookingLinks() {
                     <p className="font-sans text-sm text-[#F9F6F2] mb-1">{code.discount}</p>
                     <p className="font-sans text-xs text-[#F9F6F2] opacity-60 mb-4">{code.uses}</p>
                     <p className="font-sans text-xs text-[#F9F6F2] opacity-40 mb-3">{code.expiry}</p>
-                    <button className="w-full bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] px-4 py-2 rounded-lg text-xs font-sans text-[#F9F6F2] opacity-70 hover:opacity-100">
-                      Stop Generatable
+                    <button className="w-full bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] px-4 py-2 rounded-lg text-xs font-sans text-[#C8A97E] opacity-70 hover:opacity-100">
+                      Stop Consultation
                     </button>
                   </div>
                 ))}
