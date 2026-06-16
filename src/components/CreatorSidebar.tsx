@@ -11,6 +11,8 @@ const CreatorSidebar = ({ active: propActive }: { active?: string }) => {
   useEffect(() => {
     if (propActive) {
       setActiveItem(propActive);
+    } else if (pathname?.includes('/creators/analytics')) {
+      setActiveItem('Analytics');
     } else if (pathname?.includes('/creators/reviews')) {
       setActiveItem('Reviews');
     } else if (pathname?.includes('/creators/profile')) {
