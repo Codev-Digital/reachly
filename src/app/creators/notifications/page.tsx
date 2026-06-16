@@ -41,7 +41,7 @@ export default function CreatorNotifications() {
               <div className="relative flex-1 max-w-md">
                 <input
                   type="text"
-                  placeholder="Find a booking by ref or name..."
+                  placeholder="Find a booking"
                   className="w-full bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-full px-5 py-3 text-sm font-sans text-[#F9F6F2] placeholder-[#F9F6F2] opacity-50 focus:outline-none focus:border-[#C8A97E]"
                 />
                 <div className="absolute right-4 top-1/2 -translate-y-1/2">
