@@ -9,6 +9,7 @@ export default function CreatorBookingLinks() {
   const [activeTab, setActiveTab] = useState('All Types');
   const [sourceFilter, setSourceFilter] = useState('Instagram');
   const [showSourceDropdown, setShowSourceDropdown] = useState(false);
+  const [showPromoModal, setShowPromoModal] = useState(false);
 
   const shareTemplates = [
     { name: 'Instagram Bio', icon: 'instagram', text: 'Book a personal style session with me on Reachly! DM me' },
@@ -79,9 +80,47 @@ export default function CreatorBookingLinks() {
             </div>
 
             {/* Title */}
-            <div className="mb-6">
-              <h1 className="font-serif text-3xl font-bold text-[#C8A97E] mb-2">Booking Link & Promo Tools</h1>
-              <p className="font-sans text-sm text-[#F9F6F2] opacity-60">Share your booking page and grow your audience.</p>
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h1 className="font-serif text-3xl font-bold text-[#C8A97E] mb-2">Booking Link & Promo Tools</h1>
+                <p className="font-sans text-sm text-[#F9F6F2] opacity-60">Share your booking page and grow your audience.</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <button className="flex items-center gap-2 bg-[#141414] border border-[rgba(255,255,255,0.1)] px-5 py-2 rounded-lg text-sm font-sans text-[#F9F6F2]">
+                  Mark all as read
+                </button>
+                <div className="relative">
+                  <button
+                    onClick={() => setShowSourceDropdown(!showSourceDropdown)}
+                    className="flex items-center justify-between gap-2 bg-[#141414] border border-[rgba(200,169,126,0.3)] text-[#F9F6F2] px-4 py-2 rounded-xl text-sm font-sans min-w-[140px] hover:border-[#C8A97E] transition-all"
+                  >
+                    {activeTab}
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </button>
+                  {showSourceDropdown && (
+                    <div className="absolute top-full right-0 mt-1 bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-xl overflow-hidden z-10 shadow-lg">
+                      {['All Types', 'Active', 'Inactive'].map((tab) => (
+                        <button
+                          key={tab}
+                          onClick={() => {
+                            setActiveTab(tab);
+                            setShowSourceDropdown(false);
+                          }}
+                          className={`w-full text-left px-4 py-3 text-sm font-sans transition-colors ${
+                            activeTab === tab
+                              ? 'bg-[#C8A97E] text-[#0C0C0C]'
+                              : 'text-[#F9F6F2] hover:bg-[rgba(200,169,126,0.1)]'
+                          }`}
+                        >
+                          {tab}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* Your Booking Link Section */}
@@ -314,7 +353,9 @@ export default function CreatorBookingLinks() {
                   <h3 className="font-serif text-2xl font-bold text-[#C8A97E] mb-1">Promo Codes</h3>
                   <p className="font-sans text-sm text-[#F9F6F2] opacity-60">Create and manage promo codes for your sessions.</p>
                 </div>
-                <button className="flex items-center gap-2 bg-[rgba(200,169,126,0.1)] border border-[rgba(200,169,126,0.3)] px-4 py-2 rounded-lg text-sm font-sans text-[#C8A97E]">
+                <button 
+                  onClick={() => setShowPromoModal(true)}
+                  className="flex items-center gap-2 bg-[rgba(200,169,126,0.1)] border border-[rgba(200,169,126,0.3)] px-4 py-2 rounded-lg text-sm font-sans text-[#C8A97E]">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <line x1="12" y1="5" x2="12" y2="19" />
                     <line x1="5" y1="12" x2="19" y2="12" />
@@ -335,13 +376,93 @@ export default function CreatorBookingLinks() {
                     <p className="font-sans text-sm text-[#F9F6F2] mb-1">{code.discount}</p>
                     <p className="font-sans text-xs text-[#F9F6F2] opacity-60 mb-4">{code.uses}</p>
                     <p className="font-sans text-xs text-[#F9F6F2] opacity-40 mb-3">{code.expiry}</p>
-                    <button className="w-full bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] px-4 py-2 rounded-lg text-xs font-sans text-[#C8A97E] opacity-70 hover:opacity-100">
-                      Stop Consultation
+                    <button className="w-full bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] px-4 py-2 rounded-lg text-xs font-sans text-[#F9F6F2] opacity-70 hover:opacity-100">
+                      Stop Generatable
                     </button>
                   </div>
                 ))}
               </div>
             </div>
+
+            {/* Create Promo Code Modal */}
+            {showPromoModal && (
+              <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+                <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-2xl p-6 w-full max-w-lg">
+                  <h2 className="font-serif text-2xl font-bold text-[#F9F6F2] mb-6">Create Promo Code</h2>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <label className="font-sans text-sm text-[#F9F6F2] opacity-70 mb-2 block">Code</label>
+                      <input 
+                        type="text" 
+                        placeholder="e.g. STYLE20" 
+                        defaultValue="STYLE20"
+                        className="w-full bg-[#0C0C0C] border border-[rgba(255,255,255,0.1)] rounded-lg px-4 py-3 text-sm font-sans text-[#F9F6F2] placeholder-[#F9F6F2] opacity-50"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="font-sans text-sm text-[#F9F6F2] opacity-70 mb-2 block">Type</label>
+                      <select className="w-full bg-[#0C0C0C] border border-[rgba(255,255,255,0.1)] rounded-lg px-4 py-3 text-sm font-sans text-[#F9F6F2]">
+                        <option>% off</option>
+                        <option>Fixed amount</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="font-sans text-sm text-[#F9F6F2] opacity-70 mb-2 block">Value</label>
+                      <input 
+                        type="text" 
+                        placeholder="10" 
+                        defaultValue="10"
+                        className="w-full bg-[#0C0C0C] border border-[rgba(255,255,255,0.1)] rounded-lg px-4 py-3 text-sm font-sans text-[#F9F6F2] placeholder-[#F9F6F2] opacity-50"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="font-sans text-sm text-[#F9F6F2] opacity-70 mb-2 block">Expiry Date</label>
+                      <input 
+                        type="date" 
+                        className="w-full bg-[#0C0C0C] border border-[rgba(255,255,255,0.1)] rounded-lg px-4 py-3 text-sm font-sans text-[#F9F6F2]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="font-sans text-sm text-[#F9F6F2] opacity-70 mb-2 block">Usage Limit</label>
+                      <input 
+                        type="text" 
+                        placeholder="50" 
+                        defaultValue="50"
+                        className="w-full bg-[#0C0C0C] border border-[rgba(255,255,255,0.1)] rounded-lg px-4 py-3 text-sm font-sans text-[#F9F6F2] placeholder-[#F9F6F2] opacity-50"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="font-sans text-sm text-[#F9F6F2] opacity-70 mb-2 block">Applicable Sessions</label>
+                      <div className="flex flex-wrap gap-2">
+                        <button className="bg-[rgba(200,169,126,0.1)] border border-[rgba(200,169,126,0.3)] px-4 py-2 rounded-lg text-sm font-sans text-[#C8A97E]">Content Strategy</button>
+                        <button className="bg-[rgba(200,169,126,0.1)] border border-[rgba(200,169,126,0.3)] px-4 py-2 rounded-lg text-sm font-sans text-[#C8A97E]">Style Consultation</button>
+                        <button className="bg-[rgba(200,169,126,0.1)] border border-[rgba(200,169,126,0.3)] px-4 py-2 rounded-lg text-sm font-sans text-[#C8A97E]">Wardrobe Capsule Planning</button>
+                        <button className="bg-[rgba(200,169,126,0.1)] border border-[rgba(200,169,126,0.3)] px-4 py-2 rounded-lg text-sm font-sans text-[#C8A97E]">Confidence Coaching</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 mt-8">
+                    <button 
+                      onClick={() => setShowPromoModal(false)}
+                      className="flex-1 bg-[#141414] border border-[rgba(255,255,255,0.1)] px-4 py-3 rounded-full text-sm font-sans text-[#F9F6F2]">
+                      Cancel
+                    </button>
+                    <button 
+                      onClick={() => setShowPromoModal(false)}
+                      className="flex-1 bg-[#C8A97E] text-[#0C0C0C] px-4 py-3 rounded-full text-sm font-sans font-semibold">
+                      Create Code
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </motion.main>
         </div>
       </div>
