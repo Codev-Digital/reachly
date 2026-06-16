@@ -28,8 +28,8 @@ const CreatorSessionTypes = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <div className="flex gap-8">
-          <CreatorSidebar 
-            isOpen={isSidebarOpen} 
+          <CreatorSidebar
+            isOpen={isSidebarOpen}
             onClose={() => setIsSidebarOpen(false)}
           />
 
@@ -50,13 +50,13 @@ const CreatorSessionTypes = () => {
                 <line x1="3" y1="18" x2="21" y2="18" />
               </svg>
             </button>
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
               <div>
-                <h1 className="font-serif text-4xl font-bold text-[#C8A97E] mb-2">Your Session Types</h1>
+                <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-bold text-[#C8A97E] mb-2">Your Session Types</h1>
                 <p className="font-sans text-base text-[#F9F6F2] opacity-70">Manage what you offer to followers. Active sessions appear on your public profile.</p>
               </div>
-              
-              <button 
+
+              <button
                 onClick={() => setShowAddModal(true)}
                 className="flex items-center gap-2 bg-[#C8A97E] text-[#0C0C0C] px-5 py-2 rounded-xl text-sm font-sans font-medium hover:opacity-90 transition-all"
               >
@@ -70,8 +70,8 @@ const CreatorSessionTypes = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {sessionTypes.map((session, index) => (
-                <div 
-                  key={session.id} 
+                <div
+                  key={session.id}
                   className="bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-2xl p-6 relative"
                 >
                   <div className="absolute top-4 right-4">
@@ -102,7 +102,7 @@ const CreatorSessionTypes = () => {
                           </svg>
                           Duplicate
                         </button>
-                        <button 
+                        <button
                           onClick={() => {
                             setShowDeleteModal(true);
                             setShowMenuIndex(null);
@@ -214,25 +214,25 @@ const CreatorSessionTypes = () => {
         <div className="fixed inset-0 bg-[rgba(0,0,0,0.7)] flex items-center justify-center z-50">
           <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-2xl p-7 w-full max-w-lg">
             <h3 className="font-serif text-2xl font-bold text-[#F9F6F2] mb-5">Add Session Type</h3>
-            
+
             <div className="space-y-4 mb-6">
               <div>
                 <label className="text-sm font-sans text-[#F9F6F2] opacity-70 mb-2 block">Title</label>
-                <input 
+                <input
                   type="text"
                   className="w-full bg-[rgba(255,255,255,0.03)] border border-[rgba(200,169,126,0.2)] rounded-xl px-4 py-2.5 text-[#F9F6F2] text-sm font-sans outline-none"
                   placeholder=""
                 />
               </div>
-              
+
               <div>
                 <label className="text-sm font-sans text-[#F9F6F2] opacity-70 mb-2 block">Description</label>
-                <textarea 
+                <textarea
                   className="w-full bg-[rgba(255,255,255,0.03)] border border-[rgba(200,169,126,0.2)] rounded-xl px-4 py-2.5 text-[#F9F6F2] text-sm font-sans outline-none resize-none h-20"
                   placeholder=""
                 />
               </div>
-              
+
               <div>
                 <label className="text-sm font-sans text-[#F9F6F2] opacity-70 mb-2 block">Duration (min)</label>
                 <div className="flex gap-2">
@@ -240,42 +240,41 @@ const CreatorSessionTypes = () => {
                     <button
                       key={duration}
                       onClick={() => setSelectedDuration(duration)}
-                      className={`flex-1 py-2 rounded-xl text-sm font-sans transition-all ${
-                        duration === selectedDuration
+                      className={`flex-1 py-2 rounded-xl text-sm font-sans transition-all ${duration === selectedDuration
                           ? 'bg-[#C8A97E] text-[#0C0C0C]'
                           : 'bg-[rgba(255,255,255,0.05)] border border-[rgba(200,169,126,0.2)] text-[#F9F6F2]'
-                      }`}
+                        }`}
                     >
                       {duration} min
                     </button>
                   ))}
                 </div>
               </div>
-              
+
               <div>
                 <label className="text-sm font-sans text-[#F9F6F2] opacity-70 mb-2 block">Price (PKR)</label>
-                <input 
+                <input
                   type="text"
                   defaultValue="1200"
                   className="w-full bg-[rgba(255,255,255,0.03)] border border-[rgba(200,169,126,0.2)] rounded-xl px-4 py-2.5 text-[#F9F6F2] text-sm font-sans outline-none"
                   placeholder=""
                 />
               </div>
-              
+
               <div>
                 <label className="text-sm font-sans text-[#F9F6F2] opacity-70 mb-2 block">Max bookings per day</label>
-                <input 
+                <input
                   type="text"
                   defaultValue="No limit"
                   className="w-full bg-[rgba(255,255,255,0.03)] border border-[rgba(200,169,126,0.2)] rounded-xl px-4 py-2.5 text-[#F9F6F2] text-sm font-sans outline-none"
                   placeholder=""
                 />
               </div>
-              
+
               <div>
                 <label className="text-sm font-sans text-[#F9F6F2] opacity-70 mb-2 block">What is included</label>
                 <div className="flex gap-2">
-                  <input 
+                  <input
                     type="text"
                     className="flex-1 bg-[rgba(255,255,255,0.03)] border border-[rgba(200,169,126,0.2)] rounded-xl px-4 py-2.5 text-[#F9F6F2] text-sm font-sans outline-none"
                     placeholder=""
@@ -289,9 +288,9 @@ const CreatorSessionTypes = () => {
                 </div>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-4">
-              <button 
+              <button
                 onClick={() => setShowAddModal(false)}
                 className="flex-1 bg-[rgba(255,255,255,0.05)] border border-[rgba(200,169,126,0.2)] text-[#F9F6F2] py-2.5 rounded-full text-sm font-sans font-medium hover:bg-[rgba(255,255,255,0.1)] transition-all"
               >
@@ -310,9 +309,9 @@ const CreatorSessionTypes = () => {
           <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-2xl p-7 w-full max-w-md">
             <h3 className="font-serif text-2xl font-bold text-[#F9F6F2] mb-2">Delete Session Type</h3>
             <p className="text-sm font-sans text-[#F9F6F2] opacity-70 mb-6">Are you sure you want to delete Confidence Coaching?</p>
-            
+
             <div className="flex items-center gap-4">
-              <button 
+              <button
                 onClick={() => setShowDeleteModal(false)}
                 className="flex-1 bg-[rgba(255,255,255,0.05)] border border-[rgba(200,169,126,0.2)] text-[#F9F6F2] py-2.5 rounded-full text-sm font-sans font-medium hover:bg-[rgba(255,255,255,0.1)] transition-all"
               >

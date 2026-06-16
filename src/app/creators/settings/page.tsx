@@ -19,8 +19,8 @@ export default function CreatorSettings() {
       <CreatorNavbar />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <div className="flex gap-8">
-          <CreatorSidebar 
-            isOpen={isSidebarOpen} 
+          <CreatorSidebar
+            isOpen={isSidebarOpen}
             onClose={() => setIsSidebarOpen(false)}
           />
           <motion.main
@@ -41,7 +41,7 @@ export default function CreatorSettings() {
               </svg>
             </button>
             {/* Header */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
               <div className="relative flex-1 max-w-md">
                 <input
                   type="text"
@@ -77,7 +77,7 @@ export default function CreatorSettings() {
 
             {/* Title */}
             <div className="mb-6">
-              <h1 className="font-serif text-3xl font-bold text-[#C8A97E] mb-2">Account Settings</h1>
+              <h1 className="font-serif text-2xl sm:text-3xl font-bold text-[#C8A97E] mb-2">Account Settings</h1>
               <p className="font-sans text-sm text-[#F9F6F2] opacity-60">Manage your profile, security, notifications, and account preferences.</p>
             </div>
 
@@ -87,11 +87,10 @@ export default function CreatorSettings() {
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-sans transition-all border ${
-                    activeTab === tab
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-sans transition-all border ${activeTab === tab
                       ? 'bg-[rgba(200,169,126,0.15)] text-[#C8A97E] border-[rgba(200,169,126,0.3)]'
                       : 'bg-[rgba(255,255,255,0.05)] text-[#F9F6F2] opacity-70 border-transparent hover:opacity-100'
-                  }`}
+                    }`}
                 >
                   {tab === 'Profile' && (
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -143,7 +142,7 @@ export default function CreatorSettings() {
                 className="bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-xl p-6"
               >
                 <h3 className="font-serif text-lg font-semibold text-[#F9F6F2] mb-6">Profile Information</h3>
-                
+
                 <div className="flex items-center gap-4 mb-6">
                   <div className="w-20 h-20 rounded-full overflow-hidden flex-shrink-0">
                     <img src="/merium.png" alt="Profile" className="w-full h-full object-cover" />
@@ -226,7 +225,7 @@ export default function CreatorSettings() {
               >
                 <div className="bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-xl p-6">
                   <h3 className="font-serif text-lg font-semibold text-[#C8A97E] mb-6">Phone (WhatsApp)</h3>
-                  
+
                   <div className="flex items-center gap-3 mb-4">
                     <input
                       type="text"
@@ -241,7 +240,7 @@ export default function CreatorSettings() {
 
                 <div className="bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-xl p-6">
                   <h3 className="font-serif text-lg font-semibold text-[#C8A97E] mb-6">Phone (WhatsApp)</h3>
-                  
+
                   <div className="flex items-center gap-3 mb-4">
                     <input
                       type="text"
@@ -256,7 +255,7 @@ export default function CreatorSettings() {
 
                 <div className="bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-xl p-6">
                   <h3 className="font-serif text-lg font-semibold text-[#C8A97E] mb-6">Change Password</h3>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
                       <input
@@ -311,7 +310,7 @@ export default function CreatorSettings() {
               >
                 <div className="bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-xl p-6">
                   <h3 className="font-serif text-lg font-semibold text-[#F9F6F2] mb-6">Privacy</h3>
-                  
+
                   <div className="flex items-center justify-between py-3 border-b border-[rgba(255,255,255,0.05)]">
                     <div>
                       <p className="font-sans text-sm text-[#F9F6F2] mb-1">Hide reviews I left</p>
@@ -325,7 +324,7 @@ export default function CreatorSettings() {
 
                 <div className="bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-xl p-6">
                   <h3 className="font-serif text-lg font-semibold text-[#F9F6F2] mb-6">Data & Account</h3>
-                  
+
                   <div className="flex items-center justify-between py-3 border-b border-[rgba(255,255,255,0.05)] mb-4">
                     <div>
                       <p className="font-sans text-sm text-[#F9F6F2] mb-1">Download my data</p>
@@ -355,7 +354,7 @@ export default function CreatorSettings() {
               >
                 <div className="bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-xl p-6">
                   <h3 className="font-serif text-lg font-semibold text-[#F9F6F2] mb-6">Payout Method</h3>
-                  
+
                   <div className="mb-4">
                     <p className="font-sans text-xs text-[#F9F6F2] opacity-60 mb-2">Payment Method</p>
                     <div className="flex items-center gap-2 flex-wrap">
@@ -363,11 +362,10 @@ export default function CreatorSettings() {
                         <button
                           key={method}
                           onClick={() => setSelectedPaymentMethod(method)}
-                          className={`px-3 py-1 rounded-lg text-xs font-sans transition-all border ${
-                            selectedPaymentMethod === method
+                          className={`px-3 py-1 rounded-lg text-xs font-sans transition-all border ${selectedPaymentMethod === method
                               ? 'bg-[rgba(200,169,126,0.15)] text-[#C8A97E] border-[rgba(200,169,126,0.3)]'
                               : 'bg-[rgba(255,255,255,0.05)] text-[#F9F6F2] opacity-70 border-transparent hover:opacity-100'
-                          }`}
+                            }`}
                         >
                           {method}
                         </button>
@@ -442,7 +440,7 @@ export default function CreatorSettings() {
                   <div className="flex items-center justify-between mb-6">
                     <h3 className="font-serif text-lg font-semibold text-[#F9F6F2]">KYC Documents</h3>
                   </div>
-                  
+
                   <div className="space-y-3 mb-6">
                     {[
                       { name: 'CNIC Front', date: 'Uploaded: 2026-03-01' },
@@ -468,7 +466,7 @@ export default function CreatorSettings() {
 
                 <div className="bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-xl p-6">
                   <h3 className="font-serif text-lg font-semibold text-[#F9F6F2] mb-6">Tax Information</h3>
-                  
+
                   <div className="mb-2">
                     <label className="font-sans text-xs text-[#F9F6F2] opacity-60 block mb-2">NTN Number (Optional)</label>
                     <input
@@ -489,7 +487,7 @@ export default function CreatorSettings() {
                 transition={{ delay: 0.3 }}
                 className="bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-xl p-6"
               >
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
                     <h3 className="font-serif text-lg font-semibold text-[#F9F6F2] mb-2">Account Deactivation</h3>
                     <p className="font-sans text-sm text-[#F9F6F2] opacity-60 mb-6 max-w-md">Temporarily disable your creator account. Your profile will be hidden, and no new bookings can be made. Existing bookings remain active.</p>
@@ -509,7 +507,7 @@ export default function CreatorSettings() {
                 <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-2xl p-6 w-full max-w-md">
                   <h2 className="font-serif text-xl font-semibold text-[#F9F6F2] mb-2">Delete your account?</h2>
                   <p className="font-sans text-sm text-[#F9F6F2] opacity-70 mb-6">This action cannot be undone. All your data, bookings, and reviews will be permanently deleted. Are you sure?</p>
-                  
+
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => setShowDeleteModal(false)}
@@ -530,7 +528,7 @@ export default function CreatorSettings() {
                 <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-2xl p-6 w-full max-w-md">
                   <h2 className="font-serif text-xl font-semibold text-[#F9F6F2] mb-2">Deactivate Account</h2>
                   <p className="font-sans text-sm text-[#F9F6F2] opacity-70 mb-6">Your profile will be hidden and no new bookings accepted. You can reactivate anytime within 14 days.</p>
-                  
+
                   <div className="mb-4">
                     <label className="font-sans text-xs text-[#F9F6F2] opacity-60 block mb-2">Reason (optional)</label>
                     <select className="w-full bg-[#0C0C0C] border border-[rgba(255,255,255,0.1)] rounded-lg px-4 py-2 text-sm font-sans text-[#F9F6F2] placeholder-[#F9F6F2] opacity-50">
@@ -540,7 +538,7 @@ export default function CreatorSettings() {
                       <option>Other</option>
                     </select>
                   </div>
-                  
+
                   <div className="mb-6">
                     <label className="font-sans text-xs text-[#F9F6F2] opacity-60 block mb-2">Type DEACTIVATE to confirm</label>
                     <input
@@ -549,7 +547,7 @@ export default function CreatorSettings() {
                       className="w-full bg-[#0C0C0C] border border-[rgba(255,255,255,0.1)] rounded-lg px-4 py-2 text-sm font-sans text-[#F9F6F2] placeholder-[#F9F6F2] opacity-50"
                     />
                   </div>
-                  
+
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => setShowDeactivateModal(false)}

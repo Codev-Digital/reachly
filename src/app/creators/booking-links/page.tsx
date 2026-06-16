@@ -38,8 +38,8 @@ export default function CreatorBookingLinks() {
       <CreatorNavbar />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <div className="flex gap-8">
-          <CreatorSidebar 
-            isOpen={isSidebarOpen} 
+          <CreatorSidebar
+            isOpen={isSidebarOpen}
             onClose={() => setIsSidebarOpen(false)}
           />
           <motion.main
@@ -60,7 +60,7 @@ export default function CreatorBookingLinks() {
               </svg>
             </button>
             {/* Header */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
               <div className="relative flex-1 max-w-md">
                 <input
                   type="text"
@@ -95,9 +95,9 @@ export default function CreatorBookingLinks() {
             </div>
 
             {/* Title */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
               <div>
-                <h1 className="font-serif text-3xl font-bold text-[#C8A97E] mb-2">Booking Link & Promo Tools</h1>
+                <h1 className="font-serif text-2xl sm:text-3xl font-bold text-[#C8A97E] mb-2">Booking Link & Promo Tools</h1>
                 <p className="font-sans text-sm text-[#F9F6F2] opacity-60">Share your booking page and grow your audience.</p>
               </div>
               <div className="flex items-center gap-3">
@@ -123,11 +123,10 @@ export default function CreatorBookingLinks() {
                             setActiveTab(tab);
                             setShowSourceDropdown(false);
                           }}
-                          className={`w-full text-left px-4 py-3 text-sm font-sans transition-colors ${
-                            activeTab === tab
-                              ? 'bg-[#C8A97E] text-[#0C0C0C]'
-                              : 'text-[#F9F6F2] hover:bg-[rgba(200,169,126,0.1)]'
-                          }`}
+                          className={`w-full text-left px-4 py-3 text-sm font-sans transition-colors ${activeTab === tab
+                            ? 'bg-[#C8A97E] text-[#0C0C0C]'
+                            : 'text-[#F9F6F2] hover:bg-[rgba(200,169,126,0.1)]'
+                            }`}
                         >
                           {tab}
                         </button>
@@ -141,7 +140,7 @@ export default function CreatorBookingLinks() {
             {/* Your Booking Link Section */}
             <div className="bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-xl p-5 mb-6">
               <h3 className="font-serif text-lg font-semibold text-[#C8A97E] mb-4">Your Booking Link</h3>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                 <div className="flex-1 bg-[#0C0C0C] border border-[rgba(255,255,255,0.1)] rounded-lg px-4 py-3 text-sm font-sans text-[#F9F6F2] flex items-center gap-2">
                   <span className="opacity-60">reachly.ph/</span>
                   <span>ayeshakhan</span>
@@ -195,7 +194,7 @@ export default function CreatorBookingLinks() {
               {/* Share Templates */}
               <div className="bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-xl p-2">
                 <h3 className="font-serif text-2xl font-bold text-[#C8A97E] mb-4">Share Templates</h3>
-                <div className="grid grid-cols-9 md:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {shareTemplates.map((template, idx) => (
                     <div key={idx} className="bg-[#0C0C0C] border border-[rgba(200,169,126,0.2)] rounded-lg p-2 flex flex-col items-center">
                       <div className="flex items-center justify-center w-10 h-10 bg-[rgba(200,169,126,0.1)] rounded-full mb-3">
@@ -281,21 +280,20 @@ export default function CreatorBookingLinks() {
                     {showSourceDropdown && (
                       <div className="absolute top-full left-0 right-0 mt-1 bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-xl overflow-hidden z-10 shadow-lg">
                         {sources.map((source) => (
-                        <button
-                          key={source}
-                          onClick={() => {
-                            setSourceFilter(source);
-                            setShowSourceDropdown(false);
-                          }}
-                          className={`w-full text-left px-4 py-3 text-sm font-sans transition-colors ${
-                            sourceFilter === source
+                          <button
+                            key={source}
+                            onClick={() => {
+                              setSourceFilter(source);
+                              setShowSourceDropdown(false);
+                            }}
+                            className={`w-full text-left px-4 py-3 text-sm font-sans transition-colors ${sourceFilter === source
                               ? 'bg-[#C8A97E] text-[#0C0C0C]'
                               : 'text-[#F9F6F2] hover:bg-[rgba(200,169,126,0.1)]'
-                          }`}
-                        >
-                          {source}
-                        </button>
-                      ))}
+                              }`}
+                          >
+                            {source}
+                          </button>
+                        ))}
                       </div>
                     )}
                   </div>
@@ -315,16 +313,16 @@ export default function CreatorBookingLinks() {
 
               {/* Trackable Links List */}
               <div className="border border-[rgba(255,255,255,0.1)] rounded-lg overflow-hidden">
-                <div className="grid grid-cols-4 gap-4 px-4 py-3 border-b border-[rgba(255,255,255,0.1)] text-xs font-sans text-[#F9F6F2] opacity-60">
+                <div className="hidden sm:grid grid-cols-4 gap-4 px-4 py-3 border-b border-[rgba(255,255,255,0.1)] text-xs font-sans text-[#F9F6F2] opacity-60">
                   <span>Source</span>
                   <span>Trackable Links</span>
                   <span className="text-right">Clicks</span>
                   <span className="text-right">Action</span>
                 </div>
                 {trackableLinks.map((link, idx) => (
-                  <div key={idx} className="grid grid-cols-4 gap-4 px-4 py-3 items-center border-b border-[rgba(255,255,255,0.1)] last:border-0">
+                  <div key={idx} className="flex flex-col sm:grid sm:grid-cols-4 gap-2 sm:gap-4 px-4 py-3 border-b border-[rgba(255,255,255,0.1)] last:border-0">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 bg-[rgba(255,255,255,0.05)] rounded-full flex items-center justify-center">
+                      <div className="w-8 h-8 bg-[rgba(255,255,255,0.05)] rounded-full flex items-center justify-center flex-shrink-0">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="2">
                           {link.source === 'Instagram' && (
                             <>
@@ -349,7 +347,7 @@ export default function CreatorBookingLinks() {
                       </div>
                       <span className="text-sm font-sans text-[#F9F6F2]">{link.source}</span>
                     </div>
-                    <div className="text-sm font-sans text-[#F9F6F2] opacity-70">{link.url}</div>
+                    <div className="text-sm font-sans text-[#F9F6F2] opacity-70 break-all sm:truncate">{link.url}</div>
                     <div className="text-right text-sm font-sans text-[#F9F6F2]">{link.clicks}</div>
                     <div className="text-right">
                       <button className="flex items-center justify-center bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] w-16 h-8 rounded-lg text-xs font-sans text-[#F9F6F2] opacity-70 hover:opacity-100">
@@ -363,12 +361,12 @@ export default function CreatorBookingLinks() {
 
             {/* Promo Codes */}
             <div className="bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-xl p-5">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
                 <div>
                   <h3 className="font-serif text-2xl font-bold text-[#C8A97E] mb-1">Promo Codes</h3>
                   <p className="font-sans text-sm text-[#F9F6F2] opacity-60">Create and manage promo codes for your sessions.</p>
                 </div>
-                <button 
+                <button
                   onClick={() => setShowPromoModal(true)}
                   className="flex items-center gap-2 bg-[rgba(200,169,126,0.1)] border border-[rgba(200,169,126,0.3)] px-4 py-2 rounded-lg text-sm font-sans text-[#C8A97E]">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -404,13 +402,13 @@ export default function CreatorBookingLinks() {
               <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
                 <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-2xl p-6 w-full max-w-lg">
                   <h2 className="font-serif text-2xl font-bold text-[#F9F6F2] mb-6">Create Promo Code</h2>
-                  
+
                   <div className="space-y-4">
                     <div>
                       <label className="font-sans text-sm text-[#F9F6F2] opacity-70 mb-2 block">Code</label>
-                      <input 
-                        type="text" 
-                        placeholder="e.g. STYLE20" 
+                      <input
+                        type="text"
+                        placeholder="e.g. STYLE20"
                         defaultValue="STYLE20"
                         className="w-full bg-[#0C0C0C] border border-[rgba(255,255,255,0.1)] rounded-lg px-4 py-3 text-sm font-sans text-[#F9F6F2] placeholder-[#F9F6F2] opacity-50"
                       />
@@ -426,9 +424,9 @@ export default function CreatorBookingLinks() {
 
                     <div>
                       <label className="font-sans text-sm text-[#F9F6F2] opacity-70 mb-2 block">Value</label>
-                      <input 
-                        type="text" 
-                        placeholder="10" 
+                      <input
+                        type="text"
+                        placeholder="10"
                         defaultValue="10"
                         className="w-full bg-[#0C0C0C] border border-[rgba(255,255,255,0.1)] rounded-lg px-4 py-3 text-sm font-sans text-[#F9F6F2] placeholder-[#F9F6F2] opacity-50"
                       />
@@ -436,17 +434,17 @@ export default function CreatorBookingLinks() {
 
                     <div>
                       <label className="font-sans text-sm text-[#F9F6F2] opacity-70 mb-2 block">Expiry Date</label>
-                      <input 
-                        type="date" 
+                      <input
+                        type="date"
                         className="w-full bg-[#0C0C0C] border border-[rgba(255,255,255,0.1)] rounded-lg px-4 py-3 text-sm font-sans text-[#F9F6F2]"
                       />
                     </div>
 
                     <div>
                       <label className="font-sans text-sm text-[#F9F6F2] opacity-70 mb-2 block">Usage Limit</label>
-                      <input 
-                        type="text" 
-                        placeholder="50" 
+                      <input
+                        type="text"
+                        placeholder="50"
                         defaultValue="50"
                         className="w-full bg-[#0C0C0C] border border-[rgba(255,255,255,0.1)] rounded-lg px-4 py-3 text-sm font-sans text-[#F9F6F2] placeholder-[#F9F6F2] opacity-50"
                       />
@@ -464,12 +462,12 @@ export default function CreatorBookingLinks() {
                   </div>
 
                   <div className="flex items-center gap-3 mt-8">
-                    <button 
+                    <button
                       onClick={() => setShowPromoModal(false)}
                       className="flex-1 bg-[#141414] border border-[rgba(255,255,255,0.1)] px-4 py-3 rounded-full text-sm font-sans text-[#F9F6F2]">
                       Cancel
                     </button>
-                    <button 
+                    <button
                       onClick={() => setShowPromoModal(false)}
                       className="flex-1 bg-[#C8A97E] text-[#0C0C0C] px-4 py-3 rounded-full text-sm font-sans font-semibold">
                       Create Code

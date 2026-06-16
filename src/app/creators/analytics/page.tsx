@@ -17,8 +17,8 @@ const CreatorAnalytics = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <div className="flex gap-8">
-          <CreatorSidebar 
-            isOpen={isSidebarOpen} 
+          <CreatorSidebar
+            isOpen={isSidebarOpen}
             onClose={() => setIsSidebarOpen(false)}
           />
 
@@ -40,8 +40,8 @@ const CreatorAnalytics = () => {
               </svg>
             </button>
             <div className="mb-6">
-              <div className="flex items-center justify-between mb-2">
-                <h1 className="font-serif text-4xl font-bold text-[#C8A97E]">Analytics & Insights</h1>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-3">
+                <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-bold text-[#C8A97E]">Analytics & Insights</h1>
                 <div className="flex items-center gap-3">
                   {/* Custom Dropdown */}
                   <div className="relative">
@@ -68,11 +68,10 @@ const CreatorAnalytics = () => {
                               setTimePeriod(option);
                               setIsDropdownOpen(false);
                             }}
-                            className={`w-full text-left px-4 py-3 text-sm font-sans transition-colors ${
-                              timePeriod === option
+                            className={`w-full text-left px-4 py-3 text-sm font-sans transition-colors ${timePeriod === option
                                 ? 'bg-[#C8A97E] text-[#0C0C0C]'
                                 : 'text-[#F9F6F2] hover:bg-[rgba(200,169,126,0.1)]'
-                            }`}
+                              }`}
                           >
                             {option}
                           </button>
@@ -132,11 +131,10 @@ const CreatorAnalytics = () => {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-sans transition-all border ${
-                    activeTab === tab.id
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-sans transition-all border ${activeTab === tab.id
                       ? 'bg-[rgba(200,169,126,0.15)] text-[#C8A97E] border-[rgba(200,169,126,0.3)]'
                       : 'bg-[rgba(255,255,255,0.05)] text-[#F9F6F2] opacity-70 border-transparent hover:opacity-100'
-                  }`}
+                    }`}
                 >
                   {tab.id === 'profile' && (
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -241,7 +239,7 @@ const CreatorAnalytics = () => {
                 {/* Followers by City, Highlight Stats, Performance Comparison */}
                 <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-2xl p-6">
                   <h3 className="font-serif text-xl font-bold text-[#C8A97E] mb-5">Followers by City</h3>
-                  
+
                   {/* Highlight Stats */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                     <div className="p-5 bg-[rgba(255,255,255,0.02)] rounded-xl border border-[rgba(200,169,126,0.15)]">
@@ -585,7 +583,7 @@ const CreatorAnalytics = () => {
                 {/* Followers by City, Highlight Stats, Performance Comparison */}
                 <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-2xl p-6">
                   <h3 className="font-serif text-xl font-bold text-[#C8A97E] mb-5">Followers by City</h3>
-                  
+
                   {/* Highlight Stats */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                     <div className="p-5 bg-[rgba(255,255,255,0.02)] rounded-xl border border-[rgba(200,169,126,0.15)]">

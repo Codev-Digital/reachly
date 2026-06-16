@@ -31,8 +31,8 @@ const CreatorCalendar = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <div className="flex gap-8">
           {/* Reusable Sidebar */}
-          <CreatorSidebar 
-            isOpen={isSidebarOpen} 
+          <CreatorSidebar
+            isOpen={isSidebarOpen}
             onClose={() => setIsSidebarOpen(false)}
           />
 
@@ -91,9 +91,9 @@ const CreatorCalendar = () => {
             </div>
 
             {/* Page Title and Actions */}
-            <div className="flex items-center justify-between mb-6">
-              <h1 className="font-serif text-3xl font-bold text-[#F9F6F2]">Calendar</h1>
-              <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
+              <h1 className="font-serif text-2xl sm:text-3xl font-bold text-[#F9F6F2]">Calendar</h1>
+              <div className="flex items-center gap-2 flex-wrap">
                 <button className="flex items-center gap-2 bg-[#141414] border border-[rgba(200,169,126,0.3)] px-4 py-2 rounded-lg text-sm font-sans text-[#C8A97E] hover:bg-[rgba(200,169,126,0.1)] transition-all">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <line x1="12" y1="5" x2="12" y2="19" />
@@ -105,11 +105,10 @@ const CreatorCalendar = () => {
                   <button
                     key={tab}
                     onClick={() => setView(tab.toLowerCase() as any)}
-                    className={`px-4 py-2 rounded-lg text-sm font-sans transition-all ${
-                      (tab.toLowerCase() === view)
+                    className={`px-4 py-2 rounded-lg text-sm font-sans transition-all ${(tab.toLowerCase() === view)
                         ? 'bg-[rgba(200,169,126,0.1)] border border-[rgba(200,169,126,0.3)] text-[#C8A97E]'
                         : 'bg-[#141414] border border-[rgba(255,255,255,0.1)] text-[#F9F6F2] opacity-70 hover:opacity-100'
-                    }`}
+                      }`}
                   >
                     {tab}
                   </button>
@@ -146,7 +145,7 @@ const CreatorCalendar = () => {
             </div>
 
             {/* Sync to Google Calendar Banner */}
-            <div className="bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-xl p-5 mb-6 flex items-center justify-between">
+            <div className="bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-xl p-5 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-full bg-[rgba(200,169,126,0.1)] border border-[rgba(200,169,126,0.3)] flex items-center justify-center">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="2">
@@ -207,7 +206,7 @@ const CreatorCalendar = () => {
                       </div>
                     ))}
                   </div>
-                  
+
                   {/* Calendar Grid */}
                   <div className="grid grid-cols-7">
                     {/* Week 1 */}
@@ -311,7 +310,7 @@ const CreatorCalendar = () => {
                     </div>
                     <div className="border-r border-b border-[rgba(255,255,255,0.1)] min-h-[100px] p-2 relative">
                       <span className="text-sm font-sans text-[#F9F6F2]">30</span>
-                      <button 
+                      <button
                         onClick={() => setShowBookingModal(true)}
                         className="mt-2 bg-[rgba(200,169,126,0.2)] border border-[rgba(200,169,126,0.3)] rounded-md p-2 text-left w-full cursor-pointer"
                       >
@@ -355,22 +354,22 @@ const CreatorCalendar = () => {
                         const hour = i + 8;
                         const displayHour = hour > 12 ? hour - 12 : hour;
                         const ampm = hour >= 12 ? 'PM' : 'AM';
-                        
+
                         return (
                           <div key={hour} className="contents">
                             {/* Time label */}
                             <div className="border-r border-b border-[rgba(255,255,255,0.1)] p-2">
                               <span className="text-xs font-sans text-[#F9F6F2] opacity-70">{displayHour} {ampm}</span>
                             </div>
-                            
+
                             {/* Day columns */}
                             {[...Array(6)].map((_, j) => (
-                              <div 
-                                key={j} 
+                              <div
+                                key={j}
                                 className={`border-r border-b border-[rgba(255,255,255,0.1)] min-h-[50px] relative ${j === 1 ? 'bg-[rgba(200,169,126,0.05)]' : ''}`}
                               >
                                 {i === 7 && j === 1 && (
-                                  <button 
+                                  <button
                                     onClick={() => setShowBookingModal(true)}
                                     className="absolute left-1/2 transform -translate-x-1/2 top-1/2 -translate-y-1/2 bg-[rgba(200,169,126,0.2)] border border-[rgba(200,169,126,0.3)] rounded-md p-2 text-center w-[90%] cursor-pointer"
                                   >
@@ -397,14 +396,14 @@ const CreatorCalendar = () => {
                   <div className="text-center py-4 border-b border-[rgba(255,255,255,0.1)]">
                     <span className="text-sm font-sans text-[#C8A97E]">Tuesday 2 June</span>
                   </div>
-                  
+
                   {/* Time slots */}
                   <div>
                     {[...Array(12)].map((_, i) => {
                       const hour = i + 8;
                       const displayHour = hour > 12 ? hour - 12 : hour;
                       const ampm = hour >= 12 ? 'PM' : 'AM';
-                      
+
                       return (
                         <div key={hour} className="border-b border-[rgba(255,255,255,0.1)] min-h-[50px] flex">
                           <div className="p-3 w-20 border-r border-[rgba(255,255,255,0.1)]">
@@ -471,7 +470,7 @@ const CreatorCalendar = () => {
                   </div>
 
                   {/* Close Button */}
-                  <button 
+                  <button
                     onClick={() => setShowBookingModal(false)}
                     className="w-full text-left text-sm font-sans text-[#F9F6F2] opacity-70 hover:opacity-100"
                   >

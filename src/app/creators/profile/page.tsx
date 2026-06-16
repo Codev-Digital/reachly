@@ -15,8 +15,8 @@ const CreatorProfile = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <div className="flex gap-8">
-          <CreatorSidebar 
-            isOpen={isSidebarOpen} 
+          <CreatorSidebar
+            isOpen={isSidebarOpen}
             onClose={() => setIsSidebarOpen(false)}
           />
 
@@ -38,18 +38,17 @@ const CreatorProfile = () => {
               </svg>
             </button>
             <div className="mb-7">
-              <h1 className="font-serif text-4xl font-bold text-[#C8A97E] mb-2">Manage Your Profile & Branding</h1>
+              <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-bold text-[#C8A97E] mb-2">Manage Your Profile & Branding</h1>
               <p className="font-sans text-base text-[#F9F6F2] opacity-70">Edit your public profile, customize your branding, and control your visibility.</p>
             </div>
 
-            <div className="flex gap-3 mb-6">
+            <div className="flex gap-2 mb-6 flex-wrap">
               <button
                 onClick={() => setActiveTab('profile')}
-                className={`px-4 py-2 rounded-xl text-xs font-sans flex items-center gap-2 ${
-                  activeTab === 'profile'
+                className={`px-4 py-2 rounded-xl text-xs font-sans flex items-center gap-2 ${activeTab === 'profile'
                     ? 'bg-[rgba(200,169,126,0.15)] text-[#C8A97E] border border-[rgba(200,169,126,0.3)]'
                     : 'bg-[rgba(255,255,255,0.05)] border border-[rgba(200,169,126,0.2)] text-[#F9F6F2] opacity-70'
-                }`}
+                  }`}
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
@@ -60,11 +59,10 @@ const CreatorProfile = () => {
 
               <button
                 onClick={() => setActiveTab('branding')}
-                className={`px-4 py-2 rounded-xl text-xs font-sans flex items-center gap-2 ${
-                  activeTab === 'branding'
+                className={`px-4 py-2 rounded-xl text-xs font-sans flex items-center gap-2 ${activeTab === 'branding'
                     ? 'bg-[rgba(200,169,126,0.15)] text-[#C8A97E] border border-[rgba(200,169,126,0.3)]'
                     : 'bg-[rgba(255,255,255,0.05)] border border-[rgba(200,169,126,0.2)] text-[#F9F6F2] opacity-70'
-                }`}
+                  }`}
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M12 19l7-7 3 3-7 7-3-3z" />
@@ -77,11 +75,10 @@ const CreatorProfile = () => {
 
               <button
                 onClick={() => setActiveTab('faq')}
-                className={`px-4 py-2 rounded-xl text-xs font-sans flex items-center gap-2 ${
-                  activeTab === 'faq'
+                className={`px-4 py-2 rounded-xl text-xs font-sans flex items-center gap-2 ${activeTab === 'faq'
                     ? 'bg-[rgba(200,169,126,0.15)] text-[#C8A97E] border border-[rgba(200,169,126,0.3)]'
                     : 'bg-[rgba(255,255,255,0.05)] border border-[rgba(200,169,126,0.2)] text-[#F9F6F2] opacity-70'
-                }`}
+                  }`}
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="12" cy="12" r="10" />
@@ -93,11 +90,10 @@ const CreatorProfile = () => {
 
               <button
                 onClick={() => setActiveTab('visibility')}
-                className={`px-4 py-2 rounded-xl text-xs font-sans flex items-center gap-2 ${
-                  activeTab === 'visibility'
+                className={`px-4 py-2 rounded-xl text-xs font-sans flex items-center gap-2 ${activeTab === 'visibility'
                     ? 'bg-[rgba(200,169,126,0.15)] text-[#C8A97E] border border-[rgba(200,169,126,0.3)]'
                     : 'bg-[rgba(255,255,255,0.05)] border border-[rgba(200,169,126,0.2)] text-[#F9F6F2] opacity-70'
-                }`}
+                  }`}
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
@@ -391,7 +387,7 @@ const CreatorProfile = () => {
             {activeTab === 'visibility' && (
               <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-2xl p-6">
                 <p className="text-sm font-sans text-[#F9F6F2] opacity-60 mb-5">Control who can find your profile and whether new bookings are accepted.</p>
-                
+
                 <div className="space-y-4">
                   <div className="bg-[rgba(255,255,255,0.05)] border border-[#C8A97E] rounded-xl p-5">
                     <div className="flex items-start gap-3">

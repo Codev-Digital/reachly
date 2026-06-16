@@ -123,7 +123,7 @@ const CreatorBookings = () => {
   ];
 
   const toggleBookingSelection = (id: string) => {
-    setSelectedBookings(prev => 
+    setSelectedBookings(prev =>
       prev.includes(id) ? prev.filter(bookingId => bookingId !== id) : [...prev, id]
     );
   };
@@ -134,7 +134,7 @@ const CreatorBookings = () => {
 
   const filteredBookings = bookings.filter(booking => {
     const matchesTab = booking.status === activeTab;
-    const matchesSearch = 
+    const matchesSearch =
       booking.follower.toLowerCase().includes(searchQuery.toLowerCase()) ||
       booking.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       booking.session.toLowerCase().includes(searchQuery.toLowerCase());
@@ -164,8 +164,8 @@ const CreatorBookings = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <div className="flex gap-8">
           {/* Reusable Sidebar */}
-          <CreatorSidebar 
-            isOpen={isSidebarOpen} 
+          <CreatorSidebar
+            isOpen={isSidebarOpen}
             onClose={() => setIsSidebarOpen(false)}
           />
 
@@ -188,7 +188,7 @@ const CreatorBookings = () => {
               </svg>
             </button>
             {/* Header with search and quick actions */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
               <div className="relative flex-1 max-w-md">
                 <input
                   type="text"
@@ -226,8 +226,8 @@ const CreatorBookings = () => {
             </div>
 
             {/* Page Title */}
-            <div className="flex items-center justify-between mb-6">
-              <h1 className="font-serif text-3xl font-bold text-[#F9F6F2]">My Bookings</h1>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
+              <h1 className="font-serif text-2xl sm:text-3xl font-bold text-[#F9F6F2]">My Bookings</h1>
               <button className="flex items-center gap-2 bg-[#141414] border border-[rgba(200,169,126,0.3)] px-5 py-2 rounded-full text-sm font-sans text-[#F9F6F2] hover:bg-[rgba(200,169,126,0.1)] transition-all">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -239,7 +239,7 @@ const CreatorBookings = () => {
             </div>
 
             {/* Tabs */}
-            <div className="flex gap-3 mb-6">
+            <div className="flex gap-2 mb-6 flex-wrap">
               {tabs.map((tab) => (
                 <button
                   key={tab.name}
@@ -247,11 +247,10 @@ const CreatorBookings = () => {
                     setActiveTab(tab.name);
                     clearSelection();
                   }}
-                  className={`px-4 py-2 rounded-lg text-sm font-sans transition-all ${
-                    activeTab === tab.name
+                  className={`px-4 py-2 rounded-lg text-sm font-sans transition-all ${activeTab === tab.name
                       ? 'bg-[rgba(200,169,126,0.1)] border border-[rgba(200,169,126,0.3)] text-[#C8A97E]'
                       : 'bg-[#141414] border border-[rgba(255,255,255,0.1)] text-[#F9F6F2] opacity-70 hover:opacity-100'
-                  }`}
+                    }`}
                 >
                   {tab.name} ({tab.count})
                 </button>
@@ -275,76 +274,74 @@ const CreatorBookings = () => {
                   </svg>
                 </div>
               </div>
-              
+
               <div className="relative">
-                    <button
-                      onClick={() => {
-                        setShowSessionDropdown(!showSessionDropdown);
-                        setShowStatusDropdown(false);
-                      }}
-                      className="flex items-center justify-between gap-2 bg-[#141414] border border-[rgba(200,169,126,0.3)] text-[#F9F6F2] px-4 py-2 rounded-xl text-sm font-sans min-w-[180px] hover:border-[#C8A97E] transition-all"
-                    >
-                      {sessionTypeFilter}
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <polyline points="6 9 12 15 18 9" />
-                      </svg>
-                    </button>
-                    {showSessionDropdown && (
-                      <div className="absolute top-full left-0 right-0 mt-1 bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-xl overflow-hidden z-10 shadow-lg">
-                        {sessionTypes.map((type) => (
-                          <button
-                            key={type}
-                            onClick={() => {
-                              setSessionTypeFilter(type);
-                              setShowSessionDropdown(false);
-                            }}
-                            className={`w-full text-left px-4 py-3 text-sm font-sans transition-colors ${
-                              sessionTypeFilter === type
-                                ? 'bg-[#C8A97E] text-[#0C0C0C]'
-                                : 'text-[#F9F6F2] hover:bg-[rgba(200,169,126,0.1)]'
-                            }`}
-                          >
-                            {type}
-                          </button>
-                        ))}
-                      </div>
-                    )}
+                <button
+                  onClick={() => {
+                    setShowSessionDropdown(!showSessionDropdown);
+                    setShowStatusDropdown(false);
+                  }}
+                  className="flex items-center justify-between gap-2 bg-[#141414] border border-[rgba(200,169,126,0.3)] text-[#F9F6F2] px-4 py-2 rounded-xl text-sm font-sans min-w-[180px] hover:border-[#C8A97E] transition-all"
+                >
+                  {sessionTypeFilter}
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </button>
+                {showSessionDropdown && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-xl overflow-hidden z-10 shadow-lg">
+                    {sessionTypes.map((type) => (
+                      <button
+                        key={type}
+                        onClick={() => {
+                          setSessionTypeFilter(type);
+                          setShowSessionDropdown(false);
+                        }}
+                        className={`w-full text-left px-4 py-3 text-sm font-sans transition-colors ${sessionTypeFilter === type
+                            ? 'bg-[#C8A97E] text-[#0C0C0C]'
+                            : 'text-[#F9F6F2] hover:bg-[rgba(200,169,126,0.1)]'
+                          }`}
+                      >
+                        {type}
+                      </button>
+                    ))}
                   </div>
-                  
-                  <div className="relative">
-                    <button
-                      onClick={() => {
-                        setShowStatusDropdown(!showStatusDropdown);
-                        setShowSessionDropdown(false);
-                      }}
-                      className="flex items-center justify-between gap-2 bg-[#141414] border border-[rgba(200,169,126,0.3)] text-[#F9F6F2] px-4 py-2 rounded-xl text-sm font-sans min-w-[140px] hover:border-[#C8A97E] transition-all"
-                    >
-                      {statusFilter}
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <polyline points="6 9 12 15 18 9" />
-                      </svg>
-                    </button>
-                    {showStatusDropdown && (
-                      <div className="absolute top-full left-0 right-0 mt-1 bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-xl overflow-hidden z-10 shadow-lg">
-                        {statusOptions.map((status) => (
-                          <button
-                            key={status}
-                            onClick={() => {
-                              setStatusFilter(status);
-                              setShowStatusDropdown(false);
-                            }}
-                            className={`w-full text-left px-4 py-3 text-sm font-sans transition-colors ${
-                              statusFilter === status
-                                ? 'bg-[#C8A97E] text-[#0C0C0C]'
-                                : 'text-[#F9F6F2] hover:bg-[rgba(200,169,126,0.1)]'
-                            }`}
-                          >
-                            {status}
-                          </button>
-                        ))}
-                      </div>
-                    )}
+                )}
+              </div>
+
+              <div className="relative">
+                <button
+                  onClick={() => {
+                    setShowStatusDropdown(!showStatusDropdown);
+                    setShowSessionDropdown(false);
+                  }}
+                  className="flex items-center justify-between gap-2 bg-[#141414] border border-[rgba(200,169,126,0.3)] text-[#F9F6F2] px-4 py-2 rounded-xl text-sm font-sans min-w-[140px] hover:border-[#C8A97E] transition-all"
+                >
+                  {statusFilter}
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </button>
+                {showStatusDropdown && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-xl overflow-hidden z-10 shadow-lg">
+                    {statusOptions.map((status) => (
+                      <button
+                        key={status}
+                        onClick={() => {
+                          setStatusFilter(status);
+                          setShowStatusDropdown(false);
+                        }}
+                        className={`w-full text-left px-4 py-3 text-sm font-sans transition-colors ${statusFilter === status
+                            ? 'bg-[#C8A97E] text-[#0C0C0C]'
+                            : 'text-[#F9F6F2] hover:bg-[rgba(200,169,126,0.1)]'
+                          }`}
+                      >
+                        {status}
+                      </button>
+                    ))}
                   </div>
+                )}
+              </div>
             </div>
 
             {/* Selection Bar */}
@@ -359,7 +356,7 @@ const CreatorBookings = () => {
                     Export Selected
                   </button>
                 </div>
-                <button 
+                <button
                   onClick={clearSelection}
                   className="text-sm font-sans text-[#F9F6F2] opacity-70 hover:opacity-100"
                 >
@@ -393,9 +390,9 @@ const CreatorBookings = () => {
 
                     <div className="flex gap-4">
                       <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
-                        <img 
-                          src={booking.avatar} 
-                          alt={booking.follower} 
+                        <img
+                          src={booking.avatar}
+                          alt={booking.follower}
                           className="w-full h-full object-cover"
                         />
                       </div>
@@ -404,11 +401,10 @@ const CreatorBookings = () => {
                         <div className="flex items-start gap-3 mb-3">
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-1">
-                              <span className={`px-3 py-1 rounded-full text-xs font-sans border ${
-                                booking.status === 'Pending Action' 
-                                  ? 'bg-[rgba(251,191,36,0.1)] text-[#fbbf24] border-[rgba(251,191,36,0.3)]' 
+                              <span className={`px-3 py-1 rounded-full text-xs font-sans border ${booking.status === 'Pending Action'
+                                  ? 'bg-[rgba(251,191,36,0.1)] text-[#fbbf24] border-[rgba(251,191,36,0.3)]'
                                   : getStatusColor(booking.status)
-                              }`}>
+                                }`}>
                                 {booking.status === 'Past' ? 'Completed' : booking.status === 'Pending Action' ? 'Pending' : booking.status}
                               </span>
                               {booking.isPaid && (
@@ -470,13 +466,13 @@ const CreatorBookings = () => {
                               <button className="flex items-center gap-2 bg-[#141414] border border-[rgba(255,255,255,0.1)] px-4 py-1.5 rounded-full text-xs font-sans text-[#F9F6F2]">
                                 Join meet
                               </button>
-                              <button 
+                              <button
                                 onClick={() => setShowRescheduleModal(true)}
                                 className="flex items-center gap-2 bg-[rgba(74,222,128,0.1)] border border-[rgba(74,222,128,0.3)] px-4 py-1.5 rounded-full text-xs font-sans text-[#4ade80]"
                               >
                                 Accept Reschedule
                               </button>
-                              <button 
+                              <button
                                 onClick={() => setShowCancelModal(true)}
                                 className="flex items-center gap-2 bg-[rgba(248,113,113,0.1)] border border-[rgba(248,113,113,0.3)] px-4 py-1.5 rounded-full text-xs font-sans text-[#f87171]"
                               >
@@ -544,13 +540,13 @@ const CreatorBookings = () => {
                     Confirm moving Fatima Ali's Confidence Coaching to Thu, 4 Jun 2026 at 06:00 PM? The follower will be notified automatically.
                   </p>
                   <div className="flex items-center justify-end gap-4">
-                    <button 
+                    <button
                       onClick={() => setShowRescheduleModal(false)}
                       className="bg-[#141414] border border-[rgba(255,255,255,0.1)] px-8 py-2.5 rounded-full text-sm font-sans text-[#F9F6F2]"
                     >
                       Cancel
                     </button>
-                    <button 
+                    <button
                       onClick={() => setShowRescheduleModal(false)}
                       className="bg-[#C8A97E] text-[#0C0C0C] px-8 py-2.5 rounded-full text-sm font-sans"
                     >
@@ -570,13 +566,13 @@ const CreatorBookings = () => {
                     Are you sure you want to cancel Fatima Ali's Confidence Coaching? The follower will receive a full refund and a notification.
                   </p>
                   <div className="flex items-center justify-end gap-4">
-                    <button 
+                    <button
                       onClick={() => setShowCancelModal(false)}
                       className="bg-[#141414] border border-[rgba(255,255,255,0.1)] px-8 py-2.5 rounded-full text-sm font-sans text-[#F9F6F2]"
                     >
                       Cancel
                     </button>
-                    <button 
+                    <button
                       onClick={() => setShowCancelModal(false)}
                       className="bg-[#f87171] text-[#0C0C0C] px-8 py-2.5 rounded-full text-sm font-sans"
                     >

@@ -19,14 +19,14 @@ const CreatorAvailability = () => {
     { id: 2, date: 'Sat, 6 Jun 2026', startTime: '7:00 AM', endTime: '9:00 AM', reason: 'Early morning special!' },
   ]);
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-  
+
   const timeOptions = [
     '12:00 AM', '01:00 AM', '02:00 AM', '03:00 AM', '04:00 AM', '05:00 AM',
     '06:00 AM', '07:00 AM', '08:00 AM', '09:00 AM', '10:00 AM', '11:00 AM',
     '12:00 PM', '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM', '05:00 PM',
     '06:00 PM', '07:00 PM', '08:00 PM', '09:00 PM', '10:00 PM', '11:00 PM'
   ];
-  
+
   return (
     <div className="min-h-screen bg-[#0C0C0C] pb-12">
       <CreatorNavbar />
@@ -34,8 +34,8 @@ const CreatorAvailability = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <div className="flex gap-8">
           {/* Reusable Sidebar */}
-          <CreatorSidebar 
-            isOpen={isSidebarOpen} 
+          <CreatorSidebar
+            isOpen={isSidebarOpen}
             onClose={() => setIsSidebarOpen(false)}
           />
 
@@ -59,7 +59,7 @@ const CreatorAvailability = () => {
             </button>
             {/* Page Title */}
             <div className="mb-6">
-              <h1 className="font-serif text-4xl font-bold text-[#C8A97E] mb-2">Manage Your Availability</h1>
+              <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-bold text-[#C8A97E] mb-2">Manage Your Availability</h1>
               <p className="font-sans text-base text-[#F9F6F2] opacity-90">Set when you are available for bookings. Changes apply to all session types.</p>
             </div>
 
@@ -71,16 +71,15 @@ const CreatorAvailability = () => {
             </div>
 
             {/* Tabs */}
-            <div className="flex gap-3 mb-6">
+            <div className="flex gap-2 mb-6 flex-wrap">
               {['Weekly Schedule', 'Blocked Dates', 'One-Time Slots', 'Settings'].map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`px-5 py-2 rounded-lg text-sm font-sans transition-all ${
-                    activeTab === tab
-                      ? 'bg-[rgba(200,169,126,0.1)] border border-[rgba(200,169,126,0.3)] text-[#C8A97E]'
-                      : 'bg-[#141414] border border-[rgba(255,255,255,0.1)] text-[#F9F6F2] opacity-70 hover:opacity-100'
-                  }`}
+                  className={`px-5 py-2 rounded-lg text-sm font-sans transition-all ${activeTab === tab
+                    ? 'bg-[rgba(200,169,126,0.1)] border border-[rgba(200,169,126,0.3)] text-[#C8A97E]'
+                    : 'bg-[#141414] border border-[rgba(255,255,255,0.1)] text-[#F9F6F2] opacity-70 hover:opacity-100'
+                    }`}
                 >
                   {tab}
                 </button>
@@ -89,7 +88,7 @@ const CreatorAvailability = () => {
 
             {/* Copy to buttons - only for Weekly Schedule */}
             {activeTab === 'Weekly Schedule' && (
-              <div className="flex gap-4 mb-8">
+              <div className="flex gap-2 sm:gap-4 mb-8 flex-wrap">
                 <button className="flex items-center gap-2 bg-[#141414] border border-[rgba(255,255,255,0.1)] px-5 py-3 rounded-xl text-sm font-sans text-[#F9F6F2]">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
@@ -125,9 +124,9 @@ const CreatorAvailability = () => {
 
                       <div className="flex flex-col items-center gap-4">
                         {/* Time Block 1 */}
-                        <div className="flex items-center gap-4">
-                          <div className="relative">
-                            <select className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-xl px-5 py-3 text-[#F9F6F2] text-sm font-sans outline-none appearance-none pr-10 w-48">
+                        <div className="flex flex-wrap items-center gap-2 w-full">
+                          <div className="relative flex-1 min-w-[120px]">
+                            <select className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-xl px-3 py-3 text-[#F9F6F2] text-sm font-sans outline-none appearance-none pr-8 w-full">
                               {timeOptions.map((time, i) => (
                                 <option key={i} value={time}>{time}</option>
                               ))}
@@ -139,8 +138,8 @@ const CreatorAvailability = () => {
                             </div>
                           </div>
                           <span className="text-sm font-sans text-[#F9F6F2] opacity-70">to</span>
-                          <div className="relative">
-                            <select className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-xl px-5 py-3 text-[#F9F6F2] text-sm font-sans outline-none appearance-none pr-10 w-48">
+                          <div className="relative flex-1 min-w-[120px]">
+                            <select className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-xl px-3 py-3 text-[#F9F6F2] text-sm font-sans outline-none appearance-none pr-8 w-full">
                               {timeOptions.map((time, i) => (
                                 <option key={i} value={time}>{time}</option>
                               ))}
@@ -160,9 +159,9 @@ const CreatorAvailability = () => {
                         </div>
 
                         {/* Time Block 2 */}
-                        <div className="flex items-center gap-4">
-                          <div className="relative">
-                            <select className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-xl px-5 py-3 text-[#F9F6F2] text-sm font-sans outline-none appearance-none pr-10 w-48">
+                        <div className="flex flex-wrap items-center gap-2 w-full">
+                          <div className="relative flex-1 min-w-[120px]">
+                            <select className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-xl px-3 py-3 text-[#F9F6F2] text-sm font-sans outline-none appearance-none pr-8 w-full">
                               {timeOptions.map((time, i) => (
                                 <option key={i} value={time}>{time}</option>
                               ))}
@@ -174,8 +173,8 @@ const CreatorAvailability = () => {
                             </div>
                           </div>
                           <span className="text-sm font-sans text-[#F9F6F2] opacity-70">to</span>
-                          <div className="relative">
-                            <select className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-xl px-5 py-3 text-[#F9F6F2] text-sm font-sans outline-none appearance-none pr-10 w-48">
+                          <div className="relative flex-1 min-w-[120px]">
+                            <select className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-xl px-3 py-3 text-[#F9F6F2] text-sm font-sans outline-none appearance-none pr-8 w-full">
                               {timeOptions.map((time, i) => (
                                 <option key={i} value={time}>{time}</option>
                               ))}
@@ -210,7 +209,7 @@ const CreatorAvailability = () => {
                 <div className="lg:col-span-5">
                   <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-2xl p-7 sticky top-8">
                     <h3 className="font-serif text-2xl font-bold text-[#F9F6F2] mb-7">Weekly Summary</h3>
-                    
+
                     <div className="space-y-5">
                       <div className="flex items-center justify-between">
                         <span className="text-base font-sans text-[#F9F6F2] opacity-80">Total hours per week</span>
@@ -243,21 +242,20 @@ const CreatorAvailability = () => {
                       </div>
                       <div className="grid grid-cols-7 gap-2">
                         {['', '', '', '', '', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '30', '31'].map((date, i) => (
-                          <div 
-                            key={i} 
-                            className={`aspect-square flex items-center justify-center rounded-lg text-sm font-sans ${
-                              ['9', '17', '24', '30'].includes(date) 
-                                ? 'bg-[#f87171] text-[#0C0C0C]' 
-                                : date ? 'text-[#F9F6F2] hover:bg-[rgba(255,255,255,0.1)] cursor-pointer' : ''
-                            }`}
+                          <div
+                            key={i}
+                            className={`aspect-square flex items-center justify-center rounded-lg text-sm font-sans ${['9', '17', '24', '30'].includes(date)
+                              ? 'bg-[#f87171] text-[#0C0C0C]'
+                              : date ? 'text-[#F9F6F2] hover:bg-[rgba(255,255,255,0.1)] cursor-pointer' : ''
+                              }`}
                           >
                             {date}
                           </div>
                         ))}
                       </div>
                     </div>
-                    
-                    <button 
+
+                    <button
                       onClick={() => setShowBlockForm(!showBlockForm)}
                       className="flex items-center gap-3 text-base font-sans text-[#C8A97E] opacity-80 hover:opacity-100"
                     >
@@ -290,7 +288,7 @@ const CreatorAvailability = () => {
                               </div>
                             </div>
                           </div>
-                          
+
                           <div className="flex flex-col gap-2">
                             <label className="text-base font-sans text-[#F9F6F2] opacity-80">To</label>
                             <div className="relative w-48">
@@ -311,7 +309,7 @@ const CreatorAvailability = () => {
                               </div>
                             </div>
                           </div>
-                          
+
                           <button className="bg-[rgba(248,113,113,0.1)] border border-[rgba(248,113,113,0.4)] text-[#f87171] px-4 py-2.75 rounded-xl text-base font-sans hover:bg-[rgba(248,113,113,0.15)] transition-all">
                             Block
                           </button>
@@ -324,7 +322,7 @@ const CreatorAvailability = () => {
                 <div className="lg:col-span-5">
                   <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-2xl p-6 sticky top-8">
                     <h3 className="font-serif text-xl font-bold text-[#F9F6F2] mb-5">Blocked Dates</h3>
-                    
+
                     <div className="space-y-3">
                       <div className="bg-[rgba(255,255,255,0.05)] rounded-xl p-4">
                         <div className="flex items-center justify-between mb-2">
@@ -333,7 +331,7 @@ const CreatorAvailability = () => {
                         </div>
                         <div className="text-xs font-sans text-[#F9F6F2] opacity-50">Full day</div>
                       </div>
-                      
+
                       <div className="bg-[rgba(255,255,255,0.05)] rounded-xl p-4">
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-sm font-sans text-[#f87171]">Sun 17 Jun 2026</span>
@@ -373,14 +371,14 @@ const CreatorAvailability = () => {
               <div className="mb-12">
                 <div className="flex items-center justify-between mb-6">
                   <p className="font-sans text-base text-[#F9F6F2] opacity-70">Add one-off availability outside your regular schedule, for special hours or events</p>
-                  <button 
+                  <button
                     onClick={() => setShowSlotModal(true)}
                     className="bg-[#141414] border border-[rgba(200,169,126,0.3)] text-[#C8A97E] px-4 py-2 rounded-xl text-sm font-sans hover:bg-[rgba(200,169,126,0.1)] transition-all"
                   >
                     + Add Slot
                   </button>
                 </div>
-                
+
                 <div className="space-y-4 mb-6">
                   {oneTimeSlots.map((slot) => (
                     <div key={slot.id} className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-2xl p-5">
@@ -415,7 +413,7 @@ const CreatorAvailability = () => {
                     </div>
                   ))}
                 </div>
-                
+
                 <div className="flex justify-end">
                   <button className="bg-[#C8A97E] text-[#0C0C0C] px-6 py-2 rounded-full text-sm font-sans font-medium hover:opacity-90 transition-all">
                     Save Changes
@@ -430,45 +428,44 @@ const CreatorAvailability = () => {
                   <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-2xl p-6">
                     <h3 className="font-serif text-lg font-bold text-[#C8A97E] mb-3">Buffer Between Sessions</h3>
                     <p className="font-sans text-sm text-[#F9F6F2] opacity-70 mb-4">Adds a gap between your bookings so you have time to prepare.</p>
-                    
+
                     <div className="flex flex-wrap gap-2">
                       {['No buffer', '5 min', '10 min', '15 min', '30 min'].map((buffer, index) => (
                         <button
                           key={index}
-                          className={`px-4 py-2 rounded-xl text-sm font-sans transition-all ${
-                            buffer === '15 min'
-                              ? 'bg-[#C8A97E] text-[#0C0C0C]'
-                              : 'bg-[rgba(255,255,255,0.05)] border border-[rgba(200,169,126,0.2)] text-[#F9F6F2] hover:bg-[rgba(255,255,255,0.1)]'
-                          }`}
+                          className={`px-4 py-2 rounded-xl text-sm font-sans transition-all ${buffer === '15 min'
+                            ? 'bg-[#C8A97E] text-[#0C0C0C]'
+                            : 'bg-[rgba(255,255,255,0.05)] border border-[rgba(200,169,126,0.2)] text-[#F9F6F2] hover:bg-[rgba(255,255,255,0.1)]'
+                            }`}
                         >
                           {buffer}
                         </button>
                       ))}
                     </div>
                   </div>
-                  
+
                   <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-2xl p-6">
                     <h3 className="font-serif text-lg font-bold text-[#C8A97E] mb-5">Booking Window</h3>
-                    
+
                     <div className="space-y-5">
                       <div>
                         <div className="flex items-center justify-between mb-2">
                           <p className="font-sans text-sm text-[#F9F6F2] opacity-80">How far in advance can followers book?</p>
                           <span className="font-sans text-sm text-[#C8A97E] font-medium">{maxDays} days</span>
                         </div>
-                   <input
-  type="range"
-  min="7"
-  max="90"
-  value={maxDays}
-  onChange={(e) => setMaxDays(parseInt(e.target.value))}
-  className="w-full h-2 appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#C8A97E]"
-  style={{
-    background: `linear-gradient(to right, #C8A97E 0%, #C8A97E ${((maxDays - 7) / 83) * 100}%, rgba(200,169,126,0.2) ${((maxDays - 7) / 83) * 100}%, rgba(200,169,126,0.2) 100%)`
-  }}
-/>
+                        <input
+                          type="range"
+                          min="7"
+                          max="90"
+                          value={maxDays}
+                          onChange={(e) => setMaxDays(parseInt(e.target.value))}
+                          className="w-full h-2 appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#C8A97E]"
+                          style={{
+                            background: `linear-gradient(to right, #C8A97E 0%, #C8A97E ${((maxDays - 7) / 83) * 100}%, rgba(200,169,126,0.2) ${((maxDays - 7) / 83) * 100}%, rgba(200,169,126,0.2) 100%)`
+                          }}
+                        />
                       </div>
-                      
+
                       <div>
                         <div className="flex items-center justify-between mb-2">
                           <p className="font-sans text-sm text-[#F9F6F2] opacity-80">How far in advance can followers book?</p>
@@ -486,15 +483,15 @@ const CreatorAvailability = () => {
                           }}
                         />
                       </div>
-                      
+
                       <p className="font-sans text-sm text-[#F9F6F2] opacity-70 mt-2">Followers can book up to {maxDays} days in advance, and at least {minHours} hours before the session starts.</p>
                     </div>
                   </div>
-                  
+
                   <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-2xl p-6">
                     <h3 className="font-serif text-lg font-bold text-[#C8A97E] mb-3">Timezone</h3>
                     <p className="font-sans text-sm text-[#F9F6F2] opacity-70 mb-4">All your availability times will be shown in this timezone.</p>
-                    
+
                     <style jsx>{`
                       select {
                         color: #F9F6F2;
@@ -512,7 +509,7 @@ const CreatorAvailability = () => {
                         background-color: rgba(200,169,126,0.2);
                       }
                     `}</style>
-                    
+
                     <select className="w-full bg-[rgba(255,255,255,0.03)] border border-[rgba(200,169,126,0.2)] rounded-xl px-4 py-3 text-sm font-sans outline-none">
                       <option value="pkt">Pakistan Standard Time (PKT, UTC+5)</option>
                       <option value="ist">India Standard Time (IST, UTC+5:30)</option>
@@ -522,7 +519,7 @@ const CreatorAvailability = () => {
                       <option value="eet">Eastern European Time (EET, UTC+2)</option>
                     </select>
                   </div>
-                  
+
                   <div className="flex justify-end">
                     <button className="bg-[#C8A97E] text-[#0C0C0C] px-6 py-2 rounded-full text-sm font-sans font-medium hover:opacity-90 transition-all">
                       Save Settings
@@ -539,7 +536,7 @@ const CreatorAvailability = () => {
                   <h2 className="font-serif text-2xl font-bold text-[#C8A97E] mb-2">Live Preview - Next 14 Days</h2>
                   <p className="font-sans text-base text-[#F9F6F2] opacity-70">This is what your booking page looks like to followers.</p>
                 </div>
-                
+
                 <button className="flex items-center gap-2 text-base font-sans text-[#F9F6F2] opacity-70 hover:opacity-100">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
@@ -565,8 +562,8 @@ const CreatorAvailability = () => {
                   { day: 'WED', date: '10', month: 'JUNE', slots: ['9:00 AM', '9:30 AM', '10:00 AM', '10:30 AM'] },
                   { day: 'THU', date: '11', month: 'JUNE', slots: ['9:00 AM', '9:30 AM', '10:00 AM', '10:30 AM'] },
                 ].map((item, index) => (
-                  <div 
-                    key={index} 
+                  <div
+                    key={index}
                     className={`bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-2xl p-6 ${item.isToday ? 'ring-2 ring-[#C8A97E]' : ''}`}
                   >
                     <div className="flex items-center gap-3 mb-5">
@@ -578,15 +575,14 @@ const CreatorAvailability = () => {
                       </svg>
                       <span className="font-sans text-base font-semibold text-[#F9F6F2]">{item.day}, {item.date} {item.month}</span>
                     </div>
-                    
+
                     {item.slots.length > 0 ? (
                       <div className="space-y-3">
                         {item.slots.map((slot, slotIndex) => (
-                          <div 
-                            key={slotIndex} 
-                            className={`bg-[rgba(255,255,255,0.05)] rounded-xl py-3 text-center text-base font-sans ${
-                              item.isToday && slotIndex === 1 ? 'bg-[#C8A97E] text-[#0C0C0C]' : 'text-[#C8A97E] opacity-80'
-                            }`}
+                          <div
+                            key={slotIndex}
+                            className={`bg-[rgba(255,255,255,0.05)] rounded-xl py-3 text-center text-base font-sans ${item.isToday && slotIndex === 1 ? 'bg-[#C8A97E] text-[#0C0C0C]' : 'text-[#C8A97E] opacity-80'
+                              }`}
                           >
                             {slot}
                           </div>
@@ -606,12 +602,12 @@ const CreatorAvailability = () => {
               </div>
             </div>
           </motion.main>
-          
+
           {showSlotModal && (
             <div className="fixed inset-0 bg-[rgba(0,0,0,0.7)] flex items-center justify-center z-50">
               <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-3xl p-8 w-full max-w-md">
                 <h3 className="font-serif text-2xl font-bold text-[#F9F6F2] mb-6">Add One Time Slot</h3>
-                
+
                 <div className="space-y-4 mb-8">
                   <div>
                     <label className="text-sm font-sans text-[#F9F6F2] opacity-70 mb-2 block">Date</label>
@@ -631,7 +627,7 @@ const CreatorAvailability = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="text-sm font-sans text-[#F9F6F2] opacity-70 mb-2 block">Start Time</label>
@@ -641,7 +637,7 @@ const CreatorAvailability = () => {
                         ))}
                       </select>
                     </div>
-                    
+
                     <div>
                       <label className="text-sm font-sans text-[#F9F6F2] opacity-70 mb-2 block">End Time</label>
                       <select className="w-full bg-[rgba(255,255,255,0.03)] border border-[rgba(200,169,126,0.2)] rounded-xl px-4 py-3 text-[#F9F6F2] text-base font-sans outline-none">
@@ -651,18 +647,18 @@ const CreatorAvailability = () => {
                       </select>
                     </div>
                   </div>
-                  
+
                   <div>
                     <label className="text-sm font-sans text-[#F9F6F2] opacity-70 mb-2 block">Reason (optional)</label>
-                    <textarea 
+                    <textarea
                       placeholder="e.g. Special event, Early morning!"
                       className="w-full bg-[rgba(255,255,255,0.03)] border border-[rgba(200,169,126,0.2)] rounded-xl px-4 py-3 text-[#F9F6F2] text-base font-sans outline-none resize-none h-24"
                     />
                   </div>
                 </div>
-                
+
                 <div className="flex items-center gap-4">
-                  <button 
+                  <button
                     onClick={() => setShowSlotModal(false)}
                     className="flex-1 bg-[rgba(255,255,255,0.05)] text-[#F9F6F2] py-3 rounded-full text-base font-sans font-medium hover:bg-[rgba(255,255,255,0.1)] transition-all"
                   >

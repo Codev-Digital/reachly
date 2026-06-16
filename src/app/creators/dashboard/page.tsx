@@ -14,8 +14,8 @@ const CreatorDashboard = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <div className="flex gap-8">
           {/* Reusable Sidebar */}
-          <CreatorSidebar 
-            isOpen={isSidebarOpen} 
+          <CreatorSidebar
+            isOpen={isSidebarOpen}
             onClose={() => setIsSidebarOpen(false)}
           />
 
@@ -38,7 +38,7 @@ const CreatorDashboard = () => {
               </svg>
             </button>
             {/* Header with search and quick actions */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
               <div className="relative flex-1 max-w-md">
                 <input
                   type="text"
@@ -54,12 +54,13 @@ const CreatorDashboard = () => {
               </div>
 
               <div className="flex items-center gap-3">
-                <button className="flex items-center gap-2 bg-[#141414] border border-[rgba(200,169,126,0.3)] px-4 py-2 rounded-full text-sm font-sans text-[#C8A97E] hover:bg-[rgba(200,169,126,0.1)] transition-all">
+                <button className="flex items-center gap-2 bg-[#141414] border border-[rgba(200,169,126,0.3)] px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-sans text-[#C8A97E] hover:bg-[rgba(200,169,126,0.1)] transition-all">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
                     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
                   </svg>
-                  Copy Booking Link
+                  <span className="hidden sm:inline">Copy Booking Link</span>
+                  <span className="sm:hidden">Copy Link</span>
                 </button>
 
                 <button className="w-10 h-10 rounded-full bg-[#141414] border border-[rgba(200,169,126,0.3)] flex items-center justify-center text-[#C8A97E] hover:bg-[rgba(200,169,126,0.1)] transition-all">

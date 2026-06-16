@@ -73,11 +73,11 @@ const ratingDistribution = [
 
 export default function CreatorReviewsPage() {
   const [showReportModal, setShowReportModal] = useState(false);
-const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const StarRating = ({ rating, maxStars = 5 }: { rating: number; maxStars?: number }) => {
     return (
-      
+
       <div className="flex gap-1">
         {Array.from({ length: maxStars }).map((_, index) => (
           <svg
@@ -97,48 +97,48 @@ const [searchQuery, setSearchQuery] = useState('');
   return (
     <div className="min-h-screen bg-[#0C0C0C] pb-12">
       <CreatorNavbar />
-   
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-        <div className="flex items-center justify-between mb-6">
-              <div className="relative flex-1 max-w-md">
-                <input
-                  type="text"
-                  placeholder="Find a booking"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-full px-5 py-3 text-sm font-sans text-[#F9F6F2] placeholder-[#F9F6F2] opacity-50 focus:outline-none focus:border-[#C8A97E]"
-                />
-                <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="2">
-                    <circle cx="11" cy="11" r="8" />
-                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                  </svg>
-                </div>
-              </div>
 
-              <div className="flex items-center gap-3">
-                <button className="flex items-center gap-2 bg-[#141414] border border-[rgba(200,169,126,0.3)] px-5 py-2 rounded-full text-sm font-sans text-[#C8A97E] hover:bg-[rgba(200,169,126,0.1)] transition-all">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                  </svg>
-                  Copy Booking Link
-                </button>
-                <button className="w-10 h-10 rounded-full bg-[#141414] border border-[rgba(200,169,126,0.3)] flex items-center justify-center text-[#C8A97E] hover:bg-[rgba(200,169,126,0.1)] transition-all">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                  </svg>
-                </button>
-                <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-[#C8A97E]">
-                  <img src="/ahad raza mir.png" alt="Ahad" className="w-full h-full object-cover" />
-                </div>
-              </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
+          <div className="relative w-full sm:flex-1 sm:max-w-md">
+            <input
+              type="text"
+              placeholder="Find a booking"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-full px-5 py-3 text-sm font-sans text-[#F9F6F2] placeholder-[#F9F6F2] opacity-50 focus:outline-none focus:border-[#C8A97E]"
+            />
+            <div className="absolute right-4 top-1/2 -translate-y-1/2">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="2">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
             </div>
-        
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button className="flex items-center gap-2 bg-[#141414] border border-[rgba(200,169,126,0.3)] px-5 py-2 rounded-full text-sm font-sans text-[#C8A97E] hover:bg-[rgba(200,169,126,0.1)] transition-all">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+              </svg>
+              Copy Booking Link
+            </button>
+            <button className="w-10 h-10 rounded-full bg-[#141414] border border-[rgba(200,169,126,0.3)] flex items-center justify-center text-[#C8A97E] hover:bg-[rgba(200,169,126,0.1)] transition-all">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              </svg>
+            </button>
+            <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-[#C8A97E]">
+              <img src="/ahad raza mir.png" alt="Ahad" className="w-full h-full object-cover" />
+            </div>
+          </div>
+        </div>
+
         <div className="flex gap-8">
-          <CreatorSidebar 
-            isOpen={isSidebarOpen} 
+          <CreatorSidebar
+            isOpen={isSidebarOpen}
             onClose={() => setIsSidebarOpen(false)}
           />
 
@@ -155,9 +155,9 @@ const [searchQuery, setSearchQuery] = useState('');
               </svg>
             </button>
             <div className="mb-7">
-              <div className="flex items-center justify-between mb-2">
-                <h1 className="font-serif text-4xl md:text-5xl font-bold text-[#C8A97E]">Reviews & Ratings</h1>
-                <div className="flex items-center gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-3">
+                <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-bold text-[#C8A97E]">Reviews & Ratings</h1>
+                <div className="flex items-center gap-3 flex-wrap">
                   <button className="bg-[rgba(255,255,255,0.05)] border border-[rgba(200,169,126,0.3)] text-[#F9F6F2] px-5 py-3 rounded-xl text-sm font-sans">
                     Mark all as read
                   </button>
@@ -170,65 +170,65 @@ const [searchQuery, setSearchQuery] = useState('');
             </div>
 
             {/* Stats Row */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-5 mb-6">
-  {/* Rating Stats Card */}
-  <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-2xl p-6 md:col-span-2 text-center">
-    <div className="text-[#C8A97E] font-serif text-5xl md:text-6xl font-bold mb-3">
-      4.6
-    </div>
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-5 mb-6">
+              {/* Rating Stats Card */}
+              <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-2xl p-6 md:col-span-2 text-center">
+                <div className="text-[#C8A97E] font-serif text-5xl md:text-6xl font-bold mb-3">
+                  4.6
+                </div>
 
-    <div className="flex justify-center mb-2 gap-1.5">
-      {[0, 1, 2, 3, 4].map((i) => (
-        <svg
-          key={i}
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill={i < 4 ? "#C8A97E" : "rgba(255, 255, 255, 0.15)"}
-        >
-          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-        </svg>
-      ))}
-    </div>
+                <div className="flex justify-center mb-2 gap-1.5">
+                  {[0, 1, 2, 3, 4].map((i) => (
+                    <svg
+                      key={i}
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill={i < 4 ? "#C8A97E" : "rgba(255, 255, 255, 0.15)"}
+                    >
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                    </svg>
+                  ))}
+                </div>
 
-    <div className="font-sans text-[#F9F6F2] text-base">
-      328 reviews
-    </div>
-  </div>
+                <div className="font-sans text-[#F9F6F2] text-base">
+                  328 reviews
+                </div>
+              </div>
 
-  {/* Rating Distribution */}
-  <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-2xl p-6 md:col-span-3">
-    <div className="space-y-3">
-      {ratingDistribution.map((item) => (
-        <div key={item.stars} className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 w-12">
-            <span className="font-sans text-lg text-[#F9F6F2]">
-              {item.stars}
-            </span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="#C8A97E">
-              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-            </svg>
-          </div>
+              {/* Rating Distribution */}
+              <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-2xl p-6 md:col-span-3">
+                <div className="space-y-3">
+                  {ratingDistribution.map((item) => (
+                    <div key={item.stars} className="flex items-center gap-3">
+                      <div className="flex items-center gap-1.5 w-12">
+                        <span className="font-sans text-lg text-[#F9F6F2]">
+                          {item.stars}
+                        </span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="#C8A97E">
+                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                        </svg>
+                      </div>
 
-          <div className="flex-1 h-2.5 bg-[rgba(255,255,255,0.08)] rounded-full overflow-hidden">
-            <div
-              className="h-full bg-[#C8A97E] rounded-full transition-all"
-              style={{ width: `${item.percentage}%` }}
-            />
-          </div>
+                      <div className="flex-1 h-2.5 bg-[rgba(255,255,255,0.08)] rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-[#C8A97E] rounded-full transition-all"
+                          style={{ width: `${item.percentage}%` }}
+                        />
+                      </div>
 
-          <div className="w-12 text-right font-sans text-base text-[#F9F6F2]">
-            {item.count.toString().padStart(2, "0")}
-          </div>
+                      <div className="w-12 text-right font-sans text-base text-[#F9F6F2]">
+                        {item.count.toString().padStart(2, "0")}
+                      </div>
 
-          <div className="w-10 text-right font-sans text-base text-[#F9F6F2]">
-            {item.percentage}%
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-</div>
+                      <div className="w-10 text-right font-sans text-base text-[#F9F6F2]">
+                        {item.percentage}%
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
 
             {/* Notification Banner */}
             <div className="bg-[rgba(200,169,126,0.08)] border border-[rgba(200,169,126,0.3)] rounded-2xl p-6 flex items-start gap-4 mb-7">

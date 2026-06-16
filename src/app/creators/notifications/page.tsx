@@ -30,8 +30,8 @@ export default function CreatorNotifications() {
       <CreatorNavbar />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <div className="flex gap-8">
-          <CreatorSidebar 
-            isOpen={isSidebarOpen} 
+          <CreatorSidebar
+            isOpen={isSidebarOpen}
             onClose={() => setIsSidebarOpen(false)}
           />
           <motion.main
@@ -52,7 +52,7 @@ export default function CreatorNotifications() {
               </svg>
             </button>
             {/* Header */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
               <div className="relative flex-1 max-w-md">
                 <input
                   type="text"
@@ -87,9 +87,9 @@ export default function CreatorNotifications() {
             </div>
 
             {/* Title */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
               <div>
-                <h1 className="font-serif text-3xl font-bold text-[#C8A97E] mb-2">Notifications</h1>
+                <h1 className="font-serif text-2xl sm:text-3xl font-bold text-[#C8A97E] mb-2">Notifications</h1>
                 <p className="font-sans text-sm text-[#F9F6F2] opacity-60">Stay updated on bookings, payouts, reviews, and more.</p>
               </div>
               <div className="flex items-center gap-3">
@@ -115,11 +115,10 @@ export default function CreatorNotifications() {
                             setActiveTab(type);
                             setShowDropdown(false);
                           }}
-                          className={`w-full text-left px-4 py-3 text-sm font-sans transition-colors ${
-                            activeTab === type
+                          className={`w-full text-left px-4 py-3 text-sm font-sans transition-colors ${activeTab === type
                               ? 'bg-[#C8A97E] text-[#0C0C0C]'
                               : 'text-[#F9F6F2] hover:bg-[rgba(200,169,126,0.1)]'
-                          }`}
+                            }`}
                         >
                           {type}
                         </button>
