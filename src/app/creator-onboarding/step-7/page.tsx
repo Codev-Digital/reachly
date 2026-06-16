@@ -6,56 +6,56 @@ import CreatorNavbar from '@/components/CreatorNavbar';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Checklist {
-  profile:      boolean;
-  sessions:     boolean;
-  pricing:      boolean;
+  profile: boolean;
+  sessions: boolean;
+  pricing: boolean;
   availability: boolean;
-  payment:      boolean;
+  payment: boolean;
 }
 
 interface SessionType {
-  _id:         string;
-  title:       string;
-  duration:    number;
-  price:       number;
+  _id: string;
+  title: string;
+  duration: number;
+  price: number;
   description: string;
 }
 
 interface AvailabilityDay {
   enabled: boolean;
-  slots:   { start: string; end: string }[];
+  slots: { start: string; end: string }[];
 }
 
 interface PageData {
   profile: {
-    displayName:  string;
-    username:     string;
+    displayName: string;
+    username: string;
     profilePhoto: string;
-    coverPhoto:   string;
-    shortBio:     string;
-    city:         string;
-    country:      string;
-    languages:    string[];
-    niches:       string[];
+    coverPhoto: string;
+    shortBio: string;
+    city: string;
+    country: string;
+    languages: string[];
+    niches: string[];
   } | null;
-  sessionTypes:   SessionType[];
+  sessionTypes: SessionType[];
   availability: {
     schedule: Record<string, AvailabilityDay>;
   } | null;
-  checklist:  Checklist;
+  checklist: Checklist;
   allComplete: boolean;
 }
 
 const CHECKLIST_LABELS: { key: keyof Checklist; label: string; step: string }[] = [
-  { key: 'profile',      label: 'Profile Setup',    step: '/creator-onboarding/step-2' },
-  { key: 'sessions',     label: 'Session Types',    step: '/creator-onboarding/step-3' },
-  { key: 'pricing',      label: 'Pricing',          step: '/creator-onboarding/step-4' },
-  { key: 'availability', label: 'Availability',     step: '/creator-onboarding/step-5' },
-  { key: 'payment',      label: 'Payout Setup',     step: '/creator-onboarding/step-6' },
+  { key: 'profile', label: 'Profile Setup', step: '/creator-onboarding/step-2' },
+  { key: 'sessions', label: 'Session Types', step: '/creator-onboarding/step-3' },
+  { key: 'pricing', label: 'Pricing', step: '/creator-onboarding/step-4' },
+  { key: 'availability', label: 'Availability', step: '/creator-onboarding/step-5' },
+  { key: 'payment', label: 'Payout Setup', step: '/creator-onboarding/step-6' },
 ];
 
-const DAY_ORDER = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
-const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const DAY_ORDER = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 function getNext7Days(schedule: Record<string, AvailabilityDay> | undefined) {
   const result: { label: string; date: string; enabled: boolean }[] = [];
@@ -63,11 +63,11 @@ function getNext7Days(schedule: Record<string, AvailabilityDay> | undefined) {
   for (let i = 0; i < 7; i++) {
     const d = new Date(today);
     d.setDate(today.getDate() + i);
-    const dayKey = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'][d.getDay()];
+    const dayKey = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][d.getDay()];
     const enabled = schedule?.[dayKey]?.enabled ?? false;
     result.push({
       label: dayKey.charAt(0).toUpperCase() + dayKey.slice(1, 3),
-      date:  `${d.getDate()} ${MONTH_NAMES[d.getMonth()]}`,
+      date: `${d.getDate()} ${MONTH_NAMES[d.getMonth()]}`,
       enabled,
     });
   }
@@ -79,11 +79,11 @@ export default function CreatorOnboardingStep7() {
   const router = useRouter();
 
   const [fetchingData, setFetchingData] = useState(true);
-  const [data, setData]                 = useState<PageData | null>(null);
-  const [isActive, setIsActive]         = useState(false);
-  const [saving, setSaving]             = useState(false);
-  const [saveError, setSaveError]       = useState('');
-  const [copied, setCopied]             = useState(false);
+  const [data, setData] = useState<PageData | null>(null);
+  const [isActive, setIsActive] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const [copied, setCopied] = useState(false);
 
   // ── Load all data on mount ────────────────────────────────────────────────
   useEffect(() => {
@@ -133,7 +133,7 @@ export default function CreatorOnboardingStep7() {
       });
       const json = await res.json();
       if (json.success) {
-        router.push('/welcome');
+        router.push('/creators/dashboard');
       } else {
         setSaveError(json.error || 'Something went wrong. Please try again.');
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -146,18 +146,18 @@ export default function CreatorOnboardingStep7() {
   };
 
   // ── Derived values ────────────────────────────────────────────────────────
-  const next7Days  = getNext7Days(data?.availability?.schedule);
-  const checklist  = data?.checklist;
-  const allDone    = data?.allComplete ?? false;
-  const profile    = data?.profile;
-  const sessions   = data?.sessionTypes ?? [];
+  const next7Days = getNext7Days(data?.availability?.schedule);
+  const checklist = data?.checklist;
+  const allDone = data?.allComplete ?? false;
+  const profile = data?.profile;
+  const sessions = data?.sessionTypes ?? [];
 
   const profileImgSrc = profile?.profilePhoto || '/Group 2085668106.png';
-  const displayName   = profile?.displayName  || 'Your Name';
-  const handle        = profile?.username ? `@${profile.username}` : '@yourhandle';
-  const location      = [profile?.city, profile?.country].filter(Boolean).join(', ') || 'Pakistan';
-  const languages     = profile?.languages?.join(', ') || '—';
-  const niche         = profile?.niches?.[0] || '';
+  const displayName = profile?.displayName || 'Your Name';
+  const handle = profile?.username ? `@${profile.username}` : '@yourhandle';
+  const location = [profile?.city, profile?.country].filter(Boolean).join(', ') || 'Pakistan';
+  const languages = profile?.languages?.join(', ') || '—';
+  const niche = profile?.niches?.[0] || '';
 
   if (fetchingData) return (
     <div className="min-h-screen bg-[#0C0C0C] flex items-center justify-center">
@@ -173,19 +173,19 @@ export default function CreatorOnboardingStep7() {
       <div className="border-b border-[rgba(255,255,255,0.08)]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8 lg:py-10">
           <div className="flex items-center justify-between overflow-x-auto pb-2">
-            <StepItem num={1} label="Welcome"      status="completed" />
+            <StepItem num={1} label="Welcome" status="completed" />
             <div className="flex-1 h-px bg-[#C8A97E] mx-1 sm:mx-2" />
-            <StepItem num={2} label="Profile"      status="completed" />
+            <StepItem num={2} label="Profile" status="completed" />
             <div className="flex-1 h-px bg-[#C8A97E] mx-1 sm:mx-2" />
-            <StepItem num={3} label="Sessions"     status="completed" />
+            <StepItem num={3} label="Sessions" status="completed" />
             <div className="flex-1 h-px bg-[#C8A97E] mx-1 sm:mx-2" />
-            <StepItem num={4} label="Pricing"      status="completed" />
+            <StepItem num={4} label="Pricing" status="completed" />
             <div className="flex-1 h-px bg-[#C8A97E] mx-1 sm:mx-2" />
             <StepItem num={5} label="Availability" status="completed" />
             <div className="flex-1 h-px bg-[#C8A97E] mx-1 sm:mx-2" />
             <StepItem num={6} label="Verification" status="completed" />
             <div className="flex-1 h-px bg-[#C8A97E] mx-1 sm:mx-2" />
-            <StepItem num={7} label="Go Live"      status="active" />
+            <StepItem num={7} label="Go Live" status="active" />
           </div>
         </div>
       </div>
@@ -288,7 +288,7 @@ export default function CreatorOnboardingStep7() {
           {sessions.length === 0 ? (
             <div className="flex items-center gap-3 p-3 bg-[#0C0C0C] rounded-lg">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="1.5">
-                <circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/>
+                <circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" />
               </svg>
               <p className="font-sans text-[#F9F6F2] text-xs opacity-60">No session types added yet.</p>
               <button onClick={() => router.push('/creator-onboarding/step-3')} className="ml-auto text-xs text-[#C8A97E] font-semibold">Add now</button>
@@ -335,11 +335,10 @@ export default function CreatorOnboardingStep7() {
             {next7Days.map((day, i) => (
               <div
                 key={i}
-                className={`rounded-lg p-2 sm:p-3 text-center border transition-all ${
-                  day.enabled
+                className={`rounded-lg p-2 sm:p-3 text-center border transition-all ${day.enabled
                     ? 'bg-[#0C0C0C] border-[#C8A97E]'
                     : 'bg-[#0C0C0C] border-[rgba(200,169,126,0.1)] opacity-40'
-                }`}
+                  }`}
               >
                 <p className={`font-serif text-xs font-semibold ${day.enabled ? 'text-[#C8A97E]' : 'text-[#F9F6F2]'}`}>
                   {day.label}
@@ -361,9 +360,9 @@ export default function CreatorOnboardingStep7() {
             <p className="font-sans text-[#F9F6F2] text-xs sm:text-sm font-semibold opacity-70">
               Completion Checklist
             </p>
-           <span className={`text-xs font-sans px-2.5 py-1 rounded-full bg-[rgba(200,169,126,0.12)] text-[#C8A97E]`}>
-  {CHECKLIST_LABELS.filter(c => checklist?.[c.key]).length} / {CHECKLIST_LABELS.length} complete
-</span>
+            <span className={`text-xs font-sans px-2.5 py-1 rounded-full bg-[rgba(200,169,126,0.12)] text-[#C8A97E]`}>
+              {CHECKLIST_LABELS.filter(c => checklist?.[c.key]).length} / {CHECKLIST_LABELS.length} complete
+            </span>
           </div>
           <div className="space-y-2.5">
             {CHECKLIST_LABELS.map(item => {
@@ -422,7 +421,7 @@ export default function CreatorOnboardingStep7() {
           </div>
           {!allDone && (
             <p className="font-sans text-[#C8A97E] text-xs opacity-60 mt-3 flex items-center gap-1.5">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" /></svg>
               Complete all checklist items to activate your profile.
             </p>
           )}
@@ -439,30 +438,29 @@ export default function CreatorOnboardingStep7() {
               <span className="truncate">{bookingLink}</span>
             </div>
             <button
-  onClick={handleCopyLink}
-  className={`flex-shrink-0 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg font-sans text-xs font-semibold flex items-center gap-1.5 transition-all ${
-    copied
-      ? 'bg-[rgba(200,169,126,0.22)] border border-[rgba(200,169,126,0.6)] text-[#C8A97E]'
-      : 'bg-[rgba(200,169,126,0.12)] border border-[rgba(200,169,126,0.3)] text-[#C8A97E] hover:bg-[rgba(200,169,126,0.2)]'
-  }`}
->
-  {copied ? (
-    <>
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-        <polyline points="20 6 9 17 4 12" />
-      </svg>
-      Copied!
-    </>
-  ) : (
-    <>
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <rect x="9" y="9" width="13" height="13" rx="2" />
-        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-      </svg>
-      Copy
-    </>
-  )}
-</button>
+              onClick={handleCopyLink}
+              className={`flex-shrink-0 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg font-sans text-xs font-semibold flex items-center gap-1.5 transition-all ${copied
+                  ? 'bg-[rgba(200,169,126,0.22)] border border-[rgba(200,169,126,0.6)] text-[#C8A97E]'
+                  : 'bg-[rgba(200,169,126,0.12)] border border-[rgba(200,169,126,0.3)] text-[#C8A97E] hover:bg-[rgba(200,169,126,0.2)]'
+                }`}
+            >
+              {copied ? (
+                <>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  Copied!
+                </>
+              ) : (
+                <>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <rect x="9" y="9" width="13" height="13" rx="2" />
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                  </svg>
+                  Copy
+                </>
+              )}
+            </button>
           </div>
           {/* Share icons */}
           <div className="flex items-center gap-3">
@@ -491,7 +489,7 @@ export default function CreatorOnboardingStep7() {
               className="w-8 h-8 rounded-lg bg-[#0C0C0C] border border-[rgba(200,169,126,0.1)] flex items-center justify-center hover:border-[#C8A97E] transition-all"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="#F9F6F2">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/>
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z" />
               </svg>
             </a>
           </div>
@@ -521,16 +519,15 @@ export default function CreatorOnboardingStep7() {
           <button
             onClick={() => handleGoLive(isActive)}
             disabled={saving}
-            className={`w-full font-serif font-semibold py-3 sm:py-4 px-8 rounded-full text-sm transition-all flex items-center justify-center gap-2 ${
-              isActive && allDone
+            className={`w-full font-serif font-semibold py-3 sm:py-4 px-8 rounded-full text-sm transition-all flex items-center justify-center gap-2 ${isActive && allDone
                 ? 'bg-[#C8A97E] text-[#0C0C0C] hover:opacity-90'
                 : 'bg-[rgba(200,169,126,0.08)] border border-[rgba(200,169,126,0.3)] text-[#C8A97E] hover:border-[#C8A97E]'
-            } disabled:opacity-50`}
+              } disabled:opacity-50`}
           >
             {saving ? (
-              <><svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>Saving…</>
+              <><svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" /></svg>Saving…</>
             ) : isActive && allDone ? (
-              <><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 2L11 13"/><path d="M22 2L15 22L11 13L2 9L22 2Z"/></svg>Go Live Now</>
+              <><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 2L11 13" /><path d="M22 2L15 22L11 13L2 9L22 2Z" /></svg>Go Live Now</>
             ) : (
               'Save as Draft & Go to Dashboard'
             )}
@@ -556,18 +553,16 @@ export default function CreatorOnboardingStep7() {
 function StepItem({ num, label, status }: { num: number; label: string; status: 'completed' | 'active' | 'upcoming' }) {
   return (
     <div className="flex flex-col items-center gap-1.5 sm:gap-2 min-w-[60px] sm:min-w-[80px]">
-      <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-serif text-sm sm:text-base font-semibold transition-all ${
-        status === 'completed' ? 'bg-[#141414] text-[#C8A97E] border border-[#C8A97E]'
-        : status === 'active'  ? 'bg-[#C8A97E] text-[#0C0C0C]'
-        :                        'bg-[#141414] text-[#F9F6F2] border border-[rgba(200,169,126,0.3)] opacity-60'
-      }`}>
+      <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-serif text-sm sm:text-base font-semibold transition-all ${status === 'completed' ? 'bg-[#141414] text-[#C8A97E] border border-[#C8A97E]'
+          : status === 'active' ? 'bg-[#C8A97E] text-[#0C0C0C]'
+            : 'bg-[#141414] text-[#F9F6F2] border border-[rgba(200,169,126,0.3)] opacity-60'
+        }`}>
         {status === 'completed'
           ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="2.5"><polyline points="20 6 9 17 4 12" /></svg>
           : num}
       </div>
-      <span className={`text-[10px] sm:text-xs font-sans font-medium text-center ${
-        status === 'completed' || status === 'active' ? 'text-[#C8A97E]' : 'text-[#F9F6F2] opacity-60'
-      }`}>{label}</span>
+      <span className={`text-[10px] sm:text-xs font-sans font-medium text-center ${status === 'completed' || status === 'active' ? 'text-[#C8A97E]' : 'text-[#F9F6F2] opacity-60'
+        }`}>{label}</span>
     </div>
   );
 }
