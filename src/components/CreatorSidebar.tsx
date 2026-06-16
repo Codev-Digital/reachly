@@ -27,6 +27,8 @@ const CreatorSidebar = ({ active: propActive }: { active?: string }) => {
       setActiveItem('Calendar');
     } else if (pathname?.includes('/creators/bookings')) {
       setActiveItem('Bookings');
+    } else if (pathname?.includes('/creators/booking-links')) {
+      setActiveItem('Booking Links');
     } else if (pathname?.includes('/creators/dashboard')) {
       setActiveItem('Dashboard');
     }

@@ -262,70 +262,74 @@ const CreatorBookings = () => {
               </div>
               
               <div className="relative">
-                <button
-                  onClick={() => {
-                    setShowSessionDropdown(!showSessionDropdown);
-                    setShowStatusDropdown(false);
-                  }}
-                  className="flex items-center justify-between bg-[#141414] border border-[rgba(255,255,255,0.1)] rounded-lg px-4 py-3 text-sm font-sans text-[#F9F6F2] focus:outline-none focus:border-[#C8A97E] w-48"
-                >
-                  {sessionTypeFilter}
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="transform transition-transform">
-                    <polyline points="6 9 12 15 18 9" />
-                  </svg>
-                </button>
-                {showSessionDropdown && (
-                  <div className="absolute top-full left-0 mt-1 bg-[#141414] border border-[rgba(255,255,255,0.1)] rounded-lg w-48 z-10">
-                  {sessionTypes.map((type) => (
                     <button
-                      key={type}
                       onClick={() => {
-                        setSessionTypeFilter(type);
-                        setShowSessionDropdown(false);
-                      }}
-                      className={`w-full text-left px-4 py-2 text-sm font-sans ${
-                        sessionTypeFilter === type ? 'text-[#C8A97E] bg-[rgba(200,169,126,0.1)]' : 'text-[#F9F6F2]'
-                      }`}
-                    >
-                      {type}
-                    </button>
-                  ))}
-                </div>
-                )}
-              </div>
-              
-              <div className="relative">
-                <button
-                  onClick={() => {
-                    setShowStatusDropdown(!showStatusDropdown);
-                    setShowSessionDropdown(false);
-                  }}
-                  className="flex items-center justify-between bg-[#141414] border border-[rgba(255,255,255,0.1)] rounded-lg px-4 py-3 text-sm font-sans text-[#F9F6F2] focus:outline-none focus:border-[#C8A97E] w-40"
-                >
-                  {statusFilter}
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="transform transition-transform">
-                    <polyline points="6 9 12 15 18 9" />
-                  </svg>
-                </button>
-                {showStatusDropdown && (
-                  <div className="absolute top-full left-0 mt-1 bg-[#141414] border border-[rgba(255,255,255,0.1)] rounded-lg w-40 z-10">
-                  {statusOptions.map((status) => (
-                    <button
-                      key={status}
-                      onClick={() => {
-                        setStatusFilter(status);
+                        setShowSessionDropdown(!showSessionDropdown);
                         setShowStatusDropdown(false);
                       }}
-                      className={`w-full text-left px-4 py-2 text-sm font-sans ${
-                        statusFilter === status ? 'text-[#C8A97E] bg-[rgba(200,169,126,0.1)]' : 'text-[#F9F6F2]'
-                      }`}
+                      className="flex items-center justify-between gap-2 bg-[#141414] border border-[rgba(200,169,126,0.3)] text-[#F9F6F2] px-4 py-2 rounded-xl text-sm font-sans min-w-[180px] hover:border-[#C8A97E] transition-all"
                     >
-                      {status}
+                      {sessionTypeFilter}
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polyline points="6 9 12 15 18 9" />
+                      </svg>
                     </button>
-                  ))}
-                </div>
-                )}
-              </div>
+                    {showSessionDropdown && (
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-xl overflow-hidden z-10 shadow-lg">
+                        {sessionTypes.map((type) => (
+                          <button
+                            key={type}
+                            onClick={() => {
+                              setSessionTypeFilter(type);
+                              setShowSessionDropdown(false);
+                            }}
+                            className={`w-full text-left px-4 py-3 text-sm font-sans transition-colors ${
+                              sessionTypeFilter === type
+                                ? 'bg-[#C8A97E] text-[#0C0C0C]'
+                                : 'text-[#F9F6F2] hover:bg-[rgba(200,169,126,0.1)]'
+                            }`}
+                          >
+                            {type}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="relative">
+                    <button
+                      onClick={() => {
+                        setShowStatusDropdown(!showStatusDropdown);
+                        setShowSessionDropdown(false);
+                      }}
+                      className="flex items-center justify-between gap-2 bg-[#141414] border border-[rgba(200,169,126,0.3)] text-[#F9F6F2] px-4 py-2 rounded-xl text-sm font-sans min-w-[140px] hover:border-[#C8A97E] transition-all"
+                    >
+                      {statusFilter}
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polyline points="6 9 12 15 18 9" />
+                      </svg>
+                    </button>
+                    {showStatusDropdown && (
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-xl overflow-hidden z-10 shadow-lg">
+                        {statusOptions.map((status) => (
+                          <button
+                            key={status}
+                            onClick={() => {
+                              setStatusFilter(status);
+                              setShowStatusDropdown(false);
+                            }}
+                            className={`w-full text-left px-4 py-3 text-sm font-sans transition-colors ${
+                              statusFilter === status
+                                ? 'bg-[#C8A97E] text-[#0C0C0C]'
+                                : 'text-[#F9F6F2] hover:bg-[rgba(200,169,126,0.1)]'
+                            }`}
+                          >
+                            {status}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
             </div>
 
             {/* Selection Bar */}
