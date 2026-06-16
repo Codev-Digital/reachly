@@ -257,7 +257,7 @@ const CreatorAnalytics = () => {
                           </div>
                           <div className="text-right">
                             <p className="font-sans text-sm text-[#F9F6F2]">Avg</p>
-                            <p className="font-serif text-xl font-bold text-[#F9F6F2]">4.2</p>
+                            <p className="font-serif text-xl font-bold text-[#C8A97E]">4.2</p>
                           </div>
                         </div>
                       </div>
@@ -270,7 +270,7 @@ const CreatorAnalytics = () => {
                           </div>
                           <div className="text-right">
                             <p className="font-sans text-sm text-[#F9F6F2]">Avg</p>
-                            <p className="font-serif text-xl font-bold text-[#F9F6F2]">6.5%</p>
+                            <p className="font-serif text-xl font-bold text-[#C8A97E]">6.5%</p>
                           </div>
                         </div>
                       </div>
@@ -283,7 +283,7 @@ const CreatorAnalytics = () => {
                           </div>
                           <div className="text-right">
                             <p className="font-sans text-sm text-[#F9F6F2]">Avg</p>
-                            <p className="font-serif text-xl font-bold text-[#F9F6F2]">PKR 1,200</p>
+                            <p className="font-serif text-xl font-bold text-[#C8A97E]">PKR 1,200</p>
                           </div>
                         </div>
                       </div>
@@ -566,74 +566,72 @@ const CreatorAnalytics = () => {
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.4 }}
-                className="space-y-6"
               >
-                {/* Earnings Overview Chart */}
+                {/* Followers by City, Highlight Stats, Performance Comparison */}
                 <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-2xl p-6">
-                  <div className="flex items-center justify-between mb-5">
-                    <div>
-                      <h3 className="font-serif text-xl font-bold text-[#F9F6F2] mb-1">Earnings Overview</h3>
-                      <p className="font-sans text-xs text-[#F9F6F2] opacity-60">Total PKR 54,842 - Daily average PKR 1,028</p>
+                  <h3 className="font-serif text-xl font-bold text-[#C8A97E] mb-5">Followers by City</h3>
+                  
+                  {/* Highlight Stats */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div className="p-5 bg-[rgba(255,255,255,0.02)] rounded-xl border border-[rgba(200,169,126,0.15)]">
+                      <p className="font-sans text-sm text-[#F9F6F2] opacity-60 mb-1">Highest Revenue Day</p>
+                      <p className="font-serif text-xl font-bold text-[#C8A97E] mb-1">PKR 7,200</p>
+                      <p className="font-sans text-xs text-[#F9F6F2] opacity-60">2026-04-15</p>
                     </div>
-                    <div className="flex gap-2">
-                      {['7 days', '30 days', '90 days', 'Month', 'Year'].map((period, idx) => (
-                        <button
-                          key={idx}
-                          className={`px-3 py-1 rounded-full text-xs font-sans ${
-                            period === '30 days'
-                              ? 'bg-[rgba(200,169,126,0.15)] text-[#C8A97E]'
-                              : 'bg-[rgba(255,255,255,0.05)] text-[#F9F6F2] opacity-70'
-                          }`}
-                        >
-                          {period}
-                        </button>
-                      ))}
+                    <div className="p-5 bg-[rgba(255,255,255,0.02)] rounded-xl border border-[rgba(200,169,126,0.15)]">
+                      <p className="font-sans text-sm text-[#F9F6F2] opacity-60 mb-1">Most Booked Session</p>
+                      <p className="font-serif text-xl font-bold text-[#C8A97E] mb-1">Style Consultation</p>
+                      <p className="font-sans text-xs text-[#F9F6F2] opacity-60">47 total bookings</p>
+                    </div>
+                    <div className="p-5 bg-[rgba(255,255,255,0.02)] rounded-xl border border-[rgba(200,169,126,0.15)]">
+                      <p className="font-sans text-sm text-[#F9F6F2] opacity-60 mb-1">Average Session Value</p>
+                      <p className="font-serif text-xl font-bold text-[#C8A97E]">PKR 1,654</p>
                     </div>
                   </div>
 
-                  <div className="relative h-48 rounded-xl overflow-hidden">
-                    <svg viewBox="0 0 800 150" className="w-full h-full">
-                      <path
-                        d="M0,120 Q100,100 200,110 T400,70 T600,90 T800,60"
-                        fill="none"
-                        stroke="#C8A97E"
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                  </div>
-                </div>
-
-                {/* Session Type Earnings */}
-                <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-2xl p-6">
-                  <h3 className="font-serif text-2xl font-bold text-[#C8A97E] mb-7">Earnings by Session Type</h3>
-
-                  <div className="space-y-7">
-                    {[
-                      { name: 'Style Consultation', revenue: 'PKR 98,400', bookings: 82, percent: 75, highlight: false },
-                      { name: 'Confidence Coaching', revenue: 'PKR 102,300', bookings: 57, percent: 100, highlight: true },
-                      { name: 'Content Strategy', revenue: 'PKR 86,800', bookings: 35, percent: 65, highlight: false },
-                    ].map((item, idx) => (
-                      <div key={idx}>
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-4">
-                            <span className="font-sans text-lg text-[#F9F6F2]">{item.name}</span>
-                            {item.highlight && (
-                              <span className="font-sans text-base text-[#C8A97E] font-semibold">Best Performing</span>
-                            )}
+                  <div className="border-t border-[rgba(255,255,255,0.05)] pt-6">
+                    <h4 className="font-serif text-lg font-bold text-[#C8A97E] mb-5">Your Performance vs Category Average</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="p-5 bg-[rgba(255,255,255,0.02)] rounded-xl border border-[rgba(200,169,126,0.15)]">
+                        <p className="font-sans text-sm text-[#F9F6F2] opacity-60 mb-3">Rating</p>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-sans text-sm text-[#F9F6F2]">You</p>
+                            <p className="font-serif text-xl font-bold text-[#C8A97E]">4.8</p>
                           </div>
-                          <span className="font-sans text-lg text-[#F9F6F2]">{item.revenue} · {item.bookings} bookings</span>
-                        </div>
-                        <div className="relative h-3.5 bg-[rgba(255,255,255,0.05)] rounded-full overflow-hidden">
-                          <div
-                            className="absolute left-0 top-0 bottom-0 bg-[#C8A97E] rounded-full flex items-center justify-end"
-                            style={{ width: `${item.percent}%` }}
-                          >
-                            <div className="w-5 h-5 bg-[#C8A97E] rounded-full border-3 border-[#141414]"></div>
+                          <div className="text-right">
+                            <p className="font-sans text-sm text-[#F9F6F2]">Avg</p>
+                            <p className="font-serif text-xl font-bold text-[#F9F6F2]">4.2</p>
                           </div>
                         </div>
                       </div>
-                    ))}
+                      <div className="p-5 bg-[rgba(255,255,255,0.02)] rounded-xl border border-[rgba(200,169,126,0.15)]">
+                        <p className="font-sans text-sm text-[#F9F6F2] opacity-60 mb-3">Conversion Rate</p>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-sans text-sm text-[#F9F6F2]">You</p>
+                            <p className="font-serif text-xl font-bold text-[#C8A97E]">9.9%</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-sans text-sm text-[#F9F6F2]">Avg</p>
+                            <p className="font-serif text-xl font-bold text-[#F9F6F2]">6.5%</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-5 bg-[rgba(255,255,255,0.02)] rounded-xl border border-[rgba(200,169,126,0.15)]">
+                        <p className="font-sans text-sm text-[#F9F6F2] opacity-60 mb-3">Avg Price</p>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-sans text-sm text-[#F9F6F2]">You</p>
+                            <p className="font-serif text-xl font-bold text-[#C8A97E]">PKR 1,654</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-sans text-sm text-[#F9F6F2]">Avg</p>
+                            <p className="font-serif text-xl font-bold text-[#F9F6F2]">PKR 1,200</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </motion.div>
