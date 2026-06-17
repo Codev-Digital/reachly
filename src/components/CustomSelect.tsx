@@ -68,7 +68,7 @@ export default function CustomSelect({
 
       {isOpen && (
         <div className="absolute top-full left-0 right-0 mt-1 bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-xl overflow-hidden z-50 shadow-2xl">
-          <div className="max-h-60 overflow-y-auto">
+         <div className="max-h-60 overflow-y-auto custom-scrollbar">
             {options.map((option) => (
               <button
                 key={option.value}

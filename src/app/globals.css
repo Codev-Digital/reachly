@@ -79,6 +79,31 @@ input[type="range"]::-webkit-slider-thumb {
   border-radius: 9999px;
 }
 
+/* Themed scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #141414;
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #C8A97E;
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #b89660;
+}
+
+/* Firefox */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #C8A97E #141414;
+}
+
 .text-white {
   color: var(--color-text-white);
 }
