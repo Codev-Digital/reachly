@@ -40,7 +40,12 @@ export async function middleware(request: NextRequest) {
 
   // Read JWT — try both possible secret env var names
   const secret = process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET;
-  const token = await getToken({ req: request, secret });
+  const secureCookie =
+    process.env.NODE_ENV === 'production' ||
+    request.nextUrl.protocol === 'https:' ||
+    request.headers.get('x-forwarded-proto') === 'https';
+
+  const token = await getToken({ req: request, secret, secureCookie });
 
   const isLoggedIn = !!token;
   const isComplete = !!(token as any)?.isRegistrationComplete;
