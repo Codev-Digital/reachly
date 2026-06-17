@@ -3,7 +3,11 @@
 import { motion } from 'framer-motion';
 import CreatorNavbar from '@/components/CreatorNavbar';
 import CreatorSidebar from '@/components/CreatorSidebar';
+import CustomSelect from '@/components/CustomSelect';
 import { useState } from 'react';
+
+type DayKey = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
+interface TimeBlock { start: string; end: string }
 
 const CreatorAvailability = () => {
   const [activeTab, setActiveTab] = useState('Weekly Schedule');
@@ -18,14 +22,50 @@ const CreatorAvailability = () => {
     { id: 1, date: 'Sat, 6 Jun 2026', startTime: '7:00 AM', endTime: '9:00 AM', reason: 'Early morning special!' },
     { id: 2, date: 'Sat, 6 Jun 2026', startTime: '7:00 AM', endTime: '9:00 AM', reason: 'Early morning special!' },
   ]);
-  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  
+  const days: DayKey[] = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+  const dayLabels: Record<DayKey, string> = {
+    monday: 'Monday',
+    tuesday: 'Tuesday',
+    wednesday: 'Wednesday',
+    thursday: 'Thursday',
+    friday: 'Friday',
+    saturday: 'Saturday',
+    sunday: 'Sunday',
+  };
 
   const timeOptions = [
     '12:00 AM', '01:00 AM', '02:00 AM', '03:00 AM', '04:00 AM', '05:00 AM',
     '06:00 AM', '07:00 AM', '08:00 AM', '09:00 AM', '10:00 AM', '11:00 AM',
     '12:00 PM', '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM', '05:00 PM',
     '06:00 PM', '07:00 PM', '08:00 PM', '09:00 PM', '10:00 PM', '11:00 PM'
-  ];
+  ].map(t => ({ value: t, label: t }));
+
+  const [weeklySchedule, setWeeklySchedule] = useState<Record<DayKey, TimeBlock[]>>({
+    monday: [{ start: '09:00 AM', end: '05:00 PM' }, { start: '06:00 PM', end: '08:00 PM' }],
+    tuesday: [{ start: '09:00 AM', end: '05:00 PM' }, { start: '06:00 PM', end: '08:00 PM' }],
+    wednesday: [{ start: '09:00 AM', end: '05:00 PM' }, { start: '06:00 PM', end: '08:00 PM' }],
+    thursday: [{ start: '09:00 AM', end: '05:00 PM' }, { start: '06:00 PM', end: '08:00 PM' }],
+    friday: [{ start: '09:00 AM', end: '05:00 PM' }, { start: '06:00 PM', end: '08:00 PM' }],
+    saturday: [{ start: '09:00 AM', end: '05:00 PM' }, { start: '06:00 PM', end: '08:00 PM' }],
+    sunday: [{ start: '09:00 AM', end: '05:00 PM' }, { start: '06:00 PM', end: '08:00 PM' }],
+  });
+
+  const updateTimeBlock = (day: DayKey, index: number, field: keyof TimeBlock, value: string) => {
+    setWeeklySchedule(prev => ({
+      ...prev,
+      [day]: prev[day].map((block, i) => 
+        i === index ? { ...block, [field]: value } : block
+      )
+    }));
+  };
+
+  const [slotModalData, setSlotModalData] = useState({
+    date: '',
+    startTime: '09:00 AM',
+    endTime: '10:00 AM',
+    reason: '',
+  });
 
   return (
     <div className="min-h-screen bg-[#0C0C0C] pb-12">
@@ -113,7 +153,7 @@ const CreatorAvailability = () => {
                   {days.map((day, index) => (
                     <div key={day} className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-2xl p-7">
                       <div className="flex items-center gap-5 mb-6">
-                        <h3 className="font-serif text-2xl font-bold text-[#F9F6F2]">{day}</h3>
+                        <h3 className="font-serif text-2xl font-bold text-[#F9F6F2]">{dayLabels[day]}</h3>
                         <div className="flex items-center gap-3">
                           <div className="w-12 h-7 bg-[rgba(200,169,126,0.3)] rounded-full relative">
                             <div className="absolute right-1 top-1 w-5 h-5 bg-[#C8A97E] rounded-full" />
@@ -122,83 +162,42 @@ const CreatorAvailability = () => {
                         </div>
                       </div>
 
-                      <div className="flex flex-col items-center gap-4">
-                        {/* Time Block 1 */}
-                        <div className="flex flex-wrap items-center gap-2 w-full">
-                          <div className="relative flex-1 min-w-[120px]">
-                            <select className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-xl px-3 py-3 text-[#F9F6F2] text-sm font-sans outline-none appearance-none pr-8 w-full">
-                              {timeOptions.map((time, i) => (
-                                <option key={i} value={time}>{time}</option>
-                              ))}
-                            </select>
-                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="2">
-                                <polyline points="6 9 12 15 18 9" />
-                              </svg>
+                      <div className="flex flex-col items-center gap-3 w-full">
+                        {weeklySchedule[day].map((block, blockIndex) => (
+                            <div key={blockIndex} className="flex items-center gap-3 w-full">
+                              <CustomSelect
+                                value={block.start}
+                                options={timeOptions}
+                                onChange={(val) => updateTimeBlock(day, blockIndex, 'start', val)}
+                                buttonBg="#0C0C0C"
+                                textSize="text-sm"
+                                iconColor="#C8A97E"
+                                buttonClassName="rounded-xl px-4 py-3"
+                              />
+                              <span className="text-sm font-sans text-[#F9F6F2] opacity-70">to</span>
+                              <CustomSelect
+                                value={block.end}
+                                options={timeOptions}
+                                onChange={(val) => updateTimeBlock(day, blockIndex, 'end', val)}
+                                buttonBg="#0C0C0C"
+                                textSize="text-sm"
+                                iconColor="#C8A97E"
+                                buttonClassName="rounded-xl px-4 py-3"
+                              />
+                              <button className="text-[#F9F6F2] opacity-40 hover:opacity-100 ml-2">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <line x1="18" y1="6" x2="6" y2="18" />
+                                  <line x1="6" y1="6" x2="18" y2="18" />
+                                </svg>
+                              </button>
                             </div>
-                          </div>
-                          <span className="text-sm font-sans text-[#F9F6F2] opacity-70">to</span>
-                          <div className="relative flex-1 min-w-[120px]">
-                            <select className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-xl px-3 py-3 text-[#F9F6F2] text-sm font-sans outline-none appearance-none pr-8 w-full">
-                              {timeOptions.map((time, i) => (
-                                <option key={i} value={time}>{time}</option>
-                              ))}
-                            </select>
-                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="2">
-                                <polyline points="6 9 12 15 18 9" />
-                              </svg>
-                            </div>
-                          </div>
-                          <button className="text-[#F9F6F2] opacity-50 hover:opacity-100">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <line x1="18" y1="6" x2="6" y2="18" />
-                              <line x1="6" y1="6" x2="18" y2="18" />
-                            </svg>
-                          </button>
-                        </div>
-
-                        {/* Time Block 2 */}
-                        <div className="flex flex-wrap items-center gap-2 w-full">
-                          <div className="relative flex-1 min-w-[120px]">
-                            <select className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-xl px-3 py-3 text-[#F9F6F2] text-sm font-sans outline-none appearance-none pr-8 w-full">
-                              {timeOptions.map((time, i) => (
-                                <option key={i} value={time}>{time}</option>
-                              ))}
-                            </select>
-                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="2">
-                                <polyline points="6 9 12 15 18 9" />
-                              </svg>
-                            </div>
-                          </div>
-                          <span className="text-sm font-sans text-[#F9F6F2] opacity-70">to</span>
-                          <div className="relative flex-1 min-w-[120px]">
-                            <select className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-xl px-3 py-3 text-[#F9F6F2] text-sm font-sans outline-none appearance-none pr-8 w-full">
-                              {timeOptions.map((time, i) => (
-                                <option key={i} value={time}>{time}</option>
-                              ))}
-                            </select>
-                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="2">
-                                <polyline points="6 9 12 15 18 9" />
-                              </svg>
-                            </div>
-                          </div>
-                          <button className="text-[#F9F6F2] opacity-50 hover:opacity-100">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <line x1="18" y1="6" x2="6" y2="18" />
-                              <line x1="6" y1="6" x2="18" y2="18" />
-                            </svg>
-                          </button>
-                        </div>
-
-                        <button className="flex items-center gap-2 mt-2 text-sm font-sans text-[#C8A97E]">
+                          ))}
+                        <button className="w-full flex items-center justify-center gap-2 mt-3 text-sm font-sans text-[#C8A97E] py-3 border border-dashed border-[rgba(200,169,126,0.3)] rounded-xl hover:opacity-80 transition-opacity">
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <line x1="12" y1="5" x2="12" y2="19" />
                             <line x1="5" y1="12" x2="19" y2="12" />
                           </svg>
-                          Add another time block
+                          + Add time block
                         </button>
                       </div>
                     </div>
@@ -492,32 +491,18 @@ const CreatorAvailability = () => {
                     <h3 className="font-serif text-lg font-bold text-[#C8A97E] mb-3">Timezone</h3>
                     <p className="font-sans text-sm text-[#F9F6F2] opacity-70 mb-4">All your availability times will be shown in this timezone.</p>
 
-                    <style jsx>{`
-                      select {
-                        color: #F9F6F2;
-                      }
-                      select option {
-                        background-color: #141414;
-                        color: #F9F6F2;
-                        padding: 8px 12px;
-                      }
-                      select option:checked {
-                        background-color: #C8A97E;
-                        color: #0C0C0C;
-                      }
-                      select option:hover {
-                        background-color: rgba(200,169,126,0.2);
-                      }
-                    `}</style>
-
-                    <select className="w-full bg-[rgba(255,255,255,0.03)] border border-[rgba(200,169,126,0.2)] rounded-xl px-4 py-3 text-sm font-sans outline-none">
-                      <option value="pkt">Pakistan Standard Time (PKT, UTC+5)</option>
-                      <option value="ist">India Standard Time (IST, UTC+5:30)</option>
-                      <option value="gst">Gulf Standard Time (GST, UTC+4)</option>
-                      <option value="ast">Arabian Standard Time (AST, UTC+3)</option>
-                      <option value="utc">Coordinated Universal Time (UTC+0)</option>
-                      <option value="eet">Eastern European Time (EET, UTC+2)</option>
-                    </select>
+                    <CustomSelect
+                      value="pkt"
+                      options={[
+                        { value: 'pkt', label: 'Pakistan Standard Time (PKT, UTC+5)' },
+                        { value: 'ist', label: 'India Standard Time (IST, UTC+5:30)' },
+                        { value: 'gst', label: 'Gulf Standard Time (GST, UTC+4)' },
+                        { value: 'ast', label: 'Arabian Standard Time (AST, UTC+3)' },
+                        { value: 'utc', label: 'Coordinated Universal Time (UTC+0)' },
+                        { value: 'eet', label: 'Eastern European Time (EET, UTC+2)' },
+                      ]}
+                      onChange={() => {}}
+                    />
                   </div>
 
                   <div className="flex justify-end">
@@ -631,20 +616,20 @@ const CreatorAvailability = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="text-sm font-sans text-[#F9F6F2] opacity-70 mb-2 block">Start Time</label>
-                      <select className="w-full bg-[rgba(255,255,255,0.03)] border border-[rgba(200,169,126,0.2)] rounded-xl px-4 py-3 text-[#F9F6F2] text-base font-sans outline-none">
-                        {timeOptions.map((time, i) => (
-                          <option key={i} value={time}>{time}</option>
-                        ))}
-                      </select>
+                      <CustomSelect
+                        value={slotModalData.startTime}
+                        options={timeOptions}
+                        onChange={(val) => setSlotModalData(prev => ({ ...prev, startTime: val }))}
+                      />
                     </div>
 
                     <div>
                       <label className="text-sm font-sans text-[#F9F6F2] opacity-70 mb-2 block">End Time</label>
-                      <select className="w-full bg-[rgba(255,255,255,0.03)] border border-[rgba(200,169,126,0.2)] rounded-xl px-4 py-3 text-[#F9F6F2] text-base font-sans outline-none">
-                        {timeOptions.map((time, i) => (
-                          <option key={i} value={time}>{time}</option>
-                        ))}
-                      </select>
+                      <CustomSelect
+                        value={slotModalData.endTime}
+                        options={timeOptions}
+                        onChange={(val) => setSlotModalData(prev => ({ ...prev, endTime: val }))}
+                      />
                     </div>
                   </div>
 

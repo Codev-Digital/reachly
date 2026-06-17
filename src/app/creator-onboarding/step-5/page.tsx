@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import CreatorNavbar from '@/components/CreatorNavbar';
+import CustomSelect from '@/components/CustomSelect';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type DayKey = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
@@ -294,37 +295,37 @@ export default function CreatorOnboardingStep5() {
 
                       {/* Time slots (only if enabled) */}
                       {ds.enabled && (
-                        <div className="px-3 sm:px-4 pb-3 space-y-2">
+                        <div className="px-3 sm:px-4 pb-3 space-y-3">
                           {ds.slots.map((slot, idx) => (
-                            <div key={idx} className="flex items-center gap-2">
+                            <div key={idx} className="flex items-center gap-3 w-full">
                               {/* Start time */}
-                              <select
+                              <CustomSelect
                                 value={slot.start}
-                                onChange={e => updateSlot(day, idx, 'start', e.target.value)}
-                                className="flex-1 bg-[#0C0C0C] border border-[rgba(200,169,126,0.2)] rounded-lg px-2 py-1.5 font-sans text-white text-xs focus:outline-none focus:border-[#C8A97E]"
-                              >
-                                {TIME_OPTIONS.map(t => (
-                                  <option key={t} value={t}>{formatTime(t)}</option>
-                                ))}
-                              </select>
-                              <span className="font-sans text-[#F9F6F2] text-xs opacity-60 flex-shrink-0">to</span>
+                                options={TIME_OPTIONS.map(t => ({ value: t, label: formatTime(t) }))}
+                                onChange={(val) => updateSlot(day, idx, 'start', val)}
+                                buttonBg="#0C0C0C"
+                                textSize="text-sm"
+                                iconColor="#C8A97E"
+                                buttonClassName="rounded-lg px-4 py-3"
+                              />
+                              <span className="font-sans text-[#F9F6F2] text-sm opacity-70 flex-shrink-0">to</span>
                               {/* End time */}
-                              <select
+                              <CustomSelect
                                 value={slot.end}
-                                onChange={e => updateSlot(day, idx, 'end', e.target.value)}
-                                className="flex-1 bg-[#0C0C0C] border border-[rgba(200,169,126,0.2)] rounded-lg px-2 py-1.5 font-sans text-white text-xs focus:outline-none focus:border-[#C8A97E]"
-                              >
-                                {TIME_OPTIONS.filter(t => t > slot.start).map(t => (
-                                  <option key={t} value={t}>{formatTime(t)}</option>
-                                ))}
-                              </select>
+                                options={TIME_OPTIONS.filter(t => t > slot.start).map(t => ({ value: t, label: formatTime(t) }))}
+                                onChange={(val) => updateSlot(day, idx, 'end', val)}
+                                buttonBg="#0C0C0C"
+                                textSize="text-sm"
+                                iconColor="#C8A97E"
+                                buttonClassName="rounded-lg px-4 py-3"
+                              />
                               {/* Remove slot (only if more than 1) */}
                               {ds.slots.length > 1 && (
                                 <button
                                   onClick={() => removeSlot(day, idx)}
-                                  className="flex-shrink-0 text-[#F9F6F2] opacity-30 hover:opacity-70 hover:text-red-400 transition-all"
+                                  className="flex-shrink-0 text-[#F9F6F2] opacity-40 hover:opacity-80 hover:text-red-400 transition-all ml-2"
                                 >
-                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                     <path d="M18 6L6 18M6 6l12 12" />
                                   </svg>
                                 </button>
@@ -334,12 +335,12 @@ export default function CreatorOnboardingStep5() {
                           {/* Add time block button */}
                           <button
                             onClick={() => addSlot(day)}
-                            className="w-full flex items-center justify-center gap-1.5 text-[#C8A97E] text-xs font-sans py-1.5 hover:opacity-80 transition-opacity border border-dashed border-[rgba(200,169,126,0.2)] rounded-lg mt-1"
+                            className="w-full flex items-center justify-center gap-2 text-[#C8A97E] text-sm font-sans py-3 hover:opacity-80 transition-opacity border border-dashed border-[rgba(200,169,126,0.3)] rounded-xl mt-2"
                           >
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="2">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="2">
                               <path d="M12 5v14M5 12h14" />
                             </svg>
-                            Add time block
+                            + Add time block
                           </button>
                         </div>
                       )}
@@ -437,30 +438,35 @@ export default function CreatorOnboardingStep5() {
             <div className="bg-[#141414] border border-[rgba(200,169,126,0.15)] rounded-xl p-4 sm:p-5">
               <h3 className="font-serif text-sm font-semibold text-[#F9F6F2] mb-4">Booking Settings</h3>
               <div className="space-y-4">
-                <div>
-                  <label className="block font-sans text-[#F9F6F2] text-xs font-semibold mb-2">Buffer between bookings</label>
-                  <select
-                    value={bufferMinutes}
-                    onChange={e => setBuffer(Number(e.target.value))}
-                    className="w-full bg-[#0C0C0C] border border-[rgba(200,169,126,0.15)] rounded-lg px-3 py-2 font-sans text-white text-xs focus:outline-none focus:border-[#C8A97E]"
-                  >
-                    {BUFFER_OPTIONS.map(v => <option key={v} value={v}>{v === 0 ? 'No buffer' : `${v} minutes`}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-sans text-[#F9F6F2] text-xs font-semibold mb-2">Time zone</label>
-                  <select
-                    value={timezone}
-                    onChange={e => setTimezone(e.target.value)}
-                    className="w-full bg-[#0C0C0C] border border-[rgba(200,169,126,0.15)] rounded-lg px-3 py-2 font-sans text-white text-xs focus:outline-none focus:border-[#C8A97E]"
-                  >
-                    <option value="Asia/Karachi">Pakistan Standard Time (PKT)</option>
-                    <option value="UTC">UTC</option>
-                    <option value="Asia/Dubai">Gulf Standard Time (GST)</option>
-                    <option value="Europe/London">Greenwich Mean Time (GMT)</option>
-                    <option value="America/New_York">Eastern Time (ET)</option>
-                  </select>
-                </div>
+                <CustomSelect
+                  label="Buffer between bookings"
+                  value={String(bufferMinutes)}
+                  options={BUFFER_OPTIONS.map(v => ({ 
+                    value: String(v), 
+                    label: v === 0 ? 'No buffer' : `${v} minutes` 
+                  }))}
+                  onChange={(val) => setBuffer(Number(val))}
+                  buttonBg="#0C0C0C"
+                  textSize="text-xs"
+                  iconColor="#F9F6F2"
+                  buttonClassName="rounded-lg"
+                />
+                <CustomSelect
+                  label="Time zone"
+                  value={timezone}
+                  options={[
+                    { value: 'Asia/Karachi', label: 'Pakistan Standard Time (PKT)' },
+                    { value: 'UTC', label: 'UTC' },
+                    { value: 'Asia/Dubai', label: 'Gulf Standard Time (GST)' },
+                    { value: 'Europe/London', label: 'Greenwich Mean Time (GMT)' },
+                    { value: 'America/New_York', label: 'Eastern Time (ET)' }
+                  ]}
+                  onChange={setTimezone}
+                  buttonBg="#0C0C0C"
+                  textSize="text-xs"
+                  iconColor="#F9F6F2"
+                  buttonClassName="rounded-lg"
+                />
               </div>
             </div>
 
@@ -471,26 +477,30 @@ export default function CreatorOnboardingStep5() {
                 <div>
                   <label className="block font-sans text-[#F9F6F2] text-xs font-semibold mb-2">Followers can book up to</label>
                   <div className="flex items-center gap-2">
-                    <select
-                      value={bookingWindowDays}
-                      onChange={e => setWindow(Number(e.target.value))}
-                      className="bg-[#0C0C0C] border border-[rgba(200,169,126,0.15)] rounded-lg px-3 py-2 font-sans text-white text-xs focus:outline-none focus:border-[#C8A97E]"
-                    >
-                      {WINDOW_OPTIONS.map(v => <option key={v} value={v}>{v}</option>)}
-                    </select>
+                    <CustomSelect
+                      value={String(bookingWindowDays)}
+                      options={WINDOW_OPTIONS.map(v => ({ value: String(v), label: String(v) }))}
+                      onChange={(val) => setWindow(Number(val))}
+                      buttonBg="#0C0C0C"
+                      textSize="text-xs"
+                      iconColor="#F9F6F2"
+                      buttonClassName="rounded-lg"
+                    />
                     <span className="font-sans text-[#F9F6F2] text-xs opacity-60">days ahead</span>
                   </div>
                 </div>
                 <div>
                   <label className="block font-sans text-[#F9F6F2] text-xs font-semibold mb-2">Minimum notice required</label>
                   <div className="flex items-center gap-2">
-                    <select
-                      value={minNoticeHours}
-                      onChange={e => setNotice(Number(e.target.value))}
-                      className="bg-[#0C0C0C] border border-[rgba(200,169,126,0.15)] rounded-lg px-3 py-2 font-sans text-white text-xs focus:outline-none focus:border-[#C8A97E]"
-                    >
-                      {NOTICE_OPTIONS.map(v => <option key={v} value={v}>{v}</option>)}
-                    </select>
+                    <CustomSelect
+                      value={String(minNoticeHours)}
+                      options={NOTICE_OPTIONS.map(v => ({ value: String(v), label: String(v) }))}
+                      onChange={(val) => setNotice(Number(val))}
+                      buttonBg="#0C0C0C"
+                      textSize="text-xs"
+                      iconColor="#F9F6F2"
+                      buttonClassName="rounded-lg"
+                    />
                     <span className="font-sans text-[#F9F6F2] text-xs opacity-60">hours before</span>
                   </div>
                 </div>
