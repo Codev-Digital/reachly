@@ -168,8 +168,8 @@ export default function UserPayments() {
                           <td className="px-4 py-3">
                             <span className={`px-2.5 py-1 rounded-full text-xs font-sans ${
                               payment.status === 'Paid' 
-                                ? ' text-[#F9F6F2]' 
-                                : ' text-[#F871F2]'
+                                ? 'bg-[rgba(52,211,153,0.1)] text-[#34d399]' 
+                                : 'bg-[rgba(248,113,113,0.1)] text-[#f87171]'
                             }`}>
                               {payment.status}
                             </span>

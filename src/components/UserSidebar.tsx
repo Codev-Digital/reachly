@@ -25,7 +25,7 @@ export default function UserSidebar({
   ];
 
   const SidebarContent = () => (
-    <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-2xl p-6 w-64 h-full">
+    <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-2xl p-6 w-64 max-h-[calc(100vh-12rem)]">
       <div className="mb-6">
         <h3 className="font-serif text-lg font-semibold text-[#C8A97E] mb-1">Main Menu</h3>
       </div>
@@ -67,7 +67,7 @@ export default function UserSidebar({
   return (
     <>
       {/* Desktop sidebar */}
-      <div className="hidden lg:block">
+      <div className="hidden lg:block sticky top-24">
         <SidebarContent />
       </div>
 
