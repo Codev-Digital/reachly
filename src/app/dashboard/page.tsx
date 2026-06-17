@@ -17,22 +17,22 @@ export default function DashboardPage() {
             <div className="mb-10 sm:mb-12 lg:mb-16">
               <Logo />
             </div>
-            
+
             <div className="max-w-md mx-auto w-full">
               <p className="font-sans text-[#C8A97E] text-xs sm:text-sm font-medium mb-3 sm:mb-4 text-center">What brings you here today?</p>
-              
+
               <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-[#C8A97E] mb-3 sm:mb-4 text-center">
                 Welcome!
               </h1>
               <p className="font-sans text-[#F9F6F2] text-base sm:text-lg mb-6 sm:mb-8 px-4 text-center">
                 Choose your path below.
               </p>
-              
+
               {/* Path Options */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-8 sm:mb-10">
-                <div 
+                <div
                   className="bg-[#141414] border border-[rgba(200,169,126,0.15)] rounded-lg p-5 cursor-pointer hover:border-opacity-50 transition-all"
-                  onClick={() => router.push('/welcome')}
+                  onClick={() => router.push('/user/dashboard')}
                 >
                   <div className="space-y-4">
                     <div className="w-12 h-12 rounded-full border border-[rgba(200,169,126,0.3)] flex items-center justify-center">
@@ -54,7 +54,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                <div 
+                <div
                   className="bg-[#141414] border border-[rgba(200,169,126,0.15)] rounded-lg p-5 cursor-pointer hover:border-opacity-50 transition-all"
                   onClick={() => router.push('/creator-onboarding/step-1')}
                 >
@@ -96,7 +96,7 @@ export default function DashboardPage() {
               <HeroImage />
             </div>
           </div>
-          
+
           {/* Mobile Hero Image - Visible only on mobile */}
           <div className="block md:hidden mt-6">
             <div className="h-[350px] rounded-[20px] overflow-hidden">

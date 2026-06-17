@@ -36,7 +36,7 @@ export default function WelcomePage() {
               {/* Book sessions card */}
               <div
                 className="bg-[#141414] border border-[rgba(200,169,126,0.15)] rounded-lg p-5 sm:p-6 md:p-8 cursor-pointer hover:border-[rgba(200,169,126,0.5)] transition-all"
-                onClick={() => router.push('/signup?type=user')}
+                onClick={() => router.push('/user/dashboard')}
               >
                 <div className="space-y-4 sm:space-y-6">
                   <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full border border-[rgba(200,169,126,0.3)] flex items-center justify-center">

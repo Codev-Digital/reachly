@@ -15,7 +15,7 @@ function SignupForm() {
   const userType =
     searchParams.get('type') ||
     (callbackUrl.startsWith('/creator-onboarding') ? 'creator' : 'user');
-  
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -57,14 +57,14 @@ function SignupForm() {
       <div className="mb-8 sm:mb-10 lg:mb-12">
         <Logo />
       </div>
-      
+
       <div className="mb-8 sm:mb-10 lg:mb-12">
         <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-3 sm:mb-4">
           Create your account
         </h1>
         <p className="font-sans text-[#F9F6F2] text-sm sm:text-base">
-          {userType === 'creator' 
-            ? 'Join as a creator and start sharing your knowledge' 
+          {userType === 'creator'
+            ? 'Join as a creator and start sharing your knowledge'
             : 'Join to book sessions with amazing creators'}
         </p>
       </div>
@@ -123,7 +123,7 @@ function SignupForm() {
 
       {/* Social Buttons */}
       <div className="space-y-3 mt-6 sm:mt-8 max-w-md">
-        <button 
+        <button
           onClick={handleGoogleSignIn}
           className="w-full bg-[#141414] border border-[rgba(200,169,126,0.15)] rounded-lg py-2.5 sm:py-3 px-3 sm:px-4 font-sans text-[#F9F6F2] text-xs sm:text-sm flex items-center justify-center gap-2 hover:border-opacity-50 transition-all"
         >
@@ -166,14 +166,14 @@ export default function SignupPage() {
           <Suspense fallback={null}>
             <SignupForm />
           </Suspense>
-          
+
           {/* Right Side - Hero Image - Visible on tablets and larger */}
           <div className="hidden md:block lg:block">
             <div className="h-full min-h-[400px] md:min-h-[600px] lg:min-h-[800px]">
               <HeroImage />
             </div>
           </div>
-          
+
           {/* Mobile Hero Image - Visible only on mobile */}
           <div className="block md:hidden mt-6">
             <div className="h-[350px] rounded-[20px] overflow-hidden">
