@@ -98,6 +98,33 @@ export default function BookSessionStep2() {
               </div>
             )}
 
+            {/* Payment Security Icons */}
+            <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-xl p-6 flex items-center justify-center gap-6">
+              <div className="flex items-center gap-3">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="2">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                  <path d="M9 12l2 2 4-4" />
+                </svg>
+                <span className="font-serif text-base text-[#F9F6F2]">Secure payment</span>
+              </div>
+              <div className="h-8 w-px bg-[rgba(200,169,126,0.3)]"></div>
+              <div className="flex items-center gap-3">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="2">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                  <path d="M9 12l2 2 4-4" />
+                </svg>
+                <span className="font-serif text-base text-[#F9F6F2]">Money-back guarantee</span>
+              </div>
+              <div className="h-8 w-px bg-[rgba(200,169,126,0.3)]"></div>
+              <div className="flex items-center gap-3">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="2">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+                <span className="font-serif text-base text-[#F9F6F2]">256-bit encryption</span>
+              </div>
+            </div>
+
             {/* Navigation Buttons */}
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4">
               <button
