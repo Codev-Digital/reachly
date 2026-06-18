@@ -88,30 +88,62 @@ export default function BookSessionStep3() {
                   >
                     {option === 'guest' && (
                       <>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="inline mr-1">
-                          <circle cx="12" cy="11" r="4" />
-                          <path d="M4 21a8 8 0 0 1 16 0" />
-                        </svg>
+                     <svg
+  width="14"
+  height="14"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  strokeWidth="2"
+  strokeLinecap="round"
+  strokeLinejoin="round"
+  className="inline mr-1"
+>
+  <circle cx="12" cy="8" r="4" />
+  <path d="M4 20c0-4 3.5-7 8-7s8 3 8 7" />
+</svg>
                         Continue as Guest
                       </>
                     )}
                     {option === 'login' && (
                       <>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="inline mr-1">
-                          <rect x="3" y="11" width="13" height="11" rx="2" ry="2" />
-                          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                        </svg>
+                      <svg
+  width="14"
+  height="14"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  strokeWidth="2"
+  strokeLinecap="round"
+  strokeLinejoin="round"
+  className="inline mr-1"
+>
+  <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+  <path d="M10 17l5-5-5-5" />
+  <path d="M15 12H3" />
+</svg>
                         Log in
                       </>
                     )}
                     {option === 'signup' && (
                       <>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="inline mr-1">
-                          <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                          <circle cx="8.5" cy="7" r="4" />
-                          <path d="M20 8v6M23 11h-6" />
-                        </svg>
-                        Sign in
+                        <svg
+  width="14"
+  height="14"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  strokeWidth="2"
+  strokeLinecap="round"
+  strokeLinejoin="round"
+  className="inline mr-1"
+>
+  <circle cx="9" cy="8" r="4" />
+  <path d="M3 20c0-4 3-7 6-7s6 3 6 7" />
+  <path d="M19 8v6" />
+  <path d="M16 11h6" />
+</svg>
+                         Sign Up
                       </>
                     )}
                   </button>
