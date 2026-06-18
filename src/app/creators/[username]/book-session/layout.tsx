@@ -54,8 +54,18 @@ export default function BookSessionLayout({
   initialDate.setMonth(4); // May
   initialDate.setDate(23);
   
+  // Default session for demo
+  const defaultSession = {
+    id: '1',
+    title: 'Style Consultation',
+    duration: '30 min',
+    price: 1200,
+    description: 'Personal styling session to revamp your wardrobe and discover your signature look.',
+    features: ['Wardrobe analysis', 'Style recommendations', 'Shopping list', 'Q&A']
+  };
+  
   const [booking, setBooking] = useState<BookingState>({
-    selectedSession: null,
+    selectedSession: defaultSession,
     selectedDate: initialDate,
     selectedTime: '05:00 PM',
     userDetails: {
