@@ -7,11 +7,7 @@ import BookingCalendar from '@/components/booking/BookingCalendar';
 import { useBooking } from '../layout';
 
 const timeOptions = [
-  '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM',
-  '11:00 AM', '11:30 AM', '12:00 PM', '12:30 PM',
-  '01:00 PM', '01:30 PM', '02:00 PM', '02:30 PM',
-  '03:00 PM', '03:30 PM', '04:00 PM', '04:30 PM',
-  '05:00 PM'
+  '05:00 PM', '09:00 AM'
 ];
 
 const formatDateLong = (date: Date) => {
@@ -33,6 +29,11 @@ export default function BookSessionStep2() {
       router.push(`/creators/${params.username}/book-session/step-3`);
     }
   };
+
+  // Set default date for demo purposes
+  const defaultDate = new Date();
+  defaultDate.setMonth(4); // May
+  defaultDate.setDate(23);
 
   return (
     <div>
@@ -58,7 +59,7 @@ export default function BookSessionStep2() {
             <h3 className="font-serif text-xl font-bold text-[#F9F6F2]">Pick a Date & Time</h3>
 
             <BookingCalendar
-              selectedDate={booking.selectedDate}
+              selectedDate={booking.selectedDate || defaultDate}
               onDateSelect={(date) => setBooking(b => ({ ...b, selectedDate: date }))}
             />
 
@@ -72,8 +73,8 @@ export default function BookSessionStep2() {
                     <button
                       key={i}
                       onClick={() => handleTimeSelect(time)}
-                      className={`px-4 py-2 rounded-lg text-sm font-sans transition-all ${
-                        booking.selectedTime === time
+                      className={`px-6 py-3 rounded-lg text-sm font-sans transition-all ${
+                        (booking.selectedTime === time || (i === 0 && !booking.selectedTime))
                           ? 'bg-[#C8A97E] text-[#0C0C0C]'
                           : 'bg-[#0C0C0C] border border-[rgba(200,169,126,0.3)] text-[#F9F6F2] hover:border-[#C8A97E]'
                       }`}
@@ -85,10 +86,14 @@ export default function BookSessionStep2() {
               </div>
             )}
 
-            {booking.selectedDate && booking.selectedTime && (
+            {(booking.selectedDate || defaultDate) && (
               <div className="bg-[rgba(200,169,126,0.05)] border border-[rgba(200,169,126,0.3)] rounded-xl p-4">
-                <p className="font-sans text-sm text-[#F9F6F2]">
-                  You're booking {formatDateLong(booking.selectedDate)} at {booking.selectedTime} for a session
+                <p className="font-sans text-lg">
+                  <span className="text-[#C8A97E]">You're booking</span>
+                  <span className="text-[#F9F6F2] font-semibold"> {formatDateLong(booking.selectedDate || defaultDate)} </span>
+                  <span className="text-[#C8A97E]">at</span>
+                  <span className="text-[#F9F6F2] font-semibold"> {booking.selectedTime || '05:00 PM'} </span>
+                  <span className="text-[#C8A97E]">for a session</span>
                 </p>
               </div>
             )}

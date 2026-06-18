@@ -13,10 +13,21 @@ interface SessionType {
   features: string[];
 }
 
+interface UserDetails {
+  fullName: string;
+  email: string;
+  whatsapp: string;
+  notes: string;
+  heardFrom: string;
+  whatToDiscuss: string;
+  proceedAs: 'guest' | 'login' | 'signup';
+}
+
 interface BookingState {
   selectedSession: SessionType | null;
   selectedDate: Date | null;
   selectedTime: string | null;
+  userDetails: UserDetails;
   step: number;
 }
 
@@ -38,10 +49,24 @@ export default function BookSessionLayout({
 }: {
   children: ReactNode;
 }) {
+  // Set initial demo date
+  const initialDate = new Date();
+  initialDate.setMonth(4); // May
+  initialDate.setDate(23);
+  
   const [booking, setBooking] = useState<BookingState>({
     selectedSession: null,
-    selectedDate: null,
-    selectedTime: null,
+    selectedDate: initialDate,
+    selectedTime: '05:00 PM',
+    userDetails: {
+      fullName: '',
+      email: '',
+      whatsapp: '',
+      notes: '',
+      heardFrom: '',
+      whatToDiscuss: '',
+      proceedAs: 'guest'
+    },
     step: 1,
   });
 
