@@ -39,7 +39,18 @@ const CreatorProfileSchema = new Schema<ICreatorProfile>(
     profilePhoto: { type: String },
     coverPhoto: { type: String },
     displayName: { type: String, default: '' },
-    username: { type: String, default: '' },
+    username: {
+      type: String,
+      default: '',
+      lowercase: true,
+      trim: true,
+      // Sparse unique — empty strings won't conflict, but set usernames must be unique
+      index: { unique: true, sparse: true },
+      validate: {
+        validator: (v: string) => v === '' || /^[a-z0-9_-]{3,30}$/.test(v),
+        message: 'Username must be 3–30 chars and only contain letters, numbers, _ or -',
+      },
+    },
     shortBio: { type: String, default: '', maxlength: 140 },
     longBio: { type: String, default: '', maxlength: 1000 },
     city: { type: String, default: '' },

@@ -7,15 +7,15 @@ import { updateCreatorProfile, getCurrentUser } from '@/lib/auth-client';
 
 // ── Required fields (must all be non-empty to continue) ─────────────────────
 const REQUIRED: Record<string, string> = {
-  profilePhoto:  'Profile photo',
-  coverPhoto:    'Cover photo',
-  displayName:   'Display Name',
-  username:      'Username / Handle',
-  shortBio:      'Short Bio',
-  longBio:       'Long Bio',
-  city:          'City',
-  languages:     'Languages Spoken (at least one)',
-  niches:        'Niche / Category (at least one)',
+  profilePhoto: 'Profile photo',
+  coverPhoto: 'Cover photo',
+  displayName: 'Display Name',
+  username: 'Username / Handle',
+  shortBio: 'Short Bio',
+  longBio: 'Long Bio',
+  city: 'City',
+  languages: 'Languages Spoken (at least one)',
+  niches: 'Niche / Category (at least one)',
 };
 
 export default function CreatorOnboardingStep2() {
@@ -32,6 +32,10 @@ export default function CreatorOnboardingStep2() {
   const [coverPhotoFile, setCoverPhotoFile] = useState<File | null>(null);
   const [profilePhotoPreview, setProfilePhotoPreview] = useState<string | null>(null);
   const [coverPhotoPreview, setCoverPhotoPreview] = useState<string | null>(null);
+
+  // Username validation state
+  const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
+  const [usernameMessage, setUsernameMessage] = useState('');
 
   const [formData, setFormData] = useState({
     displayName: '',
@@ -54,22 +58,22 @@ export default function CreatorOnboardingStep2() {
         if (user) {
           setFormData({
             displayName: user.displayName || '',
-            username:    user.username    || '',
-            shortBio:    user.shortBio    || '',
-            longBio:     user.longBio     || '',
-            city:        user.city        || '',
-            country:     user.country     || 'Pakistan',
-            instagram:   user.socialLinks?.instagram || '',
-            tiktok:      user.socialLinks?.tiktok    || '',
-            youtube:     user.socialLinks?.youtube   || '',
-            linkedin:    user.socialLinks?.linkedin  || '',
+            username: user.username || '',
+            shortBio: user.shortBio || '',
+            longBio: user.longBio || '',
+            city: user.city || '',
+            country: user.country || 'Pakistan',
+            instagram: user.socialLinks?.instagram || '',
+            tiktok: user.socialLinks?.tiktok || '',
+            youtube: user.socialLinks?.youtube || '',
+            linkedin: user.socialLinks?.linkedin || '',
           });
           setSelectedLanguages(user.languages || []);
           setSelectedNiches(user.niches || []);
           setBioCount(user.shortBio?.length || 0);
           setLongBioCount(user.longBio?.length || 0);
           if (user.profilePhoto) setProfilePhotoPreview(user.profilePhoto);
-          if (user.coverPhoto)   setCoverPhotoPreview(user.coverPhoto);
+          if (user.coverPhoto) setCoverPhotoPreview(user.coverPhoto);
         }
       } finally {
         setFetchingData(false);
@@ -78,8 +82,48 @@ export default function CreatorOnboardingStep2() {
     fetchUser();
   }, []);
 
+  // ── Debounced Username Check ────────────────────────────────────────────────
+  useEffect(() => {
+    const val = formData.username.trim() || '';
+    if (!val) {
+      setUsernameStatus('idle');
+      setUsernameMessage('');
+      return;
+    }
+
+    // Basic format validation locally before hitting API
+    if (!/^[a-zA-Z0-9_-]{3,30}$/.test(val)) {
+      setUsernameStatus('taken');
+      setUsernameMessage('Must be 3-30 chars (letters, numbers, _, -)');
+      return;
+    }
+
+    setUsernameStatus('checking');
+    setUsernameMessage('');
+
+    const handler = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/creators/check-username?username=${encodeURIComponent(val)}`);
+        const data = await res.json();
+
+        if (data.available) {
+          setUsernameStatus('available');
+          setUsernameMessage(data.message || 'Available');
+        } else {
+          setUsernameStatus('taken');
+          setUsernameMessage(data.message || 'Already taken');
+        }
+      } catch (err) {
+        setUsernameStatus('idle');
+        setUsernameMessage('Could not verify username');
+      }
+    }, 500);
+
+    return () => clearTimeout(handler);
+  }, [formData.username]);
+
   const languages = ['Urdu', 'English', 'Punjabi', 'Sindhi', 'Pashto'];
-  const niches    = ['Lifestyle', 'Tech', 'Fitness', 'Fashion', 'Business', 'Education', 'Beauty', 'Food'];
+  const niches = ['Lifestyle', 'Tech', 'Fitness', 'Fashion', 'Business', 'Education', 'Beauty', 'Food'];
 
   const toggleLanguage = (lang: string) => {
     setTouched(t => ({ ...t, languages: true }));
@@ -120,15 +164,15 @@ export default function CreatorOnboardingStep2() {
   // ── Compute which required fields are missing ──────────────────────────────
   const getMissingFields = () => {
     const missing: string[] = [];
-    if (!profilePhotoPreview)                      missing.push('profilePhoto');
-    if (!coverPhotoPreview)                        missing.push('coverPhoto');
-    if (!formData.displayName.trim())              missing.push('displayName');
-    if (!formData.username.trim())                 missing.push('username');
-    if (!formData.shortBio.trim())                 missing.push('shortBio');
-    if (!formData.longBio.trim())                  missing.push('longBio');
+    if (!profilePhotoPreview) missing.push('profilePhoto');
+    if (!coverPhotoPreview) missing.push('coverPhoto');
+    if (!formData.displayName.trim()) missing.push('displayName');
+    if (!formData.username.trim()) missing.push('username');
+    if (!formData.shortBio.trim()) missing.push('shortBio');
+    if (!formData.longBio.trim()) missing.push('longBio');
     if (!formData.city || formData.city === 'Choose your city') missing.push('city');
-    if (selectedLanguages.length === 0)            missing.push('languages');
-    if (selectedNiches.length === 0)               missing.push('niches');
+    if (selectedLanguages.length === 0) missing.push('languages');
+    if (selectedNiches.length === 0) missing.push('niches');
     return missing;
   };
 
@@ -148,6 +192,18 @@ export default function CreatorOnboardingStep2() {
     const allKeys = Object.keys(REQUIRED);
     setTouched(Object.fromEntries(allKeys.map(k => [k, true])));
 
+    if (usernameStatus === 'checking') {
+      setError('Still checking username availability...');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    if (usernameStatus === 'taken') {
+      setError('Please choose an available username.');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
     const missing = getMissingFields();
     if (missing.length > 0) {
       setError(
@@ -163,19 +219,19 @@ export default function CreatorOnboardingStep2() {
     try {
       const fd = new FormData();
       fd.append('displayName', formData.displayName);
-      fd.append('username',    formData.username);
-      fd.append('shortBio',    formData.shortBio);
-      fd.append('longBio',     formData.longBio);
-      fd.append('city',        formData.city);
-      fd.append('country',     formData.country);
-      fd.append('languages',   JSON.stringify(selectedLanguages));
-      fd.append('niches',      JSON.stringify(selectedNiches));
-      fd.append('instagram',   formData.instagram);
-      fd.append('tiktok',      formData.tiktok);
-      fd.append('youtube',     formData.youtube);
-      fd.append('linkedin',    formData.linkedin);
+      fd.append('username', formData.username);
+      fd.append('shortBio', formData.shortBio);
+      fd.append('longBio', formData.longBio);
+      fd.append('city', formData.city);
+      fd.append('country', formData.country);
+      fd.append('languages', JSON.stringify(selectedLanguages));
+      fd.append('niches', JSON.stringify(selectedNiches));
+      fd.append('instagram', formData.instagram);
+      fd.append('tiktok', formData.tiktok);
+      fd.append('youtube', formData.youtube);
+      fd.append('linkedin', formData.linkedin);
       if (profilePhotoFile) fd.append('profilePhoto', profilePhotoFile);
-      if (coverPhotoFile)   fd.append('coverPhoto',   coverPhotoFile);
+      if (coverPhotoFile) fd.append('coverPhoto', coverPhotoFile);
 
       const result = await updateCreatorProfile(fd);
 
@@ -211,19 +267,19 @@ export default function CreatorOnboardingStep2() {
       <div className="border-b border-[rgba(255,255,255,0.08)]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8 lg:py-10">
           <div className="flex items-center justify-between overflow-x-auto pb-2">
-            <StepItem num={1} label="Welcome"      status="completed" />
+            <StepItem num={1} label="Welcome" status="completed" />
             <div className="flex-1 h-px bg-[#C8A97E] mx-1 sm:mx-2" />
-            <StepItem num={2} label="Profile"      status="active" />
+            <StepItem num={2} label="Profile" status="active" />
             <div className="flex-1 h-px bg-[rgba(200,169,126,0.2)] mx-1 sm:mx-2" />
-            <StepItem num={3} label="Sessions"     status="upcoming" />
+            <StepItem num={3} label="Sessions" status="upcoming" />
             <div className="flex-1 h-px bg-[rgba(200,169,126,0.2)] mx-1 sm:mx-2" />
-            <StepItem num={4} label="Pricing"      status="upcoming" />
+            <StepItem num={4} label="Pricing" status="upcoming" />
             <div className="flex-1 h-px bg-[rgba(200,169,126,0.2)] mx-1 sm:mx-2" />
             <StepItem num={5} label="Availability" status="upcoming" />
             <div className="flex-1 h-px bg-[rgba(200,169,126,0.2)] mx-1 sm:mx-2" />
             <StepItem num={6} label="Verification" status="upcoming" />
             <div className="flex-1 h-px bg-[rgba(200,169,126,0.2)] mx-1 sm:mx-2" />
-            <StepItem num={7} label="Go Live"      status="upcoming" />
+            <StepItem num={7} label="Go Live" status="upcoming" />
           </div>
         </div>
       </div>
@@ -332,12 +388,34 @@ export default function CreatorOnboardingStep2() {
             <label className="block font-sans text-[#F9F6F2] text-xs font-semibold mb-2">
               Username / Handle <span className="text-red-400">*</span>
             </label>
-            <input type="text" value={formData.username}
-              onChange={(e) => { setFormData({ ...formData, username: e.target.value }); setTouched(t => ({ ...t, username: true })); }}
-              onBlur={() => setTouched(t => ({ ...t, username: true }))}
-              className={`w-full bg-[#141414] border rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 font-sans text-white text-xs sm:text-sm focus:outline-none ${borderClass('username')}`}
-              placeholder="e.g. @kainat-khan" />
-            <p className="font-sans text-[#F9F6F2] text-xs opacity-60 mt-1">reachly.pk/yourhandle</p>
+            <div className="relative">
+              <input type="text" value={formData.username}
+                onChange={(e) => { setFormData({ ...formData, username: e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, '') }); setTouched(t => ({ ...t, username: true })); }}
+                onBlur={() => setTouched(t => ({ ...t, username: true }))}
+                className={`w-full bg-[#141414] border rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 pr-10 font-sans text-white text-xs sm:text-sm focus:outline-none ${borderClass('username')}`}
+                placeholder="e.g. kainat-khan" />
+
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                {usernameStatus === 'checking' && (
+                  <svg className="animate-spin w-4 h-4 text-[#C8A97E]" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" /></svg>
+                )}
+                {usernameStatus === 'available' && (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2"><polyline points="20 6 9 17 4 12" /></svg>
+                )}
+                {usernameStatus === 'taken' && (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-between items-start mt-1">
+              <p className="font-sans text-[#F9F6F2] text-xs opacity-60">reachly.pk/{formData.username || 'yourhandle'}</p>
+              {usernameMessage && (
+                <p className={`font-sans text-[10px] ${usernameStatus === 'taken' ? 'text-red-400' : usernameStatus === 'available' ? 'text-emerald-400' : 'text-[#F9F6F2] opacity-60'}`}>
+                  {usernameMessage}
+                </p>
+              )}
+            </div>
             {isFieldInvalid('username') && <p className="text-red-400 text-xs mt-1">Username is required</p>}
           </div>
         </div>
@@ -444,9 +522,9 @@ export default function CreatorOnboardingStep2() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
             {([
               { key: 'instagram', placeholder: 'instagram.com/yourhandle', icon: <><rect x="3" y="3" width="18" height="18" rx="5" /><circle cx="12" cy="12" r="4" /><circle cx="17.5" cy="6.5" r="1" /></> },
-              { key: 'tiktok',    placeholder: 'tiktok.com/yourhandle',    icon: <><path d="M16 3v10.5a3.5 3.5 0 1 1-3.5-3.5" /><path d="M16 3c.5 2.5 2.5 4.5 5 5" /></> },
-              { key: 'youtube',   placeholder: 'youtube.com/yourprofile',  icon: <><rect x="3" y="5" width="18" height="14" rx="4" /><path d="M10 9l6 3-6 3V9z" /></> },
-              { key: 'linkedin',  placeholder: 'linkedin.com/yourprofile', icon: <><rect x="3" y="3" width="18" height="18" rx="4" /><path d="M7 10v7" /><circle cx="7" cy="7" r="1" /><path d="M11 17v-4a2 2 0 0 1 4 0v4" /></> },
+              { key: 'tiktok', placeholder: 'tiktok.com/yourhandle', icon: <><path d="M16 3v10.5a3.5 3.5 0 1 1-3.5-3.5" /><path d="M16 3c.5 2.5 2.5 4.5 5 5" /></> },
+              { key: 'youtube', placeholder: 'youtube.com/yourprofile', icon: <><rect x="3" y="5" width="18" height="14" rx="4" /><path d="M10 9l6 3-6 3V9z" /></> },
+              { key: 'linkedin', placeholder: 'linkedin.com/yourprofile', icon: <><rect x="3" y="3" width="18" height="18" rx="4" /><path d="M7 10v7" /><circle cx="7" cy="7" r="1" /><path d="M11 17v-4a2 2 0 0 1 4 0v4" /></> },
             ] as const).map(({ key, placeholder, icon }) => (
               <div key={key} className="relative">
                 <span className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 opacity-60 pointer-events-none">
@@ -471,7 +549,7 @@ export default function CreatorOnboardingStep2() {
           <button type="submit" disabled={loading}
             className="flex-1 bg-[#C8A97E] text-[#0C0C0C] font-serif font-semibold py-3 sm:py-4 px-6 sm:px-8 rounded-full text-sm hover:opacity-90 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
             {loading ? (
-              <><svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg> Saving…</>
+              <><svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" /></svg> Saving…</>
             ) : 'Continue'}
           </button>
         </div>
@@ -483,11 +561,10 @@ export default function CreatorOnboardingStep2() {
 function StepItem({ num, label, status }: { num: number; label: string; status: 'completed' | 'active' | 'upcoming' }) {
   return (
     <div className="flex flex-col items-center gap-1.5 sm:gap-2 min-w-[60px] sm:min-w-[80px]">
-      <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-serif text-sm sm:text-base font-semibold transition-all ${
-        status === 'completed' ? 'bg-[#141414] text-[#C8A97E] border border-[#C8A97E]'
-        : status === 'active'  ? 'bg-[#C8A97E] text-[#0C0C0C]'
-        :                        'bg-[#141414] text-[#F9F6F2] border border-[rgba(200,169,126,0.3)] opacity-60'
-      }`}>
+      <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-serif text-sm sm:text-base font-semibold transition-all ${status === 'completed' ? 'bg-[#141414] text-[#C8A97E] border border-[#C8A97E]'
+        : status === 'active' ? 'bg-[#C8A97E] text-[#0C0C0C]'
+          : 'bg-[#141414] text-[#F9F6F2] border border-[rgba(200,169,126,0.3)] opacity-60'
+        }`}>
         {status === 'completed'
           ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="2.5"><polyline points="20 6 9 17 4 12" /></svg>
           : num}
