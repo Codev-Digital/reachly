@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import UserSidebar from '@/components/UserSidebar';
 import CreatorNavbar from '@/components/CreatorNavbar';
 import UserTopBar from '@/components/UserTopBar';
@@ -16,50 +16,65 @@ export default function UserBookings() {
   const [currentBooking, setCurrentBooking] = useState<any>(null);
   const [view, setView] = useState<'list' | 'details'>('list');
 
+  // Real Data State
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  // Fetch from API
+  useEffect(() => {
+    async function fetchBookings() {
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        let guestEmail = urlParams.get('email') || urlParams.get('guestEmail');
+
+        // As a fallback for guests who just completed a booking
+        if (!guestEmail) {
+          try {
+            const stored = sessionStorage.getItem('reachly_booking_state');
+            if (stored) {
+              const parsed = JSON.parse(stored);
+              if (parsed?.userDetails?.email) guestEmail = parsed.userDetails.email;
+            }
+          } catch (e) { }
+        }
+
+        const endpoint = guestEmail
+          ? `/api/user/bookings?guestEmail=${encodeURIComponent(guestEmail)}`
+          : '/api/user/bookings';
+
+        const res = await fetch(endpoint);
+        const data = await res.json();
+
+        if (res.ok) {
+          setBookings(data.bookings || []);
+        } else {
+          setError(data.error || 'Failed to fetch bookings');
+        }
+      } catch (err) {
+        setError('Network error checking bookings');
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchBookings();
+  }, []);
+
+  // Filter Bookings Based on Tabs
+  const upcomingBookings = bookings.filter(b => b.status === 'Upcoming');
+  const pastBookings = bookings.filter(b => b.status === 'Past');
+  const cancelledBookings = bookings.filter(b => b.originalStatus === 'cancelled');
+
+  let visibleBookings = upcomingBookings;
+  if (activeTab === 'past') visibleBookings = pastBookings;
+  if (activeTab === 'cancelled') visibleBookings = cancelledBookings;
+
   const tabs = [
-    { label: 'Upcoming (2)', value: 'upcoming' },
-    { label: 'Past (8)', value: 'past' },
-    { label: 'Cancelled (2)', value: 'cancelled' },
+    { label: `Upcoming (${upcomingBookings.length})`, value: 'upcoming' },
+    { label: `Past (${pastBookings.length})`, value: 'past' },
+    { label: `Cancelled (${cancelledBookings.length})`, value: 'cancelled' },
   ];
 
-  const bookings = [
-    { 
-      id: 1,
-      creator: 'Kainat Aslam',
-      session: 'Live Training Session',
-      date: 'Sat, 5 Jul 2025 at 06:00 PM',
-      shortDate: 'Sat, 5 Jul 2025',
-      time: '06:00 PM',
-      status: 'Started',
-      image: '/merium in creators section.png',
-      tags: ['Upcoming', 'Reschedule Requested'],
-      ref: 'RCH-78492031',
-      duration: '45 minutes',
-      price: 'PKR 900',
-      paymentMethod: 'JazzCash',
-      transactionId: 'JA2-99238471',
-      bookedOn: 'Sat, 28 Jun 2025',
-      sessionType: 'Live Training Session',
-    },
-    { 
-      id: 2,
-      creator: 'Sana Mir',
-      session: 'Live Training Session',
-      date: 'Sat, 5 Jul 2025 at 06:00 PM',
-      shortDate: 'Sat, 5 Jul 2025',
-      time: '06:00 PM',
-      status: 'Upcoming',
-      image: '/merium in creators section.png',
-      tags: ['Upcoming'],
-      ref: 'RCH-78492031',
-      duration: '45 minutes',
-      price: 'PKR 900',
-      paymentMethod: 'JazzCash',
-      transactionId: 'JA2-99238471',
-      bookedOn: 'Sat, 28 Jun 2025',
-      sessionType: 'Live Training Session',
-    },
-  ];
 
   const handleViewDetails = (booking: any) => {
     setCurrentBooking(booking);
@@ -74,11 +89,11 @@ export default function UserBookings() {
   return (
     <div className="min-h-screen bg-[#0C0C0C] pb-12">
       <CreatorNavbar />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <div className="flex gap-8">
-          <UserSidebar 
-            isOpen={isSidebarOpen} 
+          <UserSidebar
+            isOpen={isSidebarOpen}
             onClose={() => setIsSidebarOpen(false)}
           />
 
@@ -105,17 +120,16 @@ export default function UserBookings() {
               <>
                 <div className="mb-6">
                   <h1 className="font-serif text-4xl font-bold text-[#C8A97E] mb-4">My Bookings</h1>
-                  
+
                   <div className="flex gap-2">
                     {tabs.map((tab) => (
                       <button
                         key={tab.value}
                         onClick={() => setActiveTab(tab.value)}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-sans transition-all border ${
-                          activeTab === tab.value
-                            ? 'bg-[rgba(200,169,126,0.15)] text-[#C8A97E] border-[rgba(200,169,126,0.3)]'
-                            : 'bg-[rgba(255,255,255,0.05)] text-[#F9F6F2] opacity-70 border-transparent hover:opacity-100'
-                        }`}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-sans transition-all border ${activeTab === tab.value
+                          ? 'bg-[rgba(200,169,126,0.15)] text-[#C8A97E] border-[rgba(200,169,126,0.3)]'
+                          : 'bg-[rgba(255,255,255,0.05)] text-[#F9F6F2] opacity-70 border-transparent hover:opacity-100'
+                          }`}
                       >
                         {tab.label}
                       </button>
@@ -124,57 +138,80 @@ export default function UserBookings() {
                 </div>
 
                 <div className="space-y-4">
-                  {bookings.map((booking) => (
-                    <div key={booking.id} className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-2xl p-6">
-                      <div className="flex flex-col md:flex-row gap-6">
-                        <div className="flex items-start gap-4 flex-1">
-                          <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
-                            <img src={booking.image} alt={booking.creator} className="w-full h-full object-cover" />
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                              {booking.tags.map((tag: string, i: number) => (
-                                <span key={i} className="bg-[rgba(200,169,126,0.15)] text-[#C8A97E] px-2 py-0.5 rounded-full text-xs font-sans">{tag}</span>
-                              ))}
-                              <span className="text-xs font-sans text-[#F9F6F2] opacity-60">{booking.ref}</span>
+                  {loading ? (
+                    <div className="flex justify-center p-12">
+                      <svg className="animate-spin h-8 w-8 text-[#C8A97E]" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                      </svg>
+                    </div>
+                  ) : error ? (
+                    <div className="p-6 bg-red-900/20 border border-red-500/30 rounded-2xl">
+                      <p className="text-red-400 font-sans text-sm">{error}</p>
+                    </div>
+                  ) : visibleBookings.length === 0 ? (
+                    <div className="p-12 bg-[#141414] border border-[rgba(200,169,126,0.15)] rounded-2xl text-center">
+                      <h3 className="text-[#F9F6F2] font-serif text-xl mb-2">No bookings found</h3>
+                      <p className="text-[#F9F6F2] opacity-60 font-sans text-sm">You do not have any {activeTab} bookings at the moment.</p>
+                    </div>
+                  ) : (
+                    visibleBookings.map((booking) => (
+                      <div key={booking.id} className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-2xl p-6">
+                        <div className="flex flex-col md:flex-row gap-6">
+                          <div className="flex items-start gap-4 flex-1">
+                            <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
+                              <img src={booking.image} alt={booking.creator} className="w-full h-full object-cover" />
                             </div>
-                            <h3 className="font-serif text-xl font-semibold text-[#F9F6F2] mb-1">{booking.session} with {booking.creator}</h3>
-                            <p className="font-sans text-sm text-[#F9F6F2] opacity-70 mb-3">{booking.date}</p>
-                            <p className="font-sans text-sm text-[#C8A97E] font-medium">{booking.status}</p>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-2">
+                                {booking.tags?.map((tag: string, i: number) => (
+                                  <span key={i} className="bg-[rgba(200,169,126,0.15)] text-[#C8A97E] px-2 py-0.5 rounded-full text-xs font-sans">{tag}</span>
+                                ))}
+                                <span className="text-xs font-sans text-[#F9F6F2] opacity-60">{booking.ref}</span>
+                              </div>
+                              <h3 className="font-serif text-xl font-semibold text-[#F9F6F2] mb-1">{booking.session}</h3>
+                              <p className="font-sans text-sm text-[#F9F6F2] opacity-70 mb-1">with <span className="font-semibold">{booking.creator}</span></p>
+                              <p className="font-sans text-xs text-[#F9F6F2] opacity-50 mb-3">{booking.date}</p>
+                              <p className="font-sans text-sm text-[#C8A97E] font-medium">{booking.status}</p>
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <button className="bg-[rgba(255,255,255,0.05)] border border-[rgba(200,169,126,0.3)] text-[#F9F6F2] px-4 py-2 rounded-full text-sm font-sans">
-                            Join meet
-                          </button>
-                          <button 
-                            onClick={() => {
-                              setCurrentBooking(booking);
-                              setShowRescheduleModal(true);
-                            }}
-                            className="bg-[rgba(255,255,255,0.05)] border border-[rgba(200,169,126,0.3)] text-[#F9F6F2] px-4 py-2 rounded-full text-sm font-sans"
-                          >
-                            Reschedule
-                          </button>
-                          <button 
-                            onClick={() => {
-                              setCurrentBooking(booking);
-                              setShowCancelModal(true);
-                            }}
-                            className="bg-[rgba(248,113,113,0.1)] border border-[rgba(248,113,113,0.3)] text-[#f87171] px-4 py-2 rounded-full text-sm font-sans"
-                          >
-                            Cancel
-                          </button>
-                          <button 
-                            onClick={() => handleViewDetails(booking)}
-                            className="bg-[rgba(255,255,255,0.05)] border border-[rgba(200,169,126,0.3)] text-[#F9F6F2] px-4 py-2 rounded-full text-sm font-sans"
-                          >
-                            View details
-                          </button>
+                          <div className="flex items-center gap-2 flex-wrap h-fit">
+                            <button className="bg-[rgba(255,255,255,0.05)] border border-[rgba(200,169,126,0.3)] text-[#F9F6F2] px-4 py-2 rounded-full text-sm font-sans hover:bg-[#C8A97E] hover:text-[#0C0C0C] hover:border-transparent transition-all">
+                              Join meet
+                            </button>
+                            {booking.status === 'Upcoming' && (
+                              <>
+                                <button
+                                  onClick={() => {
+                                    setCurrentBooking(booking);
+                                    setShowRescheduleModal(true);
+                                  }}
+                                  className="bg-[rgba(255,255,255,0.05)] border border-[rgba(200,169,126,0.3)] text-[#F9F6F2] px-4 py-2 rounded-full text-sm font-sans hover:bg-[rgba(200,169,126,0.1)] transition-all"
+                                >
+                                  Reschedule
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setCurrentBooking(booking);
+                                    setShowCancelModal(true);
+                                  }}
+                                  className="bg-[rgba(248,113,113,0.1)] border border-[rgba(248,113,113,0.3)] text-[#f87171] px-4 py-2 rounded-full text-sm font-sans hover:bg-[rgba(248,113,113,0.2)] transition-all"
+                                >
+                                  Cancel
+                                </button>
+                              </>
+                            )}
+                            <button
+                              onClick={() => handleViewDetails(booking)}
+                              className="bg-[rgba(255,255,255,0.05)] border border-[rgba(200,169,126,0.3)] text-[#F9F6F2] px-4 py-2 rounded-full text-sm font-sans hover:bg-[rgba(255,255,255,0.1)] transition-all"
+                            >
+                              View details
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
               </>
             ) : (
@@ -344,18 +381,18 @@ export default function UserBookings() {
 
       {currentBooking && (
         <>
-          <RescheduleModal 
-            isOpen={showRescheduleModal} 
+          <RescheduleModal
+            isOpen={showRescheduleModal}
             onClose={() => {
               setShowRescheduleModal(false);
-            }} 
-            currentSession={{ 
-              name: currentBooking.session, 
-              date: currentBooking.date 
+            }}
+            currentSession={{
+              name: currentBooking.session,
+              date: currentBooking.date
             }}
           />
-          <CancelBookingModal 
-            isOpen={showCancelModal} 
+          <CancelBookingModal
+            isOpen={showCancelModal}
             onClose={() => {
               setShowCancelModal(false);
             }}
