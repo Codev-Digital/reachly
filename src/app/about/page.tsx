@@ -1,5 +1,6 @@
 'use client';
 
+
 import Link from 'next/link';
 import CreatorNavbar from '@/components/CreatorNavbar';
 import Footer from '@/components/Footer';
