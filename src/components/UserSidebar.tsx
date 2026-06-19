@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { signOut } from 'next-auth/react';
 
 export default function UserSidebar({ 
   isOpen, 
@@ -51,15 +52,15 @@ export default function UserSidebar({
       </nav>
 
       <div className="mt-8 pt-6 border-t border-[rgba(255,255,255,0.1)]">
-        <Link
-          href="/"
+        <button
+          onClick={() => signOut({ callbackUrl: '/' })}
           className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-sans text-[#F9F6F2] opacity-70 hover:bg-[rgba(255,255,255,0.05)] hover:opacity-100 transition-all"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
           </svg>
           Logout
-        </Link>
+        </button>
       </div>
     </div>
   );
