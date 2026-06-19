@@ -340,7 +340,7 @@ export default function CreatorOnboardingStep5() {
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="2">
                               <path d="M12 5v14M5 12h14" />
                             </svg>
-                            + Add time block
+                             Add time block
                           </button>
                         </div>
                       )}
