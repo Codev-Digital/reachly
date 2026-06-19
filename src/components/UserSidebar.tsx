@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { signOut } from 'next-auth/react';
+import { usePathname } from 'next/navigation';
+import LogoutConfirmationModal from './LogoutConfirmationModal';
 
 export default function UserSidebar({ 
   isOpen, 
@@ -14,6 +14,7 @@ export default function UserSidebar({
   onClose?: () => void;
 }) {
   const pathname = usePathname();
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   
   const navItems = [
     { label: 'Home', href: '/user/dashboard', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
@@ -53,7 +54,7 @@ export default function UserSidebar({
 
       <div className="mt-8 pt-6 border-t border-[rgba(255,255,255,0.1)]">
         <button
-          onClick={() => signOut({ callbackUrl: '/' })}
+          onClick={() => setIsLogoutModalOpen(true)}
           className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-sans text-[#F9F6F2] opacity-70 hover:bg-[rgba(255,255,255,0.05)] hover:opacity-100 transition-all"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -95,6 +96,12 @@ export default function UserSidebar({
           <SidebarContent />
         </motion.div>
       )}
+
+      {/* Logout Confirmation Modal */}
+      <LogoutConfirmationModal
+        isOpen={isLogoutModalOpen}
+        onClose={() => setIsLogoutModalOpen(false)}
+      />
     </>
   );
 }

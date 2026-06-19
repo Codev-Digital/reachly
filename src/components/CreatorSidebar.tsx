@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { signOut } from 'next-auth/react';
+import LogoutConfirmationModal from './LogoutConfirmationModal';
 
 const CreatorSidebar = ({ 
   active: propActive,
@@ -17,6 +17,7 @@ const CreatorSidebar = ({
 }) => {
   const pathname = usePathname();
   const [activeItem, setActiveItem] = useState('Dashboard');
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
   useEffect(() => {
     if (propActive) {
@@ -158,7 +159,6 @@ const CreatorSidebar = ({
     }
   };
 
-  // Raw inner content shared by both views
   const NavigationLinks = () => (
     <>
       <h3 className="font-sans text-sm font-semibold text-[#C8A97E] mb-4">Main Menu</h3>
@@ -193,7 +193,10 @@ const CreatorSidebar = ({
           </svg>
           Switch to Follower Mode
         </button>
-        <button onClick={() => signOut({ callbackUrl: '/' })} className="w-full flex items-center gap-3 px-2 py-2 rounded text-left text-sm font-sans text-[#F9F6F2] opacity-70 hover:text-[#C8A97E] hover:opacity-100 transition-all">
+        <button 
+          onClick={() => setIsLogoutModalOpen(true)}
+          className="w-full flex items-center gap-3 px-2 py-2 rounded text-left text-sm font-sans text-[#F9F6F2] opacity-70 hover:text-[#C8A97E] hover:opacity-100 transition-all"
+        >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
             <polyline points="16 17 21 12 16 7" />
@@ -207,18 +210,15 @@ const CreatorSidebar = ({
 
   return (
     <>
-      {/* DESKTOP SIDEBAR */}
       <div className="hidden lg:block w-64 flex-shrink-0">
         <div className="bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-xl p-5 sticky top-5">
           <NavigationLinks />
         </div>
       </div>
 
-      {/* MOBILE DRAWER PORTAL */}
       <AnimatePresence>
         {isOpen && (
           <>
-            {/* Backdrop with a smooth fade */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -227,13 +227,11 @@ const CreatorSidebar = ({
               onClick={onClose}
               className="fixed inset-0 bg-black/60 z-50 lg:hidden backdrop-blur-sm"
             />
-
-            {/* Slide-out Panel */}
             <motion.div
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
-              transition={{ duration: 0.3, ease: [0.32, 0.94, 0.6, 1] }} // Fast, elegant iOS-style ease-out
+              transition={{ duration: 0.3, ease: [0.32, 0.94, 0.6, 1] }}
               className="fixed left-0 top-0 bottom-0 z-50 w-72 h-full bg-[#141414] border-r border-[rgba(200,169,126,0.2)] p-6 shadow-2xl overflow-y-auto lg:hidden"
             >
               <NavigationLinks />
@@ -241,6 +239,11 @@ const CreatorSidebar = ({
           </>
         )}
       </AnimatePresence>
+
+      <LogoutConfirmationModal
+        isOpen={isLogoutModalOpen}
+        onClose={() => setIsLogoutModalOpen(false)}
+      />
     </>
   );
 };
