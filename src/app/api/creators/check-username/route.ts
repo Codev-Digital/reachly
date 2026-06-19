@@ -3,6 +3,8 @@ import connectDB from '@/lib/mongodb';
 import CreatorProfile from '@/models/CreatorProfile';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { verifyToken } from '@/lib/jwt';
+import User from '@/models/User';
 
 /**
  * GET /api/creators/check-username?username=somehandle
@@ -27,9 +29,25 @@ export async function GET(request: NextRequest) {
             });
         }
 
+        let email: string | undefined;
+
         // Get current user so they can "keep" their own username when editing
         const session = await getServerSession(authOptions);
-        const currentUserId = (session?.user as any)?.id;
+        if (session?.user?.email) {
+            email = session.user.email;
+        } else {
+            const token = request.cookies.get('auth_token')?.value;
+            const payload = token ? verifyToken(token) : null;
+            email = payload?.email;
+        }
+
+        let currentUserId: string | null = null;
+        if (email) {
+            const userDoc = await User.findOne({ email });
+            if (userDoc) {
+                currentUserId = userDoc._id.toString();
+            }
+        }
 
         const existing = await CreatorProfile.findOne({ username });
 
