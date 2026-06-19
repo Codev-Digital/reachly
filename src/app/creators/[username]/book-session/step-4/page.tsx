@@ -19,30 +19,65 @@ export default function BookSessionStep4() {
     setShowConfirmation(true);
   };
 
-  const handleConfirmPayment = () => {
-    nextStep();
-    router.push(`/creators/${params.username}/book-session/step-5`);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleConfirmPayment = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      const payload = {
+        username: params.username,
+        sessionId: booking.selectedSession?.id,
+        date: booking.selectedDate,
+        time: booking.selectedTime,
+        userDetails: booking.userDetails,
+        proceedAs: booking.userDetails.proceedAs,
+        paymentMethod,
+        promoApplied: promoApplied ? 'REACHLY50' : null,
+        finalPrice: discountedPrice,
+        originalPrice: booking.selectedSession?.price
+      };
+
+      const res = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        nextStep();
+        router.push(`/creators/${params.username}/book-session/step-5`);
+      } else {
+        alert(data.error || 'Failed to place booking');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('An error occurred');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (showConfirmation) {
     return (
       <div>
         <BookingProgress currentStep={4} />
-        
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-12">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Left Column: Payment Confirmation */}
             <div className="lg:col-span-2 space-y-6">
               <h3 className="font-serif text-xl font-bold text-[#C8A97E]">Confirm Payment</h3>
-              
+
               <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-xl p-6">
                 {/* Payment Method Info */}
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center">
-                    <img 
-                      src={paymentMethod === 'jazzcash' ? '/jazzcash.svg' : '/easypaisa.png'} 
-                      alt={paymentMethod === 'jazzcash' ? 'JazzCash' : 'EasyPaisa'} 
-                      className="w-8 h-8" 
+                    <img
+                      src={paymentMethod === 'jazzcash' ? '/jazzcash.svg' : '/easypaisa.png'}
+                      alt={paymentMethod === 'jazzcash' ? 'JazzCash' : 'EasyPaisa'}
+                      className="w-8 h-8"
                     />
                   </div>
                   <div>
@@ -77,7 +112,7 @@ export default function BookSessionStep4() {
 
                 {/* Buttons */}
                 <div className="flex flex-col sm:flex-row gap-3">
-                  <button 
+                  <button
                     onClick={() => setShowConfirmation(false)}
                     className="flex-1 border border-[rgba(200,169,126,0.3)] text-[#C8A97E] font-sans font-semibold py-3 px-6 rounded-full text-sm hover:border-[#C8A97E] transition-all"
                   >
@@ -85,9 +120,10 @@ export default function BookSessionStep4() {
                   </button>
                   <button
                     onClick={handleConfirmPayment}
-                    className="flex-1 font-serif font-semibold py-3 px-6 rounded-full text-sm transition-all bg-[#C8A97E] text-[#0C0C0C] hover:opacity-90"
+                    disabled={isSubmitting}
+                    className={`flex-1 font-serif font-semibold py-3 px-6 rounded-full text-sm transition-all ${isSubmitting ? 'bg-[rgba(200,169,126,0.5)] text-[#0C0C0C]' : 'bg-[#C8A97E] text-[#0C0C0C] hover:opacity-90'}`}
                   >
-                    Confirm Payment
+                    {isSubmitting ? 'Processing...' : 'Confirm Payment'}
                   </button>
                 </div>
               </div>
@@ -106,22 +142,21 @@ export default function BookSessionStep4() {
   return (
     <div>
       <BookingProgress currentStep={4} />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-12">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column: Payment */}
           <div className="lg:col-span-2 space-y-6">
             <h3 className="font-serif text-xl font-bold text-[#C8A97E]">Choose Payment Method</h3>
-            
+
             {/* Payment Methods */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div
                 onClick={() => setPaymentMethod('jazzcash')}
-                className={`bg-[#141414] border rounded-xl p-6 cursor-pointer transition-all ${
-                  paymentMethod === 'jazzcash'
-                    ? 'border-[#C8A97E]'
-                    : 'border-[rgba(200,169,126,0.3)] hover:border-[#C8A97E]'
-                }`}
+                className={`bg-[#141414] border rounded-xl p-6 cursor-pointer transition-all ${paymentMethod === 'jazzcash'
+                  ? 'border-[#C8A97E]'
+                  : 'border-[rgba(200,169,126,0.3)] hover:border-[#C8A97E]'
+                  }`}
               >
                 <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center mb-3">
                   <img src="/jazzcash.svg" alt="JazzCash" className="w-8 h-8" />
@@ -134,11 +169,10 @@ export default function BookSessionStep4() {
 
               <div
                 onClick={() => setPaymentMethod('easypaisa')}
-                className={`bg-[#141414] border rounded-xl p-6 cursor-pointer transition-all ${
-                  paymentMethod === 'easypaisa'
-                    ? 'border-[#C8A97E]'
-                    : 'border-[rgba(200,169,126,0.3)] hover:border-[#C8A97E]'
-                }`}
+                className={`bg-[#141414] border rounded-xl p-6 cursor-pointer transition-all ${paymentMethod === 'easypaisa'
+                  ? 'border-[#C8A97E]'
+                  : 'border-[rgba(200,169,126,0.3)] hover:border-[#C8A97E]'
+                  }`}
               >
                 <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center mb-3">
                   <img src="/easypaisa.png" alt="EasyPaisa" className="w-8 h-8" />
