@@ -69,8 +69,37 @@ export async function GET(
 
         // If a specific date was requested, compute the time slots for that day
         if (dateStr) {
-            const date = new Date(dateStr);
-            const dayKey = DAY_NAMES[date.getDay()];
+            // Parse the date as local date in the creator's timezone
+            const timezone = availability.timezone || 'Asia/Karachi';
+            
+            // Split date string into components
+            const [yearStr, monthStr, dayStr] = dateStr.split('-');
+            const year = parseInt(yearStr);
+            const month = parseInt(monthStr);
+            const day = parseInt(dayStr);
+            
+            // Create a UTC date at noon to avoid timezone shift issues when determining weekday
+            const dateUTC = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+            
+            // Use Intl API to get the correct weekday in the creator's timezone
+            const formatter = new Intl.DateTimeFormat('en-US', { 
+                weekday: 'long', 
+                timeZone: timezone 
+            });
+            const weekdayLong = formatter.format(dateUTC).toLowerCase();
+            
+            // Map long weekday to our day keys
+            const weekdayMap: Record<string, keyof typeof availability.schedule> = {
+                'sunday': 'sunday',
+                'monday': 'monday',
+                'tuesday': 'tuesday',
+                'wednesday': 'wednesday',
+                'thursday': 'thursday',
+                'friday': 'friday',
+                'saturday': 'saturday'
+            };
+            const dayKey = weekdayMap[weekdayLong];
+            
             const daySchedule = availability.schedule[dayKey];
             const isBlocked = availability.blockedDates.includes(dateStr);
 
@@ -78,17 +107,25 @@ export async function GET(
                 return NextResponse.json({ success: true, slots: [], date: dateStr });
             }
 
-            // Check if the requested date is today (in creator's or system timezone)
+            // Check if the requested date is today (in creator's timezone)
             const now = new Date();
-            const timezone = availability.timezone || 'Asia/Karachi';
-            const nowLocal = new Date(now.toLocaleString('en-US', { timeZone: timezone }));
-
-            const [y, m, d] = dateStr.split('-');
-            const isToday = nowLocal.getFullYear() === parseInt(y) &&
-                nowLocal.getMonth() + 1 === parseInt(m) &&
-                nowLocal.getDate() === parseInt(d);
-
-            const curTotalMinutes = nowLocal.getHours() * 60 + nowLocal.getMinutes();
+            const nowStr = new Intl.DateTimeFormat('en-CA', { 
+                timeZone: timezone,
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            }).format(now); // returns YYYY-MM-DD
+            const isToday = nowStr === dateStr;
+            
+            // Get current time in creator's timezone
+            const nowTimeStr = new Intl.DateTimeFormat('en-US', {
+                timeZone: timezone,
+                hour12: false,
+                hour: '2-digit',
+                minute: '2-digit'
+            }).format(now);
+            const [nowH, nowM] = nowTimeStr.split(':').map(Number);
+            const curTotalMinutes = nowH * 60 + nowM;
 
             // Generate 30-min intervals from each slot range
             const slots: string[] = [];
