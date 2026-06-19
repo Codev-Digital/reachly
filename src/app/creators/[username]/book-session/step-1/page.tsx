@@ -33,10 +33,10 @@ export default function BookSessionStep1() {
               shortBio: data.creator.shortBio,
               niches: data.creator.niches || [],
             },
-            // Pre-select first session if none picked yet
+            // Keep previously selected session if it exists in the new sessions list, otherwise no selection
             selectedSession: b.selectedSession
-              ? (data.sessions.find((s: SessionType) => s.id === b.selectedSession?.id) || data.sessions[0] || null)
-              : (data.sessions[0] || null),
+              ? (data.sessions.find((s: SessionType) => s.id === b.selectedSession?.id) || null)
+              : null,
           }));
         }
       } catch (err) {

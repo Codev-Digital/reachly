@@ -78,6 +78,18 @@ export async function GET(
                 return NextResponse.json({ success: true, slots: [], date: dateStr });
             }
 
+            // Check if the requested date is today (in creator's or system timezone)
+            const now = new Date();
+            const timezone = availability.timezone || 'Asia/Karachi';
+            const nowLocal = new Date(now.toLocaleString('en-US', { timeZone: timezone }));
+
+            const [y, m, d] = dateStr.split('-');
+            const isToday = nowLocal.getFullYear() === parseInt(y) &&
+                nowLocal.getMonth() + 1 === parseInt(m) &&
+                nowLocal.getDate() === parseInt(d);
+
+            const curTotalMinutes = nowLocal.getHours() * 60 + nowLocal.getMinutes();
+
             // Generate 30-min intervals from each slot range
             const slots: string[] = [];
             for (const slot of daySchedule.slots) {
@@ -85,12 +97,16 @@ export async function GET(
                 const [endH, endM] = slot.end.split(':').map(Number);
                 let cur = startH * 60 + startM;
                 const end = endH * 60 + endM;
+
                 while (cur + 30 <= end) {
-                    const h = Math.floor(cur / 60);
-                    const m = cur % 60;
-                    const suffix = h >= 12 ? 'PM' : 'AM';
-                    const displayH = h > 12 ? h - 12 : h === 0 ? 12 : h;
-                    slots.push(`${String(displayH).padStart(2, '0')}:${String(m).padStart(2, '0')} ${suffix}`);
+                    // Only add if it's not a past time for today (with 30 min buffer to avoid immediate bookings)
+                    if (!isToday || cur > curTotalMinutes + 30) {
+                        const h = Math.floor(cur / 60);
+                        const mins = cur % 60;
+                        const suffix = h >= 12 ? 'PM' : 'AM';
+                        const displayH = h > 12 ? h - 12 : h === 0 ? 12 : h;
+                        slots.push(`${String(displayH).padStart(2, '0')}:${String(mins).padStart(2, '0')} ${suffix}`);
+                    }
                     cur += 30;
                 }
             }

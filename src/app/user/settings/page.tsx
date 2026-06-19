@@ -1,16 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import UserSidebar from '@/components/UserSidebar';
 import CreatorNavbar from '@/components/CreatorNavbar';
 import UserTopBar from '@/components/UserTopBar';
+import LoginToExplore from '@/components/LoginToExplore';
 
 export default function UserSettings() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('Profile');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [bio, setBio] = useState('Tech enthusiast and aspiring content creator. Always looking to learn from the best.');
+  const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const tabs = [
     { label: 'Profile', icon: true },
@@ -18,6 +21,64 @@ export default function UserSettings() {
     { label: 'Notifications', icon: true },
     { label: 'Privacy', icon: true },
   ];
+
+  useEffect(() => {
+    async function checkAuth() {
+      try {
+        const res = await fetch('/api/user/me');
+        if (res.ok) {
+          setIsAuthenticated(true);
+        } else {
+          setIsAuthenticated(false);
+        }
+      } catch {
+        setIsAuthenticated(false);
+      } finally {
+        setLoading(false);
+      }
+    }
+    checkAuth();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0C0C0C] flex items-center justify-center">
+        <svg className="animate-spin h-8 w-8 text-[#C8A97E]" viewBox="0 0 24 24" fill="none">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+        </svg>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-[#0C0C0C] pb-12">
+        <CreatorNavbar />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+          <div className="flex gap-8">
+            <UserSidebar
+              isOpen={isSidebarOpen}
+              onClose={() => setIsSidebarOpen(false)}
+            />
+            <main className="flex-1">
+              <button
+                onClick={() => setIsSidebarOpen(true)}
+                className="lg:hidden mb-4 bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-lg p-2 text-[#C8A97E]"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <line x1="3" y1="12" x2="21" y2="12" />
+                  <line x1="3" y1="18" x2="21" y2="18" />
+                </svg>
+              </button>
+              <LoginToExplore />
+            </main>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0C0C0C] pb-12">
