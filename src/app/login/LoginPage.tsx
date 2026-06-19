@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -17,7 +16,6 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Where to go after a successful login — honour the callbackUrl if present
   const callbackUrl = searchParams.get('callbackUrl') || '/welcome';
   const signupUrl = callbackUrl.startsWith('/creator-onboarding')
     ? `/signup?type=creator&callbackUrl=${encodeURIComponent(callbackUrl)}`
@@ -38,8 +36,23 @@ export default function LoginPage() {
       if (result?.error) {
         setError(result.error);
       } else {
-        // Redirect to callbackUrl (e.g. /creator-onboarding/step-1) or /welcome
-        router.push(callbackUrl);
+        const res = await fetch('/api/user/me');
+        if (res.ok) {
+          const userData = await res.json();
+          if (userData.creatorProfile && userData.creatorProfile.isProfileComplete) {
+            router.push('/creators/dashboard');
+          } else if (userData.creatorProfile || userData.user.onboardingStep > 0) {
+            router.push('/creator-onboarding/step-1');
+          } else {
+            router.push('/user/dashboard');
+          }
+        } else {
+          if (callbackUrl && callbackUrl !== '/welcome') {
+            router.push(callbackUrl);
+          } else {
+            router.push('/user/dashboard');
+          }
+        }
         router.refresh();
       }
     } catch {
@@ -50,14 +63,13 @@ export default function LoginPage() {
   };
 
   const handleGoogleSignIn = () => {
-    signIn('google', { callbackUrl });
+    signIn('google', { callbackUrl: '/welcome' });
   };
 
   return (
     <div className="min-h-screen bg-[#0C0C0C] flex items-center justify-center p-4 sm:p-6">
       <div className="w-full max-w-7xl">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 items-stretch">
-          {/* Left Content */}
           <div className="p-4 sm:p-6 md:p-8 lg:p-16 flex flex-col justify-center">
             <div className="mb-8 sm:mb-10 lg:mb-12">
               <Logo />
@@ -129,7 +141,6 @@ export default function LoginPage() {
               </button>
             </form>
 
-            {/* Divider */}
             <div className="relative mt-6 sm:mt-8 max-w-md">
               <div className="absolute top-1/2 left-0 right-0 h-px bg-[rgba(200,169,126,0.15)] -translate-y-1/2"></div>
               <div className="text-center">
@@ -139,7 +150,6 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Social Buttons */}
             <div className="space-y-3 mt-6 sm:mt-8 max-w-md">
               <button 
                 onClick={handleGoogleSignIn}
@@ -174,14 +184,12 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Right Side - Hero Image - Visible on tablets and larger */}
           <div className="hidden md:block lg:block">
             <div className="h-full min-h-[400px] md:min-h-[600px] lg:min-h-[800px]">
               <HeroImage />
             </div>
           </div>
           
-          {/* Mobile Hero Image - Visible only on mobile */}
           <div className="block md:hidden mt-6">
             <div className="h-[350px] rounded-[20px] overflow-hidden">
               <HeroImage />

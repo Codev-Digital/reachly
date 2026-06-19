@@ -1,78 +1,55 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import connectDB from '@/lib/mongodb';
-import User from '@/models/User';
-import CreatorProfile from '@/models/CreatorProfile';
-import SessionType from '@/models/SessionType';
-import { verifyToken } from '@/lib/jwt';
+import { NextRequest, NextResponse } from "next/server";
+import connectDB from "@/lib/mongodb";
+import User from "@/models/User";
+import CreatorProfile from "@/models/CreatorProfile";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    let email: string | undefined;
-
     const session = await getServerSession(authOptions);
-    if (session?.user?.email) {
-      email = session.user.email;
-    } else {
-      const token = request.cookies.get('auth_token')?.value;
-      const payload = token ? verifyToken(token) : null;
-      email = payload?.email;
-    }
-
-    if (!email) {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     await connectDB();
-
-    const user = await User.findOne({ email }).select(
-      '-password -otp -otpExpires -emailChangeOTP -emailChangeOTPExpires'
-    );
-
+    const user = await User.findOne({ email: session.user.email });
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const [creatorProfile, sessionTypes] = await Promise.all([
-      CreatorProfile.findOne({ userId: user._id }),
-      SessionType.find({ userId: user._id }).sort({ order: 1 }),
-    ]);
+    // Only mark hasSeenWelcome as true if user has onboardingStep > 0 OR a CreatorProfile
+    if (user.onboardingStep > 0 && !user.hasSeenWelcome) {
+      user.hasSeenWelcome = true;
+      await user.save();
+    }
+
+    const creatorProfile = await CreatorProfile.findOne({
+      userId: user._id,
+    });
 
     return NextResponse.json({
-      id: user._id,
-      name: user.name,
-      email: user.email,
-      isVerified: user.isVerified,
-      isRegistrationComplete: user.isRegistrationComplete,
-      onboardingStep: user.onboardingStep,
-      // CreatorProfile (step 2)
-      displayName:       creatorProfile?.displayName,
-      username:          creatorProfile?.username,
-      shortBio:          creatorProfile?.shortBio,
-      longBio:           creatorProfile?.longBio,
-      city:              creatorProfile?.city,
-      country:           creatorProfile?.country,
-      languages:         creatorProfile?.languages,
-      niches:            creatorProfile?.niches,
-      profilePhoto:      creatorProfile?.profilePhoto,
-      coverPhoto:        creatorProfile?.coverPhoto,
-      socialLinks:       creatorProfile?.socialLinks,
-      isProfileComplete: creatorProfile?.isProfileComplete,
-      // SessionTypes (step 3)
-      sessionTypes: sessionTypes.map(s => ({
-        _id:         s._id,
-        title:       s.title,
-        description: s.description,
-        duration:    s.duration,
-        price:       s.price,
-        features:    s.features,
-        maxBookings: s.maxBookings,
-        order:       s.order,
-      })),
+      user: {
+        id: user._id.toString(),
+        name: user.name,
+        email: user.email,
+        isRegistrationComplete: user.isRegistrationComplete,
+        onboardingStep: user.onboardingStep,
+        hasSeenWelcome: user.hasSeenWelcome,
+      },
+      creatorProfile: creatorProfile
+        ? {
+            id: creatorProfile._id.toString(),
+            username: creatorProfile.username,
+            isProfileComplete: creatorProfile.isProfileComplete,
+          }
+        : null,
     });
-  } catch (error: any) {
-    console.error('GET /api/user/me error:', error);
-    return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });
+  } catch (error) {
+    console.error('Error in /api/user/me:', error);
+    return NextResponse.json(
+      { error: 'Something went wrong' },
+      { status: 500 }
+    );
   }
 }

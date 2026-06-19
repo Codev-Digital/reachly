@@ -50,9 +50,9 @@ export async function middleware(request: NextRequest) {
   const isLoggedIn = !!token;
   const isComplete = !!(token as any)?.isRegistrationComplete;
 
-  // ── 1. Logged-in + complete user on an auth-only page → dashboard ─────────
+  // ── 1. Logged-in + complete user on an auth-only page → welcome ─────────
   if (isLoggedIn && isComplete && exactMatch(pathname, AUTH_PAGES)) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+    return NextResponse.redirect(new URL('/welcome', request.url));
   }
 
   // ── 2. Logged-in but registration NOT complete ────────────────────────────

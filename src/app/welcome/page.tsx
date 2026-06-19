@@ -1,12 +1,108 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Logo from '../components/Logo';
 import HeroImage from '../components/HeroImage';
 
 export default function WelcomePage() {
   const router = useRouter();
+  const { data: session, status } = useSession();
+  const [redirected, setRedirected] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingButton, setIsLoadingButton] = useState(false);
+  const [userData, setUserData] = useState<any>(null);
+
+  useEffect(() => {
+    if (status === 'authenticated' && !redirected) {
+      const redirectUser = async () => {
+        const res = await fetch('/api/user/me');
+        if (res.ok) {
+          const data = await res.json();
+          setUserData(data);
+          
+          // Case 1: Has Creator Profile
+          if (data.creatorProfile) {
+            setRedirected(true);
+            if (data.creatorProfile.isProfileComplete) {
+              router.push('/creators/dashboard');
+            } else {
+              router.push('/creator-onboarding/step-1');
+            }
+            return;
+          }
+          
+          // Case 2: Onboarding step >0 → creator (even without CreatorProfile yet)
+          if (data.user.onboardingStep > 0) {
+            setRedirected(true);
+            router.push(`/creator-onboarding/step-${data.user.onboardingStep}`);
+            return;
+          }
+          
+          // Case 3: Has seen welcome → user dashboard
+          if (data.user.hasSeenWelcome) {
+            setRedirected(true);
+            router.push('/user/dashboard');
+            return;
+          }
+        }
+        setIsLoading(false);
+      };
+      redirectUser();
+    } else if (status === 'unauthenticated') {
+      router.push('/login');
+    }
+  }, [status, redirected, router]);
+
+  if (isLoading || status === 'loading') {
+    return (
+      <div className="min-h-screen bg-[#0C0C0C] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <svg className="animate-spin h-8 w-8 text-[#C8A97E]" viewBox="0 0 24 24" fill="none">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+          </svg>
+          <p className="text-[#F9F6F2] font-sans">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const handleBookSessions = async () => {
+    setIsLoadingButton(true);
+    try {
+      await fetch('/api/user/update-onboarding-step', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ step: 0 }), // We can use 0 to indicate user
+      });
+      router.push('/user/dashboard');
+    } catch (error) {
+      console.error('Error updating onboarding step:', error);
+      router.push('/user/dashboard');
+    } finally {
+      setIsLoadingButton(false);
+    }
+  };
+
+  const handleBecomeCreator = async () => {
+    setIsLoadingButton(true);
+    try {
+      await fetch('/api/user/update-onboarding-step', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ step: 1 }), // Step 1 for creator onboarding
+      });
+      router.push('/creator-onboarding/step-1');
+    } catch (error) {
+      console.error('Error updating onboarding step:', error);
+      router.push('/creator-onboarding/step-1');
+    } finally {
+      setIsLoadingButton(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#0C0C0C] flex items-center justify-center p-4 sm:p-6">
@@ -36,7 +132,7 @@ export default function WelcomePage() {
               {/* Book sessions card */}
               <div
                 className="bg-[#141414] border border-[rgba(200,169,126,0.15)] rounded-lg p-5 sm:p-6 md:p-8 cursor-pointer hover:border-[rgba(200,169,126,0.5)] transition-all"
-                onClick={() => router.push('/user/dashboard')}
+                onClick={handleBookSessions}
               >
                 <div className="space-y-4 sm:space-y-6">
                   <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full border border-[rgba(200,169,126,0.3)] flex items-center justify-center">
@@ -57,16 +153,23 @@ export default function WelcomePage() {
                       to learn, grow, and connect.
                     </p>
                   </div>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="sm:w-6 sm:h-6">
-                    <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="#C8A97E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
+                  {isLoadingButton ? (
+                    <svg className="animate-spin h-6 w-6 text-[#C8A97E]" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                    </svg>
+                  ) : (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="sm:w-6 sm:h-6">
+                      <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="#C8A97E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
                 </div>
               </div>
 
               {/* Become a creator card */}
               <div
                 className="bg-[#141414] border border-[rgba(200,169,126,0.15)] rounded-lg p-5 sm:p-6 md:p-8 cursor-pointer hover:border-[rgba(200,169,126,0.5)] transition-all"
-                onClick={() => router.push('/creator-onboarding/step-1')}
+                onClick={handleBecomeCreator}
               >
                 <div className="space-y-4 sm:space-y-6">
                   <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full border border-[rgba(200,169,126,0.3)] flex items-center justify-center">
@@ -87,9 +190,16 @@ export default function WelcomePage() {
                       monetize your expertise through 1-on-1 sessions.
                     </p>
                   </div>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="sm:w-6 sm:h-6">
-                    <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="#C8A97E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
+                  {isLoadingButton ? (
+                    <svg className="animate-spin h-6 w-6 text-[#C8A97E]" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                    </svg>
+                  ) : (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="sm:w-6 sm:h-6">
+                      <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="#C8A97E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
                 </div>
               </div>
             </div>

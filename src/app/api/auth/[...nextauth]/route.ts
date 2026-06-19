@@ -48,6 +48,7 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           email: user.email,
           isRegistrationComplete: user.isRegistrationComplete,
+          onboardingStep: user.onboardingStep,
         } as any;
       },
     }),
@@ -99,8 +100,10 @@ export const authOptions: NextAuthOptions = {
         token.email = user.email;
         if (account?.provider === "google") {
           token.isRegistrationComplete = true;
+          token.onboardingStep = 0;
         } else {
           token.isRegistrationComplete = (user as any).isRegistrationComplete;
+          token.onboardingStep = (user as any).onboardingStep;
         }
       }
 
@@ -114,6 +117,7 @@ export const authOptions: NextAuthOptions = {
           ...session.user,
           id: String(token.id || ""),
           isRegistrationComplete: !!token.isRegistrationComplete,
+          onboardingStep: token.onboardingStep || 0,
         },
       };
     }

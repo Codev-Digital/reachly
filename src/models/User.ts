@@ -18,6 +18,7 @@ export interface IUser extends Document {
    * 0 = account created, 1 = welcome, 2 = profile, 3 = sessions, etc.
    */
   onboardingStep: number;
+  hasSeenWelcome: boolean; // Track if user has seen the welcome page
   createdAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
@@ -47,6 +48,7 @@ const UserSchema = new Schema<IUser>(
     emailChangeOTPExpires: { type: Date },
     newEmail: { type: String },
     onboardingStep: { type: Number, default: 0 },
+    hasSeenWelcome: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

@@ -2,13 +2,44 @@
 
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useSession } from 'next-auth/react';
 
 export default function CreatorNavbar() {
   const router = useRouter();
   const pathname = usePathname();
+  const { data: session, status } = useSession();
+  const [userData, setUserData] = useState<any>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (status === 'authenticated') {
+      fetch('/api/user/me')
+        .then(res => res.json())
+        .then(data => setUserData(data))
+        .catch(err => console.error('Error fetching user data:', err));
+    }
+  }, [status]);
+
+  const handleDashboardClick = async () => {
+    if (userData) {
+      // If user has a creator profile and it's complete → go to creator dashboard
+      if (userData.creatorProfile && userData.creatorProfile.isProfileComplete) {
+        router.push('/creators/dashboard');
+        return;
+      }
+      
+      // If user has a creator profile but it's not complete OR onboardingStep >0 → go to creator onboarding
+      if (userData.creatorProfile || userData.user.onboardingStep > 0) {
+        router.push('/creator-onboarding/step-1');
+        return;
+      }
+
+      // Otherwise, go to user dashboard
+      router.push('/user/dashboard');
+    }
+  };
 
   const menuVariants = {
     hidden: {},
@@ -81,21 +112,30 @@ export default function CreatorNavbar() {
               About
             </Link>
 
-            <div className="flex gap-3">
+            {status === 'authenticated' ? (
               <button
-                onClick={() => router.push('/login')}
-                className="border border-[rgba(200,169,126,0.5)] text-[#C8A97E] px-5 py-2 rounded-full font-semibold text-sm hover:bg-[rgba(200,169,126,0.1)] transition-all"
-              >
-                Login
-              </button>
-
-              <button
-                onClick={() => router.push('/signup')}
+                onClick={handleDashboardClick}
                 className="bg-[#C8A97E] text-[#0C0C0C] px-5 py-2 rounded-full font-semibold text-sm hover:opacity-90 transition-opacity"
               >
-                Sign up
+                Dashboard
               </button>
-            </div>
+            ) : (
+              <div className="flex gap-3">
+                <button
+                  onClick={() => router.push('/login')}
+                  className="border border-[rgba(200,169,126,0.5)] text-[#C8A97E] px-5 py-2 rounded-full font-semibold text-sm hover:bg-[rgba(200,169,126,0.1)] transition-all"
+                >
+                  Login
+                </button>
+
+                <button
+                  onClick={() => router.push('/signup')}
+                  className="bg-[#C8A97E] text-[#0C0C0C] px-5 py-2 rounded-full font-semibold text-sm hover:opacity-90 transition-opacity"
+                >
+                  Sign up
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Mobile Hamburger */}
@@ -217,25 +257,39 @@ export default function CreatorNavbar() {
                   variants={itemVariants}
                   className="flex gap-3 pt-3"
                 >
-                  <button
-                    onClick={() => {
-                      router.push('/login');
-                      setIsMobileMenuOpen(false);
-                    }}
-                    className="flex-1 border border-[rgba(200,169,126,0.5)] text-[#C8A97E] px-5 py-2 rounded-full font-semibold text-sm"
-                  >
-                    Login
-                  </button>
+                  {status === 'authenticated' ? (
+                    <button
+                      onClick={() => {
+                        handleDashboardClick();
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="flex-1 bg-[#C8A97E] text-[#0C0C0C] px-5 py-2 rounded-full font-semibold text-sm"
+                    >
+                      Dashboard
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => {
+                          router.push('/login');
+                          setIsMobileMenuOpen(false);
+                        }}
+                        className="flex-1 border border-[rgba(200,169,126,0.5)] text-[#C8A97E] px-5 py-2 rounded-full font-semibold text-sm"
+                      >
+                        Login
+                      </button>
 
-                  <button
-                    onClick={() => {
-                      router.push('/signup');
-                      setIsMobileMenuOpen(false);
-                    }}
-                    className="flex-1 bg-[#C8A97E] text-[#0C0C0C] px-5 py-2 rounded-full font-semibold text-sm"
-                  >
-                    Sign up
-                  </button>
+                      <button
+                        onClick={() => {
+                          router.push('/signup');
+                          setIsMobileMenuOpen(false);
+                        }}
+                        className="flex-1 bg-[#C8A97E] text-[#0C0C0C] px-5 py-2 rounded-full font-semibold text-sm"
+                      >
+                        Sign up
+                      </button>
+                    </>
+                  )}
                 </motion.div>
               </motion.div>
             </motion.div>
