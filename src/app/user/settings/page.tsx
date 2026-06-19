@@ -7,6 +7,7 @@ import CreatorNavbar from '@/components/CreatorNavbar';
 import UserTopBar from '@/components/UserTopBar';
 import LoginToExplore from '@/components/LoginToExplore';
 
+
 export default function UserSettings() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('Profile');
