@@ -20,16 +20,40 @@ export default function ExploreCreatorsPage() {
   const [creators, setCreators] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Hardcoded showcase creators (always visible, will be removed later)
+  const hardcodedCreators = [
+    {
+      id: 'hardcoded-kainat',
+      username: 'kainataslam',
+      displayName: 'Kainat Aslam',
+      profilePhoto: '/merium.png',
+      shortBio: 'Fashion stylist & confidence coach helping you discover your signature style.',
+      niches: ['fashion', 'lifestyle'],
+      rating: '4.9',
+      startingPrice: 'PKR 1,200',
+      isHardcoded: true,
+    },
+  ];
+
   useEffect(() => {
     async function fetchCreators() {
       try {
         const res = await fetch('/api/creators');
         const data = await res.json();
         if (data.success) {
-          setCreators(data.creators);
+          // Merge: hardcoded first, then DB creators (skip if same username)
+          const dbUsernames = new Set(data.creators.map((c: any) => c.username));
+          const merged = [
+            ...hardcodedCreators.filter(h => !dbUsernames.has(h.username)),
+            ...data.creators,
+          ];
+          setCreators(merged);
+        } else {
+          setCreators(hardcodedCreators);
         }
       } catch (err) {
         console.error('Failed to fetch creators:', err);
+        setCreators(hardcodedCreators);
       } finally {
         setLoading(false);
       }
@@ -311,7 +335,19 @@ export default function ExploreCreatorsPage() {
           {/* Creator Cards */}
           <div className="flex-1">
             {loading ? (
-              <div className="text-center text-[#C8A97E] py-10 animate-pulse">Loading creators...</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="bg-[#141414] border border-[rgba(200,169,126,0.1)] rounded-xl overflow-hidden animate-pulse">
+                    <div className="w-full aspect-[3/4] bg-white/5" />
+                    <div className="p-4 space-y-3">
+                      <div className="h-5 w-3/4 bg-white/10 rounded" />
+                      <div className="h-3 w-1/2 bg-white/10 rounded" />
+                      <div className="h-3 w-full bg-white/10 rounded" />
+                      <div className="h-10 w-full bg-white/10 rounded-full" />
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : creators.length === 0 ? (
               <div className="text-center text-white/50 py-10">No creators found.</div>
             ) : (

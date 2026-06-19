@@ -10,10 +10,12 @@ export default function BookSessionStep4() {
   const params = useParams();
   const router = useRouter();
   const { booking, nextStep } = useBooking();
+  const creator = booking.creator;
   const [paymentMethod, setPaymentMethod] = useState<'jazzcash' | 'easypaisa'>('jazzcash');
-  const [promoApplied, setPromoApplied] = useState(true);
+  const [promoApplied, setPromoApplied] = useState(false);
+  const [promoCode, setPromoCode] = useState('');
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const discountedPrice = promoApplied ? 600 : booking.selectedSession?.price;
+  const discountedPrice = promoApplied ? (booking.selectedSession?.price ?? 0) - 600 : booking.selectedSession?.price;
 
   const handleContinue = () => {
     setShowConfirmation(true);
