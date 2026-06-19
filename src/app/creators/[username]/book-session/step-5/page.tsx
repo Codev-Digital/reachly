@@ -10,18 +10,14 @@ const formatDateLong = (date: Date) => {
   return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 };
 
-function generateRef() {
-  return 'RCH-' + Math.random().toString(36).toUpperCase().slice(2, 10);
-}
-
 export default function BookSessionStep5() {
   const params = useParams();
   const router = useRouter();
   const { booking } = useBooking();
   const creator = booking.creator;
 
-  // Generate a stable reference for this session
-  const bookingRef = useMemo(() => generateRef(), []);
+  // Use bookingRef from state
+  const bookingRef = booking.bookingRef || 'RCH-XXXXXX';
 
   const beforeSessionTips = [
     'Test your camera and microphone',

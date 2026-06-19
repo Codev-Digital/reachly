@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
 export interface IBooking extends Document {
+    bookingRef: string;
     creatorId: mongoose.Types.ObjectId;  // ref to User (creator)
     sessionTypeId: mongoose.Types.ObjectId; // ref to SessionType
     userId?: mongoose.Types.ObjectId; // ref to User (the booker, if logged in/signed up)
@@ -32,6 +33,11 @@ export interface IBooking extends Document {
 
 const BookingSchema = new Schema<IBooking>(
     {
+        bookingRef: {
+            type: String,
+            required: true,
+            unique: true,
+        },
         creatorId: {
             type: Schema.Types.ObjectId,
             ref: 'User',

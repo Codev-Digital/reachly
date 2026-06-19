@@ -9,7 +9,7 @@ import { useBooking } from '../layout';
 export default function BookSessionStep4() {
   const params = useParams();
   const router = useRouter();
-  const { booking, nextStep } = useBooking();
+  const { booking, nextStep, setBooking } = useBooking();
   const creator = booking.creator;
   const [paymentMethod, setPaymentMethod] = useState<'jazzcash' | 'easypaisa'>('jazzcash');
   const [promoApplied, setPromoApplied] = useState(false);
@@ -41,18 +41,19 @@ export default function BookSessionStep4() {
       };
 
       const res = await fetch('/api/bookings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
 
-      const data = await res.json();
-      if (data.success) {
-        nextStep();
-        router.push(`/creators/${params.username}/book-session/step-5`);
-      } else {
-        alert(data.error || 'Failed to place booking');
-      }
+        const data = await res.json();
+        if (data.success) {
+            setBooking(b => ({ ...b, bookingRef: data.bookingRef }));
+            nextStep();
+            router.push(`/creators/${params.username}/book-session/step-5`);
+        } else {
+            alert(data.error || 'Failed to place booking');
+        }
     } catch (err) {
       console.error(err);
       alert('An error occurred');

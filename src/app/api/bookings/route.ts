@@ -3,8 +3,20 @@ import connectDB from '@/lib/mongodb';
 import Booking from '@/models/Booking';
 import User from '@/models/User';
 import CreatorProfile from '@/models/CreatorProfile';
+import SessionType from '@/models/SessionType';
+import { sendEmail, generateBookingConfirmationEmail } from '@/lib/utils';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+
+// Helper to generate booking reference
+function generateBookingRef(): string {
+    return 'RCH-' + Math.random().toString(36).toUpperCase().slice(2, 10);
+}
+
+// Helper to format date like "Mon, Jan 1"
+function formatDate(date: Date): string {
+    return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
 
 export async function POST(request: NextRequest) {
     try {
@@ -36,9 +48,12 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Missing required user details (Name, Email, WhatsApp)' }, { status: 400 });
         }
 
-        // 1. Find the creator
+        // 1. Find the creator and session type
         const creatorProfile = await CreatorProfile.findOne({ username });
         if (!creatorProfile) return NextResponse.json({ error: 'Creator not found' }, { status: 404 });
+
+        const sessionType = await SessionType.findById(sessionId);
+        if (!sessionType) return NextResponse.json({ error: 'Session type not found' }, { status: 404 });
 
         // 2. Identify the user
         let userToAttachId = null;
@@ -65,8 +80,12 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Cannot book your own session' }, { status: 400 });
         }
 
+        // Generate booking reference
+        const bookingRef = generateBookingRef();
+
         // 4. Create the booking
         const booking = new Booking({
+            bookingRef,
             creatorId: creatorProfile.userId,
             sessionTypeId: sessionId,
             userId: userToAttachId,
@@ -80,8 +99,8 @@ export async function POST(request: NextRequest) {
             },
             scheduledDate: new Date(date),
             scheduledTime: time,
-            status: 'pending',
-            paymentStatus: 'pending', // we'll assume pending until they pay, or we mark it directly if payment gateway was bypassed
+            status: 'confirmed', // Mark as confirmed since payment is simulated
+            paymentStatus: 'paid', // Mark as paid since payment is simulated
             paymentMethod: paymentMethod || 'jazzcash',
             price: originalPrice,
             promoApplied,
@@ -91,7 +110,30 @@ export async function POST(request: NextRequest) {
 
         await booking.save();
 
-        return NextResponse.json({ success: true, bookingId: booking._id });
+        // Send confirmation email
+        const emailHtml = generateBookingConfirmationEmail({
+            bookingRef,
+            creatorName: creatorProfile.displayName,
+            creatorUsername: creatorProfile.username,
+            creatorProfilePhoto: creatorProfile.profilePhoto || '',
+            sessionTitle: sessionType.title,
+            sessionDuration: `${sessionType.duration} min`,
+            date: formatDate(new Date(date)),
+            time,
+            userName: userDetails.fullName,
+            userEmail: userDetails.email.toLowerCase(),
+            whatsapp: userDetails.whatsapp,
+            whatToDiscuss: userDetails.whatToDiscuss,
+            meetLink: 'https://meet.google.com/iqj-bsq-bze',
+        });
+
+        await sendEmail(
+            userDetails.email.toLowerCase(),
+            `Your Booking with ${creatorProfile.displayName} is Confirmed!`,
+            emailHtml
+        );
+
+        return NextResponse.json({ success: true, bookingId: booking._id, bookingRef });
     } catch (error: any) {
         console.error('Booking POST error:', error);
         return NextResponse.json(

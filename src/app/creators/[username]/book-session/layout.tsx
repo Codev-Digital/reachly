@@ -40,6 +40,7 @@ interface BookingState {
   selectedTime: string | null;
   userDetails: UserDetails;
   step: number;
+  bookingRef?: string;
 }
 
 const STORAGE_KEY = 'reachly_booking_state';
