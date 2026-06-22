@@ -23,15 +23,36 @@ export default function CreatorNavbar() {
   }, [status]);
 
   const handleDashboardClick = async () => {
-    if (userData) {
-      // If user has a creator profile and it's complete → go to creator dashboard
-      if (userData.creatorProfile && userData.creatorProfile.isProfileComplete) {
+    let currentUserData = userData;
+    // If user data not loaded yet, fetch it
+    if (!currentUserData) {
+      try {
+        const res = await fetch('/api/user/me');
+        if (res.ok) {
+          currentUserData = await res.json();
+        }
+      } catch (err) {
+        console.error('Error fetching user data:', err);
+        return;
+      }
+    }
+
+    if (currentUserData) {
+      // Check if user is pending approval first
+      if (currentUserData.user.approvalStatus === 'pending') {
+        router.push('/creators/pending-approval');
+        return;
+      }
+      
+      // If user has a creator profile and it's complete and approved → go to creator dashboard
+      if (currentUserData.creatorProfile && currentUserData.creatorProfile.isProfileComplete && currentUserData.user.approvalStatus === 'approved') {
         router.push('/creators/dashboard');
         return;
       }
       
       // If user has a creator profile but it's not complete OR onboardingStep >0 → go to creator onboarding
-      if (userData.creatorProfile || userData.user.onboardingStep > 0) {
+      if (currentUserData.creatorProfile || currentUserData.user.onboardingStep > 0) {
+        // But first check if they're not pending (we did that already)
         router.push('/creator-onboarding/step-1');
         return;
       }

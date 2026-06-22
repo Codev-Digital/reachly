@@ -19,8 +19,17 @@ export async function GET() {
     }
 
     // Only mark hasSeenWelcome as true if user has onboardingStep > 0 OR a CreatorProfile
+    // Also ensure approvalStatus is set for existing users
+    let needsSave = false;
     if (user.onboardingStep > 0 && !user.hasSeenWelcome) {
       user.hasSeenWelcome = true;
+      needsSave = true;
+    }
+    if (!user.approvalStatus) {
+      user.approvalStatus = 'none';
+      needsSave = true;
+    }
+    if (needsSave) {
       await user.save();
     }
 
@@ -36,6 +45,7 @@ export async function GET() {
         isRegistrationComplete: user.isRegistrationComplete,
         onboardingStep: user.onboardingStep,
         hasSeenWelcome: user.hasSeenWelcome,
+        approvalStatus: user.approvalStatus,
       },
       creatorProfile: creatorProfile
         ? {

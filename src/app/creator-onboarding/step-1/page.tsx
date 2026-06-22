@@ -1,15 +1,12 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import CreatorNavbar from '@/components/CreatorNavbar';
 
 export default function CreatorOnboardingStep1() {
   const router = useRouter();
 
   return (
     <div className="min-h-screen bg-[#0C0C0C]">
-      {/* Header with Navbar */}
-      <CreatorNavbar />
 
       {/* Progress Steps */}
       <div className="border-b border-[rgba(255,255,255,0.08)]">

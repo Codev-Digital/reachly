@@ -100,6 +100,12 @@ export default function CreatorOnboardingStep7() {
     })();
   }, []);
 
+  useEffect(() => {
+    if (data?.allComplete && !isActive) {
+      setIsActive(true);
+    }
+  }, [data?.allComplete, isActive]);
+
   // ── Booking link ──────────────────────────────────────────────────────────
   const username = data?.profile?.username || '';
   const bookingLink = `https://reachly.pk/${username}`;
@@ -124,16 +130,21 @@ export default function CreatorOnboardingStep7() {
 
   // ── Go Live / Save Draft ──────────────────────────────────────────────────
   const handleGoLive = async (activate: boolean) => {
+    const activateValue = activate && data?.allComplete;
     setSaving(true); setSaveError('');
     try {
       const res = await fetch('/api/creator-onboarding/step-7', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ activate }),
+        body: JSON.stringify({ activate: activateValue }),
       });
       const json = await res.json();
       if (json.success) {
-        router.push('/creators/dashboard');
+        if (activateValue) {
+          router.push('/creators/pending-approval');
+        } else {
+          router.push('/creators/dashboard');
+        }
       } else {
         setSaveError(json.error || 'Something went wrong. Please try again.');
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -167,7 +178,6 @@ export default function CreatorOnboardingStep7() {
 
   return (
     <div className="min-h-screen bg-[#0C0C0C]">
-      <CreatorNavbar />
 
       {/* Progress */}
       <div className="border-b border-[rgba(255,255,255,0.08)]">
@@ -517,16 +527,16 @@ export default function CreatorOnboardingStep7() {
         {/* ── CTA Buttons ── */}
         <div className="space-y-3">
           <button
-            onClick={() => handleGoLive(isActive)}
-            disabled={saving}
-            className={`w-full font-serif font-semibold py-3 sm:py-4 px-8 rounded-full text-sm transition-all flex items-center justify-center gap-2 ${isActive && allDone
+            onClick={() => handleGoLive(true)}
+            disabled={!allDone || saving}
+            className={`w-full font-serif font-semibold py-3 sm:py-4 px-8 rounded-full text-sm transition-all flex items-center justify-center gap-2 ${allDone
                 ? 'bg-[#C8A97E] text-[#0C0C0C] hover:opacity-90'
                 : 'bg-[rgba(200,169,126,0.08)] border border-[rgba(200,169,126,0.3)] text-[#C8A97E] hover:border-[#C8A97E]'
               } disabled:opacity-50`}
           >
             {saving ? (
               <><svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" /></svg>Saving…</>
-            ) : isActive && allDone ? (
+            ) : allDone ? (
               <><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 2L11 13" /><path d="M22 2L15 22L11 13L2 9L22 2Z" /></svg>Go Live Now</>
             ) : (
               'Welcome to Reachly, Go Live Now.'

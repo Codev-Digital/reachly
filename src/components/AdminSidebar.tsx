@@ -22,6 +22,8 @@ const AdminSidebar = ({
   useEffect(() => {
     if (propActive) {
       setActiveItem(propActive);
+    } else if (pathname?.includes('/admin/requests')) {
+      setActiveItem('Requests');
     } else if (pathname?.includes('/admin/users')) {
       setActiveItem('Users');
     } else if (pathname?.includes('/admin/creators')) {
@@ -47,6 +49,7 @@ const AdminSidebar = ({
 
   const menuItems = [
     { name: 'Dashboard', icon: 'dashboard', href: '/admin/dashboard' },
+    { name: 'Requests', icon: 'requests', href: '/admin/requests' },
     { name: 'Users', icon: 'users', href: '/admin/users' },
     { name: 'Creators', icon: 'creators', href: '/admin/creators' },
     { name: 'Bookings', icon: 'bookings', href: '/admin/bookings' },
@@ -67,6 +70,12 @@ const AdminSidebar = ({
             <rect x="14" y="3" width="7" height="7" />
             <rect x="3" y="14" width="7" height="7" />
             <rect x="14" y="14" width="7" height="7" />
+          </svg>
+        );
+      case 'requests':
+        return (
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
           </svg>
         );
       case 'users':

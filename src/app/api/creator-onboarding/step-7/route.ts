@@ -68,6 +68,9 @@ export async function PUT(req: NextRequest) {
       if (!sessionTypes)                     return NextResponse.json({ error: 'Add at least one session type (Step 3).' }, { status: 422 });
       if (!availability?.isAvailabilityComplete) return NextResponse.json({ error: 'Set your availability (Step 5).' }, { status: 422 });
       if (!payment?.isPaymentComplete)       return NextResponse.json({ error: 'Add your payment details (Step 6).' }, { status: 422 });
+      
+      // Set approval status to pending when submitting application
+      user.approvalStatus = 'pending';
     }
 
     user.onboardingStep = 7;

@@ -6,16 +6,19 @@ import { useEffect, useState } from 'react';
 
 export default function DashboardRedirect() {
   const router = useRouter();
-  const { data: session, status } = useSession();
-  const [redirected, setRedirected] = useState(false);
+  const { status } = useSession();
 
   useEffect(() => {
-    if (status === 'authenticated' && !redirected) {
+    if (status === 'authenticated') {
       const redirectUser = async () => {
         const res = await fetch('/api/user/me');
         if (res.ok) {
           const userData = await res.json();
-          setRedirected(true);
+
+          if (userData.user.approvalStatus === 'pending') {
+            router.push('/creators/pending-approval');
+            return;
+          }
           
           // Case 1: Has Creator Profile
           if (userData.creatorProfile) {
@@ -47,11 +50,10 @@ export default function DashboardRedirect() {
         }
       };
       redirectUser();
-    } else if (status === 'unauthenticated' && !redirected) {
-      setRedirected(true);
+    } else if (status === 'unauthenticated') {
       router.push('/login');
     }
-  }, [status, redirected, router]);
+  }, [status, router]);
 
   return <div className="min-h-screen bg-[#0C0C0C] flex items-center justify-center">
     <div className="text-[#F9F6F2]">Loading...</div>

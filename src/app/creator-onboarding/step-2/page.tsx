@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import CreatorNavbar from '@/components/CreatorNavbar';
 import { updateCreatorProfile, getCurrentUser } from '@/lib/auth-client';
 
 // ── Required fields (must all be non-empty to continue) ─────────────────────
@@ -261,7 +260,6 @@ export default function CreatorOnboardingStep2() {
 
   return (
     <div className="min-h-screen bg-[#0C0C0C]">
-      <CreatorNavbar />
 
       {/* Progress Steps */}
       <div className="border-b border-[rgba(255,255,255,0.08)]">

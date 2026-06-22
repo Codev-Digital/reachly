@@ -70,8 +70,16 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // ── 3. Logged-in and complete → creator-onboarding is allowed ─────────────
-  //    (falls through to rule 4 — NextResponse.next())
+  // ── 3. Creator pending approval check ─────────────────────────────────────
+  const approvalStatus = (token as any)?.approvalStatus;
+  if (isLoggedIn && approvalStatus === 'pending') {
+    if (startsWith(pathname, ['/creators/']) && pathname !== '/creators/pending-approval') {
+      return NextResponse.redirect(new URL('/creators/pending-approval', request.url));
+    }
+  }
+
+  // ── 4. Logged-in and complete → creator-onboarding is allowed ─────────────
+  //    (falls through to rule 5 — NextResponse.next())
 
   // ── 4. Not logged in trying to access a protected route → login ───────────
   const needsAuth =

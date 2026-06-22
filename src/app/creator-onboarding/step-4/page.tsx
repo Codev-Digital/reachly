@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import CreatorNavbar from '@/components/CreatorNavbar';
 
 const REACHLY_FEE = 0.10; // 10%
 const PROMO_DISC  = 0.20; // 20% first-session discount
@@ -79,7 +78,6 @@ export default function CreatorOnboardingStep4() {
 
   return (
     <div className="min-h-screen bg-[#0C0C0C]">
-      <CreatorNavbar />
 
       {/* Progress */}
       <div className="border-b border-[rgba(255,255,255,0.08)]">

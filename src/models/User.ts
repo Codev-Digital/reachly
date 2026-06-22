@@ -19,6 +19,7 @@ export interface IUser extends Document {
    */
   onboardingStep: number;
   hasSeenWelcome: boolean; // Track if user has seen the welcome page
+  approvalStatus: 'none' | 'pending' | 'approved' | 'rejected'; // Creator approval status
   createdAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
@@ -49,6 +50,11 @@ const UserSchema = new Schema<IUser>(
     newEmail: { type: String },
     onboardingStep: { type: Number, default: 0 },
     hasSeenWelcome: { type: Boolean, default: false },
+    approvalStatus: { 
+      type: String, 
+      enum: ['none', 'pending', 'approved', 'rejected'], 
+      default: 'none' 
+    },
   },
   { timestamps: true }
 );

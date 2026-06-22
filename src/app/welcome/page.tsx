@@ -23,13 +23,22 @@ export default function WelcomePage() {
           const data = await res.json();
           setUserData(data);
           
+          // Case 0: Pending approval should always take priority
+          if (data.user.approvalStatus === 'pending') {
+            setRedirected(true);
+            router.push('/creators/pending-approval');
+            return;
+          }
+
           // Case 1: Has Creator Profile
           if (data.creatorProfile) {
             setRedirected(true);
-            if (data.creatorProfile.isProfileComplete) {
+            if (data.user.approvalStatus === 'approved' && data.creatorProfile.isProfileComplete) {
               router.push('/creators/dashboard');
-            } else {
+            } else if (!data.creatorProfile.isProfileComplete) {
               router.push('/creator-onboarding/step-1');
+            } else {
+              router.push('/creators/pending-approval');
             }
             return;
           }

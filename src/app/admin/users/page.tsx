@@ -11,19 +11,19 @@ const UsersPage = () => {
   const [selectedRows, setSelectedRows] = useState<number[]>([]);
 
   const users = [
-    { id: 1, name: 'Zainab Malik', email: 'zainab.m@gmail.com', role: 'Follower', joined: '28 Apr 2026', status: 'Completed', spent: 'PKR 15,200', lastActive: '7 May, 07:00 am', avatar: '/ahad raza mir.png' },
-    { id: 2, name: 'Zainab Malik', email: 'zainab.m@gmail.com', role: 'Follower', joined: '28 Apr 2026', status: 'Completed', spent: 'PKR 15,200', lastActive: '7 May, 07:00 am', avatar: '/ahad raza mir.png' },
-    { id: 3, name: 'Zainab Malik', email: 'zainab.m@gmail.com', role: 'Follower', joined: '28 Apr 2026', status: 'Completed', spent: 'PKR 45,200', lastActive: '7 May, 07:00 am', avatar: '/ahad raza mir.png' },
-    { id: 4, name: 'Zainab Malik', email: 'zainab.m@gmail.com', role: 'Follower', joined: '28 Apr 2026', status: 'Completed', spent: 'PKR 45,200', lastActive: '7 May, 07:00 am', avatar: '/ahad raza mir.png' },
-    { id: 5, name: 'Zainab Malik', email: 'zainab.m@gmail.com', role: 'Follower', joined: '28 Apr 2026', status: 'Completed', spent: 'PKR 15,200', lastActive: '7 May, 07:00 am', avatar: '/ahad raza mir.png' },
-    { id: 6, name: 'Zainab Malik', email: 'zainab.m@gmail.com', role: 'Follower', joined: '28 Apr 2026', status: 'Completed', spent: 'PKR 45,200', lastActive: '7 May, 07:00 am', avatar: '/ahad raza mir.png' },
-    { id: 7, name: 'Zainab Malik', email: 'zainab.m@gmail.com', role: 'Follower', joined: '28 Apr 2026', status: 'Completed', spent: 'PKR 15,200', lastActive: '7 May, 07:00 am', avatar: '/ahad raza mir.png' },
-    { id: 8, name: 'Zainab Malik', email: 'zainab.m@gmail.com', role: 'Follower', joined: '28 Apr 2026', status: 'Completed', spent: 'PKR 45,200', lastActive: '7 May, 07:00 am', avatar: '/ahad raza mir.png' },
-    { id: 9, name: 'Zainab Malik', email: 'zainab.m@gmail.com', role: 'Follower', joined: '28 Apr 2026', status: 'Completed', spent: 'PKR 15,200', lastActive: '7 May, 07:00 am', avatar: '/ahad raza mir.png' },
-    { id: 10, name: 'Zainab Malik', email: 'zainab.m@gmail.com', role: 'Follower', joined: '28 Apr 2026', status: 'Completed', spent: 'PKR 45,200', lastActive: '7 May, 07:00 am', avatar: '/ahad raza mir.png' },
+    { id: 1, name: 'Zainab Malik', email: 'zainab.m@gmail.com', role: 'Follower', joined: '28 Apr 2026', status: 'Active', approvalStatus: null, spent: 'PKR 15,200', lastActive: '7 May, 07:00 am', avatar: '/ahad raza mir.png' },
+    { id: 2, name: 'Ahad Raza Mir', email: 'ahad@reachly.com', role: 'Creator', joined: '20 Apr 2026', status: 'Approved', approvalStatus: 'approved', spent: 'PKR 0', lastActive: '10 May, 03:30 pm', avatar: '/ahad raza mir.png' },
+    { id: 3, name: 'Mariam Hussain', email: 'mariam.h@example.com', role: 'Creator', joined: '15 Apr 2026', status: 'Pending Approval', approvalStatus: 'pending', spent: 'PKR 0', lastActive: '12 May, 09:15 am', avatar: '/ahad raza mir.png' },
+    { id: 4, name: 'Zainab Malik', email: 'zainab.m@gmail.com', role: 'Follower', joined: '28 Apr 2026', status: 'Active', approvalStatus: null, spent: 'PKR 45,200', lastActive: '7 May, 07:00 am', avatar: '/ahad raza mir.png' },
+    { id: 5, name: 'Zainab Malik', email: 'zainab.m@gmail.com', role: 'Follower', joined: '28 Apr 2026', status: 'Active', approvalStatus: null, spent: 'PKR 15,200', lastActive: '7 May, 07:00 am', avatar: '/ahad raza mir.png' },
+    { id: 6, name: 'Zainab Malik', email: 'zainab.m@gmail.com', role: 'Follower', joined: '28 Apr 2026', status: 'Active', approvalStatus: null, spent: 'PKR 45,200', lastActive: '7 May, 07:00 am', avatar: '/ahad raza mir.png' },
+    { id: 7, name: 'Zainab Malik', email: 'zainab.m@gmail.com', role: 'Follower', joined: '28 Apr 2026', status: 'Active', approvalStatus: null, spent: 'PKR 15,200', lastActive: '7 May, 07:00 am', avatar: '/ahad raza mir.png' },
+    { id: 8, name: 'Zainab Malik', email: 'zainab.m@gmail.com', role: 'Follower', joined: '28 Apr 2026', status: 'Active', approvalStatus: null, spent: 'PKR 45,200', lastActive: '7 May, 07:00 am', avatar: '/ahad raza mir.png' },
+    { id: 9, name: 'Zainab Malik', email: 'zainab.m@gmail.com', role: 'Follower', joined: '28 Apr 2026', status: 'Active', approvalStatus: null, spent: 'PKR 15,200', lastActive: '7 May, 07:00 am', avatar: '/ahad raza mir.png' },
+    { id: 10, name: 'Zainab Malik', email: 'zainab.m@gmail.com', role: 'Follower', joined: '28 Apr 2026', status: 'Active', approvalStatus: null, spent: 'PKR 45,200', lastActive: '7 May, 07:00 am', avatar: '/ahad raza mir.png' },
   ];
 
-  const tabs = ['All Users (50)', 'Followers (28)', 'Creators (20)', 'Admins (2)', 'Suspended (4)'];
+  const tabs = ['All Users (50)', 'Followers (28)', 'Creators (20)', 'Pending Approval (3)', 'Admins (2)', 'Suspended (4)'];
 
   const toggleRow = (id: number) => {
     setSelectedRows(prev => 
@@ -35,6 +35,8 @@ const UsersPage = () => {
     name: 'Emaan Raza',
     email: 'emaan.r@gmail.com',
     status: 'Active',
+    approvalStatus: null,
+    role: 'Follower',
     location: 'Lahore',
     joined: '28 Apr 2026',
     lastActive: '7 May, 07:00 am',
@@ -265,6 +267,23 @@ const UsersPage = () => {
               </button>
             </div>
 
+            {userDetails.approvalStatus === 'pending' && userDetails.role === 'Creator' && (
+              <div className="flex flex-col gap-3 mb-6">
+                <button className="flex items-center justify-center gap-2 bg-green-900/10 border border-green-500/30 px-6 py-3 rounded-xl text-sm font-sans text-green-400 hover:bg-green-900/20 transition-all">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  Approve Creator
+                </button>
+                <button className="flex items-center justify-center gap-2 bg-red-900/10 border border-red-500/30 px-6 py-3 rounded-xl text-sm font-sans text-red-400 hover:bg-red-900/20 transition-all">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                  Reject Creator
+                </button>
+              </div>
+            )}
             <div className="flex flex-col gap-3 mb-6">
               <button
                 onClick={() => setShowSuspendModal(true)}

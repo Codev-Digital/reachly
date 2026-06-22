@@ -49,6 +49,7 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           isRegistrationComplete: user.isRegistrationComplete,
           onboardingStep: user.onboardingStep,
+          approvalStatus: user.approvalStatus,
         } as any;
       },
     }),
@@ -87,6 +88,10 @@ export const authOptions: NextAuthOptions = {
             existingUser.googleId = account.providerAccountId;
             await existingUser.save();
           }
+          // Mutate user object to pass DB fields to jwt callback
+          (user as any).isRegistrationComplete = existingUser.isRegistrationComplete;
+          (user as any).onboardingStep = existingUser.onboardingStep;
+          (user as any).approvalStatus = existingUser.approvalStatus;
         }
       }
 
@@ -94,16 +99,22 @@ export const authOptions: NextAuthOptions = {
     },
 
     //  FIXED: NO DATABASE CALL HERE (this was breaking Vercel build)
-    async jwt({ token, user, account }) {
+    async jwt({ token, user, account, trigger, session }) {
+      if (trigger === "update" && session?.approvalStatus) {
+        token.approvalStatus = session.approvalStatus;
+      }
+
       if (user) {
         token.id = user.id;
         token.email = user.email;
         if (account?.provider === "google") {
-          token.isRegistrationComplete = true;
-          token.onboardingStep = 0;
+          token.isRegistrationComplete = (user as any).isRegistrationComplete ?? true;
+          token.onboardingStep = (user as any).onboardingStep ?? 0;
+          token.approvalStatus = (user as any).approvalStatus ?? 'none';
         } else {
           token.isRegistrationComplete = (user as any).isRegistrationComplete;
           token.onboardingStep = (user as any).onboardingStep;
+          token.approvalStatus = (user as any).approvalStatus;
         }
       }
 
@@ -118,6 +129,7 @@ export const authOptions: NextAuthOptions = {
           id: String(token.id || ""),
           isRegistrationComplete: !!token.isRegistrationComplete,
           onboardingStep: token.onboardingStep || 0,
+          approvalStatus: token.approvalStatus || 'none',
         },
       };
     }

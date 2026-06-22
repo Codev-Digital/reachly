@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import CreatorNavbar from '@/components/CreatorNavbar';
 import { updateSessionTypes } from '@/lib/auth-client';
 
 /* ─── types ─────────────────────────────────────────────────────────────── */
@@ -169,7 +168,6 @@ export default function CreatorOnboardingStep3() {
 
   return (
     <div className="min-h-screen bg-[#0C0C0C]">
-      <CreatorNavbar />
 
       {/* Progress bar */}
       <div className="border-b border-[rgba(255,255,255,0.08)]">

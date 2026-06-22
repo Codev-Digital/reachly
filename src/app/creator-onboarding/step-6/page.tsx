@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import CreatorNavbar from '@/components/CreatorNavbar';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type PaymentMethod = 'jazzcash' | 'easypaisa' | 'bank';
@@ -203,7 +202,6 @@ export default function CreatorOnboardingStep6() {
 
   return (
     <div className="min-h-screen bg-[#0C0C0C]">
-      <CreatorNavbar />
 
       {/* Progress */}
       <div className="border-b border-[rgba(255,255,255,0.08)]">
