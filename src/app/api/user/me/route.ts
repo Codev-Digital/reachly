@@ -51,6 +51,8 @@ export async function GET() {
         ? {
             id: creatorProfile._id.toString(),
             username: creatorProfile.username,
+            displayName: creatorProfile.displayName,
+            profilePhoto: creatorProfile.profilePhoto,
             isProfileComplete: creatorProfile.isProfileComplete,
           }
         : null,

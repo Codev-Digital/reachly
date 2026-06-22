@@ -2,10 +2,37 @@
 
 import { motion } from 'framer-motion';
 import CreatorSidebar from '@/components/CreatorSidebar';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+
+function getGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 17) return 'Good afternoon';
+  return 'Good evening';
+}
 
 const CreatorDashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState<string>('');
+
+  useEffect(() => {
+    async function loadProfile() {
+      try {
+        const res = await fetch('/api/user/me');
+        if (res.ok) {
+          const data = await res.json();
+          const name = data.creatorProfile?.displayName || data.user?.name || '';
+          const photo = data.creatorProfile?.profilePhoto || null;
+          setDisplayName(name);
+          setProfilePhoto(photo);
+        }
+      } catch (err) {
+        console.error('Failed to load profile:', err);
+      }
+    }
+    loadProfile();
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#0C0C0C]">
@@ -72,8 +99,20 @@ const CreatorDashboard = () => {
                   </svg>
                 </button>
 
-                <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-[#C8A97E]">
-                  <img src="/ahad raza mir.png" alt="Ahad" className="w-full h-full object-cover" />
+                <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-[#C8A97E] bg-[#141414] flex items-center justify-center flex-shrink-0">
+                  {profilePhoto ? (
+                    <img src={profilePhoto} alt={displayName} className="w-full h-full object-cover"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                    />
+                  ) : displayName ? (
+                    <span className="text-[#C8A97E] font-serif text-sm font-bold">
+                      {displayName.charAt(0).toUpperCase()}
+                    </span>
+                  ) : (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="1.5">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+                    </svg>
+                  )}
                 </div>
               </div>
             </div>
@@ -86,11 +125,25 @@ const CreatorDashboard = () => {
               className="bg-gradient-to-br from-[#141414] to-[#0C0C0C] border border-[rgba(200,169,126,0.2)] rounded-xl p-5 mb-6"
             >
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-[#C8A97E]">
-                  <img src="/ahad raza mir.png" alt="Ahad" className="w-full h-full object-cover" />
+                <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-[#C8A97E] bg-[#0C0C0C] flex items-center justify-center flex-shrink-0">
+                  {profilePhoto ? (
+                    <img src={profilePhoto} alt={displayName} className="w-full h-full object-cover"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                    />
+                  ) : displayName ? (
+                    <span className="text-[#C8A97E] font-serif text-xl font-bold">
+                      {displayName.charAt(0).toUpperCase()}
+                    </span>
+                  ) : (
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="1.5">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+                    </svg>
+                  )}
                 </div>
                 <div>
-                  <h2 className="font-serif text-2xl font-bold text-[#F9F6F2]">Good evening, Ahad</h2>
+                  <h2 className="font-serif text-2xl font-bold text-[#F9F6F2]">
+                    {getGreeting()}{displayName ? `, ${displayName.split(' ')[0]}` : ''}
+                  </h2>
                   <p className="font-sans text-sm text-[#F9F6F2] opacity-70">
                     Here is everything happening with your creator business today.
                   </p>

@@ -23,8 +23,8 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
             user = await User.findOne({ email });
         }
 
-        if (!user && session.user.id) {
-            user = await User.findById(session.user.id).exec();
+        if (!user && (session.user as any).id) {
+            user = await User.findById((session.user as any).id).exec();
         }
 
         if (!user) {

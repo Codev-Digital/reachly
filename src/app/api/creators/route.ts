@@ -8,14 +8,11 @@ export async function GET(request: NextRequest) {
     try {
         await connectDB();
 
-        // 1. Fetch all users who have completed onboarding (assuming steps > 6 means live)
-        // Actually the user schema says: "7 = Go Live" or similar. Let's just assume onboardingStep >= 6 or 7 means they completed it.
-        // Let's filter by onboardingStep >= 6 for safety, or we could just get those who have CreatorProfile AND SessionType.
-
-        // We can just fetch all CreatorProfiles that are marked as complete or users who meet the criteria.
-        // Currently CreatorProfile has `isProfileComplete`. Let's just find profiles based on that or we can just fetch all for now and aggregate.
-
-        const creators = await User.find({ onboardingStep: { $gte: 6 } }).select('_id onboardingStep');
+        // Only show approved creators on the public explore page
+        const creators = await User.find({
+          onboardingStep: { $gte: 6 },
+          approvalStatus: 'approved'
+        }).select('_id onboardingStep');
         const creatorUserIds = creators.map((c) => c._id);
 
         if (!creatorUserIds.length) {
