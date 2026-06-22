@@ -39,7 +39,9 @@ export default function LoginPage() {
         const res = await fetch('/api/user/me');
         if (res.ok) {
           const userData = await res.json();
-          if (userData.creatorProfile && userData.creatorProfile.isProfileComplete) {
+          if (email.toLowerCase() === 'abdullahgotaccess@gmail.com') {
+            router.push('/admin/dashboard');
+          } else if (userData.creatorProfile && userData.creatorProfile.isProfileComplete) {
             router.push('/creators/dashboard');
           } else if (userData.creatorProfile || userData.user.onboardingStep > 0) {
             router.push('/creator-onboarding/step-1');
