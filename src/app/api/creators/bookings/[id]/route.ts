@@ -6,17 +6,27 @@ import connectDB from '@/lib/mongodb';
 import Booking from '@/models/Booking';
 import User from '@/models/User';
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, context: { params: Promise<{ id: string }> }) {
     try {
-        const { id } = params;
+        const { id } = await context.params;
         const session = await getServerSession(authOptions);
-        if (!session?.user?.email) {
+        if (!session?.user) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
         await connectDB();
 
-        const user = await User.findOne({ email: session.user.email });
+        const email = session.user.email?.toLowerCase().trim();
+        let user = null;
+
+        if (email) {
+            user = await User.findOne({ email });
+        }
+
+        if (!user && session.user.id) {
+            user = await User.findById(session.user.id).exec();
+        }
+
         if (!user) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }

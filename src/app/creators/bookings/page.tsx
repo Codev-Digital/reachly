@@ -45,12 +45,28 @@ const CreatorBookings = () => {
   const statusOptions = ['All statuses', 'Upcoming', 'Pending Action', 'Past', 'Cancelled'];
 
   useEffect(() => {
+    const normalizeStatus = (status: string | undefined, statusRaw: string | undefined) => {
+      const raw = status || statusRaw || '';
+      if (raw === 'Upcoming' || raw === 'Past' || raw === 'Cancelled' || raw === 'Pending Action') {
+        return raw;
+      }
+      if (raw === 'confirmed') return 'Upcoming';
+      if (raw === 'pending') return 'Pending Action';
+      if (raw === 'completed') return 'Past';
+      if (raw === 'cancelled') return 'Cancelled';
+      return 'Upcoming';
+    };
+
     const fetchBookings = async () => {
       try {
         const res = await fetch('/api/creators/bookings');
         if (res.ok) {
           const data = await res.json();
-          setBookings(data.bookings);
+          const normalizedBookings = (data.bookings || []).map((booking: any) => ({
+            ...booking,
+            status: normalizeStatus(booking.status, booking.statusRaw),
+          }));
+          setBookings(normalizedBookings);
         }
       } catch (error) {
         console.error('Error fetching bookings:', error);
@@ -145,6 +161,21 @@ const CreatorBookings = () => {
         )
       )
     );
+
+    if (bookings.length === 0) {
+      return;
+    }
+
+    const tabOrder: BookingStatus[] = ['Upcoming', 'Pending Action', 'Past', 'Cancelled'];
+    const currentTabHasItems = bookings.some((booking) => booking.status === activeTab);
+
+    if (!currentTabHasItems) {
+      const firstAvailableTab = tabOrder.find((status) => bookings.some((booking) => booking.status === status));
+      if (firstAvailableTab && firstAvailableTab !== activeTab) {
+        setActiveTab(firstAvailableTab);
+        setSelectedBookings([]);
+      }
+    }
   }, [bookings]);
 
   const handleMarkCompleted = async () => {
