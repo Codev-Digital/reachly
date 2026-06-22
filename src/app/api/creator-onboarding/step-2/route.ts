@@ -119,38 +119,39 @@ export async function PUT(request: NextRequest) {
     // ── Upload photos to Supabase if new files provided ────────────────────
     const profilePhotoFile = formData.get('profilePhoto') as File | null;
     const coverPhotoFile = formData.get('coverPhoto') as File | null;
+if (profilePhotoFile && profilePhotoFile.size > 0) {
+  if (profilePhotoFile.size > 50 * 1024 * 1024) {
+    return NextResponse.json(
+      { error: 'Profile photo must be smaller than 50 MB' },
+      { status: 400 }
+    );
+  }
 
-    if (profilePhotoFile && profilePhotoFile.size > 0) {
-      if (profilePhotoFile.size > 5 * 1024 * 1024) {
-        return NextResponse.json(
-          { error: 'Profile photo must be smaller than 5 MB' },
-          { status: 400 }
-        );
-      }
-      const bytes = await profilePhotoFile.arrayBuffer();
-      const url = await uploadToSupabase(
-        Buffer.from(bytes),
-        profilePhotoFile.type,
-        `profiles/${user._id}/profile.${profilePhotoFile.type.split('/')[1]}`
-      );
-      profile.profilePhoto = url;
-    }
+  const bytes = await profilePhotoFile.arrayBuffer();
+  const url = await uploadToSupabase(
+    Buffer.from(bytes),
+    profilePhotoFile.type,
+    `profiles/${user._id}/profile.${profilePhotoFile.type.split('/')[1]}`
+  );
+  profile.profilePhoto = url;
+}
 
-    if (coverPhotoFile && coverPhotoFile.size > 0) {
-      if (coverPhotoFile.size > 5 * 1024 * 1024) {
-        return NextResponse.json(
-          { error: 'Cover photo must be smaller than 5 MB' },
-          { status: 400 }
-        );
-      }
-      const bytes = await coverPhotoFile.arrayBuffer();
-      const url = await uploadToSupabase(
-        Buffer.from(bytes),
-        coverPhotoFile.type,
-        `profiles/${user._id}/cover.${coverPhotoFile.type.split('/')[1]}`
-      );
-      profile.coverPhoto = url;
-    }
+if (coverPhotoFile && coverPhotoFile.size > 0) {
+  if (coverPhotoFile.size > 50 * 1024 * 1024) {
+    return NextResponse.json(
+      { error: 'Cover photo must be smaller than 50 MB' },
+      { status: 400 }
+    );
+  }
+
+  const bytes = await coverPhotoFile.arrayBuffer();
+  const url = await uploadToSupabase(
+    Buffer.from(bytes),
+    coverPhotoFile.type,
+    `profiles/${user._id}/cover.${coverPhotoFile.type.split('/')[1]}`
+  );
+  profile.coverPhoto = url;
+}
 
     // ── Persist all text data to MongoDB ───────────────────────────────────
     profile.displayName = displayName;

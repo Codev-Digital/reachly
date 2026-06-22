@@ -121,7 +121,7 @@ const CreatorProfile = () => {
                           Upload photo
                         </button>
                       </div>
-                      <p className="text-xs font-sans text-[#F9F6F2] opacity-50 mt-2">JPG or PNG, max 5MB</p>
+                      <p className="text-xs font-sans text-[#F9F6F2] opacity-50 mt-2">JPG or PNG, max 50MB</p>
                     </div>
 
                     <div className="mb-5">
