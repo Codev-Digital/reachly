@@ -1,6 +1,5 @@
 'use client';
 
-
 import Link from 'next/link';
 import CreatorNavbar from '@/components/CreatorNavbar';
 import Footer from '@/components/Footer';
@@ -143,8 +142,6 @@ export default function AboutPage() {
             alt="Merium"
             className="h-40 sm:h-56 object-contain absolute bottom-0 right-16 sm:right-40 z-0"
           />
-
-          {/* Front image */}
           <img
             src="/sara khan.png"
             alt="Sara Khan"
