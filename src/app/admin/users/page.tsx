@@ -42,7 +42,7 @@ const UsersPage = () => {
     lastActive: '7 May, 07:00 am',
     totalBookings: 1,
     totalSpent: 'PKR 1,800',
-    avatar: '/ahad raza mir.png',
+    avatar: '/avatar.png',
   };
 
   return (

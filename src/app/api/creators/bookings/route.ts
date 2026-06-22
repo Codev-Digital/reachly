@@ -27,19 +27,26 @@ function convertTo24Hour(time12h: string): string {
 
 export async function GET(request: NextRequest) {
     try {
+        console.log('=== /api/creators/bookings called ===');
         const session = await getServerSession(authOptions);
         if (!session?.user?.email) {
+            console.log('Unauthorized - no session email');
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
+        console.log('Session email:', session.user.email);
 
         await connectDB();
+        console.log('Connected to DB');
 
         const user = await User.findOne({ email: session.user.email });
         if (!user) {
+            console.log('User not found');
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }
+        console.log('Found user:', user._id);
 
         // Get all bookings for this creator
+        console.log('Querying bookings for creatorId:', user._id);
         const bookings = await Booking.find({ creatorId: user._id })
             .sort({ scheduledDate: -1, createdAt: -1 })
             .populate({
@@ -48,6 +55,7 @@ export async function GET(request: NextRequest) {
                 select: 'title duration features'
             })
             .lean();
+        console.log('Found', bookings.length, 'bookings');
 
         // Enrich with user/guest info
         const enrichedBookings = await Promise.all(
@@ -122,6 +130,7 @@ export async function GET(request: NextRequest) {
                     reason: '',
                     isPaid: booking.paymentStatus === 'paid',
                     bookedOn: bookedOn,
+                    scheduledDate: booking.scheduledDate,
                 };
             })
         );

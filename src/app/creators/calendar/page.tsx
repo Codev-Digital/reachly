@@ -1,33 +1,120 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import CreatorNavbar from '@/components/CreatorNavbar';
 import CreatorSidebar from '@/components/CreatorSidebar';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+
+interface Booking {
+  id: string;
+  bookingRef: string;
+  follower: string;
+  email: string;
+  avatar: string;
+  session: string;
+  date: string;
+  shortDate: string;
+  time: string;
+  duration: string;
+  amount: string;
+  status: string;
+  statusRaw: string;
+  paymentStatus: string;
+  paymentMethod?: string;
+  preSessionQuestion: string;
+  reason?: string;
+  isPaid?: boolean;
+  bookedOn: string;
+  scheduledDate: string;
+}
 
 const CreatorCalendar = () => {
   const [view, setView] = useState<'month' | 'week' | 'days'>('month');
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [loading, setLoading] = useState(true);
 
-  // Sample booking data for the calendar
-  const booking = {
-    follower: 'Bilal Qureshi',
-    avatar: '/ahad raza mir.png',
-    id: 'RCH-99001127',
-    sessionType: 'Content Strategy',
-    dateTime: 'Sun, 31 May 2026 at 03:00 PM',
-    duration: '60 min',
-    price: 'PKR 2,500',
-    netEarnings: 'PKR 2,125',
-    status: 'Completed',
-    preSessionQuestion: 'I want to start a YouTube channel about Pakistani street food. How do I structure my videos and what gear should I buy on a budget?'
+  // Fetch bookings on component mount
+  useEffect(() => {
+    const fetchBookings = async () => {
+      try {
+        console.log('Fetching bookings from /api/creators/bookings...');
+        const response = await fetch('/api/creators/bookings');
+        console.log('Response status:', response.status);
+        const data = await response.json();
+        console.log('API response data:', data);
+        if (data.bookings) {
+          console.log('Setting bookings:', data.bookings.length, 'bookings');
+          setBookings(data.bookings);
+        }
+      } catch (error) {
+        console.error('Error fetching bookings:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchBookings();
+  }, []);
+
+  // Helper function to get bookings for a specific date
+  const getBookingsForDate = (date: Date) => {
+    return bookings.filter(booking => {
+      const bookingDate = new Date(booking.scheduledDate);
+      return (
+        bookingDate.getDate() === date.getDate() &&
+        bookingDate.getMonth() === date.getMonth() &&
+        bookingDate.getFullYear() === date.getFullYear()
+      );
+    });
+  };
+
+  // Open booking modal with selected booking
+  const openBookingModal = (booking: Booking) => {
+    setSelectedBooking(booking);
+    setShowBookingModal(true);
+  };
+
+  // Format current month/year for display
+  const formatCurrentMonth = () => {
+    return currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  };
+
+  // Function to generate calendar days
+  const generateCalendarDays = () => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const prevLastDay = new Date(year, month, 0);
+    const firstDayOfWeek = firstDay.getDay();
+    const lastDateOfMonth = lastDay.getDate();
+    const lastDateOfPrevMonth = prevLastDay.getDate();
+
+    const days: Date[] = [];
+
+    // Previous month days
+    for (let i = firstDayOfWeek - 1; i >= 0; i--) {
+      days.push(new Date(year, month - 1, lastDateOfPrevMonth - i));
+    }
+
+    // Current month days
+    for (let i = 1; i <= lastDateOfMonth; i++) {
+      days.push(new Date(year, month, i));
+    }
+
+    // Next month days
+    const remainingDays = 42 - days.length;
+    for (let i = 1; i <= remainingDays; i++) {
+      days.push(new Date(year, month + 1, i));
+    }
+
+    return days;
   };
 
   return (
     <div className="min-h-screen bg-[#0C0C0C]">
-      <CreatorNavbar />
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <div className="flex gap-8">
           {/* Reusable Sidebar */}
@@ -119,17 +206,26 @@ const CreatorCalendar = () => {
             {/* Calendar Navigation */}
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <button className="w-10 h-10 rounded-lg bg-[#141414] border border-[rgba(255,255,255,0.1)] flex items-center justify-center text-[#F9F6F2] hover:border-[#C8A97E] transition-all">
+                <button
+                  onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1))}
+                  className="w-10 h-10 rounded-lg bg-[#141414] border border-[rgba(255,255,255,0.1)] flex items-center justify-center text-[#F9F6F2] hover:border-[#C8A97E] transition-all"
+                >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <polyline points="15 18 9 12 15 6" />
                   </svg>
                 </button>
-                <button className="w-10 h-10 rounded-lg bg-[#141414] border border-[rgba(255,255,255,0.1)] flex items-center justify-center text-[#F9F6F2] hover:border-[#C8A97E] transition-all">
+                <button
+                  onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1))}
+                  className="w-10 h-10 rounded-lg bg-[#141414] border border-[rgba(255,255,255,0.1)] flex items-center justify-center text-[#F9F6F2] hover:border-[#C8A97E] transition-all"
+                >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <polyline points="9 18 15 12 9 6" />
                   </svg>
                 </button>
-                <button className="px-4 py-2 rounded-lg bg-[#141414] border border-[rgba(255,255,255,0.1)] text-sm font-sans text-[#F9F6F2] hover:border-[#C8A97E] transition-all">
+                <button
+                  onClick={() => setCurrentDate(new Date())}
+                  className="px-4 py-2 rounded-lg bg-[#141414] border border-[rgba(255,255,255,0.1)] text-sm font-sans text-[#F9F6F2] hover:border-[#C8A97E] transition-all"
+                >
                   Today
                 </button>
               </div>
@@ -140,7 +236,7 @@ const CreatorCalendar = () => {
                   <line x1="8" y1="2" x2="8" y2="6" />
                   <line x1="3" y1="10" x2="21" y2="10" />
                 </svg>
-                June 2026
+                {formatCurrentMonth()}
               </button>
             </div>
 
@@ -208,129 +304,44 @@ const CreatorCalendar = () => {
                   </div>
 
                   {/* Calendar Grid */}
-                  <div className="grid grid-cols-7">
-                    {/* Week 1 */}
-                    <div className="border-r border-b border-[rgba(255,255,255,0.1)] min-h-[100px] p-2">
-                      <span className="text-sm font-sans text-[#F9F6F2] opacity-30">31</span>
+                  {loading ? (
+                    <div className="p-8 text-center">
+                      <span className="text-[#F9F6F2] font-sans">Loading bookings...</span>
                     </div>
-                    <div className="border-r border-b border-[rgba(255,255,255,0.1)] min-h-[100px] p-2">
-                      <span className="text-sm font-sans text-[#F9F6F2]">1</span>
-                    </div>
-                    <div className="border-r border-b border-[rgba(255,255,255,0.1)] min-h-[100px] p-2">
-                      <span className="text-sm font-sans text-[#F9F6F2]">2</span>
-                    </div>
-                    <div className="border-r border-b border-[rgba(255,255,255,0.1)] min-h-[100px] p-2">
-                      <span className="text-sm font-sans text-[#F9F6F2]">3</span>
-                    </div>
-                    <div className="border-r border-b border-[rgba(255,255,255,0.1)] min-h-[100px] p-2">
-                      <span className="text-sm font-sans text-[#F9F6F2]">4</span>
-                    </div>
-                    <div className="border-r border-b border-[rgba(255,255,255,0.1)] min-h-[100px] p-2">
-                      <span className="text-sm font-sans text-[#F9F6F2]">5</span>
-                    </div>
-                    <div className="border-b border-[rgba(255,255,255,0.1)] min-h-[100px] p-2">
-                      <span className="text-sm font-sans text-[#F9F6F2]">6</span>
-                    </div>
+                  ) : (
+                    <div className="grid grid-cols-7">
+                      {generateCalendarDays().map((date, index) => {
+                        const isCurrentMonth = date.getMonth() === currentDate.getMonth();
+                        const isToday = new Date().toDateString() === date.toDateString();
+                        const dayBookings = getBookingsForDate(date);
 
-                    {/* Week 2 */}
-                    <div className="border-r border-b border-[rgba(255,255,255,0.1)] min-h-[100px] p-2">
-                      <span className="text-sm font-sans text-[#F9F6F2]">7</span>
-                    </div>
-                    <div className="border-r border-b border-[rgba(255,255,255,0.1)] min-h-[100px] p-2">
-                      <span className="text-sm font-sans text-[#F9F6F2]">8</span>
-                    </div>
-                    <div className="border-r border-b border-[rgba(255,255,255,0.1)] min-h-[100px] p-2">
-                      <span className="text-sm font-sans text-[#F9F6F2]">9</span>
-                    </div>
-                    <div className="border-r border-b border-[rgba(255,255,255,0.1)] min-h-[100px] p-2">
-                      <span className="text-sm font-sans text-[#F9F6F2]">10</span>
-                    </div>
-                    <div className="border-r border-b border-[rgba(255,255,255,0.1)] min-h-[100px] p-2">
-                      <span className="text-sm font-sans text-[#F9F6F2]">11</span>
-                    </div>
-                    <div className="border-r border-b border-[rgba(255,255,255,0.1)] min-h-[100px] p-2">
-                      <span className="text-sm font-sans text-[#F9F6F2]">12</span>
-                    </div>
-                    <div className="border-b border-[rgba(255,255,255,0.1)] min-h-[100px] p-2">
-                      <span className="text-sm font-sans text-[#F9F6F2]">13</span>
-                    </div>
+                        return (
+                          <div
+                            key={index}
+                            className={`border-r border-b border-[rgba(255,255,255,0.1)] min-h-[100px] p-2 ${index % 7 === 6 ? 'border-r-0' : ''}`}
+                          >
+                            <span className={`text-sm font-sans ${isCurrentMonth ? 'text-[#F9F6F2]' : 'text-[#F9F6F2] opacity-30'} ${isToday ? 'bg-[#C8A97E] text-[#0C0C0C] px-1 rounded' : ''}`}>
+                              {date.getDate()}
+                            </span>
 
-                    {/* Week 3 */}
-                    <div className="border-r border-b border-[rgba(255,255,255,0.1)] min-h-[100px] p-2">
-                      <span className="text-sm font-sans text-[#F9F6F2]">14</span>
+                            {/* Bookings for this day */}
+                            <div className="mt-2 space-y-1">
+                              {dayBookings.map((booking) => (
+                                <button
+                                  key={booking.id}
+                                  onClick={() => openBookingModal(booking)}
+                                  className="w-full bg-[#C8A97E]/20 border border-[#C8A97E]/40 rounded-lg p-3 text-left cursor-pointer hover:bg-[#C8A97E]/30 transition-all"
+                                >
+                                  <div className="text-lg font-sans text-[#C8A97E] font-semibold leading-tight">{booking.time}</div>
+                                  <div className="text-sm font-sans text-[#F9F6F2] leading-tight mt-1">{booking.follower}</div>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                    <div className="border-r border-b border-[rgba(255,255,255,0.1)] min-h-[100px] p-2">
-                      <span className="text-sm font-sans text-[#F9F6F2]">15</span>
-                    </div>
-                    <div className="border-r border-b border-[rgba(255,255,255,0.1)] min-h-[100px] p-2">
-                      <span className="text-sm font-sans text-[#F9F6F2]">16</span>
-                    </div>
-                    <div className="border-r border-b border-[rgba(255,255,255,0.1)] min-h-[100px] p-2">
-                      <span className="text-sm font-sans text-[#F9F6F2]">17</span>
-                    </div>
-                    <div className="border-r border-b border-[rgba(255,255,255,0.1)] min-h-[100px] p-2">
-                      <span className="text-sm font-sans text-[#F9F6F2]">18</span>
-                    </div>
-                    <div className="border-r border-b border-[rgba(255,255,255,0.1)] min-h-[100px] p-2">
-                      <span className="text-sm font-sans text-[#F9F6F2]">19</span>
-                    </div>
-                    <div className="border-b border-[rgba(255,255,255,0.1)] min-h-[100px] p-2">
-                      <span className="text-sm font-sans text-[#F9F6F2]">20</span>
-                    </div>
-
-                    {/* Week 4 */}
-                    <div className="border-r border-b border-[rgba(255,255,255,0.1)] min-h-[100px] p-2">
-                      <span className="text-sm font-sans text-[#F9F6F2]">21</span>
-                    </div>
-                    <div className="border-r border-b border-[rgba(255,255,255,0.1)] min-h-[100px] p-2">
-                      <span className="text-sm font-sans text-[#F9F6F2]">22</span>
-                    </div>
-                    <div className="border-r border-b border-[rgba(255,255,255,0.1)] min-h-[100px] p-2">
-                      <span className="text-sm font-sans text-[#F9F6F2]">23</span>
-                    </div>
-                    <div className="border-r border-b border-[rgba(255,255,255,0.1)] min-h-[100px] p-2">
-                      <span className="text-sm font-sans text-[#F9F6F2]">24</span>
-                    </div>
-                    <div className="border-r border-b border-[rgba(255,255,255,0.1)] min-h-[100px] p-2">
-                      <span className="text-sm font-sans text-[#F9F6F2]">25</span>
-                    </div>
-                    <div className="border-r border-b border-[rgba(255,255,255,0.1)] min-h-[100px] p-2">
-                      <span className="text-sm font-sans text-[#F9F6F2]">26</span>
-                    </div>
-                    <div className="border-b border-[rgba(255,255,255,0.1)] min-h-[100px] p-2">
-                      <span className="text-sm font-sans text-[#F9F6F2]">27</span>
-                    </div>
-
-                    {/* Week 5 */}
-                    <div className="border-r border-b border-[rgba(255,255,255,0.1)] min-h-[100px] p-2">
-                      <span className="text-sm font-sans text-[#F9F6F2]">28</span>
-                    </div>
-                    <div className="border-r border-b border-[rgba(255,255,255,0.1)] min-h-[100px] p-2">
-                      <span className="text-sm font-sans text-[#F9F6F2]">29</span>
-                    </div>
-                    <div className="border-r border-b border-[rgba(255,255,255,0.1)] min-h-[100px] p-2 relative">
-                      <span className="text-sm font-sans text-[#F9F6F2]">30</span>
-                      <button
-                        onClick={() => setShowBookingModal(true)}
-                        className="mt-2 bg-[rgba(200,169,126,0.2)] border border-[rgba(200,169,126,0.3)] rounded-md p-2 text-left w-full cursor-pointer"
-                      >
-                        <div className="text-xs font-sans text-[#C8A97E] font-semibold">03:00 PM</div>
-                        <div className="text-xs font-sans text-[#F9F6F2]">Bilal Qureshi</div>
-                      </button>
-                    </div>
-                    <div className="border-r border-b border-[rgba(255,255,255,0.1)] min-h-[100px] p-2">
-                      <span className="text-sm font-sans text-[#F9F6F2] opacity-30">1</span>
-                    </div>
-                    <div className="border-r border-b border-[rgba(255,255,255,0.1)] min-h-[100px] p-2">
-                      <span className="text-sm font-sans text-[#F9F6F2] opacity-30">2</span>
-                    </div>
-                    <div className="border-r border-b border-[rgba(255,255,255,0.1)] min-h-[100px] p-2">
-                      <span className="text-sm font-sans text-[#F9F6F2] opacity-30">3</span>
-                    </div>
-                    <div className="border-b border-[rgba(255,255,255,0.1)] min-h-[100px] p-2">
-                      <span className="text-sm font-sans text-[#F9F6F2] opacity-30">4</span>
-                    </div>
-                  </div>
+                  )}
                 </div>
               )}
 
@@ -419,17 +430,17 @@ const CreatorCalendar = () => {
             </div>
 
             {/* Booking Popup Modal */}
-            {showBookingModal && (
+            {showBookingModal && selectedBooking && (
               <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                 <div className="bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-xl p-6 max-w-md w-full mx-4">
                   {/* Header */}
                   <div className="flex items-start gap-4 mb-6">
                     <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
-                      <img src={booking.avatar} alt={booking.follower} className="w-full h-full object-cover" />
+                      <img src={selectedBooking.avatar} alt={selectedBooking.follower} className="w-full h-full object-cover" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-serif text-xl font-semibold text-[#F9F6F2]">{booking.follower}</h3>
-                      <p className="text-sm font-sans text-[#F9F6F2] opacity-70">{booking.id}</p>
+                      <h3 className="font-serif text-xl font-semibold text-[#F9F6F2]">{selectedBooking.follower}</h3>
+                      <p className="text-sm font-sans text-[#F9F6F2] opacity-70">{selectedBooking.bookingRef || selectedBooking.id}</p>
                     </div>
                   </div>
 
@@ -437,37 +448,41 @@ const CreatorCalendar = () => {
                   <div className="space-y-3 mb-6">
                     <div className="flex justify-between">
                       <span className="text-sm font-sans text-[#F9F6F2] opacity-70">Session</span>
-                      <span className="text-sm font-sans text-[#F9F6F2]">{booking.sessionType}</span>
+                      <span className="text-sm font-sans text-[#F9F6F2]">{selectedBooking.session}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm font-sans text-[#F9F6F2] opacity-70">Date & Time</span>
-                      <span className="text-sm font-sans text-[#F9F6F2]">{booking.dateTime}</span>
+                      <span className="text-sm font-sans text-[#F9F6F2]">{selectedBooking.date} at {selectedBooking.time}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm font-sans text-[#F9F6F2] opacity-70">Session</span>
-                      <span className="text-sm font-sans text-[#F9F6F2]">{booking.duration}</span>
+                      <span className="text-sm font-sans text-[#F9F6F2] opacity-70">Duration</span>
+                      <span className="text-sm font-sans text-[#F9F6F2]">{selectedBooking.duration}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm font-sans text-[#F9F6F2] opacity-70">Session</span>
-                      <span className="text-sm font-sans text-[#F9F6F2]">{booking.price}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm font-sans text-[#F9F6F2] opacity-70">Net Earning</span>
-                      <span className="text-sm font-sans text-[#F9F6F2]">{booking.netEarnings}</span>
+                      <span className="text-sm font-sans text-[#F9F6F2] opacity-70">Amount</span>
+                      <span className="text-sm font-sans text-[#F9F6F2]">{selectedBooking.amount}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm font-sans text-[#F9F6F2] opacity-70">Status</span>
-                      <span className="text-sm font-sans text-[#4ade80]">{booking.status}</span>
+                      <span className="text-sm font-sans text-[#4ade80]">{selectedBooking.status}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm font-sans text-[#F9F6F2] opacity-70">Payment Status</span>
+                      <span className={`text-sm font-sans ${selectedBooking.isPaid ? 'text-[#4ade80]' : 'text-[#fbbf24]'}`}>
+                        {selectedBooking.paymentStatus}
+                      </span>
                     </div>
                   </div>
 
                   {/* Pre-session Question */}
-                  <div className="mb-6">
-                    <div className="bg-[rgba(200,169,126,0.1)] border border-[rgba(200,169,126,0.3)] rounded-lg p-4">
-                      <h4 className="text-xs font-sans text-[#C8A97E] mb-2">Pre-session question</h4>
-                      <p className="text-sm font-sans text-[#F9F6F2] opacity-80">{booking.preSessionQuestion}</p>
+                  {selectedBooking.preSessionQuestion && (
+                    <div className="mb-6">
+                      <div className="bg-[rgba(200,169,126,0.1)] border border-[rgba(200,169,126,0.3)] rounded-lg p-4">
+                        <h4 className="text-xs font-sans text-[#C8A97E] mb-2">Pre-session question</h4>
+                        <p className="text-sm font-sans text-[#F9F6F2] opacity-80">{selectedBooking.preSessionQuestion}</p>
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Close Button */}
                   <button
