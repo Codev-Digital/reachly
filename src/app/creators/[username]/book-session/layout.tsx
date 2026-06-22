@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, createContext, useContext, ReactNode, useEffect } from 'react';
-import CreatorNavbar from '@/components/CreatorNavbar';
 import Footer from '@/components/Footer';
 
 export interface SessionType {
@@ -134,7 +133,6 @@ export default function BookSessionLayout({ children }: { children: ReactNode })
   return (
     <BookingContext.Provider value={{ booking, setBooking, nextStep, prevStep, saveToStorage }}>
       <div className="min-h-screen bg-[#0c0c0c] text-[#F9F6F2] flex flex-col">
-        <CreatorNavbar />
         <main className="flex-1">{children}</main>
         <Footer />
       </div>

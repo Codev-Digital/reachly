@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
@@ -5,13 +6,9 @@ import connectDB from '@/lib/mongodb';
 import Booking from '@/models/Booking';
 import User from '@/models/User';
 
-interface RouteParams {
-  params: Promise<{ id: string }>;
-}
-
-export async function PUT(request: NextRequest, { params }: RouteParams) {
+export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
     try {
-        const { id } = await params;
+        const { id } = params;
         const session = await getServerSession(authOptions);
         if (!session?.user?.email) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -30,22 +27,38 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
         }
 
-        const booking = await Booking.findById(id);
+        let booking = null;
+        if (mongoose.isValidObjectId(id)) {
+            booking = await Booking.findById(id).exec();
+        }
+
+        if (!booking) {
+            booking = await Booking.findOne({ bookingRef: id }).exec();
+        }
+
         if (!booking) {
             return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
         }
 
         // Ensure the booking belongs to this creator
-        if (booking.creatorId.toString() !== user._id.toString()) {
+        if (booking.creatorId?.toString() !== user._id.toString()) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
         }
 
-        booking.status = status;
-        await booking.save();
+        const updatePayload: any = { status };
+        if (status === 'cancelled' && booking.paymentStatus === 'paid') {
+            updatePayload.paymentStatus = 'refunded';
+        }
 
-        return NextResponse.json({ success: true, booking });
+        const updatedBooking = await Booking.findByIdAndUpdate(
+            booking._id,
+            { $set: updatePayload },
+            { new: true }
+        ).exec();
+
+        return NextResponse.json({ success: true, booking: updatedBooking || booking });
     } catch (error: any) {
-        console.error('PUT /api/creators/bookings/[id] error:', error);
-        return NextResponse.json({ error: 'Server error' }, { status: 500 });
+        console.error('PUT /api/creators/bookings/[id] error:', error?.message ?? error, error);
+        return NextResponse.json({ error: error?.message ?? 'Server error' }, { status: 500 });
     }
 }

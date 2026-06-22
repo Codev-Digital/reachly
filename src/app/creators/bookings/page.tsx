@@ -1,7 +1,6 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import CreatorNavbar from '@/components/CreatorNavbar';
 import CreatorSidebar from '@/components/CreatorSidebar';
 import { useState, useEffect } from 'react';
 
@@ -30,7 +29,7 @@ interface Booking {
 }
 
 const CreatorBookings = () => {
-  const [activeTab, setActiveTab] = useState<BookingStatus>('Pending Action');
+  const [activeTab, setActiveTab] = useState<BookingStatus>('Upcoming');
   const [selectedBookings, setSelectedBookings] = useState<string[]>([]);
   const [sessionTypeFilter, setSessionTypeFilter] = useState('All session types');
   const [statusFilter, setStatusFilter] = useState('All statuses');
@@ -65,18 +64,23 @@ const CreatorBookings = () => {
     try {
       const res = await fetch(`/api/creators/bookings/${bookingId}`, {
         method: 'PUT',
+        credentials: 'same-origin',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ status: 'confirmed' }),
       });
-      if (res.ok) {
-        setBookings(prevBookings => 
-          prevBookings.map(booking => 
-            booking.id === bookingId ? { ...booking, statusRaw: 'confirmed', status: 'Upcoming' } : booking
-          )
-        );
+      const data = await res.json();
+      if (!res.ok) {
+        console.error('Error approving booking:', data.error || data);
+        return;
       }
+
+      setBookings(prevBookings => 
+        prevBookings.map(booking => 
+          booking.id === bookingId ? { ...booking, statusRaw: 'confirmed', status: 'Upcoming' } : booking
+        )
+      );
     } catch (error) {
       console.error('Error approving booking:', error);
     }
@@ -86,18 +90,23 @@ const CreatorBookings = () => {
     try {
       const res = await fetch(`/api/creators/bookings/${bookingId}`, {
         method: 'PUT',
+        credentials: 'same-origin',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ status: 'cancelled' }),
       });
-      if (res.ok) {
-        setBookings(prevBookings => 
-          prevBookings.map(booking => 
-            booking.id === bookingId ? { ...booking, statusRaw: 'cancelled', status: 'Cancelled' } : booking
-          )
-        );
+      const data = await res.json();
+      if (!res.ok) {
+        console.error('Error rejecting booking:', data.error || data, { bookingId, responseStatus: res.status });
+        return;
       }
+
+      setBookings(prevBookings => 
+        prevBookings.map(booking => 
+          booking.id === bookingId ? { ...booking, statusRaw: 'cancelled', status: 'Cancelled' } : booking
+        )
+      );
     } catch (error) {
       console.error('Error rejecting booking:', error);
     }
@@ -154,8 +163,6 @@ const CreatorBookings = () => {
 
   return (
     <div className="min-h-screen bg-[#0C0C0C]">
-      <CreatorNavbar />
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <div className="flex gap-8">
           {/* Reusable Sidebar */}
@@ -222,7 +229,9 @@ const CreatorBookings = () => {
 
             {/* Page Title */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
-              <h1 className="font-serif text-2xl sm:text-3xl font-bold text-[#F9F6F2]">My Bookings</h1>
+              <h1 className="font-serif text-2xl sm:text-3xl font-bold text-[#F9F6F2]">
+                {activeTab === 'Upcoming' ? 'Upcoming Bookings' : activeTab === 'Pending Action' ? 'Pending Bookings' : activeTab === 'Past' ? 'Past Bookings' : 'Cancelled Bookings'}
+              </h1>
               <button className="flex items-center gap-2 bg-[#141414] border border-[rgba(200,169,126,0.3)] px-5 py-2 rounded-full text-sm font-sans text-[#F9F6F2] hover:bg-[rgba(200,169,126,0.1)] transition-all">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
