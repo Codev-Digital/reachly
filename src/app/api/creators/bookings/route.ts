@@ -92,8 +92,8 @@ export async function GET(request: NextRequest) {
                 let displayStatus: string;
                 if (booking.status === 'pending') {
                     displayStatus = 'Pending Action';
-                } else if (booking.status === 'confirmed') {
-                    if (bookingDateTime > now) {
+                } else if (booking.status === 'confirmed' || booking.status === 'completed') {
+                    if (booking.status === 'confirmed' && bookingDateTime > now) {
                         displayStatus = 'Upcoming';
                     } else {
                         displayStatus = 'Past';

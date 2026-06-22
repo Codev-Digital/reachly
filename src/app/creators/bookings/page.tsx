@@ -42,6 +42,7 @@ const CreatorBookings = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [bookingToAction, setBookingToAction] = useState<string | null>(null);
+  const statusOptions = ['All statuses', 'Upcoming', 'Pending Action', 'Past', 'Cancelled'];
 
   useEffect(() => {
     const fetchBookings = async () => {
@@ -136,14 +137,74 @@ const CreatorBookings = () => {
     setSelectedBookings([]);
   };
 
+  useEffect(() => {
+    setSelectedBookings(prevSelected =>
+      prevSelected.filter((id) =>
+        bookings.some((booking) =>
+          booking.id === id && booking.status !== 'Past' && booking.status !== 'Cancelled'
+        )
+      )
+    );
+  }, [bookings]);
+
+  const handleMarkCompleted = async () => {
+    const validBookingIds = selectedBookings.filter((id) =>
+      bookings.some((booking) => booking.id === id && booking.status !== 'Past' && booking.status !== 'Cancelled')
+    );
+    if (validBookingIds.length === 0) return;
+
+    const updatedIds: string[] = [];
+    await Promise.all(
+      selectedBookings.map(async (bookingId) => {
+        try {
+          const res = await fetch(`/api/creators/bookings/${bookingId}`, {
+            method: 'PUT',
+            credentials: 'same-origin',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ status: 'completed' }),
+          });
+          const data = await res.json();
+          if (res.ok) {
+            updatedIds.push(bookingId);
+          } else {
+            console.error('Error marking booking completed:', data.error || data, { bookingId, responseStatus: res.status });
+          }
+        } catch (error) {
+          console.error('Error marking booking completed:', error, { bookingId });
+        }
+      })
+    );
+
+    if (updatedIds.length > 0) {
+      setBookings(prevBookings =>
+        prevBookings.map((booking) =>
+          updatedIds.includes(booking.id)
+            ? { ...booking, statusRaw: 'completed', status: 'Past' }
+            : booking
+        )
+      );
+      clearSelection();
+    }
+  };
+
   const filteredBookings = bookings.filter(booking => {
+    const searchText = searchQuery.trim().toLowerCase();
+    const follower = booking.follower || '';
+    const bookingId = booking.id || '';
+    const bookingRef = booking.bookingRef || '';
+    const sessionName = booking.session || '';
+
     const matchesTab = booking.status === activeTab;
     const matchesSearch =
-      booking.follower.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      booking.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      booking.session.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesSessionType = sessionTypeFilter === 'All session types' || booking.session === sessionTypeFilter;
-    return matchesTab && matchesSearch && matchesSessionType;
+      searchText === '' ||
+      [follower, bookingId, bookingRef, sessionName].some((field) =>
+        String(field).toLowerCase().includes(searchText)
+      );
+    const matchesSessionType = sessionTypeFilter === 'All session types' || sessionName === sessionTypeFilter;
+    const matchesStatus = statusFilter === 'All statuses' || booking.status === statusFilter;
+    return matchesTab && matchesSearch && matchesSessionType && matchesStatus;
   });
 
   const getStatusColor = (status: BookingStatus) => {
@@ -353,7 +414,10 @@ const CreatorBookings = () => {
               <div className="flex items-center justify-between bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-lg px-4 py-3 mb-6">
                 <div className="flex items-center gap-3">
                   <span className="text-sm font-sans text-[#F9F6F2]">{selectedBookings.length} Selected</span>
-                  <button className="flex items-center gap-2 bg-[rgba(200,169,126,0.1)] border border-[rgba(200,169,126,0.3)] px-4 py-1.5 rounded-full text-xs font-sans text-[#C8A97E]">
+                  <button
+                    onClick={handleMarkCompleted}
+                    className="flex items-center gap-2 bg-[rgba(200,169,126,0.1)] border border-[rgba(200,169,126,0.3)] px-4 py-1.5 rounded-full text-xs font-sans text-[#C8A97E]"
+                  >
                     Mark Completed
                   </button>
                   <button className="flex items-center gap-2 bg-[#141414] border border-[rgba(255,255,255,0.1)] px-4 py-1.5 rounded-full text-xs font-sans text-[#F9F6F2]">
@@ -381,16 +445,18 @@ const CreatorBookings = () => {
                     className="bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-xl p-5 relative"
                   >
                     {/* Select Checkbox */}
-                    <button
-                      onClick={() => toggleBookingSelection(booking.id)}
-                      className="absolute top-4 right-4 w-5 h-5 border border-[rgba(255,255,255,0.2)] rounded flex items-center justify-center"
-                    >
-                      {selectedBookings.includes(booking.id) && (
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="3">
-                          <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                      )}
-                    </button>
+                    {booking.status !== 'Past' && booking.status !== 'Cancelled' && (
+                      <button
+                        onClick={() => toggleBookingSelection(booking.id)}
+                        className="absolute top-4 right-4 w-5 h-5 border border-[rgba(255,255,255,0.2)] rounded flex items-center justify-center"
+                      >
+                        {selectedBookings.includes(booking.id) && (
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="3">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        )}
+                      </button>
+                    )}
 
                     <div className="flex gap-4">
                       <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
@@ -486,9 +552,9 @@ const CreatorBookings = () => {
                           )}
                           {booking.status === 'Past' && (
                             <>
-                              <button className="flex items-center gap-2 bg-[rgba(200,169,126,0.1)] border border-[rgba(200,169,126,0.3)] px-4 py-1.5 rounded-full text-xs font-sans text-[#C8A97E]">
-                                Mark Completed
-                              </button>
+                              <span className="px-4 py-1.5 rounded-full text-xs font-sans bg-[rgba(200,169,126,0.1)] text-[#C8A97E] border border-[rgba(200,169,126,0.3)]">
+                                Completed
+                              </span>
                               <button className="flex items-center gap-2 bg-[#141414] border border-[rgba(255,255,255,0.1)] px-4 py-1.5 rounded-full text-xs font-sans text-[#F9F6F2]">
                                 View Profile
                               </button>
