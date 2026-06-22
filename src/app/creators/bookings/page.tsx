@@ -3,23 +3,30 @@
 import { motion } from 'framer-motion';
 import CreatorNavbar from '@/components/CreatorNavbar';
 import CreatorSidebar from '@/components/CreatorSidebar';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 type BookingStatus = 'Upcoming' | 'Past' | 'Cancelled' | 'Pending Action';
 
 interface Booking {
   id: string;
+  bookingRef: string;
   follower: string;
+  email: string;
   avatar: string;
   session: string;
   date: string;
+  shortDate: string;
   time: string;
   duration: string;
   amount: string;
   status: BookingStatus;
+  statusRaw: string;
+  paymentStatus: string;
+  paymentMethod?: string;
   preSessionQuestion: string;
   reason?: string;
   isPaid?: boolean;
+  bookedOn: string;
 }
 
 const CreatorBookings = () => {
@@ -33,94 +40,82 @@ const CreatorBookings = () => {
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [bookingToAction, setBookingToAction] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchBookings = async () => {
+      try {
+        const res = await fetch('/api/creators/bookings');
+        if (res.ok) {
+          const data = await res.json();
+          setBookings(data.bookings);
+        }
+      } catch (error) {
+        console.error('Error fetching bookings:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchBookings();
+  }, []);
+
+  const handleApproveBooking = async (bookingId: string) => {
+    try {
+      const res = await fetch(`/api/creators/bookings/${bookingId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: 'confirmed' }),
+      });
+      if (res.ok) {
+        setBookings(prevBookings => 
+          prevBookings.map(booking => 
+            booking.id === bookingId ? { ...booking, statusRaw: 'confirmed', status: 'Upcoming' } : booking
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Error approving booking:', error);
+    }
+  };
+
+  const handleRejectBooking = async (bookingId: string) => {
+    try {
+      const res = await fetch(`/api/creators/bookings/${bookingId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: 'cancelled' }),
+      });
+      if (res.ok) {
+        setBookings(prevBookings => 
+          prevBookings.map(booking => 
+            booking.id === bookingId ? { ...booking, statusRaw: 'cancelled', status: 'Cancelled' } : booking
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Error rejecting booking:', error);
+    }
+  };
+
+  const upcomingCount = bookings.filter(b => b.status === 'Upcoming').length;
+  const pastCount = bookings.filter(b => b.status === 'Past').length;
+  const cancelledCount = bookings.filter(b => b.status === 'Cancelled').length;
+  const pendingCount = bookings.filter(b => b.status === 'Pending Action').length;
 
   const tabs: { name: BookingStatus; count: number }[] = [
-    { name: 'Upcoming', count: 2 },
-    { name: 'Past', count: 3 },
-    { name: 'Cancelled', count: 2 },
-    { name: 'Pending Action', count: 1 },
+    { name: 'Upcoming', count: upcomingCount },
+    { name: 'Past', count: pastCount },
+    { name: 'Cancelled', count: cancelledCount },
+    { name: 'Pending Action', count: pendingCount },
   ];
 
-  const sessionTypes = ['All session types', 'Style Consultation', 'Confidence Coaching', 'Content Strategy'];
-  const statusOptions = ['All statuses', 'Confirmed', 'Pending', 'Cancelled', 'Completed'];
-
-  const bookings: Booking[] = [
-    {
-      id: 'RCH-78492031',
-      follower: 'Kainat Faisal',
-      avatar: '/merium.png',
-      session: 'Content Strategy',
-      date: 'Sat, 30 May 2026',
-      time: '03:00 PM',
-      duration: '60 min',
-      amount: 'PKR 2,500',
-      status: 'Past',
-      preSessionQuestion: 'I want to start a YouTube channel about Pakistani street food. How do I structure my videos and what equipment do I need?',
-    },
-    {
-      id: 'RCH-78492032',
-      follower: 'Kainat Faisal',
-      avatar: '/merium.png',
-      session: 'Content Strategy',
-      date: 'Sat, 30 May 2026',
-      time: '03:00 PM',
-      duration: '60 min',
-      amount: 'PKR 2,500',
-      status: 'Past',
-      preSessionQuestion: 'I want to start a YouTube channel about Pakistani street food. How do I structure my videos and what equipment do I need?',
-    },
-    {
-      id: 'RCH-78492033',
-      follower: 'Kainat Faisal',
-      avatar: '/merium.png',
-      session: 'Content Strategy',
-      date: 'Sat, 30 May 2026',
-      time: '03:00 PM',
-      duration: '60 min',
-      amount: 'PKR 2,500',
-      status: 'Past',
-      preSessionQuestion: 'I want to start a YouTube channel about Pakistani street food. How do I structure my videos and what equipment do I need?',
-    },
-    {
-      id: 'RCH-78492034',
-      follower: 'Hira Noor',
-      avatar: '/merium.png',
-      session: 'Style Consultation',
-      date: 'Wed, 20 May 2026',
-      time: '04:30 PM',
-      duration: '30 min',
-      amount: 'PKR 1,200',
-      status: 'Cancelled',
-      preSessionQuestion: 'Need help with my Eid outfit planning. I want something traditional but modern.',
-      reason: 'Follower cancelled more than 24h before - Full refund processed',
-    },
-    {
-      id: 'RCH-78492035',
-      follower: 'Hira Noor',
-      avatar: '/merium.png',
-      session: 'Style Consultation',
-      date: 'Wed, 20 May 2026',
-      time: '04:30 PM',
-      duration: '30 min',
-      amount: 'PKR 1,200',
-      status: 'Cancelled',
-      preSessionQuestion: 'Need help with my Eid outfit planning. I want something traditional but modern.',
-      reason: 'Follower cancelled more than 24h before - Full refund processed',
-    },
-    {
-      id: 'RCH-78492036',
-      follower: 'Fatima Ali',
-      avatar: '/merium.png',
-      session: 'Confidence Coaching',
-      date: 'Tue, 2 Jun 2026',
-      time: '05:30 PM',
-      duration: '45 min',
-      amount: 'PKR 1,800',
-      status: 'Pending Action',
-      preSessionQuestion: 'I want to start a YouTube channel about Pakistani street food. How do I structure my videos and what equipment do I need?',
-      isPaid: true,
-    },
-  ];
+  const sessionTypes = ['All session types', ...Array.from(new Set(bookings.map(b => b.session)))];
 
   const toggleBookingSelection = (id: string) => {
     setSelectedBookings(prev =>
@@ -463,20 +458,20 @@ const CreatorBookings = () => {
                         <div className="flex items-center gap-3 mt-4">
                           {booking.status === 'Pending Action' && (
                             <>
-                              <button className="flex items-center gap-2 bg-[#141414] border border-[rgba(255,255,255,0.1)] px-4 py-1.5 rounded-full text-xs font-sans text-[#F9F6F2]">
-                                Join meet
-                              </button>
                               <button
-                                onClick={() => setShowRescheduleModal(true)}
+                                onClick={() => handleApproveBooking(booking.id)}
                                 className="flex items-center gap-2 bg-[rgba(74,222,128,0.1)] border border-[rgba(74,222,128,0.3)] px-4 py-1.5 rounded-full text-xs font-sans text-[#4ade80]"
                               >
-                                Accept Reschedule
+                                Approve
                               </button>
                               <button
-                                onClick={() => setShowCancelModal(true)}
+                                onClick={() => {
+                                  setBookingToAction(booking.id);
+                                  setShowCancelModal(true);
+                                }}
                                 className="flex items-center gap-2 bg-[rgba(248,113,113,0.1)] border border-[rgba(248,113,113,0.3)] px-4 py-1.5 rounded-full text-xs font-sans text-[#f87171]"
                               >
-                                Cancel
+                                Reject
                               </button>
                             </>
                           )}
@@ -561,22 +556,31 @@ const CreatorBookings = () => {
             {showCancelModal && (
               <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                 <div className="bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-xl p-8 max-w-md w-full mx-4">
-                  <h3 className="font-serif text-2xl font-bold text-[#F9F6F2] mb-4">Cancel this booking?</h3>
+                  <h3 className="font-serif text-2xl font-bold text-[#F9F6F2] mb-4">Reject this booking?</h3>
                   <p className="font-sans text-sm text-[#F9F6F2] opacity-70 mb-8">
-                    Are you sure you want to cancel Fatima Ali's Confidence Coaching? The follower will receive a full refund and a notification.
+                    Are you sure you want to reject this booking? The follower will receive a full refund and a notification.
                   </p>
                   <div className="flex items-center justify-end gap-4">
                     <button
-                      onClick={() => setShowCancelModal(false)}
+                      onClick={() => {
+                        setShowCancelModal(false);
+                        setBookingToAction(null);
+                      }}
                       className="bg-[#141414] border border-[rgba(255,255,255,0.1)] px-8 py-2.5 rounded-full text-sm font-sans text-[#F9F6F2]"
                     >
                       Cancel
                     </button>
                     <button
-                      onClick={() => setShowCancelModal(false)}
+                      onClick={() => {
+                        if (bookingToAction) {
+                          handleRejectBooking(bookingToAction);
+                        }
+                        setShowCancelModal(false);
+                        setBookingToAction(null);
+                      }}
                       className="bg-[#f87171] text-[#0C0C0C] px-8 py-2.5 rounded-full text-sm font-sans"
                     >
-                      Yes, cancel
+                      Yes, reject
                     </button>
                   </div>
                 </div>

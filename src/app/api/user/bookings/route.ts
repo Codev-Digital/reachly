@@ -80,8 +80,9 @@ export async function GET(request: NextRequest) {
                 const bookingDateTime = new Date(`${booking.scheduledDate.toISOString().split('T')[0]}T${convertTo24Hour(booking.scheduledTime)}`);
                 const now = new Date();
 
-                // TEMPORARY FOR DEVELOPMENT: Treat 'pending' the same as 'confirmed' so they show up
-                if (booking.status === 'confirmed' || booking.status === 'pending') {
+                if (booking.status === 'pending') {
+                    displayStatus = 'Pending Approval';
+                } else if (booking.status === 'confirmed') {
                     if (bookingDateTime > now) {
                         displayStatus = 'Upcoming';
                     } else {
@@ -101,7 +102,7 @@ export async function GET(request: NextRequest) {
                     shortDate: formattedShortDate,
                     time: booking.scheduledTime,
                     status: displayStatus,
-                    image: creatorProfile?.profilePhoto || '/default-avatar.png',
+                    image: creatorProfile?.profilePhoto || '/ahad raza mir.png',
                     tags: [displayStatus],
                     ref: `RCH-${booking._id.toString().slice(-8).toUpperCase()}`,
                     duration: `${booking.sessionTypeId?.duration || 0} minutes`,

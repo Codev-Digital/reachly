@@ -10,7 +10,7 @@ import CancelBookingModal from '@/components/CancelBookingModal';
 
 export default function UserBookings() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('upcoming');
+  const [activeTab, setActiveTab] = useState('pending');
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [currentBooking, setCurrentBooking] = useState<any>(null);
@@ -61,15 +61,19 @@ export default function UserBookings() {
   }, []);
 
   // Filter Bookings Based on Tabs
+  const pendingBookings = bookings.filter(b => b.status === 'Pending Approval');
   const upcomingBookings = bookings.filter(b => b.status === 'Upcoming');
   const pastBookings = bookings.filter(b => b.status === 'Past');
   const cancelledBookings = bookings.filter(b => b.originalStatus === 'cancelled');
 
-  let visibleBookings = upcomingBookings;
+  let visibleBookings = pendingBookings.length > 0 ? pendingBookings : upcomingBookings;
+  if (activeTab === 'pending') visibleBookings = pendingBookings;
+  if (activeTab === 'upcoming') visibleBookings = upcomingBookings;
   if (activeTab === 'past') visibleBookings = pastBookings;
   if (activeTab === 'cancelled') visibleBookings = cancelledBookings;
 
   const tabs = [
+    { label: `Pending (${pendingBookings.length})`, value: 'pending' },
     { label: `Upcoming (${upcomingBookings.length})`, value: 'upcoming' },
     { label: `Past (${pastBookings.length})`, value: 'past' },
     { label: `Cancelled (${cancelledBookings.length})`, value: 'cancelled' },

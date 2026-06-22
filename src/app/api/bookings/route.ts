@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
             },
             scheduledDate: new Date(date),
             scheduledTime: time,
-            status: 'confirmed', // Mark as confirmed since payment is simulated
+            status: 'pending', // Creator needs to approve first
             paymentStatus: 'paid', // Mark as paid since payment is simulated
             paymentMethod: paymentMethod || 'jazzcash',
             price: originalPrice,
