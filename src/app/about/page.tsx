@@ -4,7 +4,6 @@ import Link from "next/link";
 import CreatorNavbar from "@/components/CreatorNavbar";
 import Footer from "@/components/Footer";
 
-
 export default function AboutPage() {
   const stats = [
     { number: "500+", label: "Verified Creators" },
