@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import CreatorNavbar from '@/components/CreatorNavbar';
 import CreatorSidebar from '@/components/CreatorSidebar';
 
 const reviews = [
@@ -96,8 +95,6 @@ export default function CreatorReviewsPage() {
 
   return (
     <div className="min-h-screen bg-[#0C0C0C] pb-12">
-      <CreatorNavbar />
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-3">
           <div className="relative w-full sm:flex-1 sm:max-w-md">

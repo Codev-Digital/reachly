@@ -1,7 +1,6 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import CreatorNavbar from '@/components/CreatorNavbar';
 import CreatorSidebar from '@/components/CreatorSidebar';
 import { useState } from 'react';
 
@@ -37,7 +36,6 @@ export default function CreatorBookingLinks() {
 
   return (
     <div className="min-h-screen bg-[#0C0C0C] pb-12">
-      <CreatorNavbar />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <div className="flex gap-8">
           <CreatorSidebar

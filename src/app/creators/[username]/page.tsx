@@ -73,7 +73,7 @@ export default function CreatorProfilePage() {
 
   return (
     <div className="min-h-screen bg-[#0c0c0c] text-[#F9F6F2]">
-      <CreatorNavbar />
+      {/* <CreatorNavbar /> */}
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
         {/* Creator Header */}
