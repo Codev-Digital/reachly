@@ -11,7 +11,7 @@ export default function BookingSummary() {
   const creator = booking.creator;
 
   return (
-    <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-xl p-6 sticky top-4">
+    <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-xl p-6 sticky top-8 mt-25">
       <h3 className="font-serif text-lg font-bold text-[#F9F6F2] mb-4">Booking Summary</h3>
 
       {/* Creator Info */}
