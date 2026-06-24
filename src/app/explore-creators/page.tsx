@@ -20,40 +20,19 @@ export default function ExploreCreatorsPage() {
   const [creators, setCreators] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Hardcoded showcase creators (always visible, will be removed later)
-  const hardcodedCreators = [
-    {
-      id: 'hardcoded-kainat',
-      username: 'kainataslam',
-      displayName: 'Kainat Aslam',
-      profilePhoto: '/merium.png',
-      shortBio: 'Fashion stylist & confidence coach helping you discover your signature style.',
-      niches: ['fashion', 'lifestyle'],
-      rating: '4.9',
-      startingPrice: 'PKR 1,200',
-      isHardcoded: true,
-    },
-  ];
-
   useEffect(() => {
     async function fetchCreators() {
       try {
         const res = await fetch('/api/creators');
         const data = await res.json();
         if (data.success) {
-          // Merge: hardcoded first, then DB creators (skip if same username)
-          const dbUsernames = new Set(data.creators.map((c: any) => c.username));
-          const merged = [
-            ...hardcodedCreators.filter(h => !dbUsernames.has(h.username)),
-            ...data.creators,
-          ];
-          setCreators(merged);
+          setCreators(data.creators);
         } else {
-          setCreators(hardcodedCreators);
+          setCreators([]);
         }
       } catch (err) {
         console.error('Failed to fetch creators:', err);
-        setCreators(hardcodedCreators);
+        setCreators([]);
       } finally {
         setLoading(false);
       }
