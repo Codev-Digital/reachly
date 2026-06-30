@@ -5,11 +5,13 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSession } from 'next-auth/react';
+import { useLoading } from '@/contexts/LoadingContext';
 
 export default function CreatorNavbar() {
   const router = useRouter();
   const pathname = usePathname();
   const { data: session, status } = useSession();
+  const { navigateWithLoading } = useLoading();
   const [userData, setUserData] = useState<any>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -77,46 +79,45 @@ export default function CreatorNavbar() {
   };
 
   return (
-    <header className="border-b border-[rgba(255,255,255,0.08)] bg-[#0C0C0C]">
+    <header className="bg-transparent absolute top-0 left-0 right-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6 lg:py-8">
         {/* Top Navbar */}
         <div className="flex justify-between items-center">
           {/* Logo */}
-          <Link href="/" className="font-serif text-2xl font-bold">
-            <span className="text-[#C8A97E]">Reach</span>
-            <span className="text-[#F9F6F2]">ly</span>
+          <Link href="/" className="flex items-center gap-2">
+            <img src="/assets/logo.png" alt="Reachly Logo" className="h-10 w-auto" />
           </Link>
 
           {/* Desktop Nav */}
           <div className="hidden lg:flex gap-8 xl:gap-10 items-center">
             <Link
               href="/explore-creators"
-              className={`font-inter text-base font-medium transition-colors ${
+              className={`font-sans text-sm font-medium transition-colors ${
                 pathname === '/explore-creators'
-                  ? 'text-[#C8A97E]'
-                  : 'text-[#F9F6F2] hover:text-[#C8A97E]'
+                  ? 'text-white'
+                  : 'text-white/80 hover:text-white'
               }`}
             >
               Explore Creators
             </Link>
 
             <Link
-              href="/how-it-works"
-              className={`font-inter text-base font-medium transition-colors ${
-                pathname === '/how-it-works'
-                  ? 'text-[#C8A97E]'
-                  : 'text-[#F9F6F2] hover:text-[#C8A97E]'
+              href="/events"
+              className={`font-sans text-sm font-medium transition-colors ${
+                pathname === '/events'
+                  ? 'text-white'
+                  : 'text-white/80 hover:text-white'
               }`}
             >
-              How it Works
+              Events
             </Link>
 
             <Link
               href="/for-creators"
-              className={`font-inter text-base font-medium transition-colors ${
+              className={`font-sans text-sm font-medium transition-colors ${
                 pathname === '/for-creators'
-                  ? 'text-[#C8A97E]'
-                  : 'text-[#F9F6F2] hover:text-[#C8A97E]'
+                  ? 'text-white'
+                  : 'text-white/80 hover:text-white'
               }`}
             >
               For Creators
@@ -124,10 +125,10 @@ export default function CreatorNavbar() {
 
             <Link
               href="/about"
-              className={`font-inter text-base font-medium transition-colors ${
+              className={`font-sans text-sm font-medium transition-colors ${
                 pathname === '/about'
-                  ? 'text-[#C8A97E]'
-                  : 'text-[#F9F6F2] hover:text-[#C8A97E]'
+                  ? 'text-white'
+                  : 'text-white/80 hover:text-white'
               }`}
             >
               About
@@ -136,22 +137,22 @@ export default function CreatorNavbar() {
             {status === 'authenticated' ? (
               <button
                 onClick={handleDashboardClick}
-                className="bg-[#C8A97E] text-[#0C0C0C] px-5 py-2 rounded-full font-semibold text-sm hover:opacity-90 transition-opacity"
+                className="bg-white text-[#0033A0] px-5 py-2 rounded-full font-semibold text-sm hover:bg-white/90 transition-all"
               >
                 Dashboard
               </button>
             ) : (
               <div className="flex gap-3">
                 <button
-                  onClick={() => router.push('/login')}
-                  className="border border-[rgba(200,169,126,0.5)] text-[#C8A97E] px-5 py-2 rounded-full font-semibold text-sm hover:bg-[rgba(200,169,126,0.1)] transition-all"
+                  onClick={() => navigateWithLoading('/login')}
+                  className="text-white font-sans font-medium text-sm hover:text-white/80 transition-all"
                 >
                   Login
                 </button>
 
                 <button
                   onClick={() => router.push('/signup')}
-                  className="bg-[#C8A97E] text-[#0C0C0C] px-5 py-2 rounded-full font-semibold text-sm hover:opacity-90 transition-opacity"
+                  className="border border-white/50 text-white px-5 py-2 rounded-full font-sans font-medium text-sm hover:bg-white/10 transition-all"
                 >
                   Sign up
                 </button>
@@ -292,7 +293,7 @@ export default function CreatorNavbar() {
                     <>
                       <button
                         onClick={() => {
-                          router.push('/login');
+                          navigateWithLoading('/login');
                           setIsMobileMenuOpen(false);
                         }}
                         className="flex-1 border border-[rgba(200,169,126,0.5)] text-[#C8A97E] px-5 py-2 rounded-full font-semibold text-sm"

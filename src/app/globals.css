@@ -11,6 +11,7 @@
 
   --font-manier: 'Manier', system-ui, sans-serif;
   --font-inter: 'Inter', system-ui, sans-serif;
+  --font-anton: var(--font-anton), sans-serif;
 }
 
 * {
@@ -49,6 +50,10 @@ a:hover,
 
 .font-inter {
   font-family: var(--font-inter);
+}
+
+.font-anton {
+  font-family: var(--font-anton);
 }
 
 .bg-background {

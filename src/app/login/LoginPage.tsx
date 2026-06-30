@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import Image from 'next/image';
-import Logo from '../components/Logo';
 import HeroImage from '../components/HeroImage';
 
 export default function LoginPage() {
@@ -65,138 +64,183 @@ export default function LoginPage() {
   };
 
   const handleGoogleSignIn = () => {
-    signIn('google', { callbackUrl: '/welcome' });
+    signIn('google', { callbackUrl });
   };
 
   return (
-    <div className="min-h-screen bg-[#0C0C0C] flex items-center justify-center p-4 sm:p-6">
-      <div className="w-full max-w-7xl">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 items-stretch">
-          <div className="p-4 sm:p-6 md:p-8 lg:p-16 flex flex-col justify-center">
-            <div className="mb-8 sm:mb-10 lg:mb-12">
-              <Logo />
-            </div>
-            
-            <div className="mb-8 sm:mb-10 lg:mb-12">
-              <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-3 sm:mb-4">
-                Welcome back
-              </h1>
-              <p className="font-sans text-[#F9F6F2] text-sm sm:text-base">
-                Sign in to continue your journey
-              </p>
+    <div className="min-h-screen bg-[#F4F5F8] flex items-center justify-center p-4 sm:p-6 lg:p-8">
+      <div className="w-full max-w-7xl bg-white rounded-[32px] p-4 lg:p-6 shadow-xl border border-gray-100">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+
+          {/* Left Form Side */}
+          <div className="lg:col-span-6 p-4 sm:p-6 md:p-8 flex flex-col justify-between">
+            {/* Top Logo */}
+            <div className="mb-8">
+              <Image
+                src="/assets/logo1.png"
+                alt="Reachly Logo"
+                width={120}
+                height={40}
+                style={{ width: 'auto', height: '40px' }}
+                className="cursor-pointer"
+                onClick={() => router.push('/')}
+                priority
+              />
             </div>
 
-            {error && (
-              <div className="mb-4 p-3 bg-red-900/30 border border-red-500/50 rounded-lg">
-                <p className="font-sans text-sm text-red-300">{error}</p>
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6 max-w-md">
-              <div>
-                <label className="block font-sans text-[#F9F6F2] text-xs sm:text-sm mb-2">Email</label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-[#141414] border border-[rgba(200,169,126,0.15)] rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 font-sans text-sm sm:text-base text-white focus:outline-none focus:border-[#C8A97E]"
-                  placeholder="you@example.com"
-                />
+            {/* Central Form Container */}
+            <div className="my-auto max-w-md mx-auto w-full">
+              <div className="text-center mb-8">
+                <h1 className="font-anton font-bold text-black text-3xl sm:text-4xl md:text-5xl leading-tight uppercase mb-3">
+                  Welcome Back
+                </h1>
+                <p className="font-sans text-gray-400 text-sm">
+                  Login to your Reachly account to continue
+                </p>
               </div>
 
-              <div>
-                <label className="block font-sans text-[#F9F6F2] text-xs sm:text-sm mb-2">Password</label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-[#141414] border border-[rgba(200,169,126,0.15)] rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 font-sans text-sm sm:text-base text-white focus:outline-none focus:border-[#C8A97E] pr-12"
-                    placeholder="Enter your password"
-                  />
+              {error && (
+                <div className="mb-4 p-3.5 bg-red-50 border border-red-200 rounded-xl">
+                  <p className="font-sans text-xs text-red-600 font-semibold"> {error}</p>
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Email Address */}
+                <div>
+                  <label className="block font-sans text-gray-700 font-semibold text-xs mb-2">
+                    Email Address <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                      {/* Envelope Icon */}
+                      <svg className="w-4 h-4 text-[#0012FF]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className={`w-full bg-white border ${error ? 'border-red-300' : 'border-gray-200'} rounded-xl pl-11 pr-4 py-3 font-sans text-sm text-black placeholder-gray-400 focus:outline-none focus:border-[#0012FF] transition-all`}
+                      placeholder="Enter your email"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Password */}
+                <div>
+                  <label className="block font-sans text-gray-700 font-semibold text-xs mb-2">
+                    Password <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                      {/* Lock Icon */}
+                      <svg className="w-4 h-4 text-[#0012FF]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <rect x="3" y="11" width="18" height="11" rx="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M7 11V7a5 5 0 0110 0v4" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </div>
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className={`w-full bg-white border ${error ? 'border-red-300' : 'border-gray-200'} rounded-xl pl-11 pr-12 py-3 font-sans text-sm text-black placeholder-gray-400 focus:outline-none focus:border-[#0012FF] transition-all`}
+                      placeholder="Enter your password"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showPassword ? (
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+                        </svg>
+                      ) : (
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Remember / Forgot */}
+                <div className="flex items-center justify-between pt-1">
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      className="w-4 h-4 rounded border-gray-300 text-[#0012FF] focus:ring-[#0012FF]"
+                    />
+                    <span className="font-sans text-xs text-gray-500 font-medium">Remember me</span>
+                  </label>
                   <button
                     type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 text-[#F9F6F2]"
+                    onClick={() => router.push('/forgot-password')}
+                    className="font-sans text-xs text-black font-bold hover:underline"
                   >
-                    {showPassword ? '👁️' : '👁️‍🗨️'}
+                    Forgot Password?
                   </button>
                 </div>
-              </div>
 
-              <div className="flex justify-end">
+                {/* Action button */}
                 <button
-                  type="button"
-                  onClick={() => router.push('/forgot-password')}
-                  className="font-sans text-[#C8A97E] text-xs sm:text-sm hover:underline"
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-[#0012FF] hover:bg-[#000EB4] active:scale-[0.98] text-white font-sans font-bold py-3.5 px-6 rounded-full text-sm tracking-wide shadow-lg shadow-blue-500/20 transition-all disabled:opacity-50 mt-4 cursor-pointer"
                 >
-                  Forgot password?
+                  {loading ? 'Logging in...' : 'Login'}
                 </button>
-              </div>
+              </form>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-[#C8A97E] text-[#0C0C0C] font-serif font-semibold py-3 sm:py-4 px-6 sm:px-8 rounded-full text-base sm:text-lg hover:opacity-90 transition-all disabled:opacity-50"
-              >
-                {loading ? 'Signing in...' : 'Log in'}
-              </button>
-            </form>
-
-            <div className="relative mt-6 sm:mt-8 max-w-md">
-              <div className="absolute top-1/2 left-0 right-0 h-px bg-[rgba(200,169,126,0.15)] -translate-y-1/2"></div>
-              <div className="text-center">
-                <span className="bg-[#0C0C0C] px-4 font-sans text-[#F9F6F2] text-xs sm:text-sm opacity-60">
+              {/* Divider */}
+              <div className="relative my-6 text-center">
+                <div className="absolute top-1/2 left-0 right-0 h-px bg-gray-200 -translate-y-1/2"></div>
+                <span className="relative bg-white px-4 font-sans text-gray-400 text-xs font-semibold">
                   or continue with
                 </span>
               </div>
-            </div>
 
-            <div className="space-y-3 mt-6 sm:mt-8 max-w-md">
-              <button 
+              {/* Google LogIn */}
+              <button
                 onClick={handleGoogleSignIn}
-                className="w-full bg-[#141414] border border-[rgba(200,169,126,0.15)] rounded-lg py-2.5 sm:py-3 px-3 sm:px-4 font-sans text-[#F9F6F2] text-xs sm:text-sm flex items-center justify-center gap-2 hover:border-opacity-50 transition-all"
+                className="w-full bg-white border border-gray-200 rounded-full py-3 px-4 font-sans text-gray-700 text-xs font-bold flex items-center justify-center gap-2.5 hover:bg-gray-50 transition-all cursor-pointer active:scale-[0.98]"
               >
                 <Image
                   src="/google.svg"
                   alt="Google"
                   width={16}
                   height={16}
-                  className="sm:w-[18px] sm:h-[18px]"
                 />
                 Log in with Google
               </button>
-              <button className="w-full bg-[#141414] border border-[rgba(200,169,126,0.15)] rounded-lg py-2.5 sm:py-3 px-3 sm:px-4 font-sans text-[#F9F6F2] text-xs sm:text-sm flex items-center justify-center gap-2 hover:border-opacity-50 transition-all">
-                <Image
-                  src="/facebook.svg"
-                  alt="Facebook"
-                  width={16}
-                  height={16}
-                  className="sm:w-[18px] sm:h-[18px]"
-                />
-                Log in with Facebook
-              </button>
             </div>
 
-            <div className="relative mt-8 sm:mt-10 lg:mt-12 max-w-md">
-              <div className="absolute top-0 left-0 right-0 h-px bg-[rgba(200,169,126,0.15)]"></div>
-              <p className="text-center font-sans text-[#F9F6F2] text-sm sm:text-base pt-4 sm:pt-6">
-                Do not have an account? <span className="text-[#C8A97E] font-semibold cursor-pointer" onClick={() => router.push(signupUrl)}>Sign up</span>
+            {/* Bottom Redirect Link */}
+            <div className="mt-8 pt-4 border-t border-gray-100 text-center">
+              <p className="font-sans text-xs text-gray-500 font-medium">
+                Do not have an account?{' '}
+                <span
+                  className="text-[#0012FF] font-bold cursor-pointer hover:underline"
+                  onClick={() => router.push(signupUrl)}
+                >
+                  Sign up
+                </span>
               </p>
             </div>
           </div>
 
-          <div className="hidden md:block lg:block">
-            <div className="h-full min-h-[400px] md:min-h-[600px] lg:min-h-[800px]">
+          {/* Right Hero Side */}
+          <div className="hidden lg:block lg:col-span-6 relative">
+            <div className="h-full min-h-[600px] lg:min-h-[700px]">
               <HeroImage />
             </div>
           </div>
-          
-          <div className="block md:hidden mt-6">
-            <div className="h-[350px] rounded-[20px] overflow-hidden">
-              <HeroImage />
-            </div>
-          </div>
+
         </div>
       </div>
     </div>

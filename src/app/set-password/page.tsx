@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
-import Logo from '../components/Logo';
+import Image from 'next/image';
 import HeroImage from '../components/HeroImage';
 import { setPassword, checkPasswordStrength, requestChangeEmail, verifyChangeEmail } from '@/lib/auth-client';
 
@@ -38,7 +38,6 @@ function SetPasswordForm() {
 
   const getStrengthLabel = () => {
     if (!password) return '';
-    
     let score = 0;
     if (password.length >= 8) score++;
     if (password.match(/[A-Z]/)) score++;
@@ -61,7 +60,6 @@ function SetPasswordForm() {
     return 0;
   };
   
-  // Keep original check for validation
   const strength = checkPasswordStrength(password);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -136,239 +134,269 @@ function SetPasswordForm() {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-[#0C0C0C] flex items-center justify-center p-4 sm:p-6">
-      <div className="w-full max-w-7xl">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 items-stretch">
-          {/* Left Content */}
-          <div className="p-4 sm:p-6 md:p-8 lg:p-16 flex flex-col justify-center">
-            <div className="mb-10 sm:mb-12 lg:mb-16">
-              <Logo />
-            </div>
-            
-            <div className="max-w-md mx-auto w-full">
-              {!showChangeEmail ? (
-                <>
-                  <div className="text-center mb-8 sm:mb-10 lg:mb-12">
-                    <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-[#C8A97E] mb-3 sm:mb-4">
-                      Set your Password
-                    </h1>
-                    <p className="font-sans text-[#F9F6F2] text-xs sm:text-sm px-4">
-                      Enter a new password for your account. Make sure it's strong and secure.
-                    </p>
-                    <p className="font-sans text-[#F9F6F2] text-xs opacity-60 mt-2">
-                      For: {email}
-                    </p>
-                  </div>
-
-                  {error && (
-                    <div className="mb-4 p-3 bg-red-900/30 border border-red-500/50 rounded-lg">
-                      <p className="font-sans text-sm text-red-300">{error}</p>
-                    </div>
-                  )}
-
-                  <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
-                    <div>
-                      <label className="block font-sans text-[#F9F6F2] text-lg mb-3">Password</label>
-                      <div className="relative">
-                        <div className="absolute left-4 top-1/2 -translate-y-1/2">
-                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="1.5">
-                            <rect x="3" y="11" width="18" height="11" rx="2" />
-                            <path d="M7 11V7a5 5 0 0110 0v4" />
-                          </svg>
-                        </div>
-                        <input
-                          type={showPassword ? 'text' : 'password'}
-                          value={password}
-                          onChange={(e) => setPasswordState(e.target.value)}
-                          className="w-full bg-[#1a1a1a] border border-[rgba(200,169,126,0.3)] rounded-2xl pl-14 pr-12 py-5 font-sans text-lg text-white focus:outline-none focus:border-[#C8A97E]"
-                          placeholder="••••••••"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-4 top-1/2 -translate-y-1/2 text-[#C8A97E] opacity-60 hover:opacity-100"
-                        >
-                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="1.5">
-                            {showPassword ? (
-                              <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24" />
-                            ) : (
-                              <>
-                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                                <circle cx="12" cy="12" r="3" />
-                              </>
-                            )}
-                          </svg>
-                        </button>
-                      </div>
-                      
-                      {/* Password Strength Indicator - Figma Style */}
-                      {password && (
-                        <div className="mt-3">
-                          <div className="flex gap-2 mb-2">
-                            {[0, 1, 2, 3].map((i) => (
-                              <div
-                                key={i}
-                                className="h-2 flex-1 rounded-full transition-all duration-300"
-                                style={{
-                                  backgroundColor: i < getFilledBarsForLabel() ? '#C8A97E' : 'rgba(255,255,255,0.1)'
-                                }}
-                              />
-                            ))}
-                          </div>
-                          <p className="text-lg font-sans text-[#F9F6F2]">
-                            {getStrengthLabel()}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="mt-8">
-                      <label className="block font-sans text-[#F9F6F2] text-lg mb-3">Confirm Password</label>
-                      <div className="relative">
-                        <div className="absolute left-4 top-1/2 -translate-y-1/2">
-                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="1.5">
-                            <rect x="3" y="11" width="18" height="11" rx="2" />
-                            <path d="M7 11V7a5 5 0 0110 0v4" />
-                          </svg>
-                        </div>
-                        <input
-                          type={showConfirmPassword ? 'text' : 'password'}
-                          value={confirmPassword}
-                          onChange={(e) => setConfirmPassword(e.target.value)}
-                          className="w-full bg-[#1a1a1a] border border-[rgba(200,169,126,0.3)] rounded-2xl pl-14 pr-12 py-5 font-sans text-lg text-white focus:outline-none focus:border-[#C8A97E]"
-                          placeholder="••••••••"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          className="absolute right-4 top-1/2 -translate-y-1/2 text-[#C8A97E] opacity-60 hover:opacity-100"
-                        >
-                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="1.5">
-                            {showConfirmPassword ? (
-                              <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24" />
-                            ) : (
-                              <>
-                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                                <circle cx="12" cy="12" r="3" />
-                              </>
-                            )}
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="mt-10">
-                      <button
-                        type="submit"
-                        disabled={loading}
-                        className="w-full bg-[#C8A97E] text-[#0C0C0C] font-serif font-semibold py-4 px-6 rounded-full text-lg hover:opacity-90 transition-all disabled:opacity-50"
-                      >
-                        {loading ? 'Setting password...' : 'Set Password'}
-                      </button>
-                    </div>
-
-                    <div className="text-center my-4 sm:my-6">
-                      <span className="font-sans text-[#F9F6F2] text-sm">OR</span>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => setShowChangeEmail(true)}
-                      className="w-full border border-[rgba(200,169,126,0.3)] text-[#C8A97E] font-serif font-semibold py-2.5 sm:py-3 px-6 sm:px-8 rounded-full text-sm hover:bg-[#C8A97E] hover:text-[#0C0C0C] transition-all"
-                    >
-                      Change Email Address
-                    </button>
-                  </form>
-                </>
-              ) : (
-                <>
-                  <div className="text-center mb-8">
-                    <button 
-                      onClick={() => setShowChangeEmail(false)}
-                      className="flex items-center text-[#C8A97E] mb-4 text-sm"
-                    >
-                      ← Back
-                    </button>
-                    <h1 className="font-serif text-2xl font-bold text-[#C8A97E] mb-3">
-                      Change Email
-                    </h1>
-                  </div>
-
-                  {changeEmailError && (
-                    <div className="mb-4 p-3 bg-red-900/30 border border-red-500/50 rounded-lg">
-                      <p className="font-sans text-sm text-red-300">{changeEmailError}</p>
-                    </div>
-                  )}
-
-                  {changeEmailStep === 'request' ? (
-                    <div className="space-y-5">
-                      <div>
-                        <label className="block font-sans text-[#F9F6F2] text-xs mb-2">New Email Address</label>
-                        <input
-                          type="email"
-                          value={newEmail}
-                          onChange={(e) => setNewEmail(e.target.value)}
-                          className="w-full bg-[#141414] border border-[rgba(200,169,126,0.15)] rounded-2xl px-3 sm:px-4 py-2.5 sm:py-3 font-sans text-sm sm:text-base text-white focus:outline-none focus:border-[#C8A97E]"
-                          placeholder="you@example.com"
-                        />
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={handleRequestChangeEmail}
-                        disabled={changeEmailLoading}
-                        className="w-full bg-[#C8A97E] text-[#0C0C0C] font-serif font-semibold py-2.5 sm:py-3 px-6 sm:px-8 rounded-full text-sm hover:opacity-90 transition-all disabled:opacity-50"
-                      >
-                        {changeEmailLoading ? 'Sending...' : 'Send Verification Code'}
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="space-y-5">
-                      <div>
-                        <label className="block font-sans text-[#F9F6F2] text-xs mb-2">
-                          Enter the 6-digit code sent to {newEmail}
-                        </label>
-                        <input
-                          type="text"
-                          value={changeEmailOTP}
-                          onChange={(e) => setChangeEmailOTP(e.target.value)}
-                          className="w-full bg-[#141414] border border-[rgba(200,169,126,0.15)] rounded-2xl px-3 sm:px-4 py-2.5 sm:py-3 font-sans text-sm sm:text-base text-white focus:outline-none focus:border-[#C8A97E]"
-                          placeholder="000000"
-                          maxLength={6}
-                        />
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={handleVerifyChangeEmail}
-                        disabled={changeEmailLoading}
-                        className="w-full bg-[#C8A97E] text-[#0C0C0C] font-serif font-semibold py-2.5 sm:py-3 px-6 sm:px-8 rounded-full text-sm hover:opacity-90 transition-all disabled:opacity-50"
-                      >
-                        {changeEmailLoading ? 'Verifying...' : 'Verify & Change Email'}
-                      </button>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Right Side - Hero Image - Visible on tablets and larger */}
-          <div className="hidden md:block lg:block">
-            <div className="h-full min-h-[400px] md:min-h-[600px] lg:min-h-[800px]">
-              <HeroImage />
-            </div>
-          </div>
+  const layout = (content: React.ReactNode) => (
+    <div className="min-h-screen bg-[#F4F5F8] flex items-center justify-center p-4 sm:p-6 lg:p-8">
+      <div className="w-full max-w-7xl bg-white rounded-[32px] p-4 lg:p-6 shadow-xl border border-gray-100">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
           
-          {/* Mobile Hero Image - Visible only on mobile */}
-          <div className="block md:hidden mt-6">
-            <div className="h-[350px] rounded-[20px] overflow-hidden">
+          {/* Left Form Side */}
+          <div className="lg:col-span-6 p-4 sm:p-6 md:p-8 flex flex-col justify-between">
+            {/* Top Logo */}
+            <div className="mb-8">
+              <Image
+                src="/assets/logo1.png"
+                alt="Reachly Logo"
+                width={120}
+                height={40}
+                style={{ width: 'auto', height: '40px' }}
+                className="cursor-pointer"
+                onClick={() => router.push('/')}
+                priority
+              />
+            </div>
+
+            {/* Central Form Container */}
+            <div className="my-auto max-w-md mx-auto w-full">
+              {content}
+            </div>
+
+            {/* Bottom spacer */}
+            <div className="mt-8 pt-4" />
+          </div>
+
+          {/* Right Side - Hero Image */}
+          <div className="hidden lg:block lg:col-span-6 relative">
+            <div className="h-full min-h-[600px] lg:min-h-[700px]">
               <HeroImage />
             </div>
           </div>
+
         </div>
       </div>
+    </div>
+  );
+
+  if (showChangeEmail) {
+    return layout(
+      <div>
+        <div className="text-center mb-8">
+          <button 
+            onClick={() => setShowChangeEmail(false)}
+            className="flex items-center text-[#0012FF] mb-4 text-xs font-bold hover:underline cursor-pointer"
+          >
+            ← Back
+          </button>
+          <h1 className="font-anton text-black text-3xl sm:text-4xl uppercase mb-3">
+            Change Email
+          </h1>
+          <p className="font-sans text-gray-400 text-sm">
+            Update your registered email address
+          </p>
+        </div>
+
+        {changeEmailError && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl">
+            <p className="font-sans text-xs text-red-600 font-semibold">{changeEmailError}</p>
+          </div>
+        )}
+
+        {changeEmailStep === 'request' ? (
+          <div className="space-y-4">
+            <div>
+              <label className="block font-sans text-gray-700 font-semibold text-xs mb-2">New Email Address</label>
+              <input
+                type="email"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 font-sans text-sm text-black placeholder-gray-400 focus:outline-none focus:border-[#0012FF] transition-all"
+                placeholder="you@example.com"
+                required
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={handleRequestChangeEmail}
+              disabled={changeEmailLoading}
+              className="w-full bg-[#0012FF] hover:bg-[#000EB4] active:scale-[0.98] text-white font-sans font-bold py-3.5 px-6 rounded-full text-sm tracking-wide shadow-lg shadow-blue-500/20 transition-all disabled:opacity-50 mt-4 cursor-pointer"
+            >
+              {changeEmailLoading ? 'Sending...' : 'Send Verification Code'}
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div>
+              <label className="block font-sans text-gray-700 font-semibold text-xs mb-2">
+                Enter code sent to {newEmail}
+              </label>
+              <input
+                type="text"
+                value={changeEmailOTP}
+                onChange={(e) => setChangeEmailOTP(e.target.value)}
+                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 font-sans text-sm text-black placeholder-gray-400 focus:outline-none focus:border-[#0012FF] transition-all"
+                placeholder="000000"
+                maxLength={6}
+                required
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={handleVerifyChangeEmail}
+              disabled={changeEmailLoading}
+              className="w-full bg-[#0012FF] hover:bg-[#000EB4] active:scale-[0.98] text-white font-sans font-bold py-3.5 px-6 rounded-full text-sm tracking-wide shadow-lg shadow-blue-500/20 transition-all disabled:opacity-50 mt-4 cursor-pointer"
+            >
+              {changeEmailLoading ? 'Verifying...' : 'Verify & Change Email'}
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return layout(
+    <div>
+      <div className="text-center mb-8">
+        <h1 className="font-anton text-black text-3xl sm:text-4xl md:text-5xl leading-tight uppercase mb-3">
+          Set Your Password
+        </h1>
+        <p className="font-sans text-gray-400 text-sm">
+          Enter a new password for your account, make sure it's strong
+        </p>
+        <p className="font-sans text-gray-400 text-xs mt-2">
+          For: <span className="text-black font-semibold">{email}</span>
+        </p>
+      </div>
+
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl">
+          <p className="font-sans text-xs text-red-600 font-semibold">{error}</p>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Password */}
+        <div>
+          <label className="block font-sans text-gray-700 font-semibold text-xs mb-2">Password <span className="text-red-500">*</span></label>
+          <div className="relative">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+              {/* Lock Icon */}
+              <svg className="w-4 h-4 text-[#0012FF]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <rect x="3" y="11" width="18" height="11" rx="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M7 11V7a5 5 0 0110 0v4" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+            <input
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={(e) => setPasswordState(e.target.value)}
+              className="w-full bg-white border border-gray-200 rounded-xl pl-11 pr-12 py-3 font-sans text-sm text-black placeholder-gray-400 focus:outline-none focus:border-[#0012FF] transition-all"
+              placeholder="••••••••"
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              {showPassword ? (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+                </svg>
+              ) : (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+              )}
+            </button>
+          </div>
+          
+          {/* Password Strength Indicator */}
+          {password && (
+            <div className="mt-3">
+              <div className="flex gap-1.5 mb-1.5">
+                {[0, 1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="h-1.5 flex-1 rounded-full transition-all duration-300"
+                    style={{
+                      backgroundColor: i < getFilledBarsForLabel() ? '#0012FF' : '#E5E7EB'
+                    }}
+                  />
+                ))}
+              </div>
+              <p className="text-xs font-sans font-bold text-black">
+                {getStrengthLabel()}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Confirm Password */}
+        <div>
+          <label className="block font-sans text-gray-700 font-semibold text-xs mb-2">Confirm Password <span className="text-red-500">*</span></label>
+          <div className="relative">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+              {/* Lock Icon */}
+              <svg className="w-4 h-4 text-[#0012FF]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <rect x="3" y="11" width="18" height="11" rx="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M7 11V7a5 5 0 0110 0v4" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+            <input
+              type={showConfirmPassword ? 'text' : 'password'}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="w-full bg-white border border-gray-200 rounded-xl pl-11 pr-12 py-3 font-sans text-sm text-black placeholder-gray-400 focus:outline-none focus:border-[#0012FF] transition-all"
+              placeholder="••••••••"
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              {showConfirmPassword ? (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+                </svg>
+              ) : (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Action button */}
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-[#0012FF] hover:bg-[#000EB4] active:scale-[0.98] text-white font-sans font-bold py-3.5 px-6 rounded-full text-sm tracking-wide shadow-lg shadow-blue-500/20 transition-all disabled:opacity-50 mt-6 cursor-pointer"
+        >
+          {loading ? 'Setting password...' : 'Set Password'}
+        </button>
+
+        {/* Divider */}
+        <div className="relative my-4 text-center">
+          <div className="absolute top-1/2 left-0 right-0 h-px bg-gray-200 -translate-y-1/2"></div>
+          <span className="relative bg-white px-4 font-sans text-gray-400 text-xs font-semibold">
+            or
+          </span>
+        </div>
+
+        {/* Change email address */}
+        <button
+          type="button"
+          onClick={() => setShowChangeEmail(true)}
+          className="w-full bg-white border border-[#0012FF] text-[#0012FF] font-sans font-bold py-3 px-6 rounded-full text-xs hover:bg-[#0012FF]/5 transition-all cursor-pointer"
+        >
+          Change Email Address
+        </button>
+      </form>
     </div>
   );
 }
@@ -376,13 +404,16 @@ function SetPasswordForm() {
 export default function SetPasswordPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-[#0C0C0C] flex items-center justify-center p-4 sm:p-6">
+      <div className="min-h-screen bg-[#F4F5F8] flex items-center justify-center p-4 sm:p-6">
         <div className="w-full max-w-7xl text-center">
-          <div className="animate-pulse text-[#C8A97E]">Loading...</div>
+          <div className="animate-pulse text-[#0012FF]">Loading...</div>
         </div>
       </div>
     }>
-      <SetPasswordForm />
+      <VerifyEmailForm />
     </Suspense>
   );
 }
+// Renamed helper block internally to match routing exports
+const VerifyEmailForm = SetPasswordForm;
+export { VerifyEmailForm };
