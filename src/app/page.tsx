@@ -43,27 +43,27 @@ export default function Home() {
 
   /* ── creator data used in multiple sections ── */
   const allCreators = [
-    { name: 'Mahira Khan', img: '/assets/mahira_khan.png' },
-    { name: 'Danish Taimoor', img: '/assets/danish.png' },
-    { name: 'Hania Amir', img: '/assets/hania.png' },
-    { name: 'Feroz Khan', img: '/assets/feroz.jpg' },
-    { name: 'Dure Fishan', img: '/assets/dure.png' },
-    { name: 'Bilal Abbas', img: '/assets/bilal.png' },
-    { name: 'Ahsan Khan', img: '/assets/ahsan-khan.jpg' },
-    { name: 'Sajal Ali', img: '/assets/sajal-ali.jpg' },
+    { name: 'Mahira Khan', img: '/Avatars/3.jpg' },
+    { name: 'Danish Taimoor', img: '/Avatars/1.jpg' },
+    { name: 'Hania Amir', img: '/Avatars/5.jpg' },
+    { name: 'Feroz Khan', img: '/Avatars/2.jpg' },
+    { name: 'Dure Fishan', img: '/Avatars/6.jpg' },
+    { name: 'Bilal Abbas', img: '/Avatars/4.jpg' },
+    { name: 'Ahsan Khan', img: '/Avatars/7.jpg' },
+    { name: 'Sajal Ali', img: '/Avatars/8.jpg' },
   ];
   /* duplicate for seamless loop */
   const marqueeCreators = [...allCreators, ...allCreators];
 
   const testimonials = [
-    { name: 'Jordan L.', loc: 'Los Angeles, CA', text: '"Ayesha helped me find my style, stay consistent, and grow my engagement. I feel much more confident creating content. One of the best investments I\'ve made for my personal brand!"', avatar: '/assets/sajal-ali.jpg', quoteColor: '#E8D9A0', dot1: '#A0B4E8', dot2: '#B8E0C8' },
-    { name: 'Zara A.', loc: 'Karachi, PK', text: '"Reachly helped me connect with Mahira Khan directly. The session was incredible and changed how I view personal branding!"', avatar: '/assets/mahira-khan.jpg', quoteColor: '#F4C5C5', dot1: '#F4C5C5', dot2: '#A0C8E8' },
-    { name: 'Ali R.', loc: 'Lahore, PK', text: '"Booking was seamless. Paid through JazzCash and got a confirmation instantly. Highly recommend the platform!"', avatar: '/assets/ahsan-khan.jpg', quoteColor: '#B8E8B8', dot1: '#B8E8B8', dot2: '#E8D9A0' },
-    { name: 'Sana M.', loc: 'Islamabad, PK', text: '"I never thought I could afford a 1-on-1 with my favourite creator. Reachly made it possible and affordable."', avatar: '/assets/hania.png', quoteColor: '#C8D8F8', dot1: '#C8D8F8', dot2: '#F4C5C5' },
-    { name: 'Hassan T.', loc: 'Peshawar, PK', text: '"The verification badge gives me confidence. Every creator I booked was professional and punctual."', avatar: '/assets/new-man.jpg', quoteColor: '#E8D9A0', dot1: '#A0B4E8', dot2: '#B8E0C8' },
-    { name: 'Nida F.', loc: 'Multan, PK', text: '"Got actionable advice on growing my YouTube channel. Worth every rupee. Reachly is a game changer!"', avatar: '/assets/dure.png', quoteColor: '#F4C5C5', dot1: '#F4C5C5', dot2: '#B8E8B8' },
-    { name: 'Ayesha K.', loc: 'Dubai, UAE', text: '"Super smooth experience from booking to the call. Will definitely book again. Love Reachly!"', avatar: '/assets/sajal-ali.jpg', quoteColor: '#B8E8B8', dot1: '#B8E8B8', dot2: '#C8D8F8' },
-    { name: 'Bilal Ch.', loc: 'Faisalabad, PK', text: '"I was skeptical at first, but after my first session I was hooked. The creator gave genuine value!"', avatar: '/assets/danish.png', quoteColor: '#C8D8F8', dot1: '#C8D8F8', dot2: '#E8D9A0' },
+    { name: 'Jordan L.', loc: 'Los Angeles, CA', text: '"Ayesha helped me find my style, stay consistent, and grow my engagement. I feel much more confident creating content. One of the best investments I\'ve made for my personal brand!"', avatar: '/Avatars/8.jpg', quoteColor: '#E8D9A0', dot1: '#A0B4E8', dot2: '#B8E0C8' },
+    { name: 'Zara A.', loc: 'Karachi, PK', text: '"Reachly helped me connect with Mahira Khan directly. The session was incredible and changed how I view personal branding!"', avatar: '/Avatars/2.jpg', quoteColor: '#F4C5C5', dot1: '#F4C5C5', dot2: '#A0C8E8' },
+    { name: 'Ali R.', loc: 'Lahore, PK', text: '"Booking was seamless. Paid through JazzCash and got a confirmation instantly. Highly recommend the platform!"', avatar: '/Avatars/7.jpg', quoteColor: '#B8E8B8', dot1: '#B8E8B8', dot2: '#E8D9A0' },
+    { name: 'Sana M.', loc: 'Islamabad, PK', text: '"I never thought I could afford a 1-on-1 with my favourite creator. Reachly made it possible and affordable."', avatar: '/Avatars/4.jpg', quoteColor: '#C8D8F8', dot1: '#C8D8F8', dot2: '#F4C5C5' },
+    { name: 'Hassan T.', loc: 'Peshawar, PK', text: '"The verification badge gives me confidence. Every creator I booked was professional and punctual."', avatar: '/Avatars/15.jpg', quoteColor: '#E8D9A0', dot1: '#A0B4E8', dot2: '#B8E0C8' },
+    { name: 'Nida F.', loc: 'Multan, PK', text: '"Got actionable advice on growing my YouTube channel. Worth every rupee. Reachly is a game changer!"', avatar: '/Avatars/6.jpg', quoteColor: '#F4C5C5', dot1: '#F4C5C5', dot2: '#B8E8B8' },
+    { name: 'Ayesha K.', loc: 'Dubai, UAE', text: '"Super smooth experience from booking to the call. Will definitely book again. Love Reachly!"', avatar: '/Avatars/10.jpg', quoteColor: '#B8E8B8', dot1: '#B8E8B8', dot2: '#C8D8F8' },
+    { name: 'Bilal Ch.', loc: 'Faisalabad, PK', text: '"I was skeptical at first, but after my first session I was hooked. The creator gave genuine value!"', avatar: '/Avatars/1.jpg', quoteColor: '#C8D8F8', dot1: '#C8D8F8', dot2: '#E8D9A0' },
   ];
   const marqueeTestimonials1 = [...testimonials, ...testimonials];
   const marqueeTestimonials2 = [...testimonials].reverse().concat([...testimonials].reverse());
@@ -78,10 +78,10 @@ export default function Home() {
   ];
 
   const categoryCreators = [
-    { name: 'Sarah Khan', handle: '@sarahkhan', tag: 'Sponsored', img: '/assets/sara-khan.jpg', rating: '4.9', description: "Pakistan's leading fashion and lifestyle content creator.", price: '1200 PKR', category: 'Fashion', bgClass: 'bg-[#D0E1FD]', isVerified: false },
-    { name: 'Dananeer Mobeen', handle: '@dananeermobeen', tag: 'Verified', img: '/assets/danaer-mobeen.png', rating: '4.9', description: "Viral sensation & lifestyle creator with millions of fans.", price: '1200 PKR', category: 'Lifestyle', bgClass: 'bg-[#B88E75]', isVerified: true },
-    { name: 'Bilal Abbas', handle: '@bilalabbas', tag: 'Sponsored', img: '/assets/bilal-abbass.png', rating: '4.9', description: "Award-winning actor and digital creator from Pakistan.", price: '1200 PKR', category: 'Tech', bgClass: 'bg-[#A7D8B9]', isVerified: false },
-    { name: 'Dure Fishan', handle: '@durefishan', tag: 'Verified', img: '/assets/dure.png', rating: '4.9', description: "Beauty, fashion & lifestyle creator beloved across Pakistan.", price: '1200 PKR', category: 'Beauty', bgClass: 'bg-[#ECA2A2]', isVerified: true },
+    { name: 'Sarah Khan', handle: '@sarahkhan', tag: 'Sponsored', img: '/Avatars/12.jpg', rating: '4.9', description: "Pakistan's leading fashion and lifestyle content creator.", price: '1200 PKR', category: 'Fashion', bgClass: 'bg-[#D0E1FD]', isVerified: false },
+    { name: 'Dananeer Mobeen', handle: '@dananeermobeen', tag: 'Verified', img: '/Avatars/5.jpg', rating: '4.9', description: "Viral sensation & lifestyle creator with millions of fans.", price: '1200 PKR', category: 'Lifestyle', bgClass: 'bg-[#B88E75]', isVerified: true },
+    { name: 'Bilal Abbas', handle: '@bilalabbas', tag: 'Sponsored', img: '/Avatars/10.jpg', rating: '4.9', description: "Award-winning actor and digital creator from Pakistan.", price: '1200 PKR', category: 'Tech', bgClass: 'bg-[#A7D8B9]', isVerified: false },
+    { name: 'Dure Fishan', handle: '@durefishan', tag: 'Verified', img: '/Avatars/6.jpg', rating: '4.9', description: "Beauty, fashion & lifestyle creator beloved across Pakistan.", price: '1200 PKR', category: 'Beauty', bgClass: 'bg-[#ECA2A2]', isVerified: true },
   ];
 
   const filteredCategoryCreators = categoryCreators.filter(c => {
@@ -131,10 +131,10 @@ export default function Home() {
               className="flex items-center justify-center gap-6 flex-wrap"
             >
               {[
-                { img: '/assets/ahsan-khan.jpg', name: 'Ahsan Khan' },
-                { img: '/assets/mahira-khan.jpg', name: 'Mahira Khan' },
-                { img: '/assets/new-man.jpg', name: 'Fawad Khan' },
-                { img: '/assets/sajal-ali.jpg', name: 'Sajal Ali' },
+                { img: '/Avatars/7.jpg', name: 'Ahsan Khan' },
+                { img: '/Avatars/2.jpg', name: 'Mahira Khan' },
+                { img: '/Avatars/15.jpg', name: 'Fawad Khan' },
+                { img: '/Avatars/8.jpg', name: 'Sajal Ali' },
               ].map((creator, i) => (
                 <motion.div
                   key={i}
@@ -322,10 +322,10 @@ export default function Home() {
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
           >
             {[
-              { name: 'Sarah Khan', handle: '@sarahkhan', tag: 'Sponsored', img: '/assets/sara-khan.jpg', rating: '4.9', description: "Pakistan's leading fashion and lifestyle content creator.", price: '1200 PKR', bgClass: 'bg-[#D0E1FD]', isVerified: false },
-              { name: 'Dananeer Mobeen', handle: '@dananeermobeen', tag: 'Verified', img: '/assets/danaer-mobeen.png', rating: '4.9', description: "Viral sensation & lifestyle creator with millions of fans.", price: '1200 PKR', bgClass: 'bg-[#B88E75]', isVerified: true },
-              { name: 'Bilal Abbas', handle: '@bilalabbas', tag: 'Sponsored', img: '/assets/bilal-abbass.png', rating: '4.9', description: "Award-winning actor and digital creator from Pakistan.", price: '1200 PKR', bgClass: 'bg-[#A7D8B9]', isVerified: false },
-              { name: 'Dure Fishan', handle: '@durefishan', tag: 'Verified', img: '/assets/dure.png', rating: '4.9', description: "Beauty, fashion & lifestyle creator beloved across Pakistan.", price: '1200 PKR', bgClass: 'bg-[#ECA2A2]', isVerified: true },
+              { name: 'Sarah Khan', handle: '@sarahkhan', tag: 'Sponsored', img: '/Avatars/12.jpg', rating: '4.9', description: "Pakistan's leading fashion and lifestyle content creator.", price: '1200 PKR', bgClass: 'bg-[#D0E1FD]', isVerified: false },
+              { name: 'Dananeer Mobeen', handle: '@dananeermobeen', tag: 'Verified', img: '/Avatars/5.jpg', rating: '4.9', description: "Viral sensation & lifestyle creator with millions of fans.", price: '1200 PKR', bgClass: 'bg-[#B88E75]', isVerified: true },
+              { name: 'Bilal Abbas', handle: '@bilalabbas', tag: 'Sponsored', img: '/Avatars/10.jpg', rating: '4.9', description: "Award-winning actor and digital creator from Pakistan.", price: '1200 PKR', bgClass: 'bg-[#A7D8B9]', isVerified: false },
+              { name: 'Dure Fishan', handle: '@durefishan', tag: 'Verified', img: '/Avatars/6.jpg', rating: '4.9', description: "Beauty, fashion & lifestyle creator beloved across Pakistan.", price: '1200 PKR', bgClass: 'bg-[#ECA2A2]', isVerified: true },
             ].map((creator, index) => (
               <motion.div
                 key={index}
@@ -764,7 +764,7 @@ export default function Home() {
                   {/* Avatar + name */}
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 border border-gray-100 shadow-sm bg-gray-100">
-                      <img src={t.avatar || '/assets/sajal-ali.jpg'} alt={t.name} className="w-full h-full object-cover" />
+                      <img src={t.avatar || '/Avatars/8.jpg'} alt={t.name} className="w-full h-full object-cover" />
                     </div>
                     <div>
                       <p className="font-sans font-bold text-sm text-black leading-tight">{t.name}</p>
@@ -802,7 +802,7 @@ export default function Home() {
                   {/* Avatar + name */}
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 border border-gray-100 shadow-sm bg-gray-100">
-                      <img src={t.avatar || '/assets/mahira-khan.jpg'} alt={t.name} className="w-full h-full object-cover" />
+                      <img src={t.avatar || '/Avatars/2.jpg'} alt={t.name} className="w-full h-full object-cover" />
                     </div>
                     <div>
                       <p className="font-sans font-bold text-sm text-black leading-tight">{t.name}</p>
@@ -840,7 +840,7 @@ export default function Home() {
               transition={{ duration: 0.5 }}
               whileHover={{ scale: 1.04, rotate: '-2deg' }}
             >
-              <img src="/assets/bilal.png" alt="Creator" className="w-full h-full object-cover object-top" />
+              <img src="/Avatars/5.jpg" alt="Creator" className="w-full h-full object-cover object-top" />
             </motion.div>
 
             {/* Bottom-left: dure (salmon bg) - smaller, bottom-left overlapping */}
@@ -852,7 +852,7 @@ export default function Home() {
               transition={{ duration: 0.5, delay: 0.1 }}
               whileHover={{ scale: 1.04, rotate: '0deg' }}
             >
-              <img src="/assets/dure.png" alt="Creator" className="w-full h-full object-cover object-top" />
+              <img src="/Avatars/6.jpg" alt="Creator" className="w-full h-full object-cover object-top" />
             </motion.div>
 
             {/* Top-right: feroz (peach bg) - smaller, top-right overlapping */}
@@ -864,7 +864,7 @@ export default function Home() {
               transition={{ duration: 0.5, delay: 0.15 }}
               whileHover={{ scale: 1.04, rotate: '2deg' }}
             >
-              <img src="/assets/feroz.jpg" alt="Creator" className="w-full h-full object-cover object-top" />
+              <img src="/Avatars/3.jpg" alt="Creator" className="w-full h-full object-cover object-top" />
             </motion.div>
 
             {/* Bottom-right: mahira (blue bg) - large, right side mid-height */}
@@ -876,7 +876,7 @@ export default function Home() {
               transition={{ duration: 0.5, delay: 0.2 }}
               whileHover={{ scale: 1.04, rotate: '0deg' }}
             >
-              <img src="/assets/mahira_khan.png" alt="Creator" className="w-full h-full object-cover object-top" />
+              <img src="/Avatars/2.jpg" alt="Creator" className="w-full h-full object-cover object-top" />
             </motion.div>
 
             {/* Center text */}
