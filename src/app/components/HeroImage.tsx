@@ -4,24 +4,24 @@ import { motion } from 'framer-motion';
 
 export default function HeroImage() {
   const column1 = [
-    '/assets/ahsan-khan.jpg',
-    '/assets/bilal.png',
-    '/assets/danaer-mobeen.png',
-    '/assets/danish.png',
+    '/Avatars/1.jpg',
+    '/Avatars/2.jpg',
+    '/Avatars/3.jpg',
+    '/Avatars/4.jpg',
   ];
 
   const column2 = [
-    '/assets/hania.png',
-    '/assets/mahira-khan.jpg',
-    '/assets/new-man.jpg',
-    '/assets/sajal-ali.jpg',
+    '/Avatars/5.jpg',
+    '/Avatars/6.jpg',
+    '/Avatars/7.jpg',
+    '/Avatars/8.jpg',
   ];
 
   const column3 = [
-    '/assets/dure.png',
-    '/assets/feroz.jpg',
-    '/assets/mahira_khan.png',
-    '/assets/sara-khan.jpg',
+    '/Avatars/9.jpg',
+    '/Avatars/10.jpg',
+    '/Avatars/11.jpg',
+    '/Avatars/12.jpg',
   ];
 
   // Duplicate arrays to make them scroll seamlessly
