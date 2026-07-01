@@ -135,7 +135,34 @@ export default function Home() {
                 { img: '/Avatars/2.jpg', name: 'Mahira Khan' },
                 { img: '/Avatars/15.jpg', name: 'Fawad Khan' },
                 { img: '/Avatars/8.jpg', name: 'Sajal Ali' },
-              ].map((creator, i) => (
+              ].map((creator, i) => {
+                const buttonRef = useRef<HTMLDivElement>(null);
+                const [position, setPosition] = useState({ x: 0, y: 0 });
+                const [isHovered, setIsHovered] = useState(false);
+                
+                const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+                  if (buttonRef.current) {
+                    const rect = buttonRef.current.getBoundingClientRect();
+                    const buttonCenterX = rect.left + rect.width / 2;
+                    const buttonCenterY = rect.top + rect.height / 2;
+                    
+                    const x = e.clientX - buttonCenterX;
+                    const y = e.clientY - buttonCenterY;
+                    
+                    // Stronger magnetic effect
+                    const maxMove = 15;
+                    const moveX = Math.max(-maxMove, Math.min(maxMove, x * 0.5));
+                    const moveY = Math.max(-maxMove, Math.min(maxMove, y * 0.5));
+                    
+                    setPosition({ x: moveX, y: moveY });
+                  }
+                };
+
+                const handleMouseLeave = () => {
+                  setPosition({ x: 0, y: 0 });
+                };
+
+                return (
                 <motion.div
                   key={i}
                   initial={{ opacity: 0, y: 30, rotate: i % 2 === 0 ? -8 : 8 }}
@@ -143,28 +170,40 @@ export default function Home() {
                   transition={{ duration: 0.6, delay: 0.5 + i * 0.1 }}
                   whileHover={{ y: -10, rotate: 0, scale: 1.05 }}
                   className="relative group"
+                  onMouseEnter={() => setIsHovered(true)}
+                  onMouseLeave={() => setIsHovered(false)}
                 >
                   <div className="w-40 h-56 sm:w-48 sm:h-64 rounded-3xl overflow-hidden border-4 border-white/20 shadow-2xl">
                     <img src={creator.img} alt={creator.name} className="w-full h-full object-cover" />
                   </div>
-                  {i === 1 && (
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ delay: 1, type: "spring" }}
-                      className="absolute -right-10 top-[100%] -translate-y-1/2 z-20
-               w-20 h-20 rounded-full
-               bg-[#0033A0] text-white
+                  <motion.div
+                    ref={buttonRef}
+                    onMouseMove={handleMouseMove}
+                    onMouseLeave={handleMouseLeave}
+                    initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                    animate={isHovered ? { opacity: 1, scale: 1.05, y: 0 } : { opacity: 0, scale: 0.8, y: 20 }}
+                    className="absolute -right-6 top-1/2 -translate-y-1/2 z-20
+               w-16 h-16 sm:w-20 sm:h-20 rounded-full
                flex items-center justify-center
-               text-sm font-semibold text-center
-               shadow-[0_0_30px_rgba(0,51,160,0.6)]
-               backdrop-blur-md"
-                    >
-                      Explore
-                    </motion.div>
-                  )}
+               text-xs sm:text-sm font-semibold text-center
+               cursor-pointer"
+                    style={{ x: position.x, y: position.y }}
+                    transition={{ 
+                      x: { type: "spring", stiffness: 300, damping: 20 },
+                      y: { type: "spring", stiffness: 300, damping: 20 },
+                      opacity: { duration: 0.3 },
+                      scale: { duration: 0.3 }
+                    }}
+                  >
+                    {/* Glow effect */}
+                    <div className="absolute inset-0 rounded-full bg-gradient-to-br from-purple-500 via-blue-500 to-cyan-400 opacity-75 blur-xl" />
+                    {/* Button background */}
+                    <div className="relative w-full h-full rounded-full bg-[#0033A0] text-white flex items-center justify-center shadow-[0_0_30px_rgba(0,51,160,0.6)] backdrop-blur-md">
+                    Explore
+                    </div>
+                  </motion.div>
                 </motion.div>
-              ))}
+              )})}
             </motion.div>
           </div>
         </div>
@@ -213,9 +252,13 @@ export default function Home() {
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.08 }}
                 whileHover={{ y: -8, scale: 1.02 }}
-                className="relative h-[280px] sm:h-[340px] rounded-3xl overflow-hidden shadow-lg group bg-white cursor-pointer"
+                className="relative h-[360px] w-full rounded-3xl overflow-hidden shadow-lg group bg-white cursor-pointer"
               >
-                <img src={creator.img} alt={creator.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+               <img
+  src={creator.img}
+  alt={creator.name}
+  className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
+/>
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end justify-center pb-6">
                   <span className="text-white font-sans font-bold text-lg tracking-wide drop-shadow-md">{creator.name}</span>
                 </div>
@@ -333,13 +376,13 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="flex flex-col bg-transparent rounded-3xl transition-all duration-300 hover:-translate-y-1.5 group"
+              className="flex flex-col bg-transparent rounded-3xl max-w-[250px] mx-auto transition-all duration-300 hover:-translate-y-1.5 group"
               >
-                <div className="relative h-[300px] w-full rounded-3xl overflow-hidden">
+          <div className="relative h-[235px] w-full rounded-3xl overflow-hidden bg-[#F3F4F6]">
                   <img
                     src={creator.img}
                     alt={creator.name}
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                   className="absolute inset-0 w-full h-full object-cover object-top scale-[0.99] transition-transform duration-300 group-hover:scale-[0.99]"
                   />
 
                   {/* Optional dark overlay for readability */}
@@ -360,7 +403,6 @@ export default function Home() {
                       <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                     </svg>
                   </button>
-                  <img src={creator.img} alt={creator.name} className="h-[80%] max-w-[90%] object-contain transition-transform duration-300 " />
                 </div>
                 <div className="pt-4 pb-2">
                   <div className="flex items-center justify-between">
@@ -459,11 +501,11 @@ export default function Home() {
                       transition={{ duration: 0.4, delay: index * 0.08 }}
                       className="w-[280px] shrink-0 flex flex-col bg-transparent rounded-3xl transition-all duration-300 hover:-translate-y-1.5 group"
                     >
-                      <div className="relative h-[280px] w-full rounded-3xl overflow-hidden">
+                    <div className="relative h-[280px] w-full rounded-3xl overflow-hidden bg-[#F3F4F6]">
   <img
     src={creator.img}
     alt={creator.name}
-    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+    className="absolute inset-0 w-full h-full object-cover object-top scale-[0.99] transition-transform duration-500 group-hover:scale-[0.99]"
   />
 
   {/* Optional overlay for better contrast */}
@@ -574,11 +616,23 @@ export default function Home() {
                   onClick={() => toggleSaveEvent(event.id)}
                   className="absolute top-6 right-6 w-11 h-11 rounded-full bg-white/10 backdrop-blur-md hover:bg-white/20 flex items-center justify-center transition-all cursor-pointer z-10 active:scale-90 border border-white/25"
                 >
-                  <svg className={`w-5 h-5 transition-colors ${savedEvents.includes(event.id) ? 'fill-white text-white' : 'text-white'}`} fill={savedEvents.includes(event.id) ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
-                    <polyline points="17 21 17 13 7 13 7 21" />
-                    <polyline points="7 3 7 8 15 8" />
-                  </svg>
+                 <svg
+  className={`w-6 h-6 transition-all duration-300 ${
+    savedEvents.includes(event.id)
+      ? 'fill-white text-white'
+      : 'text-white'
+  }`}
+  fill={savedEvents.includes(event.id) ? 'currentColor' : 'none'}
+  stroke="currentColor"
+  strokeWidth="2"
+  viewBox="0 0 24 24"
+>
+  <path
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    d="M17 21l-5-3-5 3V5a2 2 0 012-2h6a2 2 0 012 2v16z"
+  />
+</svg>
                 </button>
                 <div className="absolute bottom-6 left-6 right-6 flex items-end justify-between gap-4">
                   <div className="text-white">
@@ -745,7 +799,7 @@ export default function Home() {
           </h2>
         </FadeUp>
 
-        <div className="space-y-6">
+    <div className="space-y-6 max-w-[1400px] mx-auto px-4 sm:px-6">
           {/* Row 1 — left → right */}
           <div className="overflow-hidden relative">
             <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-24 z-10 bg-gradient-to-r from-[#F7F7FA] to-transparent" />
