@@ -332,34 +332,37 @@ export default function ExploreCreatorsPage() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {creators.map((creator) => (
-                  <div key={creator.id} className="bg-[#141414] border border-[rgba(200,169,126,0.15)] rounded-xl overflow-hidden hover:border-[#C8A97E] transition-all">
-                    <div className="relative">
-                      <img src={creator.profilePhoto} alt={creator.displayName} className="w-full aspect-[3/4] object-cover" />
-                      {creator.niches[0] && (
-                        <div className="absolute top-3 left-3 bg-[rgba(20,20,20,0.8)] text-[#F9F6F2] px-3 py-1 rounded-full text-[10px] font-semibold font-sans capitalize">
-                          {creator.niches[0]}
-                        </div>
-                      )}
+              <div key={creator.id} className="bg-[#141414] border border-[rgba(200,169,126,0.15)] rounded-xl overflow-hidden hover:border-[#C8A97E] transition-all">
+                <div className="relative">
+                  <img src={creator.profilePhoto} alt={creator.displayName} className="w-full aspect-[3/4] object-cover" />
+                  {creator.niches[0] && (
+                    <div className="absolute top-3 left-3 bg-[rgba(20,20,20,0.8)] text-[#F9F6F2] px-3 py-1 rounded-full text-[10px] font-semibold font-sans capitalize">
+                      {creator.niches[0]}
                     </div>
-                    <div className="p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-serif text-lg font-semibold text-[#F9F6F2] line-clamp-1">{creator.displayName}</h3>
-                        <div className="flex items-center gap-1">
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="#C8A97E">
-                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                          </svg>
-                          <span className="font-sans text-xs text-[#F9F6F2] opacity-70">{creator.rating}</span>
-                        </div>
-                      </div>
-                      <p className="font-sans text-xs text-[#F9F6F2] opacity-50 mb-2">@{creator.username}</p>
-                      <p className="font-sans text-xs text-[#F9F6F2] opacity-60 mb-4 h-8 line-clamp-2">{creator.shortBio}</p>
-                      <p className="font-sans text-sm text-[#F9F6F2] mb-3">Starting from <span className="font-semibold text-[#C8A97E]">{creator.startingPrice}</span></p>
-                      <Link href={`/creators/${creator.username}`} className="w-full block text-center bg-[#C8A97E] text-[#0C0C0C] font-sans font-semibold py-3 rounded-full hover:opacity-90 transition-all">
-                        Book Now
-                      </Link>
+                  )}
+                </div>
+                <div className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-1">
+                      <h3 className="font-serif text-lg font-semibold text-[#F9F6F2] line-clamp-1">{creator.displayName}</h3>
+                      {creator.isVerified && <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 1.5L14.8 7.5L21 8L16.5 12.5L17.5 18.5L12 15.5L6.5 18.5L7.5 12.5L3 8L9.2 7.5L12 1.5Z" fill="#22C55E"/><path d="M10 13L7 10L8.5 8.5L10 10L15.5 5L17 6.5L10 13Z" fill="white"/></svg>}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="#C8A97E">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                      </svg>
+                      <span className="font-sans text-xs text-[#F9F6F2] opacity-70">{creator.rating}</span>
                     </div>
                   </div>
-                ))}
+                  <p className="font-sans text-xs text-[#F9F6F2] opacity-50 mb-2">@{creator.username}</p>
+                  <p className="font-sans text-xs text-[#F9F6F2] opacity-60 mb-4 h-8 line-clamp-2">{creator.shortBio}</p>
+                  <p className="font-sans text-sm text-[#F9F6F2] mb-3">Starting from <span className="font-semibold text-[#C8A97E]">{creator.startingPrice}</span></p>
+                  <Link href={`/creators/${creator.username}`} className="w-full block text-center bg-[#C8A97E] text-[#0C0C0C] font-sans font-semibold py-3 rounded-full hover:opacity-90 transition-all">
+                    Book Now
+                  </Link>
+                </div>
+              </div>
+            ))}
               </div>
             )}
           </div>

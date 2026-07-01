@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
         const creators = await User.find({
           onboardingStep: { $gte: 6 },
           approvalStatus: 'approved'
-        }).select('_id onboardingStep');
+        }).select('_id onboardingStep isVerified');
         const creatorUserIds = creators.map((c) => c._id);
 
         if (!creatorUserIds.length) {
@@ -42,6 +42,7 @@ export async function GET(request: NextRequest) {
                 profilePhoto: profile.profilePhoto || '/merium.png', // fallback
                 startingPrice: minPrice,
                 rating: 4.9, // placeholder for now since we don't have reviews implemented
+                isVerified: user.isVerified || false,
             };
         }).filter(Boolean); // Remove nulls
 

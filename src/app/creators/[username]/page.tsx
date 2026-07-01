@@ -82,7 +82,10 @@ export default function CreatorProfilePage() {
             <div className="flex items-start gap-6">
               <img src={creator.profilePhoto} alt={creator.displayName} className="w-24 h-24 rounded-full border-2 border-[#C8A97E]" />
               <div>
-                <h1 className="font-serif text-2xl sm:text-3xl font-bold mb-2">{creator.displayName}</h1>
+                <div className="flex items-center gap-2 mb-2">
+                  <h1 className="font-serif text-2xl sm:text-3xl font-bold">{creator.displayName}</h1>
+                  {creator.isVerified && <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 1.5L14.8 7.5L21 8L16.5 12.5L17.5 18.5L12 15.5L6.5 18.5L7.5 12.5L3 8L9.2 7.5L12 1.5Z" fill="#22C55E"/><path d="M10 13L7 10L8.5 8.5L10 10L15.5 5L17 6.5L10 13Z" fill="white"/></svg>}
+                </div>
                 <p className="text-white/70 text-sm mb-2">@{creator.username}</p>
                 <div className="flex items-center gap-4 text-white/50 text-xs">
                   {creator.niches && creator.niches[0] && <span>✨ {creator.niches[0]}</span>}
