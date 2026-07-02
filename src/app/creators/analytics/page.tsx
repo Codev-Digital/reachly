@@ -10,6 +10,7 @@ const CreatorAnalytics = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+  
   return (
     <div className="min-h-screen bg-[#0C0C0C] pb-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
