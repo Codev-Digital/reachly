@@ -31,7 +31,17 @@ export async function PUT(req: NextRequest) {
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
     const body = await req.json();
-    const { schedule, bufferMinutes, timezone, bookingWindowDays, minNoticeHours, blockedDates } = body;
+    const { 
+      schedule, 
+      bufferMinutes, 
+      timezone, 
+      bookingWindowDays, 
+      minNoticeHours, 
+      blockedDates,
+      duration,
+      location,
+      meetingLimits
+    } = body;
 
     // Must have at least one enabled day
     const days = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
@@ -52,6 +62,10 @@ export async function PUT(req: NextRequest) {
     if (bookingWindowDays !== undefined) availability.bookingWindowDays = bookingWindowDays;
     if (minNoticeHours !== undefined) availability.minNoticeHours = minNoticeHours;
     if (blockedDates) availability.blockedDates = blockedDates;
+    if (duration) availability.duration = duration;
+    if (location !== undefined) availability.location = location;
+    if (meetingLimits) availability.meetingLimits = meetingLimits;
+    
     availability.isAvailabilityComplete = true;
     await availability.save();
 

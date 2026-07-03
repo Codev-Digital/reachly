@@ -20,7 +20,16 @@ const BLANK: SessionData = {
   price: '', features: [''], maxBookings: '',
 };
 
-const DURATIONS = [15, 30, 45, 60, 90];
+const DURATION_OPTIONS = [
+  { value: 15, label: '15 mins' },
+  { value: 30, label: '30 mins' },
+  { value: 45, label: '45 mins' },
+  { value: 60, label: '1 hr' },
+  { value: 75, label: '1 hr 15 mins' },
+  { value: 90, label: '1 hr 30 mins' },
+  { value: 105, label: '1 hr 45 mins' },
+  { value: 120, label: '2 hrs' },
+];
 
 // Simple unique id generator for local items
 function generateLocalId() {
@@ -31,7 +40,7 @@ function generateLocalId() {
 function validateSession(s: SessionData): string | null {
   if (!s.title.trim())       return 'Title is required.';
   if (!s.description.trim()) return 'Description is required.';
-  if (!DURATIONS.includes(s.duration)) return 'Select a valid duration.';
+  if (!s.duration) return 'Select a valid duration.';
   if (!s.price || Number(s.price) < 1) return 'Price must be at least PKR 1.';
   return null;
 }
@@ -52,6 +61,7 @@ export default function CreatorOnboardingStep3() {
   const [showForm, setShowForm]         = useState(false);
   const [editingIdx, setEditingIdx]     = useState<number | null>(null);
   const [formData, setFormData]         = useState<SessionData>(BLANK);
+  const [showDurationDropdown, setShowDurationDropdown] = useState(false);
 
   /* ── Load saved sessions on mount ───────────────────────────────────── */
   useEffect(() => {
@@ -100,6 +110,7 @@ export default function CreatorOnboardingStep3() {
     setEditingIdx(null);
     setFormData(BLANK);
     setFormError('');
+    setShowDurationDropdown(false);
   };
 
   const addFeature    = () => setFormData(f => ({ ...f, features: [...f.features, ''] }));
@@ -107,6 +118,16 @@ export default function CreatorOnboardingStep3() {
     setFormData(f => ({ ...f, features: f.features.filter((_, idx) => idx !== i) }));
   const changeFeature = (i: number, v: string) =>
     setFormData(f => { const fs = [...f.features]; fs[i] = v; return { ...f, features: fs }; });
+
+  const selectDuration = (value: number) => {
+    setFormData(f => ({ ...f, duration: value }));
+    setShowDurationDropdown(false);
+  };
+
+  const getDurationLabel = (value: number) => {
+    const option = DURATION_OPTIONS.find(o => o.value === value);
+    return option ? option.label : 'Select duration';
+  };
 
   /* ── Save session (local only — persisted on "Continue") ────────────── */
   const handleSaveToList = () => {
@@ -160,93 +181,64 @@ export default function CreatorOnboardingStep3() {
   /* ── Render ──────────────────────────────────────────────────────────── */
   if (fetchingData) {
     return (
-      <div className="min-h-screen bg-[#0C0C0C] flex items-center justify-center">
-        <p className="text-[#C8A97E] font-serif text-lg animate-pulse">Loading your sessions…</p>
+      <div className="min-h-screen bg-[#F7F7FA] flex items-center justify-center">
+        <div className="text-[#0012FF] text-lg animate-pulse">Loading your sessions…</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0C0C0C]">
+    <div className="min-h-screen bg-[#F7F7FA]">
+      {/* Navigation Bar */}
+      <nav className="bg-white border-b border-gray-100 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+          <div className="flex items-center justify-between">
+            <img src="/assets/logo1.png" alt="Reachly Logo" className="h-10 w-auto" />
+            <div className="hidden md:flex items-center gap-10">
+              <button className="text-gray-400 font-sans text-sm">Explore Creators</button>
+              <button className="text-gray-400 font-sans text-sm">Events</button>
+              <button className="text-gray-400 font-sans text-sm">For Creators</button>
+              <button className="text-gray-400 font-sans text-sm">About</button>
+            </div>
+            <div className="flex items-center gap-4">
+              <button className="text-[#0012FF] font-sans font-semibold text-sm">Login</button>
+              <button className="bg-[#0012FF] text-white px-5 py-2.5 rounded-full font-sans font-semibold text-sm">Sign up</button>
+            </div>
+          </div>
+        </div>
+      </nav>
 
-      {/* Progress bar */}
-      <div className="border-b border-[rgba(255,255,255,0.08)]">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8 lg:py-10">
-          <div className="flex items-center justify-between overflow-x-auto pb-2">
-            <StepItem num={1} label="Welcome"      status="completed" />
-            <div className="flex-1 h-px bg-[#C8A97E] mx-1 sm:mx-2" />
-            <StepItem num={2} label="Profile"      status="completed" />
-            <div className="flex-1 h-px bg-[#C8A97E] mx-1 sm:mx-2" />
-            <StepItem num={3} label="Sessions"     status="active" />
-            <div className="flex-1 h-px bg-[rgba(200,169,126,0.2)] mx-1 sm:mx-2" />
-            <StepItem num={4} label="Pricing"      status="upcoming" />
-            <div className="flex-1 h-px bg-[rgba(200,169,126,0.2)] mx-1 sm:mx-2" />
-            <StepItem num={5} label="Availability" status="upcoming" />
-            <div className="flex-1 h-px bg-[rgba(200,169,126,0.2)] mx-1 sm:mx-2" />
-            <StepItem num={6} label="Verification" status="upcoming" />
-            <div className="flex-1 h-px bg-[rgba(200,169,126,0.2)] mx-1 sm:mx-2" />
-            <StepItem num={7} label="Go Live"      status="upcoming" />
+      {/* Progress Steps */}
+      <div className="bg-[#F7F7FA] border-b border-gray-100">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+          <div className="flex items-center justify-center gap-6">
+            <StepItem num={1} status="completed" />
+            <div className="flex-1 max-w-[100px] h-0.5 bg-[#0012FF]" />
+            <StepItem num={2} status="active" />
+            <div className="flex-1 max-w-[100px] h-0.5 bg-gray-200" />
+            <StepItem num={3} status="upcoming" />
+            <div className="flex-1 max-w-[100px] h-0.5 bg-gray-200" />
+            <StepItem num={4} status="upcoming" />
           </div>
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10 lg:py-12">
-
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
         {/* Heading */}
-        <div className="mb-8 sm:mb-10">
-          <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-bold text-[#C8A97E] mb-2">
-            What sessions will you offer?
+        <div className="mb-8">
+          <h1 className="font-anton text-3xl font-bold text-black mb-2">
+            What <span className="text-[#0012FF]">Sessions</span> Will You Offer?
           </h1>
-          <p className="font-sans text-[#F9F6F2] text-xs sm:text-sm opacity-70">
+          <p className="text-xs text-gray-400">
             Define the session types followers can book with you. You need at least 1 to continue.
           </p>
         </div>
 
         {/* Page-level error */}
         {pageError && (
-          <div className="mb-6 p-4 bg-red-900/30 border border-red-500/50 rounded-lg">
-            <p className="font-sans text-sm text-red-300">{pageError}</p>
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
+            <p className="text-sm text-red-600">{pageError}</p>
           </div>
-        )}
-
-        {/* Quick start suggestions */}
-        <div className="mb-6">
-          <p className="font-sans text-[#F9F6F2] text-xs font-semibold mb-3">Quick start suggestions</p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-            {[
-              { title: '15 min Quick Question',    desc: 'Ask anything, get quick answers', duration: 15 },
-              { title: '30 min Career Advice',     desc: 'Map your next career move',       duration: 30 },
-              { title: '60 min Deep Dive Strategy',desc: 'Comprehensive planning session',  duration: 60 },
-            ].map((item, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => openNewForm({ title: item.title, description: item.desc, duration: item.duration })}
-                className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-lg p-4 sm:p-5 flex items-start gap-3 sm:gap-4 text-left hover:border-[#C8A97E] transition-all"
-              >
-                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-[rgba(200,169,126,0.3)] flex items-center justify-center flex-shrink-0">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="1.5" className="sm:w-5 sm:h-5">
-                    <path d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="font-serif text-xs sm:text-sm font-semibold text-[#F9F6F2]">{item.title}</p>
-                  <p className="font-sans text-[#F9F6F2] text-xs opacity-60 mt-1">{item.desc}</p>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Empty-state add button */}
-        {!showForm && sessions.length === 0 && (
-          <button
-            onClick={() => openNewForm()}
-            className="w-full border border-dashed border-[rgba(200,169,126,0.3)] text-[#C8A97E] py-3 sm:py-4 px-6 rounded-lg font-serif font-semibold text-sm hover:border-[#C8A97E] transition-all flex items-center justify-center gap-2 mb-6"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="2"><path d="M12 5v14M5 12h14" /></svg>
-            Add Session Type
-          </button>
         )}
 
         {/* Session list */}
@@ -255,75 +247,43 @@ export default function CreatorOnboardingStep3() {
             {sessions.map((session, idx) => (
               <div
                 key={session._id || idx}
-                className="bg-[#141414] border border-[rgba(200,169,126,0.15)] rounded-lg p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                className="bg-white border border-gray-200 rounded-xl p-5"
               >
-                <div className="flex items-start sm:items-center gap-3 sm:gap-4">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-[rgba(200,169,126,0.3)] flex items-center justify-center flex-shrink-0">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="1.5" className="sm:w-5 sm:h-5">
-                      <path d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2 mb-1">
-                      <span className="font-serif text-xs sm:text-sm font-semibold text-[#C8A97E]">{session.title}</span>
-                      <span className="bg-[#0C0C0C] text-[#F9F6F2] text-xs px-2 py-0.5 rounded-full border border-[rgba(200,169,126,0.3)]">{session.duration} min</span>
-                      <span className="bg-[#0C0C0C] text-[#F9F6F2] text-xs px-2 py-0.5 rounded-full border border-[rgba(200,169,126,0.3)]">PKR {session.price}</span>
-                    </div>
-                    <p className="font-sans text-[#F9F6F2] text-xs opacity-60 line-clamp-1">{session.description}</p>
-                    {session.features.filter(Boolean).length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {session.features.filter(Boolean).map((f, fi) => (
-                          <span key={fi} className="text-[#C8A97E] text-xs opacity-70">• {f}</span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                  <span className="font-sans text-sm font-semibold text-black">{session.title}</span>
+                  <span className="bg-[#FFF7ED] text-[#C8A97E] text-xs px-3 py-1 rounded-full border border-[#C8A97E]/30">
+                    {getDurationLabel(session.duration)}
+                  </span>
+                  <span className="bg-[#E0E7FF] text-[#0012FF] text-xs px-3 py-1 rounded-full border border-[#0012FF]/30">
+                    {session.price} PKR
+                  </span>
                 </div>
-                <div className="flex items-center gap-2 self-end sm:self-auto flex-shrink-0">
-                  <button
-                    onClick={() => deleteSession(idx)}
-                    className="w-9 h-9 sm:w-10 sm:h-10 border border-[rgba(200,169,126,0.3)] rounded-lg flex items-center justify-center hover:border-red-400 hover:text-red-400 transition-all"
-                    title="Delete"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                      <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                    </svg>
-                  </button>
-                  <button
-                    onClick={() => openEditForm(idx)}
-                    className="w-9 h-9 sm:w-10 sm:h-10 border border-[rgba(200,169,126,0.3)] rounded-lg flex items-center justify-center hover:border-[#C8A97E] transition-all"
-                    title="Edit"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="1.5">
-                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                    </svg>
-                  </button>
-                </div>
+                <p className="font-sans text-gray-500 text-xs">{session.description}</p>
               </div>
             ))}
-
-            {/* Add another */}
-            {!showForm && (
-              <button
-                onClick={() => openNewForm()}
-                className="w-full border border-dashed border-[rgba(200,169,126,0.3)] text-[#C8A97E] py-3 px-6 rounded-lg font-serif font-semibold text-sm hover:border-[#C8A97E] transition-all flex items-center justify-center gap-2"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="2"><path d="M12 5v14M5 12h14" /></svg>
-                Add Another Session Type
-              </button>
-            )}
           </div>
+        )}
+
+        {/* Add Session Button (dashed border) */}
+        {!showForm && (
+          <button
+            onClick={() => openNewForm()}
+            className="w-full border-2 border-dashed border-gray-300 text-gray-500 py-4 px-6 rounded-xl font-sans font-semibold text-xs hover:border-[#0012FF] hover:text-[#0012FF] transition-all flex items-center justify-center gap-2 mb-6"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14" /></svg>
+            Add Session Type
+          </button>
         )}
 
         {/* ── Inline form ───────────────────────────────────────────────────── */}
         {showForm && (
-          <div className="bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-xl p-4 sm:p-6 mb-6">
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="font-serif text-base sm:text-lg font-semibold text-[#F9F6F2]">
+          <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6 relative">
+            <div className="flex items-center justify-between mb-5 pb-4 border-b border-gray-200">
+              <h3 className="font-sans text-sm font-semibold text-black">
                 {editingIdx !== null ? 'Edit Session' : 'New Session Type'}
               </h3>
-              <button onClick={closeForm} className="text-[#F9F6F2] opacity-50 hover:opacity-100 transition-opacity">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <button onClick={closeForm} className="text-gray-500 hover:text-gray-700 transition-opacity">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M6 6l12 12M6 18l12-12" />
                 </svg>
               </button>
@@ -331,93 +291,96 @@ export default function CreatorOnboardingStep3() {
 
             {/* Form-level error */}
             {formError && (
-              <div className="mb-4 p-3 bg-red-900/30 border border-red-500/50 rounded-lg">
-                <p className="font-sans text-xs text-red-300">{formError}</p>
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl">
+                <p className="text-xs text-red-600">{formError}</p>
               </div>
             )}
 
-            <div className="space-y-4 sm:space-y-5">
+            <div className="space-y-5">
               {/* Title */}
               <div>
-                <label className="block font-sans text-[#F9F6F2] text-xs font-semibold mb-2">
-                  Title <span className="text-red-400">*</span>
+                <label className="block text-xs font-semibold text-gray-700 mb-2">
+                  Title <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={formData.title}
                   onChange={e => setFormData(f => ({ ...f, title: e.target.value }))}
-                  className="w-full bg-[#0C0C0C] border border-[rgba(200,169,126,0.15)] rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 font-sans text-white text-xs sm:text-sm focus:outline-none focus:border-[#C8A97E]"
-                  placeholder="e.g. Career Strategy Call"
+                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] placeholder-gray-400"
+                  placeholder="e.g. Career, Strategy, Call"
                 />
               </div>
 
               {/* Description */}
               <div>
-                <label className="block font-sans text-[#F9F6F2] text-xs font-semibold mb-2">
-                  Description <span className="text-red-400">*</span>
+                <label className="block text-xs font-semibold text-gray-700 mb-2">
+                  Description <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   value={formData.description}
                   onChange={e => setFormData(f => ({ ...f, description: e.target.value }))}
-                  className="w-full bg-[#0C0C0C] border border-[rgba(200,169,126,0.15)] rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 font-sans text-white text-xs sm:text-sm focus:outline-none focus:border-[#C8A97E] h-16 sm:h-20 resize-none"
+                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] placeholder-gray-400 h-28 resize-none"
                   placeholder="What will followers get from this session?"
                 />
               </div>
 
               {/* Duration + Price */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-                <div>
-                  <label className="block font-sans text-[#F9F6F2] text-xs font-semibold mb-2">
-                    Duration <span className="text-red-400">*</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="relative">
+                  <label className="block text-xs font-semibold text-gray-700 mb-2">
+                    Duration <span className="text-red-500">*</span>
                   </label>
-                  <div className="flex flex-wrap gap-2">
-                    {DURATIONS.map(d => (
-                      <button
-                        key={d}
-                        type="button"
-                        onClick={() => {
-                          setFormData(f => {
-                            // Update title to include the new duration if it's a duration-based title
-                            let newTitle = f.title;
-                            const durationMatch = f.title.match(/^\d+ min /i);
-                            if (durationMatch) {
-                              newTitle = f.title.replace(/^\d+ min /i, `${d} min `);
-                            } else if (f.title.includes('min')) {
-                              newTitle = f.title.replace(/\d+ min/i, `${d} min`);
-                            }
-                            return { ...f, duration: d, title: newTitle };
-                          });
-                        }}
-                        className={`px-3 py-1.5 rounded-full text-xs font-sans transition-all border ${
-                          formData.duration === d
-                            ? 'bg-[#C8A97E] text-[#0C0C0C] border-[#C8A97E]'
-                            : 'bg-[#0C0C0C] text-[#F9F6F2] border-[rgba(200,169,126,0.3)]'
-                        }`}
-                      >
-                        {d} min
-                      </button>
-                    ))}
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowDurationDropdown(!showDurationDropdown)}
+                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-left text-gray-900 focus:outline-none focus:border-[#0012FF] flex items-center justify-between"
+                  >
+                    <span className={formData.duration ? 'text-gray-900' : 'text-gray-400'}>
+                      {getDurationLabel(formData.duration)}
+                    </span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2">
+                      <path d="M6 9l6 6 6-6" />
+                    </svg>
+                  </button>
+                  
+                  {showDurationDropdown && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
+                      {DURATION_OPTIONS.map(option => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => selectDuration(option.value)}
+                          className={`w-full px-4 py-3 text-left text-sm transition-colors ${
+                            formData.duration === option.value
+                              ? 'bg-[#0012FF] text-white'
+                              : 'text-gray-500 hover:bg-gray-50'
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div>
-                  <label className="block font-sans text-[#F9F6F2] text-xs font-semibold mb-2">
-                    Price (PKR) <span className="text-red-400">*</span>
+                  <label className="block text-xs font-semibold text-gray-700 mb-2">
+                    Price (PKR) <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="number"
                     min="1"
                     value={formData.price}
                     onChange={e => setFormData(f => ({ ...f, price: e.target.value }))}
-                    className="w-full bg-[#0C0C0C] border border-[rgba(200,169,126,0.15)] rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 font-sans text-white text-xs sm:text-sm focus:outline-none focus:border-[#C8A97E]"
-                    placeholder="e.g. 1500"
+                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] placeholder-gray-400"
+                    placeholder="e.g. 1200"
                   />
                 </div>
               </div>
 
               {/* What's included */}
               <div>
-                <label className="block font-sans text-[#F9F6F2] text-xs font-semibold mb-2">
-                  What's included <span className="font-normal opacity-50">(optional)</span>
+                <label className="block text-xs font-semibold text-gray-700 mb-2">
+                  What's Included <span className="text-red-500">*</span>
                 </label>
                 <div className="space-y-2">
                   {formData.features.map((feat, i) => (
@@ -426,16 +389,16 @@ export default function CreatorOnboardingStep3() {
                         type="text"
                         value={feat}
                         onChange={e => changeFeature(i, e.target.value)}
-                        className="flex-1 bg-[#0C0C0C] border border-[rgba(200,169,126,0.15)] rounded-lg px-3 sm:px-4 py-2 font-sans text-white text-xs sm:text-sm focus:outline-none focus:border-[#C8A97E]"
-                        placeholder={`Included item ${i + 1}`}
+                        className="flex-1 bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] placeholder-gray-400"
+                        placeholder="Feature 1"
                       />
                       {formData.features.length > 1 && (
                         <button
                           type="button"
                           onClick={() => removeFeature(i)}
-                          className="text-[#F9F6F2] opacity-40 hover:opacity-80 transition-opacity flex-shrink-0"
+                          className="text-gray-400 hover:text-gray-600 transition-opacity flex-shrink-0 px-2"
                         >
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M18 6L6 18M6 6l12 12" />
                           </svg>
                         </button>
@@ -446,41 +409,41 @@ export default function CreatorOnboardingStep3() {
                 <button
                   type="button"
                   onClick={addFeature}
-                  className="mt-2 text-[#C8A97E] text-xs font-sans flex items-center gap-1 hover:opacity-80 transition-opacity"
+                  className="mt-2 text-gray-500 text-xs font-sans flex items-center gap-1 hover:text-[#0012FF] transition-opacity"
                 >
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14" /></svg>
-                  Add item
+                  Add feature
                 </button>
               </div>
 
               {/* Max bookings */}
               <div>
-                <label className="block font-sans text-[#F9F6F2] text-xs font-semibold mb-2">
-                  Max bookings per day <span className="font-normal opacity-50">(optional)</span>
+                <label className="block text-xs font-semibold text-gray-700 mb-2">
+                  Max Bookings Per Day
                 </label>
                 <input
                   type="number"
                   min="1"
                   value={formData.maxBookings}
                   onChange={e => setFormData(f => ({ ...f, maxBookings: e.target.value }))}
-                  className="w-full bg-[#0C0C0C] border border-[rgba(200,169,126,0.15)] rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 font-sans text-white text-xs sm:text-sm focus:outline-none focus:border-[#C8A97E]"
+                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] placeholder-gray-400"
                   placeholder="e.g. 5"
                 />
               </div>
 
               {/* Form actions */}
-              <div className="flex flex-col sm:flex-row justify-end gap-3 pt-2">
+              <div className="flex gap-3 pt-2">
                 <button
                   type="button"
                   onClick={closeForm}
-                  className="border border-[rgba(200,169,126,0.3)] text-[#C8A97E] px-5 py-2.5 rounded-full font-serif font-semibold text-sm hover:border-[#C8A97E] transition-all"
+                  className="border border-gray-200 text-gray-700 px-6 py-2.5 rounded-full font-sans font-semibold text-sm hover:bg-gray-50 transition-all"
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
                   onClick={handleSaveToList}
-                  className="bg-[#C8A97E] text-[#0C0C0C] px-6 py-2.5 rounded-full font-serif font-semibold text-sm hover:opacity-90 transition-all"
+                  className="bg-[#0012FF] text-white px-6 py-2.5 rounded-full font-sans font-semibold text-sm hover:bg-[#0012FF]/90 transition-all"
                 >
                   {editingIdx !== null ? 'Save Changes' : 'Add Session'}
                 </button>
@@ -489,59 +452,47 @@ export default function CreatorOnboardingStep3() {
           </div>
         )}
 
-        {/* Status info box */}
-        <div className="bg-[#141414] border border-[rgba(200,169,126,0.15)] rounded-lg p-4 sm:p-5 flex items-start gap-3 sm:gap-4 mb-6 sm:mb-8">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-[rgba(200,169,126,0.3)] flex items-center justify-center flex-shrink-0">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="1.5" className="sm:w-5 sm:h-5">
-              <path d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-          </div>
-          <div>
-            <h3 className={`font-serif text-xs sm:text-sm font-semibold ${sessions.length > 0 ? 'text-[#C8A97E]' : 'text-[#F9F6F2] opacity-80'}`}>
-              {sessions.length > 0
-                ? `${sessions.length} session type${sessions.length > 1 ? 's' : ''} added — you're good to continue!`
-                : 'At least 1 session type required'}
-            </h3>
-            <p className="font-sans text-[#F9F6F2] text-xs opacity-60 mt-1">
-              {sessions.length > 0
-                ? 'Add more session types if you want, then click Continue.'
-                : 'Add a session type above so followers know what they can book with you.'}
-            </p>
-          </div>
-        </div>
-
         {/* Navigation */}
-        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+        <div className="flex justify-between gap-3">
           <button
             type="button"
             onClick={() => router.push('/creator-onboarding/step-2')}
-            className="flex-1 border border-[rgba(200,169,126,0.3)] text-[#C8A97E] font-serif font-semibold py-3 sm:py-4 px-6 sm:px-8 rounded-full text-sm hover:border-[#C8A97E] transition-all flex items-center justify-center gap-2"
+            className="border border-gray-200 text-gray-700 px-6 py-2.5 rounded-full font-sans font-semibold text-sm hover:bg-gray-50 transition-all flex items-center gap-2"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M19 12H5M12 19l-7-7 7-7" />
             </svg>
             Back
           </button>
-          <button
-            type="button"
-            onClick={handleContinue}
-            disabled={sessions.length === 0 || saving}
-            className={`flex-1 font-serif font-semibold py-3 sm:py-4 px-6 sm:px-8 rounded-full text-sm transition-all flex items-center justify-center gap-2 ${
-              sessions.length > 0 && !saving
-                ? 'bg-[#C8A97E] text-[#0C0C0C] hover:opacity-90'
-                : 'bg-[rgba(200,169,126,0.2)] text-[rgba(0,0,0,0.4)] cursor-not-allowed'
-            }`}
-          >
-            {saving ? (
-              <>
-                <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                </svg>
-                Saving…
-              </>
-            ) : 'Continue'}
-          </button>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => router.push('/')}
+              className="border border-[#0012FF] text-[#0012FF] px-6 py-2.5 rounded-full font-sans font-semibold text-sm hover:bg-[#0012FF]/5 transition-all"
+            >
+              Save as Draft
+            </button>
+            <button
+              type="button"
+              onClick={handleContinue}
+              disabled={sessions.length === 0 || saving}
+              className={`px-6 py-2.5 rounded-full font-sans font-semibold text-sm transition-all ${
+                sessions.length > 0 && !saving
+                  ? 'bg-[#0012FF] text-white hover:bg-[#0012FF]/90'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
+            >
+              {saving ? (
+                <>
+                  <svg className="animate-spin w-4 h-4 inline mr-2" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                  </svg>
+                  Saving…
+                </>
+              ) : 'Continue'}
+            </button>
+          </div>
         </div>
 
       </div>
@@ -550,23 +501,22 @@ export default function CreatorOnboardingStep3() {
 }
 
 /* ─── StepItem ───────────────────────────────────────────────────────────── */
-function StepItem({ num, label, status }: { num: number; label: string; status: 'completed' | 'active' | 'upcoming' }) {
+function StepItem({ num, status }: { num: number; status: 'completed' | 'active' | 'upcoming' }) {
   return (
-    <div className="flex flex-col items-center gap-1.5 sm:gap-2 min-w-[60px] sm:min-w-[80px]">
-      <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-serif text-sm sm:text-base font-semibold transition-all ${
-        status === 'completed' ? 'bg-[#141414] text-[#C8A97E] border border-[#C8A97E]'
-        : status === 'active'  ? 'bg-[#C8A97E] text-[#0C0C0C]'
-        :                        'bg-[#141414] text-[#F9F6F2] border border-[rgba(200,169,126,0.3)] opacity-60'
+    <div className="flex flex-col items-center gap-1.5">
+      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all ${
+        status === 'completed' 
+          ? 'bg-[#0012FF] text-white border border-[#0012FF]'
+          : status === 'active'
+            ? 'bg-[#E0E7FF] text-[#0012FF] border-2 border-[#0012FF]'
+            : 'bg-white text-gray-400 border border-gray-200'
       }`}>
-        {status === 'completed'
-          ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="2.5"><polyline points="20 6 9 17 4 12" /></svg>
-          : num}
+        {status === 'completed' ? (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        ) : num}
       </div>
-      <span className={`text-[10px] sm:text-xs font-sans font-medium text-center ${
-        status === 'completed' || status === 'active' ? 'text-[#C8A97E]' : 'text-[#F9F6F2] opacity-60'
-      }`}>
-        {label}
-      </span>
     </div>
   );
 }

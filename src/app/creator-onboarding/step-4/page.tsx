@@ -1,251 +1,747 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-const REACHLY_FEE = 0.10; // 10%
-const PROMO_DISC  = 0.20; // 20% first-session discount
+// ─── Types ────────────────────────────────────────────────────────────────────
+type DayKey = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
 
+interface TimeSlot { start: string; end: string; }
+interface DaySchedule { enabled: boolean; slots: TimeSlot[]; }
+type Schedule = Record<DayKey, DaySchedule>;
+
+interface Duration {
+  value: number;
+  unit: 'min' | 'hr';
+}
+
+interface Location {
+  type: 'in-person' | 'online';
+  address?: string;
+}
+
+interface MeetingLimits {
+  count: number;
+  period: 'day' | 'week' | 'month';
+}
+
+const DAYS: DayKey[] = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
+const DAY_LABELS: Record<DayKey, string> = {
+  monday:'Monday', tuesday:'Tuesday', wednesday:'Wednesday',
+  thursday:'Thursday', friday:'Friday', saturday:'Saturday', sunday:'Sunday',
+};
+
+// Time options every 30 min from 00:00 → 23:30
+const TIME_OPTIONS: string[] = Array.from({ length: 48 }, (_, i) => {
+  const h = Math.floor(i / 2).toString().padStart(2, '0');
+  const m = i % 2 === 0 ? '00' : '30';
+  return `${h}:${m}`;
+});
+
+function formatTime(t: string) {
+  const [h, m] = t.split(':').map(Number);
+  const period = h < 12 ? 'AM' : 'PM';
+  const hour = h === 0 ? 12 : h > 12 ? h - 12 : h;
+  return `${hour}:${m.toString().padStart(2,'0')} ${period}`;
+}
+
+// Default blank schedule
+function defaultSchedule(): Schedule {
+  return DAYS.reduce((acc, d) => {
+    acc[d] = { enabled: false, slots: [{ start: '09:00', end: '17:00' }] };
+    return acc;
+  }, {} as Schedule);
+}
+
+const DURATION_PRESETS = [15, 30, 45, 60, 90, 120];
+const BUFFER_OPTIONS = [5, 10, 15, 30, 45, 60];
+
+// ─── Component ────────────────────────────────────────────────────────────────
 export default function CreatorOnboardingStep4() {
   const router = useRouter();
-  const [fetchingData, setFetchingData]   = useState(true);
-  const [saving, setSaving]               = useState(false);
-  const [error, setError]                 = useState('');
-  const [sessionTypes, setSessionTypes]   = useState<any[]>([]);
-  const [offerPromo, setOfferPromo]       = useState(false);
-  const [payoutFrequency, setPayoutFreq]  = useState<'weekly'|'biweekly'|'monthly'>('weekly');
 
+  const [fetchingData, setFetchingData] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  // Schedule state
+  const [schedule, setSchedule] = useState<Schedule>(defaultSchedule());
+  const [bufferMinutes, setBuffer] = useState(15);
+  const [bookingWindowDays, setWindow] = useState(30);
+  const [minNoticeHours, setNotice] = useState(4);
+  const [duration, setDuration] = useState<Duration>({ value: 45, unit: 'min' });
+  const [showCustomDuration, setShowCustomDuration] = useState(false);
+  const [location, setLocation] = useState<Location | null>(null);
+  const [meetingLimits, setMeetingLimits] = useState<MeetingLimits>({ count: 4, period: 'day' });
+
+  // Dropdown state
+  const [openDuration, setOpenDuration] = useState(false);
+  const [openDurationUnit, setOpenDurationUnit] = useState(false);
+  const [openBuffer, setOpenBuffer] = useState(false);
+  const [openWindow, setOpenWindow] = useState(false);
+  const [openNotice, setOpenNotice] = useState(false);
+  const [openLocation, setOpenLocation] = useState(false);
+  const [openMeetingPeriod, setOpenMeetingPeriod] = useState(false);
+  const [openTimeStart, setOpenTimeStart] = useState<{ day: DayKey; idx: number } | null>(null);
+  const [openTimeEnd, setOpenTimeEnd] = useState<{ day: DayKey; idx: number } | null>(null);
+
+  // ─── Load saved data on mount ─────────────────────────────────────────────
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch('/api/creator-onboarding/step-4', { cache: 'no-store' });
+        const res = await fetch('/api/creator-onboarding/step-5', { cache: 'no-store' });
         if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data.sessionTypes)) setSessionTypes(data.sessionTypes);
-          if (data.pricing) {
-            setOfferPromo(data.pricing.offerFirstSessionDiscount ?? false);
-            setPayoutFreq(data.pricing.payoutFrequency ?? 'weekly');
+          const { availability } = await res.json();
+          if (availability) {
+            // Merge saved schedule with defaults
+            const saved = availability.schedule || {};
+            const merged = defaultSchedule();
+            DAYS.forEach(d => {
+              if (saved[d]) merged[d] = {
+                enabled: saved[d].enabled ?? false,
+                slots: saved[d].slots?.length ? saved[d].slots : [{ start: '09:00', end: '17:00' }],
+              };
+            });
+            setSchedule(merged);
+            setBuffer(availability.bufferMinutes ?? 15);
+            setWindow(availability.bookingWindowDays ?? 30);
+            setNotice(availability.minNoticeHours ?? 4);
+            setDuration(availability.duration ?? { value: 45, unit: 'min' });
+            setLocation(availability.location ?? null);
+            setMeetingLimits(availability.meetingLimits ?? { count: 4, period: 'day' });
           }
         }
       } finally { setFetchingData(false); }
     })();
   }, []);
 
-  const calcEarnings = (price: number) => {
-    const fee = Math.round(price * REACHLY_FEE);
-    const youReceiveFull = Math.round(price - fee);
-    const promoDiscount = Math.round(price * PROMO_DISC);
-    const promoPrice = price - promoDiscount;
-    const youReceivePromo = Math.round(promoPrice - fee); // Discount comes from creator share
+  // ─── Schedule helpers ─────────────────────────────────────────────────────
+  const toggleDay = (day: DayKey) =>
+    setSchedule(s => ({ ...s, [day]: { ...s[day], enabled: !s[day].enabled } }));
 
-    return {
-      youReceiveFull,
-      youReceivePromo,
-      fee,
-      promoPrice,
-      promoDiscount,
-    };
+  const updateSlot = (day: DayKey, idx: number, field: 'start' | 'end', val: string) =>
+    setSchedule(s => {
+      const slots = [...s[day].slots];
+      slots[idx] = { ...slots[idx], [field]: val };
+      return { ...s, [day]: { ...s[day], slots } };
+    });
+
+  const addSlot = (day: DayKey) =>
+    setSchedule(s => ({
+      ...s,
+      [day]: { ...s[day], slots: [...s[day].slots, { start: '09:00', end: '17:00' }] },
+    }));
+
+  const enabledDays = DAYS.filter(d => schedule[d].enabled).length;
+
+  // ─── Handle Duration Selection ────────────────────────────────────────────
+  const handleDurationSelect = (value: number) => {
+    if (value === -1) {
+      setShowCustomDuration(true);
+      setDuration({ ...duration, value: 45 });
+    } else {
+      setShowCustomDuration(false);
+      setDuration({ value, unit: 'min' });
+    }
+    setOpenDuration(false);
   };
 
-  const avgPrice = sessionTypes.length
-    ? sessionTypes.reduce((s, t) => s + Number(t.price), 0) / sessionTypes.length
-    : 0;
-  const avgEarnings = sessionTypes.length
-    ? sessionTypes.reduce((s, t) => s + calcEarnings(Number(t.price)).youReceiveFull, 0) / sessionTypes.length
-    : 0;
-  const potentialMonthly = Math.round(avgEarnings * 3 * 20);
-
+  // ─── Continue ────────────────────────────────────────────────────────────
   const handleContinue = async () => {
+    if (enabledDays === 0) {
+      setError('Enable at least one day in your weekly schedule before continuing.');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
     setSaving(true); setError('');
     try {
-      const res = await fetch('/api/creator-onboarding/step-4', {
+      const res = await fetch('/api/creator-onboarding/step-5', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ offerFirstSessionDiscount: offerPromo, payoutFrequency }),
+        body: JSON.stringify({ 
+          schedule, 
+          bufferMinutes, 
+          timezone: 'Asia/Karachi', 
+          bookingWindowDays, 
+          minNoticeHours, 
+          blockedDates: [],
+          duration,
+          location,
+          meetingLimits
+        }),
       });
       const data = await res.json();
       if (data.success) router.push('/creator-onboarding/step-5');
-      else setError(data.error || 'Failed to save. Try again.');
+      else { setError(data.error || 'Failed to save. Try again.'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
     } catch { setError('Network error. Please try again.'); }
     finally { setSaving(false); }
   };
 
   if (fetchingData) return (
-    <div className="min-h-screen bg-[#0C0C0C] flex items-center justify-center">
-      <p className="text-[#C8A97E] font-serif text-lg animate-pulse">Loading pricing…</p>
+    <div className="min-h-screen bg-[#F7F7FA] flex items-center justify-center">
+      <div className="text-[#0012FF] text-lg animate-pulse">Loading availability…</div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-[#0C0C0C]">
+    <div className="min-h-screen bg-[#F7F7FA]">
+      {/* Navigation Bar */}
+      <nav className="bg-white border-b border-gray-100 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+          <div className="flex items-center justify-between">
+            <img src="/assets/logo1.png" alt="Reachly Logo" className="h-10 w-auto" />
+            <div className="hidden md:flex items-center gap-10">
+              <button className="text-gray-400 font-sans text-sm">Explore Creators</button>
+              <button className="text-gray-400 font-sans text-sm">Events</button>
+              <button className="text-gray-400 font-sans text-sm">For Creators</button>
+              <button className="text-gray-400 font-sans text-sm">About</button>
+            </div>
+            <div className="flex items-center gap-4">
+              <button className="text-[#0012FF] font-sans font-semibold text-sm">Login</button>
+              <button className="bg-[#0012FF] text-white px-5 py-2.5 rounded-full font-sans font-semibold text-sm">Sign up</button>
+            </div>
+          </div>
+        </div>
+      </nav>
 
-      {/* Progress */}
-      <div className="border-b border-[rgba(255,255,255,0.08)]">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8 lg:py-10">
-          <div className="flex items-center justify-between overflow-x-auto pb-2">
-            {[['Welcome','completed'],['Profile','completed'],['Sessions','completed'],['Pricing','active'],['Availability','upcoming'],['Verification','upcoming'],['Go Live','upcoming']].map(([label, status], i) => (
-              <React.Fragment key={i}>
-                <StepItem num={i+1} label={label} status={status as any} />
-                {i < 6 && <div className={`flex-1 h-px mx-1 sm:mx-2 ${['completed','active'].includes(status) && i < 3 ? 'bg-[#C8A97E]' : 'bg-[rgba(200,169,126,0.2)]'}`} />}
-              </React.Fragment>
-            ))}
+      {/* Progress Steps */}
+      <div className="bg-[#F7F7FA] border-b border-gray-100">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+          <div className="flex items-center justify-center gap-6">
+            <StepItem num={1} status="completed" />
+            <div className="flex-1 max-w-[100px] h-0.5 bg-[#0012FF]" />
+            <StepItem num={2} status="completed" />
+            <div className="flex-1 max-w-[100px] h-0.5 bg-[#0012FF]" />
+            <StepItem num={3} status="active" />
+            <div className="flex-1 max-w-[100px] h-0.5 bg-gray-200" />
+            <StepItem num={4} status="upcoming" />
           </div>
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-10 lg:py-12">
-        <div className="mb-8 sm:mb-10">
-          <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-bold text-[#C8A97E] mb-2">Pricing Setup</h1>
-          <p className="font-sans text-[#F9F6F2] text-xs sm:text-sm opacity-70">Review your earnings and set any promotions.</p>
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
+        {/* Heading */}
+        <div className="mb-8">
+          <h1 className="font-anton text-3xl font-bold text-black mb-2">
+            When Are You <span className="text-[#0012FF]">Available</span>?
+          </h1>
+          <p className="text-xs text-gray-400">
+            Set your weekly schedule. You can change this anytime.
+          </p>
         </div>
 
-        {error && <div className="mb-6 p-4 bg-red-900/30 border border-red-500/50 rounded-lg"><p className="text-sm text-red-300">{error}</p></div>}
-
-        {/* No sessions warning */}
-        {sessionTypes.length === 0 && (
-          <div className="mb-6 p-4 bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-lg flex items-center gap-3">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
-            <div>
-              <p className="font-sans text-[#C8A97E] text-sm font-semibold">No sessions found</p>
-              <p className="font-sans text-[#F9F6F2] text-xs opacity-60">Go back to step 3 to add session types first.</p>
-            </div>
-            <button onClick={() => router.push('/creator-onboarding/step-3')} className="ml-auto border border-[rgba(200,169,126,0.3)] text-[#C8A97E] px-4 py-1.5 rounded-full text-xs font-semibold hover:bg-[#C8A97E] hover:text-[#0C0C0C] transition-all">Go back</button>
+        {/* Error */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
+            <p className="text-sm text-red-600">{error}</p>
           </div>
         )}
 
-        {/* Earnings Breakdown */}
-        {sessionTypes.length > 0 && (
-          <div className="mb-6">
-            <h3 className="font-sans text-[#F9F6F2] text-xs font-semibold mb-4">Earnings Breakdown</h3>
-            {sessionTypes.map((s, i) => {
-              const e = calcEarnings(Number(s.price));
-              return (
-                <div key={s._id || i} className="bg-[#141414] border border-[rgba(200,169,126,0.15)] rounded-lg p-4 sm:p-6 mb-4">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h4 className="font-serif text-sm font-semibold text-[#F9F6F2] mb-1">{s.title}</h4>
-                      <p className="font-sans text-[#F9F6F2] text-xs opacity-60">{s.duration} min session</p>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-8">
+
+          {/* ─── Left: Weekly schedule ───────────────────────────────────────────── */}
+          <div className="bg-white border border-gray-200 rounded-xl p-6">
+            <div className="border-b border-gray-200 pb-4 mb-6">
+              <h3 className="font-sans text-sm font-semibold text-black">Weekly Schedule</h3>
+            </div>
+
+            <div className="space-y-4">
+              {DAYS.map(day => {
+                const ds = schedule[day];
+                return (
+                  <div key={day} className="bg-[#F7F7FA] border border-gray-200 rounded-xl p-4">
+                    {/* Day header row */}
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-4">
+                        {/* Toggle */}
+                        <button
+                          onClick={() => toggleDay(day)}
+                          className={`relative w-11 h-6 rounded-full transition-all flex-shrink-0 ${ds.enabled ? 'bg-[#0012FF]' : 'bg-gray-300'}`}
+                        >
+                          <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all duration-200 ${ds.enabled ? 'left-6' : 'left-1'}`} />
+                        </button>
+                        <span className={`font-sans text-sm font-semibold ${ds.enabled ? 'text-black' : 'text-gray-400'}`}>
+                          {DAY_LABELS[day]}
+                        </span>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-serif text-sm font-semibold text-[#C8A97E] mb-1">PKR {Number(s.price).toLocaleString()}</p>
-                      <p className="font-sans text-[#F9F6F2] text-xs opacity-60">You charge</p>
+
+                    {/* Time slots (only if enabled) */}
+                    {ds.enabled && (
+                      <div className="space-y-3">
+                        {ds.slots.map((slot, idx) => (
+                        <div key={idx} className="flex items-center gap-3 w-full">
+                          {/* Start time */}
+                          <div className="relative flex-1">
+                            <button
+                              type="button"
+                              onClick={() => setOpenTimeStart(openTimeStart?.day === day && openTimeStart?.idx === idx ? null : { day, idx })}
+                              className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-left text-gray-900 focus:outline-none focus:border-[#0012FF] flex items-center justify-between"
+                            >
+                              <span>{formatTime(slot.start)}</span>
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2">
+                                <path d="M6 9l6 6 6-6" />
+                              </svg>
+                            </button>
+                            {openTimeStart?.day === day && openTimeStart?.idx === idx && (
+                              <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 max-h-60 overflow-y-auto">
+                                {TIME_OPTIONS.map(t => (
+                                  <button
+                                    key={t}
+                                    type="button"
+                                    onClick={() => {
+                                      updateSlot(day, idx, 'start', t);
+                                      setOpenTimeStart(null);
+                                    }}
+                                    className={`w-full px-4 py-3 text-left text-sm transition-colors ${
+                                      slot.start === t
+                                        ? 'bg-[#0012FF] text-white'
+                                        : 'text-gray-500 hover:bg-gray-50'
+                                    }`}
+                                  >
+                                    {formatTime(t)}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+
+                          <span className="font-sans text-sm text-gray-500 flex-shrink-0">to</span>
+
+                          {/* End time */}
+                          <div className="relative flex-1">
+                            <button
+                              type="button"
+                              onClick={() => setOpenTimeEnd(openTimeEnd?.day === day && openTimeEnd?.idx === idx ? null : { day, idx })}
+                              className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-left text-gray-900 focus:outline-none focus:border-[#0012FF] flex items-center justify-between"
+                            >
+                              <span>{formatTime(slot.end)}</span>
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2">
+                                <path d="M6 9l6 6 6-6" />
+                              </svg>
+                            </button>
+                            {openTimeEnd?.day === day && openTimeEnd?.idx === idx && (
+                              <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 max-h-60 overflow-y-auto">
+                                {TIME_OPTIONS.filter(t => t > slot.start).map(t => (
+                                  <button
+                                    key={t}
+                                    type="button"
+                                    onClick={() => {
+                                      updateSlot(day, idx, 'end', t);
+                                      setOpenTimeEnd(null);
+                                    }}
+                                    className={`w-full px-4 py-3 text-left text-sm transition-colors ${
+                                      slot.end === t
+                                        ? 'bg-[#0012FF] text-white'
+                                        : 'text-gray-500 hover:bg-gray-50'
+                                    }`}
+                                  >
+                                    {formatTime(t)}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        ))}
+                        {/* Add time block button */}
+                        <button
+                          onClick={() => addSlot(day)}
+                          className="w-full flex items-center gap-2 text-[#0012FF] text-sm font-semibold font-sans hover:opacity-80 transition-opacity"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2">
+                            <path d="M12 5v14M5 12h14" />
+                          </svg>
+                          Add Another Time Block
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* ─── Right: Booking Settings ──────────────────────────────────────────── */}
+          <div className="bg-white border border-gray-200 rounded-xl p-6">
+            <div className="border-b border-gray-200 pb-4 mb-6">
+              <h3 className="font-sans text-sm font-semibold text-black">Booking Settings</h3>
+            </div>
+
+            <div className="space-y-6">
+              {/* Duration */}
+              <div className="space-y-3">
+                <label className="block text-xs font-semibold text-gray-700">Duration</label>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setOpenDuration(!openDuration)}
+                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-left text-gray-900 focus:outline-none focus:border-[#0012FF] flex items-center justify-between"
+                  >
+                    <span className={!showCustomDuration ? 'text-gray-900' : 'text-gray-400'}>
+                      {showCustomDuration ? 'Custom' : `${duration.value} ${duration.unit}`}
+                    </span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2">
+                      <path d="M6 9l6 6 6-6" />
+                    </svg>
+                  </button>
+
+                  {openDuration && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50">
+                      {DURATION_PRESETS.map(v => (
+                        <button
+                          key={v}
+                          type="button"
+                          onClick={() => handleDurationSelect(v)}
+                          className={`w-full px-4 py-3 text-left text-sm transition-colors ${
+                            !showCustomDuration && duration.value === v
+                              ? 'bg-[#0012FF] text-white'
+                              : 'text-gray-500 hover:bg-gray-50'
+                          }`}
+                        >
+                          {v} mins
+                        </button>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => handleDurationSelect(-1)}
+                        className={`w-full px-4 py-3 text-left text-sm transition-colors ${
+                          showCustomDuration
+                            ? 'bg-[#0012FF] text-white'
+                            : 'text-gray-500 hover:bg-gray-50'
+                        }`}
+                      >
+                        Custom
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Custom duration inputs */}
+                {showCustomDuration && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 mb-2">Time</label>
+                      <input
+                        type="number"
+                        value={duration.value}
+                        onChange={(e) => setDuration({ ...duration, value: Number(e.target.value) })}
+                        className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
+                        min="1"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 mb-2">Unit</label>
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={() => setOpenDurationUnit(!openDurationUnit)}
+                          className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-left text-gray-900 focus:outline-none focus:border-[#0012FF] flex items-center justify-between"
+                        >
+                          <span>{duration.unit}</span>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2">
+                            <path d="M6 9l6 6 6-6" />
+                          </svg>
+                        </button>
+                        {openDurationUnit && (
+                          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50">
+                            {(['min', 'hr'] as const).map(u => (
+                              <button
+                                key={u}
+                                type="button"
+                                onClick={() => {
+                                  setDuration({ ...duration, unit: u });
+                                  setOpenDurationUnit(false);
+                                }}
+                                className={`w-full px-4 py-3 text-left text-sm transition-colors ${
+                                  duration.unit === u
+                                    ? 'bg-[#0012FF] text-white'
+                                    : 'text-gray-500 hover:bg-gray-50'
+                                }`}
+                              >
+                                {u}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                  <div className={`grid gap-3 ${offerPromo ? 'grid-cols-4' : 'grid-cols-2'}`}>
-                    <div className="bg-[#0C0C0C] border border-[rgba(200,169,126,0.3)] rounded-lg p-3 sm:p-4 text-center">
-                      <p className="font-serif text-base sm:text-lg font-semibold text-[#C8A97E] mb-1">PKR {e.youReceiveFull.toLocaleString()}</p>
-                      <p className="font-sans text-[#F9F6F2] text-xs opacity-60">You receive (full price)</p>
+                )}
+              </div>
+
+              {/* Buffer between bookings */}
+              <div className="relative">
+                <label className="block text-xs font-semibold text-gray-700 mb-2">
+                  Buffer Between Bookings
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setOpenBuffer(!openBuffer)}
+                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-left text-gray-900 focus:outline-none focus:border-[#0012FF] flex items-center justify-between"
+                >
+                  <span className={bufferMinutes ? 'text-gray-900' : 'text-gray-400'}>
+                    {bufferMinutes} mins
+                  </span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2">
+                    <path d="M6 9l6 6 6-6" />
+                  </svg>
+                </button>
+
+                {openBuffer && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50">
+                    {BUFFER_OPTIONS.map(v => (
+                      <button
+                        key={v}
+                        type="button"
+                        onClick={() => { setBuffer(v); setOpenBuffer(false); }}
+                        className={`w-full px-4 py-3 text-left text-sm transition-colors ${
+                          bufferMinutes === v
+                            ? 'bg-[#0012FF] text-white'
+                            : 'text-gray-500 hover:bg-gray-50'
+                        }`}
+                      >
+                        {v} mins
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Location */}
+              <div className="space-y-3">
+                <label className="block text-xs font-semibold text-gray-700">Location</label>
+                {location ? (
+                  <div className="flex items-center justify-between bg-white border border-gray-200 rounded-xl px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2">
+                        <path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7z" />
+                        <circle cx="12" cy="9" r="2" />
+                      </svg>
+                      <span className="font-sans text-sm text-gray-900">
+                        {location.type === 'in-person' ? 'In-person' : 'Online'}
+                      </span>
                     </div>
-                    <div className="bg-[#0C0C0C] border border-[rgba(200,169,126,0.3)] rounded-lg p-3 sm:p-4 text-center">
-                      <p className="font-serif text-base sm:text-lg font-semibold text-[#C8A97E] mb-1">PKR {e.fee.toLocaleString()}</p>
-                      <p className="font-sans text-[#F9F6F2] text-xs opacity-60">Reachly fee (10%)</p>
-                    </div>
-                    {offerPromo && (
-                      <>
-                        <div className="bg-[#0C0C0C] border border-[rgba(200,169,126,0.3)] rounded-lg p-3 sm:p-4 text-center">
-                          <p className="font-serif text-base sm:text-lg font-semibold text-[#C8A97E] mb-1">PKR {e.promoPrice.toLocaleString()}</p>
-                          <p className="font-sans text-[#F9F6F2] text-xs opacity-60">First session (20% off)</p>
-                        </div>
-                        <div className="bg-[#0C0C0C] border border-[rgba(200,169,126,0.3)] rounded-lg p-3 sm:p-4 text-center">
-                          <p className="font-serif text-base sm:text-lg font-semibold text-[#C8A97E] mb-1">PKR {e.youReceivePromo.toLocaleString()}</p>
-                          <p className="font-sans text-[#F9F6F2] text-xs opacity-60">You receive (with promo)</p>
-                        </div>
-                      </>
+                    <button
+                      type="button"
+                      onClick={() => setLocation(null)}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2">
+                        <path d="M18 6L6 18M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setOpenLocation(!openLocation)}
+                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-left text-gray-400 focus:outline-none focus:border-[#0012FF] flex items-center justify-between"
+                    >
+                      Select location
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2">
+                        <path d="M6 9l6 6 6-6" />
+                      </svg>
+                    </button>
+
+                    {openLocation && (
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setLocation({ type: 'in-person' });
+                            setOpenLocation(false);
+                          }}
+                          className="w-full px-4 py-3 text-left text-sm text-gray-500 hover:bg-gray-50 transition-colors"
+                        >
+                          In-person
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setLocation({ type: 'online' });
+                            setOpenLocation(false);
+                          }}
+                          className="w-full px-4 py-3 text-left text-sm text-gray-500 hover:bg-gray-50 transition-colors"
+                        >
+                          Online
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Address field for in-person */}
+                {location && location.type === 'in-person' && (
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-2">
+                      Location name/address
+                    </label>
+                    <textarea
+                      value={location.address || ''}
+                      onChange={(e) => setLocation({ ...location, address: e.target.value })}
+                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] resize-none h-24 placeholder-gray-400"
+                      placeholder="Enter your address"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Followers can book up to */}
+              <div className="relative">
+                <label className="block text-xs font-semibold text-gray-700 mb-2">
+                  Followers Can Book Up To
+                </label>
+                <div className="flex items-center gap-3">
+                  <div className="w-20">
+                    <input
+                      type="number"
+                      value={bookingWindowDays}
+                      onChange={(e) => setWindow(Number(e.target.value))}
+                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] text-center"
+                      min="1"
+                    />
+                  </div>
+                  <span className="font-sans text-sm text-gray-500">days ahead</span>
+                </div>
+              </div>
+
+              {/* Minimum notice required */}
+              <div className="relative">
+                <label className="block text-xs font-semibold text-gray-700 mb-2">
+                  Minimum Notice Required
+                </label>
+                <div className="flex items-center gap-3">
+                  <div className="w-20">
+                    <input
+                      type="number"
+                      value={minNoticeHours}
+                      onChange={(e) => setNotice(Number(e.target.value))}
+                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] text-center"
+                      min="0"
+                    />
+                  </div>
+                  <span className="font-sans text-sm text-gray-500">hours</span>
+                </div>
+              </div>
+
+              {/* Meeting Limits */}
+              <div className="relative">
+                <label className="block text-xs font-semibold text-gray-700 mb-2">
+                  Meeting Limits
+                </label>
+                <div className="flex items-center gap-3">
+                  <div className="w-20">
+                    <input
+                      type="number"
+                      value={meetingLimits.count}
+                      onChange={(e) => setMeetingLimits({ ...meetingLimits, count: Number(e.target.value) })}
+                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] text-center"
+                      min="1"
+                    />
+                  </div>
+                  <span className="font-sans text-sm text-gray-500">meetings per</span>
+                  <div className="relative flex-1">
+                    <button
+                      type="button"
+                      onClick={() => setOpenMeetingPeriod(!openMeetingPeriod)}
+                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-left text-gray-900 focus:outline-none focus:border-[#0012FF] flex items-center justify-between"
+                    >
+                      <span>{meetingLimits.period}</span>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2">
+                        <path d="M6 9l6 6 6-6" />
+                      </svg>
+                    </button>
+                    {openMeetingPeriod && (
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50">
+                        {(['day', 'week', 'month'] as const).map(p => (
+                          <button
+                            key={p}
+                            type="button"
+                            onClick={() => {
+                              setMeetingLimits({ ...meetingLimits, period: p });
+                              setOpenMeetingPeriod(false);
+                            }}
+                            className={`w-full px-4 py-3 text-left text-sm transition-colors ${
+                              meetingLimits.period === p
+                                ? 'bg-[#0012FF] text-white'
+                                : 'text-gray-500 hover:bg-gray-50'
+                            }`}
+                          >
+                            {p}
+                          </button>
+                        ))}
+                      </div>
                     )}
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Price tip */}
-        <div className="bg-[#141414] border border-[rgba(200,169,126,0.15)] rounded-lg p-4 sm:p-5 flex items-start gap-3 sm:gap-4 mb-4">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-[rgba(200,169,126,0.3)] flex items-center justify-center flex-shrink-0">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="1.5"><path d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-          </div>
-          <div>
-            <h4 className="font-serif text-xs sm:text-sm font-semibold text-[#C8A97E] mb-1">Price recommendation</h4>
-            <p className="font-sans text-[#F9F6F2] text-xs opacity-60">Creators in your niche charge between PKR 800 and PKR 3,000 per session.</p>
-          </div>
-        </div>
-
-        {/* Promo toggle */}
-        <div className="bg-[#141414] border border-[rgba(200,169,126,0.15)] rounded-lg p-4 sm:p-5 flex items-center justify-between gap-4 mb-4">
-          <div className="flex items-center gap-3 sm:gap-4">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-[rgba(200,169,126,0.3)] flex items-center justify-center flex-shrink-0">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="1.5"><path d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-            </div>
-            <div>
-              <h4 className="font-serif text-xs sm:text-sm font-semibold text-[#C8A97E] mb-1">Offer 20% off first session</h4>
-              <p className="font-sans text-[#F9F6F2] text-xs opacity-60">New followers get a discount on their first booking. Helps with conversion.</p>
+              </div>
             </div>
           </div>
-          <button onClick={() => setOfferPromo(!offerPromo)} className={`relative flex-shrink-0 w-12 h-6 rounded-full transition-all ${offerPromo ? 'bg-[#C8A97E]' : 'bg-[#333]'}`}>
-            <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${offerPromo ? 'translate-x-6' : 'translate-x-0'}`} />
-          </button>
         </div>
 
-        {/* Payout frequency */}
-        <div className="bg-[#141414] border border-[rgba(200,169,126,0.15)] rounded-lg p-4 sm:p-5 mb-6">
-          <h3 className="font-serif text-xs sm:text-sm font-semibold text-[#F9F6F2] mb-4">Payout Frequency</h3>
-          <div className="space-y-2">
-            {([['weekly','Weekly (every Monday)','Fastest access to earnings'],['biweekly','Bi-weekly (every 2 weeks)','Balance between frequency and admin'],['monthly','Monthly (last day)','Best for bulk accounting']] as const).map(([val, label, sub]) => (
-              <button key={val} onClick={() => setPayoutFreq(val)} className={`w-full rounded-lg p-3 sm:p-4 flex items-center gap-3 text-left transition-all ${payoutFrequency === val ? 'bg-[rgba(200,169,126,0.1)] border border-[#C8A97E]' : 'bg-[#0C0C0C] border border-[rgba(200,169,126,0.15)] opacity-60 hover:opacity-80'}`}>
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${payoutFrequency === val ? 'border-[#C8A97E]' : 'border-[rgba(200,169,126,0.3)]'}`}>
-                  {payoutFrequency === val && <div className="w-2.5 h-2.5 rounded-full bg-[#C8A97E]" />}
-                </div>
-                <div>
-                  <p className="font-sans text-sm text-[#F9F6F2]">{label}</p>
-                  <p className="font-sans text-xs text-[#F9F6F2] opacity-60">{sub}</p>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Potential earnings */}
-        {sessionTypes.length > 0 && (
-          <div className="bg-[#141414] border border-[rgba(200,169,126,0.15)] rounded-lg p-6 sm:p-8 mb-6 text-center">
-            <h3 className="font-serif text-sm font-semibold text-[#F9F6F2] mb-2">Your potential monthly earnings</h3>
-            <p className="font-serif text-3xl sm:text-4xl font-bold text-[#C8A97E] mb-3">PKR {potentialMonthly.toLocaleString()}</p>
-            <p className="font-sans text-[#F9F6F2] text-xs opacity-50">Based on ~3 sessions/day, 20 days/month at your average rate.</p>
-          </div>
-        )}
-
-        {/* Change prices link */}
-        <div className="bg-[#141414] border border-[rgba(200,169,126,0.15)] rounded-lg p-4 sm:p-5 flex items-center justify-between gap-4 mb-8">
-          <div>
-            <h4 className="font-serif text-xs sm:text-sm font-semibold text-[#F9F6F2] mb-1">Need to change prices?</h4>
-            <p className="font-sans text-[#F9F6F2] text-xs opacity-60">Go back to Session Types to edit them inline.</p>
-          </div>
-          <button onClick={() => router.push('/creator-onboarding/step-3')} className="flex-shrink-0 border border-[rgba(200,169,126,0.3)] text-[#C8A97E] px-4 py-2 rounded-full font-serif font-semibold text-xs hover:bg-[#C8A97E] hover:text-[#0C0C0C] transition-all flex items-center gap-1.5">
-            Edit Sessions <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 6l6 6-6 6" /></svg>
-          </button>
-        </div>
-
-        {/* Nav */}
-        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-          <button onClick={() => router.push('/creator-onboarding/step-3')} className="flex-1 border border-[rgba(200,169,126,0.3)] text-[#C8A97E] font-serif font-semibold py-3 sm:py-4 px-6 sm:px-8 rounded-full text-sm hover:border-[#C8A97E] transition-all flex items-center justify-center gap-2">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
+        {/* Navigation */}
+        <div className="flex justify-between gap-3">
+          <button
+            type="button"
+            onClick={() => router.push('/creator-onboarding/step-3')}
+            className="border border-gray-200 text-gray-700 px-6 py-2.5 rounded-full font-sans font-semibold text-sm hover:bg-gray-50 transition-all flex items-center gap-2"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M19 12H5M12 19l-7-7 7-7" />
+            </svg>
             Back
           </button>
-          <button onClick={handleContinue} disabled={saving} className="flex-1 bg-[#C8A97E] text-[#0C0C0C] font-serif font-semibold py-3 sm:py-4 px-6 sm:px-8 rounded-full text-sm hover:opacity-90 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
-            {saving ? <><svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>Saving…</> : 'Continue'}
-          </button>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => router.push('/')}
+              className="border border-[#0012FF] text-[#0012FF] px-6 py-2.5 rounded-full font-sans font-semibold text-sm hover:bg-[#0012FF]/5 transition-all"
+            >
+              Save as Draft
+            </button>
+            <button
+              type="button"
+              onClick={handleContinue}
+              disabled={saving || enabledDays === 0}
+              className={`px-6 py-2.5 rounded-full font-sans font-semibold text-sm transition-all ${
+                enabledDays > 0 && !saving
+                  ? 'bg-[#0012FF] text-white hover:bg-[#0012FF]/90'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
+            >
+              {saving ? (
+                <>
+                  <svg className="animate-spin w-4 h-4 inline mr-2" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+                  Saving…
+                </>
+              ) : 'Continue'}
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-function StepItem({ num, label, status }: { num: number; label: string; status: 'completed' | 'active' | 'upcoming' }) {
+// ─── StepItem ──────────────────────────────────────────────────────────────────
+function StepItem({ num, status }: { num: number; status: 'completed' | 'active' | 'upcoming' }) {
   return (
-    <div className="flex flex-col items-center gap-1.5 sm:gap-2 min-w-[60px] sm:min-w-[80px]">
-      <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-serif text-sm sm:text-base font-semibold transition-all ${status === 'completed' ? 'bg-[#141414] text-[#C8A97E] border border-[#C8A97E]' : status === 'active' ? 'bg-[#C8A97E] text-[#0C0C0C]' : 'bg-[#141414] text-[#F9F6F2] border border-[rgba(200,169,126,0.3)] opacity-60'}`}>
-        {status === 'completed' ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="2.5"><polyline points="20 6 9 17 4 12" /></svg> : num}
+    <div className="flex flex-col items-center gap-1.5">
+      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all ${
+        status === 'completed'
+          ? 'bg-[#0012FF] text-white border border-[#0012FF]'
+          : status === 'active'
+          ? 'bg-[#E0E7FF] text-[#0012FF] border-2 border-[#0012FF]'
+          : 'bg-white text-gray-400 border border-gray-200'
+      }`}>
+        {status === 'completed' ? (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        ) : num}
       </div>
-      <span className={`text-[10px] sm:text-xs font-sans font-medium text-center ${status === 'completed' || status === 'active' ? 'text-[#C8A97E]' : 'text-[#F9F6F2] opacity-60'}`}>{label}</span>
     </div>
   );
 }

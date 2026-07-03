@@ -10,6 +10,21 @@ export interface IDaySchedule {
   slots: ITimeSlot[];
 }
 
+export interface IDuration {
+  value: number;
+  unit: 'min' | 'hr';
+}
+
+export interface ILocation {
+  type: 'in-person' | 'online';
+  address?: string;
+}
+
+export interface IMeetingLimits {
+  count: number;
+  period: 'day' | 'week' | 'month';
+}
+
 export interface ICreatorAvailability extends Document {
   userId: mongoose.Types.ObjectId;
   schedule: {
@@ -21,11 +36,14 @@ export interface ICreatorAvailability extends Document {
     saturday:  IDaySchedule;
     sunday:    IDaySchedule;
   };
+  duration: IDuration;
   bufferMinutes: number;     // gap between bookings
   timezone: string;
   bookingWindowDays: number; // how far ahead followers can book
   minNoticeHours: number;    // minimum hours notice
   blockedDates: string[];    // ISO date strings "YYYY-MM-DD"
+  location: ILocation | null;
+  meetingLimits: IMeetingLimits;
   isAvailabilityComplete: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -41,6 +59,30 @@ const DayScheduleSchema = new Schema<IDaySchedule>(
   { _id: false }
 );
 
+const DurationSchema = new Schema<IDuration>(
+  {
+    value: { type: Number, default: 45 },
+    unit: { type: String, enum: ['min', 'hr'], default: 'min' },
+  },
+  { _id: false }
+);
+
+const LocationSchema = new Schema<ILocation>(
+  {
+    type: { type: String, enum: ['in-person', 'online'] },
+    address: { type: String },
+  },
+  { _id: false }
+);
+
+const MeetingLimitsSchema = new Schema<IMeetingLimits>(
+  {
+    count: { type: Number, default: 4 },
+    period: { type: String, enum: ['day', 'week', 'month'], default: 'day' },
+  },
+  { _id: false }
+);
+
 const CreatorAvailabilitySchema = new Schema<ICreatorAvailability>(
   {
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
@@ -53,11 +95,14 @@ const CreatorAvailabilitySchema = new Schema<ICreatorAvailability>(
       saturday:  { type: DayScheduleSchema, default: { enabled: false, slots: [{ start: '09:00', end: '17:00' }] } },
       sunday:    { type: DayScheduleSchema, default: { enabled: false, slots: [{ start: '09:00', end: '17:00' }] } },
     },
+    duration: { type: DurationSchema, default: { value: 45, unit: 'min' } },
     bufferMinutes:     { type: Number, default: 15 },
     timezone:          { type: String, default: 'Asia/Karachi' },
     bookingWindowDays: { type: Number, default: 30 },
     minNoticeHours:    { type: Number, default: 4 },
     blockedDates:      { type: [String], default: [] },
+    location:          { type: LocationSchema, default: null },
+    meetingLimits:     { type: MeetingLimitsSchema, default: { count: 4, period: 'day' } },
     isAvailabilityComplete: { type: Boolean, default: false },
   },
   { timestamps: true }
