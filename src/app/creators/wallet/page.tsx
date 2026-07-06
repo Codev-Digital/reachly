@@ -8,7 +8,14 @@ export default function CreatorWallet() {
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string>('');
   const [activeNavItem, setActiveNavItem] = useState('Wallet');
-
+const [statusFilter, setStatusFilter] = useState('');
+const [dropdownOpen, setDropdownOpen] = useState(false);
+const statusOptions = [
+  { value: '', label: 'All Statuses' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'pending', label: 'Pending' },
+  { value: 'failed', label: 'Failed' },
+];
   useEffect(() => {
     async function loadProfile() {
       try {
@@ -337,12 +344,44 @@ export default function CreatorWallet() {
                 className="w-full lg:w-80 bg-white border border-gray-200 rounded-xl pl-12 pr-4 py-2 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] transition-all"
               />
             </div>
-            <select className="bg-white border border-gray-200 rounded-xl px-4 py-2 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] transition-all">
-              <option value="">All Statuses</option>
-              <option value="completed">Completed</option>
-              <option value="pending">Pending</option>
-              <option value="failed">Failed</option>
-            </select>
+          {/* Replace the <select> with this */}
+<div className="relative">
+  <button
+    onClick={() => setDropdownOpen(!dropdownOpen)}
+    className="flex items-center justify-between gap-8 bg-white border border-[#0012FF]/30 rounded-2xl px-4 py-2 text-sm text-gray-900 focus:outline-none min-w-[160px]"
+  >
+    <span className="font-medium">
+      {statusOptions.find(o => o.value === statusFilter)?.label || 'All Statuses'}
+    </span>
+    <svg
+      width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2"
+      className={`transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`}
+    >
+      <polyline points="18 15 12 9 6 15" />
+    </svg>
+  </button>
+
+  {dropdownOpen && (
+    <div className="absolute right-0 top-[calc(100%+6px)] w-full bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden z-50">
+      {statusOptions.filter(o => o.value !== '').map((option) => (
+        <button
+          key={option.value}
+          onClick={() => {
+            setStatusFilter(option.value);
+            setDropdownOpen(false);
+          }}
+          className={`w-full text-left px-4 py-3 text-sm font-medium transition-all ${
+            statusFilter === option.value
+              ? 'bg-[#0012FF] text-white'
+              : 'text-gray-400 hover:bg-gray-50 hover:text-gray-700'
+          }`}
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
+  )}
+</div>
           </div>
         </div>
 
