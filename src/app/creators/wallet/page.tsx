@@ -206,7 +206,7 @@ const statusOptions = [
       className="object-fill"
       priority
     />
-            <div className="absolute inset-0 p-6">
+            <div className="absolute inset-0 p-5">
               <div className="flex items-start justify-between h-full">
                 <div className="flex flex-col justify-between h-full">
                   <div className="w-8 h-8 bg-white/60 rounded-xl flex items-center justify-center mb-3">
@@ -252,7 +252,7 @@ const statusOptions = [
       fill
       className="object-fill"
     />
-            <div className="absolute inset-0 p-5">
+            <div className="mt-5 mr-10 absolute inset-0 p-7">
               <div className="w-8 h-8 bg-white/60 rounded-xl flex items-center justify-center mb-3">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2">
                   <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
@@ -279,7 +279,7 @@ const statusOptions = [
       fill
       className="object-fill"
     />
-            <div className="absolute inset-0 p-5">
+            <div className="absolute inset-0 p-12">
               <div className="w-8 h-8 bg-white/60 rounded-xl flex items-center justify-center mb-3">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2">
                   <circle cx="12" cy="12" r="10" />
@@ -307,7 +307,7 @@ const statusOptions = [
       fill
       className="object-fill"
     />
-            <div className="absolute inset-0 p-5">
+            <div className="absolute inset-0 p-13">
               <div className="w-8 h-8 bg-white/60 rounded-xl flex items-center justify-center mb-3">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2">
                   <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
