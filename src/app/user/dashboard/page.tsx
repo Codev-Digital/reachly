@@ -356,7 +356,7 @@ export default function UserDashboard() {
           <div className="lg:col-span-8 space-y-10">
             
             {/* Stats Cards Grid (using uc-1, uc-2, uc-3) */}
-          <div className="flex items-stretch -ml-10 gap-3">
+          <div className="flex items-stretch -ml-10 gap-2">
               
               {/* Card 1: Total Bookings */}
              <div className="relative w-full h-[160px] z-30 pl-6 pt-4">
