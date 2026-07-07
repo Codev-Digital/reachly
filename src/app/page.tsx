@@ -216,7 +216,7 @@
         {/* ════════════════════════════════════════
             PAKISTAN'S TOP CREATORS — auto marquee
         ════════════════════════════════════════ */}
-        <section className="py-20 bg-[#F7F7FA] text-[#0C0C0C]">
+        {/* <section className="py-20 bg-[#F7F7FA] text-[#0C0C0C]">
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
             <FadeUp className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
               <div>
@@ -270,7 +270,7 @@
               ))}
             </motion.div>
           </div>
-        </section>
+        </section> */}
 
         {/* ════════════════════════════════════════
             HOW IT WORKS
@@ -354,10 +354,10 @@
                 <p className="font-sans text-sm sm:text-base text-gray-500 mt-2">We've got the best of the best! Our curated talent go above and beyond</p>
               </div>
               <div className="flex items-center gap-3">
-                <button onClick={() => setFeaturedPage(prev => (prev > 0 ? prev - 1 : 1))} className="w-12 h-12 rounded-full border border-[#0012FF] flex items-center justify-center text-[#0012FF] hover:bg-[#0012FF]/5 transition-all active:scale-95">
+                <button onClick={() => setFeaturedPage(prev => (prev > 0 ? prev - 1 : 1))} className="w-12 h-12 rounded-full border border-[#0012FF] flex items-center justify-center text-[#0012FF]">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
                 </button>
-                <button onClick={() => setFeaturedPage(prev => (prev < 1 ? prev + 1 : 0))} className="w-12 h-12 rounded-full bg-[#0012FF] flex items-center justify-center text-white hover:bg-[#0012FF]/95 transition-all active:scale-95 shadow-md shadow-[#0012FF]/20">
+                <button onClick={() => setFeaturedPage(prev => (prev < 1 ? prev + 1 : 0))} className="w-12 h-12 rounded-full bg-[#0012FF] flex items-center justify-center text-white shadow-md shadow-[#0012FF]/20">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
                 </button>
               </div>
@@ -382,7 +382,7 @@
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.5, delay: index * 0.1 }}
-      className="flex flex-col w-full max-w-[260px] mx-auto group"
+      className="flex flex-col w-full max-w-[260px] mx-auto"
     >
       {/* Image with SVG clip notch */}
       <div className="relative w-full h-[280px]">
@@ -413,7 +413,7 @@
         <img
           src={creator.img}
           alt={creator.name}
-          className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
+          className="w-full h-full object-cover object-top"
           style={{ clipPath: `url(#${clipId})` }}
         />
 
@@ -431,17 +431,51 @@
   onClick={() => toggleFavorite(creator.name)}
  className="absolute top-3 right-1 flex items-center justify-center"
 >
-  <svg
-    className={`w-6 h-6 transition-colors duration-200 ${
-     favorites.includes(creator.name)
-  ? 'text-red-500'
-  : 'text-gray-200'
-    }`}
+ <svg
+  className={`w-6 h-6 transition-colors duration-200 ${
+    favorites.includes(creator.name)
+      ? "text-red-500"
+      : "text-gray-300"
+  }`}
+  viewBox="0 0 24 24"
+>
+  <defs>
+    <filter id="heartGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="0.6" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  {/* Heart */}
+  <path
     fill="currentColor"
-    viewBox="0 0 24 24"
-  >
-    <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-  </svg>
+    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+  />
+
+  {/* Glow */}
+  <path
+    d="M15.2 6.2c1.5 0 2.7 1.2 2.7 2.7 0 1-.4 1.9-1 2.8"
+    stroke="white"
+    strokeWidth="2.4"
+    strokeOpacity="0.35"
+    strokeLinecap="round"
+    fill="none"
+    filter="url(#heartGlow)"
+  />
+
+  {/* Main shine */}
+  <path
+    d="M15.2 6.2c1.5 0 2.7 1.2 2.7 2.7 0 1-.4 1.9-1 2.8"
+    stroke="white"
+    strokeWidth="1.3"
+    strokeOpacity="0.95"
+    strokeLinecap="round"
+    fill="none"
+  />
+</svg>
 </button>
       </div>
 
@@ -510,7 +544,7 @@
                     key={i}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => { setActiveCategory(cat.name); setCategoryIndex(0); }}
-                    className={`flex items-center gap-3 px-5 py-3 rounded-full text-sm font-sans font-medium transition-all whitespace-nowrap cursor-pointer ${activeCategory === cat.name ? 'bg-[#0012FF] text-white shadow-md shadow-[#0012FF]/20' : 'bg-white text-gray-500 hover:bg-gray-100 hover:text-black border border-gray-100'}`}
+                    className={`flex items-center gap-3 px-5 py-3 rounded-full text-sm font-sans font-medium whitespace-nowrap cursor-pointer ${activeCategory === cat.name ? 'bg-[#0012FF] text-white shadow-md shadow-[#0012FF]/20' : 'bg-white text-gray-500 border border-gray-100'}`}
                   >
                     {cat.icon} {cat.name}
                   </motion.button>
@@ -584,7 +618,7 @@
                             <img
                               src={creator.img}
                               alt={creator.name}
-                              className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
+                              className="w-full h-full object-cover object-top "
                               style={{ clipPath: `url(#${clipId})` }}
                             />
 
@@ -602,17 +636,51 @@
                               onClick={() => toggleFavorite(creator.name)}
                               className="absolute top-3 right-1 flex items-center justify-center"
                             >
-                              <svg
-                                className={`w-6 h-6 transition-colors duration-200 ${
-                                  favorites.includes(creator.name)
-                                    ? 'text-red-500'
-                                    : 'text-gray-200'
-                                }`}
-                                fill="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                              </svg>
+                            <svg
+  className={`w-6 h-6 transition-colors duration-200 ${
+    favorites.includes(creator.name)
+      ? "text-red-500"
+      : "text-gray-300"
+  }`}
+  viewBox="0 0 24 24"
+>
+  <defs>
+    <filter id="heartGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="0.6" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  {/* Heart */}
+  <path
+    fill="currentColor"
+    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+  />
+
+  {/* Glow */}
+  <path
+    d="M15.2 6.2c1.5 0 2.7 1.2 2.7 2.7 0 1-.4 1.9-1 2.8"
+    stroke="white"
+    strokeWidth="2.4"
+    strokeOpacity="0.35"
+    strokeLinecap="round"
+    fill="none"
+    filter="url(#heartGlow)"
+  />
+
+  {/* Main shine */}
+  <path
+    d="M15.2 6.2c1.5 0 2.7 1.2 2.7 2.7 0 1-.4 1.9-1 2.8"
+    stroke="white"
+    strokeWidth="1.3"
+    strokeOpacity="0.95"
+    strokeLinecap="round"
+    fill="none"
+  />
+</svg>
                             </button>
                           </div>
 
