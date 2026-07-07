@@ -336,9 +336,10 @@ const CreatorCalendar = () => {
                         <span>{booking.type}</span>
                       </div>
                     </div>
-                    <p className="text-sm text-gray-500 mb-2">
+                    <p className="text-sm text-gray-500 mb-4">
                       {booking.note} <span className="text-[#0012FF] cursor-pointer font-semibold">Read more</span>
                     </p>
+                    <div className="w-full h-px bg-gray-200 mb-4"></div>
                   <div className="flex items-center gap-3 px-4">
                     <button
                       onClick={() => handleRescheduleClick(booking)}

@@ -420,10 +420,10 @@ const CreatorDashboard = () => {
                       height={180}
                       className="w-[120%] -mr-[20%] h-auto"
                     />
-                    <div className="absolute inset-0 p-17">
-                      <div className="flex items-start gap-2 mb-3">
-                        <div className="w-14 h-14 bg-white/60 rounded-xl flex items-center justify-center">
-                          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2">
+                    <div className="absolute top-6 left-6 right-6 bottom-6">
+                      <div className="flex items-center gap-4 mb-3">
+                        <div className="w-16 h-16 bg-white/60 rounded-xl flex items-center justify-center flex-shrink-0">
+                          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2">
                             <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
                             <line x1="16" y1="2" x2="16" y2="6" />
                             <line x1="8" y1="2" x2="8" y2="6" />
@@ -431,8 +431,8 @@ const CreatorDashboard = () => {
                           </svg>
                         </div>
                         <div>
-                          <p className="text-sm text-gray-600 font-sans">Total Bookings this month</p>
-                          <p className="text-2xl font-bold font-sans mt-1" style={{ color: "#22C55E" }}>12</p>
+                          <p className="text-sm text-gray-700 font-sans mb-1">Total Bookings this month</p>
+                          <p className="text-3xl font-bold font-sans" style={{ color: "#22C55E" }}>12</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-1 text-white">
@@ -462,17 +462,17 @@ const CreatorDashboard = () => {
                       height={180}
                       className="w-[120%] -mr-[20%] h-auto"
                     />
-                    <div className="absolute inset-0 p-20">
-                      <div className="flex items-start gap-4 mb-3">
-                        <div className="w-14 h-14 bg-white/60 rounded-xl flex items-center justify-center">
-                          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2">
+                    <div className="absolute top-19 left-6 right-6 bottom-6">
+                      <div className="flex items-center gap-4 mb-3">
+                        <div className="w-16 h-16 bg-white/60 rounded-xl flex items-center justify-center flex-shrink-0">
+                          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2">
                             <circle cx="12" cy="12" r="10" />
                             <polyline points="12 6 12 12 16 14" />
                           </svg>
                         </div>
                         <div>
-                          <p className="text-sm text-gray-600 font-sans">Upcoming Sessions</p>
-                          <p className="text-2xl font-bold font-sans mt-1" style={{ color: "#F59E0B" }}>3</p>
+                          <p className="text-sm text-gray-700 font-sans mb-1">Upcoming Sessions</p>
+                          <p className="text-3xl font-bold font-sans" style={{ color: "#F59E0B" }}>3</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-1 text-white">
@@ -501,17 +501,17 @@ const CreatorDashboard = () => {
                       height={180}
                       className="w-[120%] -mr-[20%] h-auto"
                     />
-                    <div className="absolute inset-0 p-20">
-                      <div className="flex items-start gap-2 mb-3">
-                        <div className="w-14 h-14 bg-white/60 rounded-xl flex items-center justify-center">
-                          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2">
+                    <div className="absolute top-19 left-6 right-6 bottom-6">
+                      <div className="flex items-center gap-4 mb-3">
+                        <div className="w-16 h-16 bg-white/60 rounded-xl flex items-center justify-center flex-shrink-0">
+                          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2">
                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                             <circle cx="12" cy="12" r="3" />
                           </svg>
                         </div>
                         <div>
-                          <p className="text-sm text-gray-600 font-sans">Profile Views</p>
-                          <p className="text-2xl font-bold font-sans mt-1" style={{ color: "#EF4444" }}>1,256</p>
+                          <p className="text-sm text-gray-700 font-sans mb-1">Profile Views</p>
+                          <p className="text-3xl font-bold font-sans" style={{ color: "#EF4444" }}>1,256</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-1 text-white">
@@ -540,10 +540,10 @@ const CreatorDashboard = () => {
                       height={180}
                       className="w-[120%] -mr-[20%] h-auto"
                     />
-                    <div className="absolute inset-0 p-20">
-                      <div className="flex items-start gap-2 mb-3">
-                        <div className="w-14 h-14 bg-white/60 rounded-xl flex items-center justify-center">
-                          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2">
+                    <div className="absolute top-19 left-6 right-6 bottom-6">
+                      <div className="flex items-center gap-4 mb-3">
+                        <div className="w-16 h-16 bg-white/60 rounded-xl flex items-center justify-center flex-shrink-0">
+                          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2">
                             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
                             <circle cx="9" cy="7" r="4" />
                             <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
@@ -551,8 +551,8 @@ const CreatorDashboard = () => {
                           </svg>
                         </div>
                         <div>
-                          <p className="text-sm text-gray-600 font-sans">Upcoming Sessions</p>
-                          <p className="text-2xl font-bold font-sans mt-1" style={{ color: "#0012FF" }}>3</p>
+                          <p className="text-sm text-gray-700 font-sans mb-1">Upcoming Sessions</p>
+                          <p className="text-3xl font-bold font-sans" style={{ color: "#0012FF" }}>3</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-1 text-white">
@@ -618,19 +618,33 @@ const CreatorDashboard = () => {
                     <p className="text-md text-gray-500 mb-5">
                       {booking.note} <span className="text-[#0012FF] cursor-pointer font-semibold">Read more</span>
                     </p>
-                    <div className="flex items-center gap-3 px-10">
-                      <button className="flex-1 py-3 border-2 border-gray-200 rounded-2xl text-lg font-semibold text-gray-500 hover:bg-gray-50 transition-all">
-                        Reschedule
-                      </button>
-                      <button className="flex-1 py-3 border-2 border-red-200 rounded-2xl text-lg font-semibold text-red-500 bg-red-50 hover:bg-red-100 transition-all">
-                        Cancel Appointment
-                      </button>
-                    </div>
+                   <div className="flex items-center gap-1">
+  <button className="flex-1 py-1 border-2 border-gray-200 rounded-2xl text-sm font-semibold text-gray-500 hover:bg-gray-50 transition-all">
+    Reschedule
+  </button>
+
+  <button className="flex-1 py-1 border-2 border-red-200 rounded-2xl text-sm font-semibold text-red-500 bg-red-50 hover:bg-red-100 transition-all">
+    Cancel Appointment
+  </button>
+</div>
                     {/* Arrow indicator */}
-                    <div className="absolute -right-2 bottom-8">
-                      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2">
-                        <polyline points="9 18 15 12 9 6" />
-                      </svg>
+                    <div className="absolute -right-1 bottom-6">
+                   <svg
+  width="32"
+  height="32"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="#0012FF"
+  strokeWidth="2"
+  strokeLinecap="round"
+  strokeLinejoin="round"
+>
+  {/* Shaft */}
+  <line x1="7" y1="17" x2="17" y2="7" />
+
+  {/* Arrow head */}
+  <polyline points="12,7 17,7 17,12" />
+</svg>
                     </div>
                   </motion.div>
                 ))}
