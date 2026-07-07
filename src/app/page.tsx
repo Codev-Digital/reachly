@@ -56,15 +56,16 @@
     const marqueeCreators = [...allCreators, ...allCreators];
 
     const testimonials = [
-      { name: 'Jordan L.', loc: 'Los Angeles, CA', text: '"Ayesha helped me find my style, stay consistent, and grow my engagement. I feel much more confident creating content. One of the best investments I\'ve made for my personal brand!"', avatar: '/Avatars/8.jpg', quoteColor: '#E8D9A0', dot1: '#A0B4E8', dot2: '#B8E0C8' },
-      { name: 'Zara A.', loc: 'Karachi, PK', text: '"Reachly helped me connect with Mahira Khan directly. The session was incredible and changed how I view personal branding!"', avatar: '/Avatars/2.jpg', quoteColor: '#F4C5C5', dot1: '#F4C5C5', dot2: '#A0C8E8' },
-      { name: 'Ali R.', loc: 'Lahore, PK', text: '"Booking was seamless. Paid through JazzCash and got a confirmation instantly. Highly recommend the platform!"', avatar: '/Avatars/7.jpg', quoteColor: '#B8E8B8', dot1: '#B8E8B8', dot2: '#E8D9A0' },
-      { name: 'Sana M.', loc: 'Islamabad, PK', text: '"I never thought I could afford a 1-on-1 with my favourite creator. Reachly made it possible and affordable."', avatar: '/Avatars/4.jpg', quoteColor: '#C8D8F8', dot1: '#C8D8F8', dot2: '#F4C5C5' },
-      { name: 'Hassan T.', loc: 'Peshawar, PK', text: '"The verification badge gives me confidence. Every creator I booked was professional and punctual."', avatar: '/Avatars/15.jpg', quoteColor: '#E8D9A0', dot1: '#A0B4E8', dot2: '#B8E0C8' },
-      { name: 'Nida F.', loc: 'Multan, PK', text: '"Got actionable advice on growing my YouTube channel. Worth every rupee. Reachly is a game changer!"', avatar: '/Avatars/6.jpg', quoteColor: '#F4C5C5', dot1: '#F4C5C5', dot2: '#B8E8B8' },
-      { name: 'Ayesha K.', loc: 'Dubai, UAE', text: '"Super smooth experience from booking to the call. Will definitely book again. Love Reachly!"', avatar: '/Avatars/10.jpg', quoteColor: '#B8E8B8', dot1: '#B8E8B8', dot2: '#C8D8F8' },
-      { name: 'Bilal Ch.', loc: 'Faisalabad, PK', text: '"I was skeptical at first, but after my first session I was hooked. The creator gave genuine value!"', avatar: '/Avatars/1.jpg', quoteColor: '#C8D8F8', dot1: '#C8D8F8', dot2: '#E8D9A0' },
+      { name: 'Jordan L.', loc: 'Los Angeles, CA', text: '"Ayesha helped me find my style, stay consistent, and grow my engagement. I feel much more confident creating content. One of the best investments I\'ve made for my personal brand!"', avatar: '/Avatars/8.jpg', commaIndex: 0, dot1: '#A0B4E8', dot2: '#B8E0C8' },
+      { name: 'Zara A.', loc: 'Karachi, PK', text: '"Reachly helped me connect with Mahira Khan directly. The session was incredible and changed how I view personal branding!"', avatar: '/Avatars/2.jpg', commaIndex: 1, dot1: '#F4C5C5', dot2: '#A0C8E8' },
+      { name: 'Ali R.', loc: 'Lahore, PK', text: '"Booking was seamless. Paid through JazzCash and got a confirmation instantly. Highly recommend the platform!"', avatar: '/Avatars/7.jpg', commaIndex: 2, dot1: '#B8E8B8', dot2: '#E8D9A0' },
+      { name: 'Sana M.', loc: 'Islamabad, PK', text: '"I never thought I could afford a 1-on-1 with my favourite creator. Reachly made it possible and affordable."', avatar: '/Avatars/4.jpg', commaIndex: 0, dot1: '#C8D8F8', dot2: '#F4C5C5' },
+      { name: 'Hassan T.', loc: 'Peshawar, PK', text: '"The verification badge gives me confidence. Every creator I booked was professional and punctual."', avatar: '/Avatars/15.jpg', commaIndex: 1, dot1: '#A0B4E8', dot2: '#B8E0C8' },
+      { name: 'Nida F.', loc: 'Multan, PK', text: '"Got actionable advice on growing my YouTube channel. Worth every rupee. Reachly is a game changer!"', avatar: '/Avatars/6.jpg', commaIndex: 2, dot1: '#F4C5C5', dot2: '#B8E8B8' },
+      { name: 'Ayesha K.', loc: 'Dubai, UAE', text: '"Super smooth experience from booking to the call. Will definitely book again. Love Reachly!"', avatar: '/Avatars/10.jpg', commaIndex: 0, dot1: '#B8E8B8', dot2: '#C8D8F8' },
+      { name: 'Bilal Ch.', loc: 'Faisalabad, PK', text: '"I was skeptical at first, but after my first session I was hooked. The creator gave genuine value!"', avatar: '/Avatars/1.jpg', commaIndex: 1, dot1: '#C8D8F8', dot2: '#E8D9A0' },
     ];
+    const commaSvgs = ['/assets/comma-1.svg', '/assets/comma-2.svg', '/assets/comma3.svg'];
     const marqueeTestimonials1 = [...testimonials, ...testimonials];
     const marqueeTestimonials2 = [...testimonials].reverse().concat([...testimonials].reverse());
 
@@ -881,7 +882,7 @@
 
       <div className="space-y-6 max-w-[1400px] mx-auto px-4 sm:px-6">
             {/* Row 1 — left → right */}
-            <div className="overflow-hidden relative">
+            <div className="overflow-hidden pt-10 relative">
               <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-24 z-10 bg-gradient-to-r from-[#F7F7FA] to-transparent" />
               <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-24 z-10 bg-gradient-to-l from-[#F7F7FA] to-transparent" />
               <motion.div
@@ -892,9 +893,13 @@
                 {marqueeTestimonials1.map((t, i) => (
                   <div key={i} className="w-[300px] sm:w-[330px] shrink-0 bg-white rounded-2xl p-6 shadow-sm border border-gray-100 relative">
                     {/* Big quote mark top-right */}
-                    <div className="absolute top-4 right-5 text-6xl leading-none font-serif" style={{ color: t.quoteColor || '#E8D9B5', opacity: 0.9 }}>
-                      &ldquo;
-                    </div>
+              <div className="absolute -mt-10 right-5">
+  <img
+    src={commaSvgs[t.commaIndex]}
+    alt="quote"
+    className="w-16 h-16 -translate-y-2"
+  />
+</div>
                     {/* Avatar + name */}
                     <div className="flex items-center gap-3 mb-4">
                       <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 border border-gray-100 shadow-sm bg-gray-100">
@@ -919,8 +924,8 @@
             </div>
 
             {/* Row 2 — right → left */}
-            <div className="overflow-hidden relative">
-              <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-24 z-10 bg-gradient-to-r from-[#F7F7FA] to-transparent" />
+            <div className=" overflow-hidden pt-10  relative">
+              <div className="  pointer-events-none absolute left-0 top-0 bottom-0 w-24 z-10 bg-gradient-to-r from-[#F7F7FA] to-transparent" />
               <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-24 z-10 bg-gradient-to-l from-[#F7F7FA] to-transparent" />
               <motion.div
                 animate={{ x: ['-50%', '0%'] }}
@@ -930,8 +935,8 @@
                 {marqueeTestimonials2.map((t, i) => (
                   <div key={i} className="w-[300px] sm:w-[330px] shrink-0 bg-white rounded-2xl p-6 shadow-sm border border-gray-100 relative">
                     {/* Big quote mark top-right */}
-                    <div className="absolute top-4 right-5 text-6xl leading-none font-serif" style={{ color: t.quoteColor || '#F4C5C5', opacity: 0.9 }}>
-                      &ldquo;
+                    <div className="absolute -mt-12 right-5">
+                      <img src={commaSvgs[t.commaIndex]} alt="quote" className="w-16 h-16" />
                     </div>
                     {/* Avatar + name */}
                     <div className="flex items-center gap-3 mb-4">
