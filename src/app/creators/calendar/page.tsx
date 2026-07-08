@@ -21,6 +21,8 @@ const CreatorCalendar = () => {
   const [bookingToCancel, setBookingToCancel] = useState<any>(null);
   const [showRescheduleModal, setShowRescheduleModal] = useState<boolean>(false);
   const [bookingToReschedule, setBookingToReschedule] = useState<any>(null);
+  const [selectedRescheduleDate, setSelectedRescheduleDate] = useState<string>('02');
+  const [selectedRescheduleTimeSlot, setSelectedRescheduleTimeSlot] = useState<string>('3 PM - 4 PM');
 
   useEffect(() => {
     async function loadProfile() {
@@ -316,78 +318,124 @@ const CreatorCalendar = () => {
 
       {/* Reschedule Appointment Modal */}
       {showRescheduleModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100]">
-          <div className="relative">
-            <Image
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100] p-4">
+          <div className="relative w-full max-w-lg flex flex-col items-center justify-between p-8 pt-12 pb-8 min-h-[520px] z-10">
+            {/* SVG Background notched card */}
+            <img
               src="/assets/cancel-card.svg"
-              alt="Reschedule Modal"
-              width={600}
-              height={700}
-              className="w-full max-w-lg"
+              alt=""
+              className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10"
             />
-            <div className="absolute inset-0 px-8 pt-10 pb-4 flex flex-col items-center justify-between">
+            {/* Close Button */}
+            <button
+              onClick={() => setShowRescheduleModal(false)}
+              className="absolute -top-5 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center hover:bg-gray-50 transition-all z-20 border border-gray-100/50 cursor-pointer text-gray-500"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+
+            {/* Content */}
+            <div className="flex flex-col items-center w-full flex-grow">
+              <h3 className="text-2xl font-bold text-black mb-1">Reschedule Appointment</h3>
+              <p className="text-gray-500 text-center mb-6 text-sm">
+                Choose a new date and time for your appointment
+              </p>
+
+              {/* Dates Slider */}
+              <div className="flex items-center gap-1 w-full border border-gray-100 rounded-2xl p-2 mb-5 bg-white/50">
+                <button className="text-gray-400 hover:text-black px-1">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <polyline points="15 18 9 12 15 6" />
+                  </svg>
+                </button>
+                <div className="flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth flex-grow py-1 justify-between">
+                  {[
+                    { day: 'Mon', num: '01' },
+                    { day: 'Tue', num: '02' },
+                    { day: 'Wed', num: '03' },
+                    { day: 'Thu', num: '04' },
+                    { day: 'Fri', num: '05' },
+                    { day: 'Sat', num: '06' },
+                    { day: 'Sun', num: '07' },
+                    { day: 'Mon', num: '08' },
+                    { day: 'Tue', num: '09' },
+                    { day: 'Wed', num: '10' },
+                    { day: 'Thu', num: '12' },
+                    { day: 'Fri', num: '13' },
+                    { day: 'Sat', num: '15' },
+                    { day: 'Sun', num: '16' },
+                    { day: 'Mon', num: '17' },
+                    { day: 'Tue', num: '18' },
+                  ].map((d) => (
+                    <button
+                      key={d.num}
+                      onClick={() => setSelectedRescheduleDate(d.num)}
+                      className={`flex flex-col items-center justify-center min-w-[36px] py-1.5 rounded-lg text-xs transition-all ${
+                        selectedRescheduleDate === d.num
+                          ? 'bg-[#0012FF]/10 text-[#0012FF] font-bold border border-[#0012FF]/20'
+                          : 'text-gray-400 hover:bg-gray-50'
+                      }`}
+                    >
+                      <span className="text-[10px] uppercase font-medium">{d.day}</span>
+                      <span className="text-sm font-semibold">{d.num}</span>
+                    </button>
+                  ))}
+                </div>
+                <button className="text-gray-400 hover:text-black px-1">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Time Slots Grid */}
+              <div className="grid grid-cols-3 gap-2.5 w-full mb-6">
+                {[
+                  '11 AM - 12 PM',
+                  '12 PM - 1 PM',
+                  '1 PM - 2 PM',
+                  '2 PM - 3 PM',
+                  '3 PM - 4 PM',
+                  '4 PM - 5 PM',
+                  '5 PM - 6 PM',
+                  '6 PM - 7 PM',
+                  '7 PM - 8 PM',
+                  '8 PM - 9 PM',
+                  '9 PM - 10 PM',
+                  '10 PM - 11 PM'
+                ].map((slot) => (
+                  <button
+                    key={slot}
+                    onClick={() => setSelectedRescheduleTimeSlot(slot)}
+                    className={`py-3 px-1 border rounded-xl text-xs font-semibold text-center transition-all ${
+                      selectedRescheduleTimeSlot === slot
+                        ? 'bg-[#0012FF]/10 border-[#0012FF] text-[#0012FF]'
+                        : 'border-gray-200 text-gray-500 hover:bg-gray-50 bg-white'
+                    }`}
+                  >
+                    {slot}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-4 w-full">
               <button
                 onClick={() => setShowRescheduleModal(false)}
-                className="absolute top-1 right-59 w-7 h-6 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-all"
+                className="flex-1 py-3.5 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-full text-sm font-bold transition-all border border-gray-200"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2">
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
+                Cancel
               </button>
-              <div className="flex flex-col items-center w-full">
-                <Image
-                  src="/assets/reschedule.png"
-                  alt="Reschedule Appointment"
-                  width={130}
-                  height={100}
-                  className="mb-4"
-                />
-                <h3 className="text-xl font-bold text-black mb-1">Reschedule Appointment</h3>
-                <p className="text-gray-600 text-center mb-5 text-sm">
-                  Choose a new date and time for your appointment
-                </p>
-                <div className="w-full space-y-3 mb-5">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-2">Date *</label>
-                    <input
-                      type="date"
-                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] transition-all"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-2">Time *</label>
-                    <select
-                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] transition-all"
-                    >
-                      <option value="">Select Time</option>
-                      <option value="09:00">09:00 AM</option>
-                      <option value="10:00">10:00 AM</option>
-                      <option value="11:00">11:00 AM</option>
-                      <option value="12:00">12:00 PM</option>
-                      <option value="13:00">01:00 PM</option>
-                      <option value="14:00">02:00 PM</option>
-                      <option value="15:00">03:00 PM</option>
-                      <option value="16:00">04:00 PM</option>
-                      <option value="17:00">05:00 PM</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-              <div className="flex gap-3 w-full">
-                <button
-                  onClick={() => setShowRescheduleModal(false)}
-                  className="flex-1 py-2 border-2 border-gray-200 rounded-2xl text-base font-semibold text-gray-600 hover:bg-gray-50 transition-all"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleConfirmReschedule}
-                  className="flex-1 py-2 bg-[#0012FF] text-white rounded-2xl text-base font-semibold hover:bg-[#0012FF]/90 transition-all"
-                >
-                  Reschedule
-                </button>
-              </div>
+              <button
+                onClick={handleConfirmReschedule}
+                className="flex-1 py-3.5 bg-[#0012FF] hover:bg-[#0012FF]/90 text-white rounded-full text-sm font-bold transition-all shadow-md"
+              >
+                Reschedule Appointment
+              </button>
             </div>
           </div>
         </div>

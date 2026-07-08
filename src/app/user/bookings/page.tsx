@@ -1,431 +1,339 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import UserSidebar from '@/components/UserSidebar';
-import CreatorNavbar from '@/components/CreatorNavbar';
-import UserTopBar from '@/components/UserTopBar';
-import RescheduleModal from '@/components/RescheduleModal';
-import CancelBookingModal from '@/components/CancelBookingModal';
+import { useEffect, useState, useRef } from 'react';
+import UserNavbar from '@/components/UserNavbar';
+import { motion, useInView } from 'framer-motion';
+import Link from 'next/link';
+import Image from 'next/image';
 
-export default function UserBookings() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('pending');
-  const [showRescheduleModal, setShowRescheduleModal] = useState(false);
-  const [showCancelModal, setShowCancelModal] = useState(false);
-  const [currentBooking, setCurrentBooking] = useState<any>(null);
-  const [view, setView] = useState<'list' | 'details'>('list');
+function FadeUp({ children, delay = 0, className = '' }: { children: React.ReactNode; delay?: number; className?: string }) {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: '-80px' });
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 40 }}
+      animate={inView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.6, delay, ease: 'easeOut' }}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
+}
 
-  // Real Data State
-  const [bookings, setBookings] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+interface Booking {
+  id: string;
+  name: string;
+  username: string;
+  avatar: string;
+  status: 'Accepted' | 'Rejected' | 'Pending';
+  price: string;
+  date: string;
+  time: string;
+  location: 'In-person' | 'Online';
+  bio: string;
+}
 
-  // Fetch from API
+const mockBookings: Booking[] = [
+  { id: '1', name: 'Sophia Reed', username: '@sophiareed', avatar: '/Avatars/12.jpg', status: 'Accepted', price: '2500 PKR', date: 'Sat', time: '03:00 PM to 05:00 PM', location: 'In-person', bio: 'Passionate content creator dedicated to helping brands and businesses connect with their audience through engaging, high-quality content...' },
+  { id: '2', name: 'Sophia Reed', username: '@sophiareed', avatar: '/Avatars/12.jpg', status: 'Rejected', price: '2500 PKR', date: 'Sat', time: '03:00 PM to 05:00 PM', location: 'In-person', bio: 'Passionate content creator dedicated to helping brands and businesses connect with their audience through engaging, high-quality content...' },
+  { id: '3', name: 'Sophia Reed', username: '@sophiareed', avatar: '/Avatars/12.jpg', status: 'Accepted', price: '2500 PKR', date: 'Sat', time: '03:00 PM to 05:00 PM', location: 'Online', bio: 'Passionate content creator dedicated to helping brands and businesses connect with their audience through engaging, high-quality content...' },
+  { id: '4', name: 'Sophia Reed', username: '@sophiareed', avatar: '/Avatars/12.jpg', status: 'Accepted', price: '2500 PKR', date: 'Sat', time: '03:00 PM to 05:00 PM', location: 'In-person', bio: 'Passionate content creator dedicated to helping brands and businesses connect with their audience through engaging, high-quality content...' },
+  { id: '5', name: 'Sophia Reed', username: '@sophiareed', avatar: '/Avatars/12.jpg', status: 'Rejected', price: '2500 PKR', date: 'Sat', time: '03:00 PM to 05:00 PM', location: 'Online', bio: 'Passionate content creator dedicated to helping brands and businesses connect with their audience through engaging, high-quality content...' },
+  { id: '6', name: 'Sophia Reed', username: '@sophiareed', avatar: '/Avatars/12.jpg', status: 'Accepted', price: '2500 PKR', date: 'Sat', time: '03:00 PM to 05:00 PM', location: 'In-person', bio: 'Passionate content creator dedicated to helping brands and businesses connect with their audience through engaging, high-quality content...' },
+  { id: '7', name: 'Sophia Reed', username: '@sophiareed', avatar: '/Avatars/12.jpg', status: 'Accepted', price: '2500 PKR', date: 'Sat', time: '03:00 PM to 05:00 PM', location: 'Online', bio: 'Passionate content creator dedicated to helping brands and businesses connect with their audience through engaging, high-quality content...' },
+  { id: '8', name: 'Sophia Reed', username: '@sophiareed', avatar: '/Avatars/12.jpg', status: 'Rejected', price: '2500 PKR', date: 'Sat', time: '03:00 PM to 05:00 PM', location: 'Online', bio: 'Passionate content creator dedicated to helping brands and businesses connect with their audience through engaging, high-quality content...' },
+  { id: '9', name: 'Sophia Reed', username: '@sophiareed', avatar: '/Avatars/12.jpg', status: 'Accepted', price: '2500 PKR', date: 'Sat', time: '03:00 PM to 05:00 PM', location: 'In-person', bio: 'Passionate content creator dedicated to helping brands and businesses connect with their audience through engaging, high-quality content...' },
+];
+
+export default function UserBookingsPage() {
+  const [activeTab, setActiveTab] = useState<'Upcoming' | 'Past' | 'Cancelled'>('Upcoming');
+  const [displayName, setDisplayName] = useState('James Richard');
+  const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
+  const [showRescheduleModal, setShowRescheduleModal] = useState<boolean>(false);
+  const [selectedRescheduleDate, setSelectedRescheduleDate] = useState<string>('02');
+  const [selectedRescheduleTimeSlot, setSelectedRescheduleTimeSlot] = useState<string>('3 PM - 4 PM');
+
   useEffect(() => {
-    async function fetchBookings() {
+    const fetchUser = async () => {
       try {
-        const urlParams = new URLSearchParams(window.location.search);
-        let guestEmail = urlParams.get('email') || urlParams.get('guestEmail');
-
-        // As a fallback for guests who just completed a booking
-        if (!guestEmail) {
-          try {
-            const stored = sessionStorage.getItem('reachly_booking_state');
-            if (stored) {
-              const parsed = JSON.parse(stored);
-              if (parsed?.userDetails?.email) guestEmail = parsed.userDetails.email;
-            }
-          } catch (e) { }
+        const authRes = await fetch('/api/user/me');
+        if (authRes.ok) {
+          const userData = await authRes.json();
+          if (userData.user) {
+            setDisplayName(userData.user.name || 'James Richard');
+            setProfilePhoto(userData.user.image || null);
+          }
         }
-
-        const endpoint = guestEmail
-          ? `/api/user/bookings?guestEmail=${encodeURIComponent(guestEmail)}`
-          : '/api/user/bookings';
-
-        const res = await fetch(endpoint);
-        const data = await res.json();
-
-        if (res.ok) {
-          setBookings(data.bookings || []);
-        } else {
-          setError(data.error || 'Failed to fetch bookings');
-        }
-      } catch (err) {
-        setError('Network error checking bookings');
-      } finally {
-        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching user:', error);
       }
-    }
-    fetchBookings();
+    };
+    fetchUser();
   }, []);
 
-  // Filter Bookings Based on Tabs
-  const pendingBookings = bookings.filter(b => b.status === 'Pending Approval');
-  const upcomingBookings = bookings.filter(b => b.status === 'Upcoming');
-  const pastBookings = bookings.filter(b => b.status === 'Past');
-  const cancelledBookings = bookings.filter(b => b.originalStatus === 'cancelled');
-
-  let visibleBookings = pendingBookings.length > 0 ? pendingBookings : upcomingBookings;
-  if (activeTab === 'pending') visibleBookings = pendingBookings;
-  if (activeTab === 'upcoming') visibleBookings = upcomingBookings;
-  if (activeTab === 'past') visibleBookings = pastBookings;
-  if (activeTab === 'cancelled') visibleBookings = cancelledBookings;
-
-  const tabs = [
-    { label: `Pending (${pendingBookings.length})`, value: 'pending' },
-    { label: `Upcoming (${upcomingBookings.length})`, value: 'upcoming' },
-    { label: `Past (${pastBookings.length})`, value: 'past' },
-    { label: `Cancelled (${cancelledBookings.length})`, value: 'cancelled' },
-  ];
-
-
-  const handleViewDetails = (booking: any) => {
-    setCurrentBooking(booking);
-    setView('details');
-  };
-
-  const handleBackToList = () => {
-    setView('list');
-    setCurrentBooking(null);
-  };
-
   return (
-    <div className="min-h-screen bg-[#0C0C0C] pb-12">
-      <CreatorNavbar />
-
+    <div className="min-h-screen bg-[#F8F8FA]">
+      <UserNavbar displayName={displayName} profilePhoto={profilePhoto} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-        <div className="flex gap-8">
-          <UserSidebar
-            isOpen={isSidebarOpen}
-            onClose={() => setIsSidebarOpen(false)}
-          />
+        {/* Page Heading */}
+        <FadeUp className="mb-8">
+          <p className="text-gray-500 text-sm font-sans mb-1">Hello {displayName.split(' ')[0]}!</p>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-black font-anton tracking-tight">
+            Manage Your <span className="text-[#0012FF] font-black italic">Bookings</span> <span className="text-gray-400 font-normal text-base sm:text-lg">with ease</span>
+          </h1>
+        </FadeUp>
 
-          <motion.main
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="flex-1"
-          >
-            <button
-              onClick={() => setIsSidebarOpen(true)}
-              className="lg:hidden mb-4 bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-lg p-2 text-[#C8A97E]"
+        {/* Tabs and Search */}
+        <div className="flex flex-wrap items-center justify-between mb-6 sm:mb-8 gap-3">
+          <div className="flex gap-3">
+            {(['Upcoming', 'Past', 'Cancelled'] as const).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-6 py-2 rounded-xl font-semibold transition-all ${activeTab === tab ? 'bg-[#0012FF] text-white' : 'bg-white text-gray-600 border border-gray-200'
+                  }`}
+              >
+                {tab} <span className="text-sm opacity-80">({tab === 'Upcoming' ? 9 : tab === 'Past' ? 6 : 3})</span>
+              </button>
+            ))}
+          </div>
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search bookings"
+              className="pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#0012FF]/20 w-64"
+            />
+            <svg className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+        </div>
+
+        {/* Bookings Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+          {mockBookings.map((booking, index) => (
+            <motion.div
+              key={booking.id}
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.1 + index * 0.05 }}
+              className="relative w-full h-auto min-h-[220px] sm:min-h-[212px] z-10 flex flex-col"
             >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="3" y1="6" x2="21" y2="6" />
-                <line x1="3" y1="12" x2="21" y2="12" />
-                <line x1="3" y1="18" x2="21" y2="18" />
-              </svg>
-            </button>
-
-            <UserTopBar searchPlaceholder="Search Creators" />
-
-            {view === 'list' ? (
-              <>
-                <div className="mb-6">
-                  <h1 className="font-serif text-4xl font-bold text-[#C8A97E] mb-4">My Bookings</h1>
-
-                  <div className="flex gap-2">
-                    {tabs.map((tab) => (
-                      <button
-                        key={tab.value}
-                        onClick={() => setActiveTab(tab.value)}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-sans transition-all border ${activeTab === tab.value
-                          ? 'bg-[rgba(200,169,126,0.15)] text-[#C8A97E] border-[rgba(200,169,126,0.3)]'
-                          : 'bg-[rgba(255,255,255,0.05)] text-[#F9F6F2] opacity-70 border-transparent hover:opacity-100'
-                          }`}
-                      >
-                        {tab.label}
-                      </button>
-                    ))}
+              {/* Background Card Image */}
+              <Image
+                src="/assets/rec-card.png"
+                alt=""
+                fill
+                className="object-fill pointer-events-none -z-10"
+              />
+              {/* Content */}
+              <div className="relative w-full pl-6 pr-14 pt-6 pb-6 flex flex-col justify-between flex-grow">
+                <div>
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-full overflow-hidden">
+                        <Image src={booking.avatar} alt={booking.name} className="w-full h-full object-cover" width={48} height={48} />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-xl text-black">{booking.name}</h3>
+                        <p className="text-sm text-gray-500">{booking.username}</p>
+                      </div>
+                    </div>
+                    <p className="font-bold text-lg text-[#0012FF]">{booking.price}</p>
                   </div>
-                </div>
-
-                <div className="space-y-4">
-                  {loading ? (
-                    <div className="flex justify-center p-12">
-                      <svg className="animate-spin h-8 w-8 text-[#C8A97E]" viewBox="0 0 24 24" fill="none">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                  <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
+                    <div className="flex items-center gap-2">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
                       </svg>
+                      <span>{booking.date} at {booking.time}</span>
                     </div>
-                  ) : error === 'Unauthorized' ? (
-                    <div className="p-8 sm:p-12 bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-3xl text-center flex flex-col items-center justify-center max-w-lg mx-auto mt-8">
-                      <div className="w-16 h-16 bg-[rgba(200,169,126,0.1)] border border-[#C8A97E] rounded-full flex items-center justify-center mb-6">
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="2">
-                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                          <path d="M7 11V7a5 5 0 0110 0v4"></path>
+                    <div className="flex items-center gap-2">
+                      {booking.location === 'In-person' ? (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2">
+                          <circle cx="12" cy="12" r="10" />
+                          <circle cx="12" cy="12" r="3" />
                         </svg>
-                      </div>
-                      <h3 className="text-[#C8A97E] font-serif text-3xl font-bold mb-3">Login to explore</h3>
-                      <p className="text-[#F9F6F2] opacity-70 font-sans text-sm mb-8 leading-relaxed">
-                        Please log in or sign up to view your personalized booking dashboard, manage sessions, and connect with your favorite creators.
-                      </p>
-                      <div className="flex flex-col sm:flex-row gap-4 w-full">
-                        <a href="/login?callbackUrl=/user/bookings" className="flex-1 bg-transparent border border-[rgba(200,169,126,0.5)] text-[#C8A97E] font-sans font-semibold py-3 px-6 rounded-full hover:bg-[rgba(200,169,126,0.1)] transition-all">
-                          Log in
-                        </a>
-                        <a href="/signup?callbackUrl=/user/bookings" className="flex-1 bg-[#C8A97E] text-[#0C0C0C] font-sans font-semibold py-3 px-6 rounded-full hover:opacity-90 transition-all">
-                          Sign up
-                        </a>
-                      </div>
+                      ) : (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2">
+                          <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+                          <polyline points="3.5 20 8 17 16 17 20.5 20" />
+                          <line x1="8" y1="10" x2="8" y2="14" />
+                          <line x1="11" y1="10" x2="11" y2="14" />
+                          <line x1="14" y1="10" x2="14" y2="14" />
+                        </svg>
+                      )}
+                      <span>{booking.location}</span>
                     </div>
-                  ) : error ? (
-                    <div className="p-6 bg-red-900/20 border border-red-500/30 rounded-2xl">
-                      <p className="text-red-400 font-sans text-sm">{error}</p>
-                    </div>
-                  ) : visibleBookings.length === 0 ? (
-                    <div className="p-12 bg-[#141414] border border-[rgba(200,169,126,0.15)] rounded-2xl text-center">
-                      <h3 className="text-[#F9F6F2] font-serif text-xl mb-2">No bookings found</h3>
-                      <p className="text-[#F9F6F2] opacity-60 font-sans text-sm">You do not have any {activeTab} bookings at the moment.</p>
-                    </div>
-                  ) : (
-                    visibleBookings.map((booking) => (
-                      <div key={booking.id} className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-2xl p-6">
-                        <div className="flex flex-col md:flex-row gap-6">
-                          <div className="flex items-start gap-4 flex-1">
-                            <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
-                              <img src={booking.image} alt={booking.creator} className="w-full h-full object-cover" />
-                            </div>
-                            <div className="flex-1">
-                              <div className="flex items-center gap-3 mb-2">
-                                {booking.tags?.map((tag: string, i: number) => (
-                                  <span key={i} className="bg-[rgba(200,169,126,0.15)] text-[#C8A97E] px-2 py-0.5 rounded-full text-xs font-sans">{tag}</span>
-                                ))}
-                                <span className="text-xs font-sans text-[#F9F6F2] opacity-60">{booking.ref}</span>
-                              </div>
-                              <h3 className="font-serif text-xl font-semibold text-[#F9F6F2] mb-1">{booking.session}</h3>
-                              <p className="font-sans text-sm text-[#F9F6F2] opacity-70 mb-1">with <span className="font-semibold">{booking.creator}</span></p>
-                              <p className="font-sans text-xs text-[#F9F6F2] opacity-50 mb-3">{booking.date}</p>
-                              <p className="font-sans text-sm text-[#C8A97E] font-medium">{booking.status}</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 flex-wrap h-fit">
-                            <button className="bg-[rgba(255,255,255,0.05)] border border-[rgba(200,169,126,0.3)] text-[#F9F6F2] px-4 py-2 rounded-full text-sm font-sans hover:bg-[#C8A97E] hover:text-[#0C0C0C] hover:border-transparent transition-all">
-                              Join meet
-                            </button>
-                            {booking.status === 'Upcoming' && (
-                              <>
-                                <button
-                                  onClick={() => {
-                                    setCurrentBooking(booking);
-                                    setShowRescheduleModal(true);
-                                  }}
-                                  className="bg-[rgba(255,255,255,0.05)] border border-[rgba(200,169,126,0.3)] text-[#F9F6F2] px-4 py-2 rounded-full text-sm font-sans hover:bg-[rgba(200,169,126,0.1)] transition-all"
-                                >
-                                  Reschedule
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setCurrentBooking(booking);
-                                    setShowCancelModal(true);
-                                  }}
-                                  className="bg-[rgba(248,113,113,0.1)] border border-[rgba(248,113,113,0.3)] text-[#f87171] px-4 py-2 rounded-full text-sm font-sans hover:bg-[rgba(248,113,113,0.2)] transition-all"
-                                >
-                                  Cancel
-                                </button>
-                              </>
-                            )}
-                            <button
-                              onClick={() => handleViewDetails(booking)}
-                              className="bg-[rgba(255,255,255,0.05)] border border-[rgba(200,169,126,0.3)] text-[#F9F6F2] px-4 py-2 rounded-full text-sm font-sans hover:bg-[rgba(255,255,255,0.1)] transition-all"
-                            >
-                              View details
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                  )}
+                  </div>
+                  <p className="text-sm text-gray-500 mb-4 line-clamp-2 pr-4">
+                    {booking.bio} <span className="text-[#0012FF] cursor-pointer font-semibold">Read more</span>
+                  </p>
                 </div>
-              </>
-            ) : (
-              currentBooking && (
-                <>
-                  <div className="mb-6">
+                <div>
+                  <div className="w-full h-px bg-gray-200 mb-4"></div>
+                  <div className="flex items-center gap-3 px-4">
                     <button
-                      onClick={handleBackToList}
-                      className="flex items-center gap-2 font-sans text-sm text-[#F9F6F2] opacity-70 hover:opacity-100 mb-4"
+                      onClick={() => setShowRescheduleModal(true)}
+                      className="flex-1 py-2 border-2 border-gray-200 rounded-2xl text-sm font-semibold text-gray-500 hover:bg-gray-50 transition-all bg-white"
                     >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <polyline points="15 18 9 12 15 6" />
-                      </svg>
-                      Back
+                      Reschedule
                     </button>
-
-                    <div className="flex items-center gap-2 mb-4">
-                      <span className="font-sans text-sm text-[#F9F6F2] opacity-70">My bookings</span>
-                      <span className="text-[#F9F6F2] opacity-40">›</span>
-                      <span className="font-sans text-sm text-[#C8A97E]">{currentBooking.ref}</span>
-                    </div>
+                    <button
+                      className="flex-1 py-2 border-2 border-red-200 rounded-2xl text-sm font-semibold text-red-500 bg-red-50 hover:bg-red-100 transition-all"
+                    >
+                      Cancel Appointment
+                    </button>
                   </div>
-
-                  <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-2xl p-6 mb-4">
-                    <div className="flex items-start gap-4">
-                      <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
-                        <img src={currentBooking.image} alt={currentBooking.creator} className="w-full h-full object-cover" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          {currentBooking.tags.map((tag: string, i: number) => (
-                            <span key={i} className="bg-[rgba(200,169,126,0.15)] text-[#C8A97E] px-2 py-0.5 rounded-full text-xs font-sans">{tag}</span>
-                          ))}
-                          <span className="text-xs font-sans text-[#F9F6F2] opacity-60">{currentBooking.ref}</span>
-                        </div>
-                        <h3 className="font-serif text-xl font-semibold text-[#F9F6F2] mb-1">{currentBooking.session} with {currentBooking.creator}</h3>
-                        <p className="font-sans text-sm text-[#F9F6F2] opacity-70">{currentBooking.date}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-                    <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-2xl p-6">
-                      <h3 className="font-serif text-lg font-semibold text-[#F9F6F2] mb-4">Session Details</h3>
-                      <div className="grid grid-cols-2 gap-4 mb-4">
-                        <div>
-                          <p className="font-sans text-xs text-[#F9F6F2] opacity-60 mb-1">Session type</p>
-                          <p className="font-sans text-sm text-[#F9F6F2]">{currentBooking.sessionType}</p>
-                        </div>
-                        <div>
-                          <p className="font-sans text-xs text-[#F9F6F2] opacity-60 mb-1">Duration</p>
-                          <p className="font-sans text-sm text-[#F9F6F2]">{currentBooking.duration}</p>
-                        </div>
-                        <div>
-                          <p className="font-sans text-xs text-[#F9F6F2] opacity-60 mb-1">Date</p>
-                          <p className="font-sans text-sm text-[#F9F6F2]">{currentBooking.shortDate}</p>
-                        </div>
-                        <div>
-                          <p className="font-sans text-xs text-[#F9F6F2] opacity-60 mb-1">Time</p>
-                          <p className="font-sans text-sm text-[#F9F6F2]">{currentBooking.time}</p>
-                        </div>
-                      </div>
-
-                      <div className="border-t border-[rgba(255,255,255,0.1)] pt-4 mb-4">
-                        <p className="font-sans text-xs text-[#F9F6F2] opacity-60 mb-2">Google Meet link</p>
-                        <div className="flex items-center gap-2">
-                          <button className="bg-[#C8A97E] text-[#0C0C0C] px-4 py-2 rounded-full text-sm font-sans font-medium flex items-center gap-2">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                            </svg>
-                            Join meet
-                          </button>
-                          <button className="bg-[rgba(255,255,255,0.05)] border border-[rgba(200,169,126,0.3)] text-[#F9F6F2] px-4 py-2 rounded-full text-sm font-sans flex items-center gap-2">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                            </svg>
-                            Copy Link
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="mb-4">
-                        <p className="font-sans text-xs text-[#F9F6F2] opacity-60 mb-2">Add to calendar</p>
-                        <div className="flex items-center gap-2">
-                          <button className="bg-[rgba(255,255,255,0.05)] border border-[rgba(200,169,126,0.3)] text-[#F9F6F2] px-4 py-2 rounded-full text-sm font-sans flex items-center gap-2">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                              <line x1="16" y1="2" x2="16" y2="6"></line>
-                              <line x1="8" y1="2" x2="8" y2="6"></line>
-                              <line x1="3" y1="10" x2="21" y2="10"></line>
-                            </svg>
-                            Google
-                          </button>
-                          <button className="bg-[rgba(255,255,255,0.05)] border border-[rgba(200,169,126,0.3)] text-[#F9F6F2] px-4 py-2 rounded-full text-sm font-sans flex items-center gap-2">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                              <circle cx="12" cy="14" r="4"></circle>
-                              <line x1="12" y1="2" x2="12" y2="6"></line>
-                            </svg>
-                            Apple
-                          </button>
-                          <button className="bg-[rgba(255,255,255,0.05)] border border-[rgba(200,169,126,0.3)] text-[#F9F6F2] px-4 py-2 rounded-full text-sm font-sans flex items-center gap-2">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16v-2"></path>
-                              <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-                              <line x1="12" y1="22.08" x2="12" y2="12"></line>
-                            </svg>
-                            Outlook
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-2xl p-6">
-                      <h3 className="font-serif text-lg font-semibold text-[#F9F6F2] mb-4">Payment Details</h3>
-                      <div className="mb-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <p className="font-sans text-xs text-[#F9F6F2] opacity-60">Amount</p>
-                          <p className="font-sans text-sm font-semibold text-[#C8A97E]">{currentBooking.price}</p>
-                        </div>
-                        <div className="flex items-center justify-between mb-2">
-                          <p className="font-sans text-xs text-[#F9F6F2] opacity-60">Payment method</p>
-                          <p className="font-sans text-sm text-[#F9F6F2]">{currentBooking.paymentMethod}</p>
-                        </div>
-                      </div>
-                      <div className="border-t border-[rgba(255,255,255,0.1)] pt-4 mb-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <p className="font-sans text-xs text-[#F9F6F2] opacity-60">Transaction ID</p>
-                          <p className="font-sans text-sm text-[#F9F6F2]">{currentBooking.transactionId}</p>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <p className="font-sans text-xs text-[#F9F6F2] opacity-60">Booked on</p>
-                          <p className="font-sans text-sm text-[#F9F6F2]">{currentBooking.bookedOn}</p>
-                        </div>
-                      </div>
-                      <button className="w-full bg-[rgba(255,255,255,0.05)] border border-[rgba(200,169,126,0.3)] text-[#F9F6F2] px-4 py-2.5 rounded-full text-sm font-sans flex items-center justify-center gap-2">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                          <polyline points="7 10 12 15 17 10"></polyline>
-                          <line x1="12" y1="15" x2="12" y2="3"></line>
-                        </svg>
-                        Download Invoice
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-2xl p-6">
-                    <h3 className="font-serif text-lg font-semibold text-[#F9F6F2] mb-4">Pre-session Message</h3>
-                    <textarea
-                      rows={2}
-                      placeholder="Send a message to your creator before the session (optional)..."
-                      className="w-full bg-[#0C0C0C] border border-[rgba(255,255,255,0.1)] rounded-lg px-4 py-2.5 text-sm font-sans text-[#F9F6F2] placeholder-[#F9F6F2] opacity-50 focus:outline-none resize-none mb-3"
+                </div>
+                {/* Arrow indicator (from creator calendar) */}
+                <div className="absolute right-0.5 bottom-0.5">
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M7 17L17 7M17 7H10M17 7V14"
+                      stroke="#0012FF"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
                     />
-                    <div className="flex justify-end">
-                      <button className="bg-[#C8A97E] text-[#0C0C0C] px-6 py-2.5 rounded-full text-sm font-sans font-semibold">
-                        Save message
-                      </button>
-                    </div>
-                  </div>
-                </>
-              )
-            )}
-          </motion.main>
+                  </svg>
+                </div>
+              </div>
+            </motion.div>
+          ))}
         </div>
       </div>
 
-      {currentBooking && (
-        <>
-          <RescheduleModal
-            isOpen={showRescheduleModal}
-            onClose={() => {
-              setShowRescheduleModal(false);
-            }}
-            currentSession={{
-              name: currentBooking.session,
-              date: currentBooking.date
-            }}
-          />
-          <CancelBookingModal
-            isOpen={showCancelModal}
-            onClose={() => {
-              setShowCancelModal(false);
-            }}
-            onConfirm={() => console.log('Booking cancelled!')}
-            sessionName={currentBooking.session}
-            creatorName={currentBooking.creator}
-          />
-        </>
+      {/* Reschedule Appointment Modal */}
+      {showRescheduleModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100] p-4">
+          <div className="relative w-full max-w-lg flex flex-col items-center justify-between p-8 pt-12 pb-8 min-h-[520px] z-10">
+            {/* SVG Background notched card */}
+            <img
+              src="/assets/cancel-card.svg"
+              alt=""
+              className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10"
+            />
+            {/* Close Button */}
+            <button
+              onClick={() => setShowRescheduleModal(false)}
+              className="absolute -top-5 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center hover:bg-gray-50 transition-all z-20 border border-gray-100/50 cursor-pointer text-gray-500"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+
+            {/* Content */}
+            <div className="flex flex-col items-center w-full flex-grow">
+              <h3 className="text-2xl font-bold text-black mb-1">Reschedule Appointment</h3>
+              <p className="text-gray-500 text-center mb-6 text-sm">
+                Choose a new date and time for your appointment
+              </p>
+
+              {/* Dates Slider */}
+              <div className="flex items-center gap-1 w-full border border-gray-100 rounded-2xl p-2 mb-5 bg-white/50">
+                <button className="text-gray-400 hover:text-black px-1">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <polyline points="15 18 9 12 15 6" />
+                  </svg>
+                </button>
+                <div className="flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth flex-grow py-1 justify-between">
+                  {[
+                    { day: 'Mon', num: '01' },
+                    { day: 'Tue', num: '02' },
+                    { day: 'Wed', num: '03' },
+                    { day: 'Thu', num: '04' },
+                    { day: 'Fri', num: '05' },
+                    { day: 'Sat', num: '06' },
+                    { day: 'Sun', num: '07' },
+                    { day: 'Mon', num: '08' },
+                    { day: 'Tue', num: '09' },
+                    { day: 'Wed', num: '10' },
+                    { day: 'Thu', num: '12' },
+                    { day: 'Fri', num: '13' },
+                    { day: 'Sat', num: '15' },
+                    { day: 'Sun', num: '16' },
+                    { day: 'Mon', num: '17' },
+                    { day: 'Tue', num: '18' },
+                  ].map((d) => (
+                    <button
+                      key={d.num}
+                      onClick={() => setSelectedRescheduleDate(d.num)}
+                      className={`flex flex-col items-center justify-center min-w-[36px] py-1.5 rounded-lg text-xs transition-all ${selectedRescheduleDate === d.num
+                          ? 'bg-[#0012FF]/10 text-[#0012FF] font-bold border border-[#0012FF]/20'
+                          : 'text-gray-400 hover:bg-gray-50'
+                        }`}
+                    >
+                      <span className="text-[10px] uppercase font-medium">{d.day}</span>
+                      <span className="text-sm font-semibold">{d.num}</span>
+                    </button>
+                  ))}
+                </div>
+                <button className="text-gray-400 hover:text-black px-1">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Time Slots Grid */}
+              <div className="grid grid-cols-3 gap-2.5 w-full mb-6">
+                {[
+                  '11 AM - 12 PM',
+                  '12 PM - 1 PM',
+                  '1 PM - 2 PM',
+                  '2 PM - 3 PM',
+                  '3 PM - 4 PM',
+                  '4 PM - 5 PM',
+                  '5 PM - 6 PM',
+                  '6 PM - 7 PM',
+                  '7 PM - 8 PM',
+                  '8 PM - 9 PM',
+                  '9 PM - 10 PM',
+                  '10 PM - 11 PM'
+                ].map((slot) => (
+                  <button
+                    key={slot}
+                    onClick={() => setSelectedRescheduleTimeSlot(slot)}
+                    className={`py-3 px-1 border rounded-xl text-xs font-semibold text-center transition-all ${selectedRescheduleTimeSlot === slot
+                        ? 'bg-[#0012FF]/10 border-[#0012FF] text-[#0012FF]'
+                        : 'border-gray-200 text-gray-500 hover:bg-gray-50 bg-white'
+                      }`}
+                  >
+                    {slot}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-4 w-full">
+              <button
+                onClick={() => setShowRescheduleModal(false)}
+                className="flex-1 py-3.5 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-full text-sm font-bold transition-all border border-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => setShowRescheduleModal(false)}
+                className="flex-1 py-3.5 bg-[#0012FF] hover:bg-[#0012FF]/90 text-white rounded-full text-sm font-bold transition-all shadow-md"
+              >
+                Reschedule Appointment
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
