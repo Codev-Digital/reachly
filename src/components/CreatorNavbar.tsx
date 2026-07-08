@@ -175,7 +175,7 @@ export default function CreatorNavbar() {
                     : { rotate: 0, top: 4 }
                 }
                 transition={{ duration: 0.3 }}
-                className="absolute left-0 w-6 h-[2px] bg-[#C8A97E] rounded-full"
+                className="absolute left-0 w-6 h-[2px] bg-[#FFFFFF] rounded-full"
               />
 
               <motion.span
@@ -184,7 +184,7 @@ export default function CreatorNavbar() {
                   x: isMobileMenuOpen ? -10 : 0,
                 }}
                 transition={{ duration: 0.2 }}
-                className="absolute left-0 top-3 w-6 h-[2px] bg-[#C8A97E] rounded-full"
+                className="absolute left-0 top-3 w-6 h-[2px] bg-[#FFFFFF] rounded-full"
               />
 
               <motion.span
@@ -194,7 +194,7 @@ export default function CreatorNavbar() {
                     : { rotate: 0, top: 20 }
                 }
                 transition={{ duration: 0.3 }}
-                className="absolute left-0 w-6 h-[2px] bg-[#C8A97E] rounded-full"
+                className="absolute left-0 w-6 h-[2px] bg-[#FFFFFF] rounded-full"
               />
             </div>
           </motion.button>
@@ -211,7 +211,7 @@ export default function CreatorNavbar() {
                 duration: 0.3,
                 ease: [0.22, 1, 0.36, 1],
               }}
-              className="lg:hidden overflow-hidden mt-6"
+              className="lg:hidden overflow-hidden mt-4 bg-[#01092F]/95 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl relative z-[100]"
             >
               <motion.div
                 variants={menuVariants}
@@ -285,7 +285,7 @@ export default function CreatorNavbar() {
                         handleDashboardClick();
                         setIsMobileMenuOpen(false);
                       }}
-                      className="flex-1 bg-[#C8A97E] text-[#0C0C0C] px-5 py-2 rounded-full font-semibold text-sm"
+                      className="flex-1 bg-[#FFFFFF] text-[#0C0C0C] px-5 py-2 rounded-full font-semibold text-sm"
                     >
                       Dashboard
                     </button>

@@ -3,6 +3,7 @@
 import { useState, useEffect, type ReactNode } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import CreatorDashboardNav from '@/components/CreatorDashboardNav';
 
 // Card with a concave notch carved at the top-center (via radial mask) so the
 // close button nests in it. Grows freely in height without distorting — replaces
@@ -66,7 +67,6 @@ const SESSIONS = [
 export default function CreatorSettings() {
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string>('');
-  const [activeNavItem, setActiveNavItem] = useState('Settings');
   const [activeTab, setActiveTab] = useState('Profile');
 
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>(['English']);
@@ -103,14 +103,6 @@ export default function CreatorSettings() {
     }
     loadProfile();
   }, []);
-
-  const navItems = [
-    { name: 'Dashboard', href: '/creators/dashboard', icon: 'dashboard' },
-    { name: 'Events', href: '/creators/events', icon: 'events' },
-    { name: 'Calendar', href: '/creators/calendar', icon: 'calendar' },
-    { name: 'Wallet', href: '/creators/wallet', icon: 'wallet' },
-    { name: 'Settings', href: '/creators/settings', icon: 'settings' },
-  ];
 
   const tabs = [
     {
@@ -192,145 +184,37 @@ export default function CreatorSettings() {
 
   return (
     <div className="min-h-screen bg-[#F7F7FA]">
-      {/* Top Navigation Bar */}
-      <div className="px-4 sm:px-6 pt-4">
-        <nav className="bg-white border border-gray-100 shadow-sm sticky top-0 z-50 rounded-3xl">
-          <div className="px-6 py-4">
-            <div className="flex items-center justify-between">
-              {/* Logo */}
-              <Link href="/" className="flex items-center gap-2">
-                <Image
-                  src="/assets/logo1.png"
-                  alt="Reachly"
-                  width={100}
-                  height={40}
-                  className="object-contain w-auto h-auto"
-                />
-              </Link>
-
-              {/* Navigation Items */}
-              <div className="flex items-center gap-6">
-                {navItems.map((item) => (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    onClick={() => setActiveNavItem(item.name)}
-                    className={`flex items-center gap-3 px-4 py-2 rounded-xl text-md font-semibold transition-all ${
-                      activeNavItem === item.name
-                        ? 'text-[#0012FF]'
-                        : 'text-gray-600 hover:text-[#0012FF]'
-                    }`}
-                  >
-                    {item.icon === 'events' && (
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                        <polyline points="14 2 14 8 20 8" />
-                      </svg>
-                    )}
-                    {item.icon === 'dashboard' && (
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <rect x="3" y="3" width="7" height="9" rx="1" />
-                        <rect x="14" y="3" width="7" height="5" rx="1" />
-                        <rect x="14" y="11" width="7" height="10" rx="1" />
-                        <rect x="3" y="14" width="7" height="7" rx="1" />
-                      </svg>
-                    )}
-                    {item.icon === 'calendar' && (
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                        <line x1="16" y1="2" x2="16" y2="6" />
-                        <line x1="8" y1="2" x2="8" y2="6" />
-                        <line x1="3" y1="10" x2="21" y2="10" />
-                      </svg>
-                    )}
-                    {item.icon === 'wallet' && (
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <rect x="2" y="5" width="20" height="14" rx="2" />
-                        <line x1="2" y1="10" x2="22" y2="10" />
-                      </svg>
-                    )}{item.icon === 'settings' && (
-  activeNavItem === 'Settings' ? (
-    <Image
-      src="/assets/settings.svg.png"
-      alt="Settings"
-      width={46}
-      height={46}
-      className="flex-shrink-0"
-    />
-  ) : (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-    >
-      <circle cx="12" cy="12" r="3" />
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-    </svg>
-  )
-)}
-                    {item.name}
-                  </Link>
-                ))}
-              </div>
-
-              {/* Right Section */}
-              <div className="flex items-center gap-4">
-                <button className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center text-[#0012FF] hover:bg-gray-50 transition-all">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                  </svg>
-                </button>
-
-                <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white bg-gray-200 flex items-center justify-center">
-                  {profilePhoto ? (
-                    <Image src={profilePhoto} alt={displayName} className="w-full h-full object-cover" width={40} height={40} />
-                  ) : displayName ? (
-                    <span className="text-gray-700 font-bold text-sm">
-                      {displayName.charAt(0).toUpperCase()}
-                    </span>
-                  ) : (
-                    <Image src="/Avatars/1.jpg" alt="User" className="w-full h-full object-cover" width={40} height={40} />
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </nav>
-      </div>
+      <CreatorDashboardNav profilePhoto={profilePhoto} displayName={displayName} />
 
       {/* Main Content */}
-      <main className="px-4 sm:px-6 py-8">
+      <main className="px-3 sm:px-4 lg:px-6 py-6 sm:py-8">
         {/* Header */}
-        <div className="mb-6">
-          <p className="text-gray-500 font-sans mb-1">Hello {displayName ? displayName.split(' ')[0] : 'Sophia Reed'}!</p>
-          <div className="flex items-center gap-2">
-            <h1 className="text-3xl lg:text-4xl font-bold text-black font-sans">
+        <div className="mb-5 sm:mb-6">
+          <p className="text-gray-500 font-sans mb-1 text-sm sm:text-base">Hello {displayName ? displayName.split(' ')[0] : 'Sophia Reed'}!</p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-black font-sans">
               Account <span className="text-[#0012FF]">Settings</span>
             </h1>
-            <span className="text-gray-500 font-sans text-lg">/ Overview</span>
+            <span className="text-gray-500 font-sans text-base sm:text-lg">/ Overview</span>
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="flex items-start gap-6 mb-8">
+        {/* Tabs — scrollable on mobile */}
+        <div className="flex items-start gap-3 sm:gap-6 mb-6 sm:mb-8 overflow-x-auto pb-1 -mx-1 px-1">
           {tabs.map((tab) => (
             <button
               key={tab.name}
               onClick={() => setActiveTab(tab.name)}
-              className={`flex flex-col items-center gap-2 ${activeTab === tab.name ? 'text-[#0012FF]' : 'text-gray-500'}`}
+              className={`flex flex-col items-center gap-1.5 sm:gap-2 flex-shrink-0 ${activeTab === tab.name ? 'text-[#0012FF]' : 'text-gray-500'}`}
             >
               <div
-                className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${
+                className={`w-11 h-11 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all ${
                   activeTab === tab.name ? 'bg-[#0012FF]/10 text-[#0012FF]' : 'bg-white border border-gray-200 text-gray-500'
                 }`}
               >
                 {tab.icon}
               </div>
-              <span className={`text-sm ${activeTab === tab.name ? 'font-bold' : 'font-medium'}`}>{tab.name}</span>
+              <span className={`text-xs sm:text-sm whitespace-nowrap ${activeTab === tab.name ? 'font-bold' : 'font-medium'}`}>{tab.name}</span>
             </button>
           ))}
         </div>
@@ -373,8 +257,8 @@ export default function CreatorSettings() {
             </div>
 
             {/* Profile photo + change button */}
-            <div className="flex items-end gap-6 -mt-24 px-2 mb-8 relative z-10">
-              <div className="w-40 h-40 rounded-full overflow-hidden border-4 border-white bg-gray-200 shadow-lg flex-shrink-0">
+            <div className="flex flex-col sm:flex-row sm:items-end gap-4 -mt-16 sm:-mt-24 px-2 mb-8 relative z-10">
+              <div className="w-28 h-28 sm:w-40 sm:h-40 rounded-full overflow-hidden border-4 border-white bg-gray-200 shadow-lg flex-shrink-0">
                 <Image
                   src="/Avatars/3.jpg"
                   alt="Profile"
@@ -384,7 +268,7 @@ export default function CreatorSettings() {
                 />
               </div>
               <div className="flex flex-col gap-1 pb-2">
-                <button className="bg-[#0012FF] text-white px-6 py-3 rounded-full text-sm font-semibold hover:bg-[#0010d0] transition-all w-fit">
+                <button className="bg-[#0012FF] text-white px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-[#0010d0] transition-all w-fit">
                   Change Profile Photo
                 </button>
                 <p className="text-gray-500 text-sm">JPG or PNG, max 5MB</p>
@@ -586,8 +470,8 @@ export default function CreatorSettings() {
             </div>
 
             {/* Bottom Buttons */}
-            <div className="flex items-center justify-between">
-              <button className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-6 py-3 rounded-full text-sm font-semibold hover:bg-gray-50 transition-all">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <button className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-gray-50 transition-all">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <line x1="19" y1="12" x2="5" y2="12" />
                   <polyline points="12 19 5 12 12 5" />
@@ -595,10 +479,10 @@ export default function CreatorSettings() {
                 Back
               </button>
               <div className="flex gap-3">
-                <button className="border border-[#0012FF] text-[#0012FF] px-8 py-3 rounded-full text-sm font-semibold hover:bg-[#0012FF]/5 transition-all">
+                <button className="border border-[#0012FF] text-[#0012FF] px-5 sm:px-8 py-2.5 rounded-full text-sm font-semibold hover:bg-[#0012FF]/5 transition-all">
                   Cancel
                 </button>
-                <button className="bg-[#0012FF] text-white px-8 py-3 rounded-full text-sm font-semibold hover:bg-[#0010d0] transition-all">
+                <button className="bg-[#0012FF] text-white px-5 sm:px-8 py-2.5 rounded-full text-sm font-semibold hover:bg-[#0010d0] transition-all">
                   Save Changes
                 </button>
               </div>
@@ -612,26 +496,26 @@ export default function CreatorSettings() {
             {SESSIONS.map((session) => (
               <div
                 key={session.id}
-                className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm flex items-start justify-between gap-4"
+                className="bg-white rounded-2xl border border-gray-200 p-5 sm:p-6 shadow-sm flex flex-col sm:flex-row sm:items-start justify-between gap-4"
               >
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 flex-wrap mb-3">
-                    <h3 className="text-xl font-bold text-black">{session.title}</h3>
-                    <span className="bg-[#FEF3E2] text-[#E8940C] px-3 py-1 rounded-full text-xs font-semibold">
+                    <h3 className="text-lg sm:text-xl font-bold text-black">{session.title}</h3>
+                    <span className="bg-[#FEF3E2] text-[#E8940C] px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap">
                       {session.duration}
                     </span>
-                    <span className="bg-[#E9E9FF] text-[#0012FF] px-3 py-1 rounded-full text-xs font-semibold">
+                    <span className="bg-[#E9E9FF] text-[#0012FF] px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap">
                       {session.price}
                     </span>
                   </div>
-                  <p className="text-gray-400 text-base">{session.description}</p>
+                  <p className="text-gray-400 text-sm sm:text-base">{session.description}</p>
                 </div>
                 <button
                   onClick={() => {
                     setEditSession(session);
                     setShowEditModal(true);
                   }}
-                  className="text-gray-500 hover:text-[#0012FF] transition-all mt-1"
+                  className="text-gray-500 hover:text-[#0012FF] transition-all mt-1 self-start sm:self-auto"
                 >
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
@@ -662,7 +546,7 @@ export default function CreatorSettings() {
                       key={day}
                       className={`rounded-2xl px-5 py-4 ${enabledDays[day] ? 'bg-[#F7F7FA]' : 'bg-[#F4F4F6]'}`}
                     >
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-3 flex-wrap">
                         {/* Toggle */}
                         <button
                           onClick={() => toggleDay(day)}
@@ -677,30 +561,30 @@ export default function CreatorSettings() {
                           />
                         </button>
 
-                        <span className={`text-base font-medium w-24 ${enabledDays[day] ? 'text-black' : 'text-gray-400'}`}>
+                        <span className={`text-sm sm:text-base font-medium w-20 sm:w-24 ${enabledDays[day] ? 'text-black' : 'text-gray-400'}`}>
                           {day}
                         </span>
 
                         {enabledDays[day] && (
-                          <div className="flex items-center gap-2 flex-1">
+                          <div className="flex items-center gap-2 flex-1 flex-wrap sm:flex-nowrap">
                             <div className="relative">
-                              <select className="appearance-none bg-white border border-gray-200 rounded-lg pl-3 pr-8 py-2 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] cursor-pointer">
+                              <select className="appearance-none bg-white border border-gray-200 rounded-lg pl-3 pr-7 py-2 text-xs sm:text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] cursor-pointer max-w-[110px] sm:max-w-none">
                                 {TIME_OPTIONS.map((t) => (
                                   <option key={t}>{t}</option>
                                 ))}
                               </select>
-                              <svg className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <svg className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <polyline points="6 9 12 15 18 9" />
                               </svg>
                             </div>
                             <span className="text-sm text-gray-500">to</span>
                             <div className="relative">
-                              <select defaultValue="5:00 PM" className="appearance-none bg-white border border-gray-200 rounded-lg pl-3 pr-8 py-2 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] cursor-pointer">
+                              <select defaultValue="5:00 PM" className="appearance-none bg-white border border-gray-200 rounded-lg pl-3 pr-7 py-2 text-xs sm:text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] cursor-pointer max-w-[110px] sm:max-w-none">
                                 {TIME_OPTIONS.map((t) => (
                                   <option key={t}>{t}</option>
                                 ))}
                               </select>
-                              <svg className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <svg className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <polyline points="6 9 12 15 18 9" />
                               </svg>
                             </div>
@@ -861,8 +745,8 @@ export default function CreatorSettings() {
             </div>
 
             {/* Bottom Buttons */}
-            <div className="flex items-center justify-between">
-              <button className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-6 py-3 rounded-full text-sm font-semibold hover:bg-gray-50 transition-all">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <button className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-gray-50 transition-all">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <line x1="19" y1="12" x2="5" y2="12" />
                   <polyline points="12 19 5 12 12 5" />
@@ -870,10 +754,10 @@ export default function CreatorSettings() {
                 Back
               </button>
               <div className="flex gap-3">
-                <button className="border border-[#0012FF] text-[#0012FF] px-8 py-3 rounded-full text-sm font-semibold hover:bg-[#0012FF]/5 transition-all">
+                <button className="border border-[#0012FF] text-[#0012FF] px-5 sm:px-8 py-2.5 rounded-full text-sm font-semibold hover:bg-[#0012FF]/5 transition-all">
                   Cancel
                 </button>
-                <button className="bg-[#0012FF] text-white px-8 py-3 rounded-full text-sm font-semibold hover:bg-[#0010d0] transition-all">
+                <button className="bg-[#0012FF] text-white px-5 sm:px-8 py-2.5 rounded-full text-sm font-semibold hover:bg-[#0010d0] transition-all">
                   Save Changes
                 </button>
               </div>
@@ -942,8 +826,8 @@ export default function CreatorSettings() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between">
-                <button className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-6 py-3 rounded-full text-sm font-semibold hover:bg-gray-50 transition-all">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <button className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-gray-50 transition-all">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <line x1="19" y1="12" x2="5" y2="12" />
                     <polyline points="12 19 5 12 12 5" />
@@ -951,10 +835,10 @@ export default function CreatorSettings() {
                   Back
                 </button>
                 <div className="flex gap-3">
-                  <button className="border border-[#0012FF] text-[#0012FF] px-8 py-3 rounded-full text-sm font-semibold hover:bg-[#0012FF]/5 transition-all">
+                  <button className="border border-[#0012FF] text-[#0012FF] px-5 sm:px-8 py-2.5 rounded-full text-sm font-semibold hover:bg-[#0012FF]/5 transition-all">
                     Cancel
                   </button>
-                  <button className="bg-[#0012FF] text-white px-8 py-3 rounded-full text-sm font-semibold hover:bg-[#0010d0] transition-all">
+                  <button className="bg-[#0012FF] text-white px-5 sm:px-8 py-2.5 rounded-full text-sm font-semibold hover:bg-[#0010d0] transition-all">
                     Save Changes
                   </button>
                 </div>
@@ -962,14 +846,14 @@ export default function CreatorSettings() {
             </div>
 
             <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <h3 className="text-lg font-bold text-black mb-1">Delete Account</h3>
                   <p className="text-gray-500 text-sm">Deleting your account will permanently remove all your data.</p>
                 </div>
                 <button
                   onClick={() => setShowDeleteModal(true)}
-                  className="bg-red-600 text-white px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-red-700 transition-all"
+                  className="bg-red-600 text-white px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-red-700 transition-all w-fit"
                 >
                   Delete Account
                 </button>
@@ -1063,9 +947,7 @@ export default function CreatorSettings() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-5 mb-5">
-                <div>
-                  <label className="text-sm font-semibold text-black block mb-2">Duration</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
                   <div className="relative">
                     <select className="w-full appearance-none bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] cursor-pointer">
                       <option>1 hour</option>
@@ -1077,18 +959,16 @@ export default function CreatorSettings() {
                       <polyline points="6 9 12 15 18 9" />
                     </svg>
                   </div>
+                  <div>
+                    <label className="text-sm font-semibold text-black block mb-2">Price</label>
+                    <input
+                      type="text"
+                      defaultValue="1200"
+                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="text-sm font-semibold text-black block mb-2">Price</label>
-                  <input
-                    type="text"
-                    defaultValue="1200"
-                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-5 mb-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-3">
                 <div>
                   <label className="text-sm font-semibold text-black block mb-2">What&rsquo;s Included</label>
                   <input
