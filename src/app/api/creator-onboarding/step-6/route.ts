@@ -31,6 +31,19 @@ export async function PUT(req: NextRequest) {
     const user = await User.findOne({ email: session.user.email });
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
+    const contentType = req.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      const body = await req.json();
+      if (body.isActive) {
+        user.approvalStatus = 'pending';
+        if (user.onboardingStep < 5) {
+          user.onboardingStep = 5;
+        }
+        await user.save();
+        return NextResponse.json({ success: true });
+      }
+    }
+
     const formData = await req.formData();
     const paymentMethod = formData.get('paymentMethod') as string;
     const payoutFrequency = (formData.get('payoutFrequency') as string) || 'weekly';

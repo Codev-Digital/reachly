@@ -51,34 +51,38 @@ export default function CreatorOnboardingStep2() {
 
   // ─── Load saved data on mount so user never loses progress ───────────────────
   useEffect(() => {
-    const fetchUser = async () => {
+    const fetchProfile = async () => {
       try {
-        const user = await getCurrentUser();
-        if (user) {
-          setFormData({
-            displayName: user.displayName || '',
-            username: user.username || '',
-            shortBio: user.shortBio || '',
-            longBio: user.longBio || '',
-            city: user.city || '',
-            country: user.country || 'Pakistan',
-            instagram: user.socialLinks?.instagram || '',
-            tiktok: user.socialLinks?.tiktok || '',
-            youtube: user.socialLinks?.youtube || '',
-            linkedin: user.socialLinks?.linkedin || '',
-          });
-          setSelectedLanguages(user.languages || []);
-          setSelectedNiches(user.niches || []);
-          setBioCount(user.shortBio?.length || 0);
-          setLongBioCount(user.longBio?.length || 0);
-          if (user.profilePhoto) setProfilePhotoPreview(user.profilePhoto);
-          if (user.coverPhoto) setCoverPhotoPreview(user.coverPhoto);
+        const res = await fetch('/api/creator-onboarding/step-2', { cache: 'no-store' });
+        if (res.ok) {
+          const data = await res.json();
+          const profile = data.profile;
+          if (profile) {
+            setFormData({
+              displayName: profile.displayName || '',
+              username: profile.username || '',
+              shortBio: profile.shortBio || '',
+              longBio: profile.longBio || '',
+              city: profile.city || '',
+              country: profile.country || 'Pakistan',
+              instagram: profile.socialLinks?.instagram || '',
+              tiktok: profile.socialLinks?.tiktok || '',
+              youtube: profile.socialLinks?.youtube || '',
+              linkedin: profile.socialLinks?.linkedin || '',
+            });
+            setSelectedLanguages(profile.languages || []);
+            setSelectedNiches(profile.niches || []);
+            setBioCount(profile.shortBio?.length || 0);
+            setLongBioCount(profile.longBio?.length || 0);
+            if (profile.profilePhoto) setProfilePhotoPreview(profile.profilePhoto);
+            if (profile.coverPhoto) setCoverPhotoPreview(profile.coverPhoto);
+          }
         }
       } finally {
         setFetchingData(false);
       }
     };
-    fetchUser();
+    fetchProfile();
   }, []);
 
   // ─── Debounced Username Check ───────────────────────────────────────────────────

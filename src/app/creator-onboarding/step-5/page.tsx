@@ -41,6 +41,7 @@ export default function CreatorOnboardingStep5() {
   const [error, setError] = useState('');
   const [profile, setProfile] = useState<CreatorProfile | null>(null);
   const [sessions, setSessions] = useState<Session[]>([]);
+  const [availability, setAvailability] = useState<any>(null);
 
   // ── Load saved data on mount ──────────────────────────────────────────────
   useEffect(() => {
@@ -59,6 +60,13 @@ export default function CreatorOnboardingStep5() {
           const data = await sessionsRes.json();
           setSessions(data.sessionTypes || []);
         }
+
+        // Load availability data from step 5 (which is the schedule API)
+        const availabilityRes = await fetch('/api/creator-onboarding/step-5', { cache: 'no-store' });
+        if (availabilityRes.ok) {
+          const data = await availabilityRes.json();
+          setAvailability(data.availability);
+        }
       } finally {
         setFetchingData(false);
       }
@@ -76,7 +84,7 @@ export default function CreatorOnboardingStep5() {
         body: JSON.stringify({ isActive: true }),
       });
       const data = await res.json();
-      if (data.success) router.push('/dashboard');
+      if (data.success) router.push('/creators/pending-approval');
       else { setError(data.error || 'Failed to go live. Try again.'); }
     } catch {
       setError('Network error. Please try again.');
@@ -298,18 +306,22 @@ export default function CreatorOnboardingStep5() {
                 </button>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day, i) => (
-                  <div
-                    key={day}
-                    className={`px-3 py-2 rounded-lg text-xs font-sans ${
-                      i === 0
-                        ? 'bg-[#E0E7FF] text-[#0012FF] font-semibold'
-                        : 'bg-gray-100 text-gray-500'
-                    }`}
-                  >
-                    {day}
-                  </div>
-                ))}
+                {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => {
+                  const dayKey = day.toLowerCase();
+                  const isEnabled = availability?.schedule?.[dayKey]?.enabled ?? false;
+                  return (
+                    <div
+                      key={day}
+                      className={`px-3 py-2 rounded-lg text-xs font-sans font-semibold transition-all ${
+                        isEnabled
+                          ? 'bg-[#E0E7FF] text-[#0012FF]'
+                          : 'bg-gray-100 text-gray-400'
+                      }`}
+                    >
+                      {day}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>

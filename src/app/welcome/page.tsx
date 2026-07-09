@@ -23,6 +23,13 @@ export default function WelcomePage() {
           const data = await res.json();
           setUserData(data);
           
+          // Case Admin: Admin user should go straight to admin pending requests page
+          if (data.user.email === 'admin@reachly.com' || data.user.email === 'abdullahgotaccess@gmail.com') {
+            setRedirected(true);
+            router.push('/admin/requests');
+            return;
+          }
+
           // Case 0: Pending approval should always take priority
           if (data.user.approvalStatus === 'pending') {
             setRedirected(true);

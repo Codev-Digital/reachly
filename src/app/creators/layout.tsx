@@ -49,7 +49,7 @@ export default function CreatorLayout({
 
   return (
     <>
-      <CreatorNavbar />
+      {pathname !== '/creators/pending-approval' && <CreatorNavbar />}
       {children}
     </>
   );
