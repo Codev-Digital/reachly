@@ -90,18 +90,18 @@ export default function CreatorCalendar() {
         if (data.bookings) {
           // Format bookings for UI
           const list = data.bookings.map((b: any) => ({
-            id: b._id,
-            _id: b._id,
-            name: b.guestDetails?.name || 'Client',
-            handle: b.guestDetails?.email ? `@${b.guestDetails.email.split('@')[0]}` : '@client',
-            avatar: b.guestDetails?.avatar || '/Avatars/3.jpg',
-            time: b.selectedTime || 'N/A',
-            type: b.sessionType?.location?.type === 'online' ? 'Online' : 'In-person',
-            note: b.notes || 'No notes provided',
-            amount: `${b.sessionType?.price || 2500} PKR`,
-            selectedDate: b.selectedDate,
-            selectedTime: b.selectedTime,
-            status: b.status,
+            id: b.id,
+            _id: b.id,
+            name: b.follower || 'Client',
+            handle: b.email ? `@${b.email.split('@')[0]}` : '@client',
+            avatar: b.avatar || '/Avatars/3.jpg',
+            time: b.time || 'N/A',
+            type: b.type || 'Online',
+            note: b.preSessionQuestion || 'No notes provided',
+            amount: b.amount || '2500 PKR',
+            selectedDate: b.scheduledDate,
+            selectedTime: b.time,
+            status: b.statusRaw,
           }));
           setBookings(list);
         }

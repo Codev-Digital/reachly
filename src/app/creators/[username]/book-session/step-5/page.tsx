@@ -1,5 +1,5 @@
 'use client';
-
+import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import BookingProgress from '@/components/booking/BookingProgress';
 import { useBooking } from '../layout';
@@ -13,6 +13,7 @@ export default function BookSessionStep5() {
   const router = useRouter();
   const { booking } = useBooking();
   const creator = booking.creator;
+  const [saved, setSaved] = useState(true);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-20 pt-2">
@@ -36,8 +37,27 @@ export default function BookSessionStep5() {
               <div className="w-full h-24 relative overflow-visible mb-12">
                 <svg width="0" height="0" style={{ position: 'absolute' }}>
                   <defs>
-                    <clipPath id="cover-clip-s5" clipPathUnits="objectBoundingBox">
-                      <path d="M0 .94 C0 .975 .025 1 .06 1 H.80 C.855 1 .865 .99 .865 .97 V.90 C.865 .88 .885 .86 .91 .86 H.95 C.985 .86 1 .85 1 .825 V.09 C1 .025 .975 0 .94 0 H.06 C.025 0 0 .025 0 .06 V.94 Z" />
+                    <clipPath id="cover-clip-s1" clipPathUnits="objectBoundingBox">
+                      <path
+                        d="
+      M0 .94
+      C0 .975 .025 1 .06 1
+      H.82
+
+      C.88 1 .90 .97 .90 .93
+      V.76
+
+      C.90 .68 .94 .64 .98 .62
+      C.995 .61 1 .59 1 .56
+
+      V.06
+      C1 .025 .975 0 .94 0
+
+      H.06
+      C.025 0 0 .025 0 .06
+      Z
+    "
+                      />
                     </clipPath>
                   </defs>
                 </svg>
@@ -46,23 +66,32 @@ export default function BookSessionStep5() {
                     src={creator.coverPhoto}
                     alt="cover"
                     className="absolute inset-0 w-full h-full object-cover"
-                    style={{ clipPath: 'url(#cover-clip-s5)' }}
+                    style={{ clipPath: 'url(#cover-clip-s1)' }}
                   />
                 ) : (
                   <div
                     className="absolute inset-0 bg-gradient-to-r from-blue-700 to-indigo-900"
-                    style={{ clipPath: 'url(#cover-clip-s5)' }}
+                    style={{ clipPath: 'url(#cover-clip-s1)' }}
                   />
                 )}
+                {/* Niche badge – top-right */}
                 <span className="absolute right-3 top-3 bg-white text-gray-800 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase shadow-sm z-10">
                   {creator?.niches?.[0] || 'Influencer'}
                 </span>
+                {/* Bookmark – sits in the lower-right notch, outside the clip */}
                 <button
-                  className="absolute bottom-0 right-0 w-8 h-10 bg-[#0012FF] hover:bg-[#0010d0] transition-colors flex items-center justify-center z-10 rounded-sm shadow-md"
+                  onClick={() => setSaved(!saved)}
+                  className="absolute bottom-0 right-0 w-8 h-10 flex items-center justify-center z-10 cursor-pointer"
                   title="Save creator"
                 >
-                  <svg width="14" height="16" viewBox="0 0 24 24" fill="white">
-                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+                  <svg
+                    width="16"
+                    height="20"
+                    viewBox="0 0 24 28"
+                    className="transition-colors duration-200"
+                    fill={saved ? "#0012FF" : "gray"}
+                  >
+                    <path d="M19 25L12 19L5 25V4C5 2.9 5.9 2 7 2H17C18.1 2 19 2.9 19 4V25Z" />
                   </svg>
                 </button>
               </div>
@@ -152,7 +181,7 @@ export default function BookSessionStep5() {
               {/* Facebook */}
               <a href="#" className="w-5 h-5 rounded-full bg-[#0012FF] flex items-center justify-center text-white hover:opacity-90 transition-opacity">
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M9 8h-3v4h3v12h5v-12h3.642l.358-4h-4v-1.667c0-.955.192-1.333 1.115-1.333h2.885v-5h-3.808c-3.596 0-5.192 1.583-5.192 4.615v3.385z"/>
+                  <path d="M9 8h-3v4h3v12h5v-12h3.642l.358-4h-4v-1.667c0-.955.192-1.333 1.115-1.333h2.885v-5h-3.808c-3.596 0-5.192 1.583-5.192 4.615v3.385z" />
                 </svg>
               </a>
               {/* Instagram */}

@@ -63,10 +63,10 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
             }
         }
         if (selectedDate) {
-            updatePayload.selectedDate = new Date(selectedDate);
+            updatePayload.scheduledDate = new Date(selectedDate);
         }
         if (selectedTime) {
-            updatePayload.selectedTime = selectedTime;
+            updatePayload.scheduledTime = selectedTime;
         }
 
         const updatedBooking = await Booking.findByIdAndUpdate(
@@ -74,6 +74,46 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
             { $set: updatePayload },
             { new: true }
         ).exec();
+
+        // Notify user if booking is rescheduled or cancelled
+        if (booking.userId) {
+            try {
+                const Notification = (await import('@/models/Notification')).default;
+                
+                // Rescheduled Notification
+                if (selectedDate || selectedTime) {
+                    const formattedDate = new Date(selectedDate || booking.scheduledDate).toLocaleDateString('en-US', {
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric',
+                    });
+                    const newTime = selectedTime || booking.scheduledTime;
+                    
+                    await new Notification({
+                        userId: booking.userId,
+                        title: 'Booking Rescheduled',
+                        message: `Your booking was rescheduled by the creator to ${formattedDate} at ${newTime}.`,
+                        type: 'reschedule',
+                        read: false,
+                        time: 'Just now'
+                    }).save();
+                }
+
+                // Cancelled Notification
+                if (status === 'cancelled') {
+                    await new Notification({
+                        userId: booking.userId,
+                        title: 'Booking Cancelled',
+                        message: `Your booking was cancelled by the creator.`,
+                        type: 'cancellation',
+                        read: false,
+                        time: 'Just now'
+                    }).save();
+                }
+            } catch (notifErr) {
+                console.error('Error creating user notification:', notifErr);
+            }
+        }
 
         return NextResponse.json({ success: true, booking: updatedBooking || booking });
     } catch (error: any) {

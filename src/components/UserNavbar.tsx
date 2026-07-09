@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 
 interface UserNavbarProps {
@@ -33,17 +33,58 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
 
   // Notifications State & Dropdown Open Toggle State
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [notifications, setNotifications] = useState([
-    { id: 1, type: 'reminder', title: 'Session Reminder', desc: 'Your live training with Sophia Reed starts in 2 hours.', time: '6h ago', isNew: true },
-    { id: 2, type: 'review', title: 'Review Requested', desc: 'Your session with Julie ended yesterday. Please leave a review!', time: '6h ago', isNew: true },
-    { id: 3, type: 'reminder', title: 'Session Reminder', desc: 'Your live training with Sophia Reed starts in 2 hours.', time: 'Yesterday', isNew: false },
-    { id: 4, type: 'review', title: 'Review Requested', desc: 'Your session with Julie ended yesterday. Please leave a review!', time: 'Yesterday', isNew: false },
-    { id: 5, type: 'reminder', title: 'Session Reminder', desc: 'Your live training with Sophia Reed starts in 2 hours.', time: 'Yesterday', isNew: false },
-    { id: 6, type: 'review', title: 'Review Requested', desc: 'Your session with Julie ended yesterday. Please leave a review!', time: 'Yesterday', isNew: false }
-  ]);
+  const [notifications, setNotifications] = useState<any[]>([]);
 
-  const handleClearAll = () => {
-    setNotifications([]);
+  const fetchNotifications = useCallback(async () => {
+    try {
+      const res = await fetch('/api/user/notifications');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          setNotifications(data.notifications || []);
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 10000);
+    return () => clearInterval(interval);
+  }, [fetchNotifications]);
+
+  const handleClearAll = async () => {
+    try {
+      const res = await fetch('/api/user/notifications', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ markAll: true })
+      });
+      if (res.ok) {
+        setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleMarkRead = async (id: string) => {
+    try {
+      const res = await fetch('/api/user/notifications', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notificationId: id })
+      });
+      if (res.ok) {
+        setNotifications((prev) =>
+          prev.map((n) => (n._id === id ? { ...n, read: true } : n))
+        );
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   // Close notifications on click outside
@@ -213,8 +254,10 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
                 <path d="M13.73 21a2 2 0 0 1-3.46 0" />
               </svg>
-              {notifications.filter(n => n.isNew).length > 0 && (
-                <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-[#0012FF] rounded-full border-2 border-white"></span>
+              {notifications.filter(n => !n.read).length > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center px-1 border border-white">
+                  {notifications.filter(n => !n.read).length}
+                </span>
               )}
             </button>
 
@@ -235,9 +278,9 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
                     <div>
                       <div className="flex items-center gap-2">
                         <h3 className="text-2xl font-bold text-black font-sans tracking-tight">Notifications</h3>
-                        {notifications.filter(n => n.isNew).length > 0 && (
+                        {notifications.filter(n => !n.read).length > 0 && (
                           <span className="bg-[#EBFDF2] text-[#00B050] text-xs font-bold px-2.5 py-0.5 rounded-full">
-                            {notifications.filter(n => n.isNew).length} New
+                            {notifications.filter(n => !n.read).length} New
                           </span>
                         )}
                       </div>
@@ -264,80 +307,52 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
                   <div className="flex-grow overflow-y-auto pr-1 select-text scrollbar-thin scrollbar-thumb-gray-200 max-h-[480px]">
                     {notifications.length > 0 ? (
                       <div className="flex flex-col">
-                        {/* New Notifications */}
-                        {notifications.filter(n => n.isNew).map((n, i, arr) => (
-                          <div key={n.id}>
+                        {/* New/Unread Notifications */}
+                        {notifications.filter(n => !n.read).map((n, i, arr) => (
+                          <div key={n._id} onClick={() => handleMarkRead(n._id)} className="cursor-pointer">
                             <div className="flex items-center justify-between gap-4 py-1.5 hover:bg-gray-50/50 rounded-xl transition-all">
                               <div className="flex items-center gap-3.5">
-                                <div className={`w-11 h-11 flex items-center justify-center rounded-xl shrink-0 ${n.type === 'reminder' ? 'bg-[#EEF2FF] text-[#0012FF]' : 'bg-[#FFFBEB] text-[#F59E0B]'
-                                  }`}>
-                                  {n.type === 'reminder' ? (
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                                      <polyline points="14 2 14 8 20 8" />
-                                    </svg>
-                                  ) : (
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                                    </svg>
-                                  )}
+                                <div className="w-11 h-11 flex items-center justify-center rounded-xl shrink-0 bg-[#EEF2FF] text-[#0012FF]">
+                                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                    <polyline points="14 2 14 8 20 8" />
+                                  </svg>
                                 </div>
                                 <div className="flex flex-col">
                                   <span className="font-bold text-sm text-gray-900 leading-tight">{n.title}</span>
-                                  <span className="text-xs text-gray-400 mt-1 leading-normal pr-4">{n.desc}</span>
+                                  <span className="text-xs text-gray-400 mt-1 leading-normal pr-4">{n.message}</span>
                                 </div>
                               </div>
-                              <span className="text-[10px] text-gray-400 font-medium whitespace-nowrap shrink-0 flex items-center gap-1.5 self-start pt-1">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-[#0012FF]">
-                                  <circle cx="12" cy="12" r="10" />
-                                  <polyline points="12 6 12 12 16 14" />
-                                </svg>
-                                {n.time}
-                              </span>
                             </div>
                             {i < arr.length - 1 && <div className="border-t border-gray-100/60 my-3.5" />}
                           </div>
                         ))}
 
                         {/* Divider for previous notifications */}
-                        {notifications.filter(n => !n.isNew).length > 0 && (
+                        {notifications.filter(n => n.read).length > 0 && (
                           <div className="flex items-center gap-3 my-5">
                             <div className="flex-grow h-px bg-gray-100" />
-                            <span className="text-[9px] font-bold text-gray-400 tracking-wider">PREVIOUS NOTIFICATIONS</span>
+                            <span className="text-[9px] font-bold text-gray-400 tracking-wider">READ NOTIFICATIONS</span>
                             <div className="flex-grow h-px bg-gray-100" />
                           </div>
                         )}
 
-                        {/* Previous Notifications */}
-                        {notifications.filter(n => !n.isNew).map((n, i, arr) => (
-                          <div key={n.id}>
+                        {/* Read Notifications */}
+                        {notifications.filter(n => n.read).map((n, i, arr) => (
+                          <div key={n._id}>
                             <div className="flex items-center justify-between gap-4 py-1.5 hover:bg-gray-50/50 rounded-xl transition-all">
                               <div className="flex items-center gap-3.5">
-                                <div className={`w-11 h-11 flex items-center justify-center rounded-xl shrink-0 ${n.type === 'reminder' ? 'bg-[#EEF2FF] text-[#0012FF]' : 'bg-[#FFFBEB] text-[#F59E0B]'
-                                  }`}>
-                                  {n.type === 'reminder' ? (
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                                      <polyline points="14 2 14 8 20 8" />
-                                    </svg>
-                                  ) : (
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                                    </svg>
-                                  )}
+                                <div className="w-11 h-11 flex items-center justify-center rounded-xl shrink-0 bg-gray-100 text-gray-400">
+                                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                    <polyline points="14 2 14 8 20 8" />
+                                  </svg>
                                 </div>
                                 <div className="flex flex-col">
-                                  <span className="font-bold text-sm text-gray-900 leading-tight">{n.title}</span>
-                                  <span className="text-xs text-gray-400 mt-1 leading-normal pr-4">{n.desc}</span>
+                                  <span className="font-bold text-sm text-gray-650 leading-tight">{n.title}</span>
+                                  <span className="text-xs text-gray-400 mt-1 leading-normal pr-4">{n.message}</span>
                                 </div>
                               </div>
-                              <span className="text-[10px] text-gray-400 font-medium whitespace-nowrap shrink-0 flex items-center gap-1.5 self-start pt-1">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                  <circle cx="12" cy="12" r="10" />
-                                  <polyline points="12 6 12 12 16 14" />
-                                </svg>
-                                {n.time}
-                              </span>
                             </div>
                             {i < arr.length - 1 && <div className="border-t border-gray-100/60 my-3.5" />}
                           </div>
