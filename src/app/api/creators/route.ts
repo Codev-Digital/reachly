@@ -10,7 +10,6 @@ export async function GET(request: NextRequest) {
 
         // Only show approved creators on the public explore page
         const creators = await User.find({
-          onboardingStep: { $gte: 6 },
           approvalStatus: 'approved'
         }).select('_id onboardingStep isVerified');
         const creatorUserIds = creators.map((c) => c._id);

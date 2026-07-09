@@ -29,6 +29,7 @@ export interface CreatorInfo {
   username: string;
   displayName: string;
   profilePhoto: string;
+  coverPhoto?: string;
   shortBio: string;
   niches: string[];
 }

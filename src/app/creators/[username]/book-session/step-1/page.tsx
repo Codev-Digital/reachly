@@ -10,7 +10,7 @@ export default function BookSessionStep1() {
   const params = useParams();
   const router = useRouter();
   const { booking, setBooking, nextStep } = useBooking();
-
+  const [saved, setSaved] = useState(true);
   const [sessions, setSessions] = useState<SessionType[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -29,6 +29,7 @@ export default function BookSessionStep1() {
               username: data.creator.username,
               displayName: data.creator.displayName,
               profilePhoto: data.creator.profilePhoto,
+              coverPhoto: data.creator.coverPhoto,
               shortBio: data.creator.shortBio,
               niches: data.creator.niches || [],
             },
@@ -85,13 +86,68 @@ export default function BookSessionStep1() {
           {/* Content */}
           <div className="relative z-10 p-6 pt-7 pb-6 flex flex-col h-full justify-between">
             <div>
-              {/* Header Banner */}
-              <div className="w-full h-24 bg-gradient-to-r from-blue-700 to-indigo-900 rounded-2xl relative overflow-hidden mb-12">
-                <span className="absolute right-3 top-3 bg-white text-gray-800 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase shadow-sm">
-                  Influencer
-                </span>
-              </div>
+              {/* Cover banner – SVG clip notch at lower-right, bookmark outside clip */}
+              <div className="w-full h-24 relative overflow-visible mb-12">
+                <svg width="0" height="0" style={{ position: 'absolute' }}>
+                  <defs>
+                    <clipPath id="cover-clip-s1" clipPathUnits="objectBoundingBox">
+                      <path
+                        d="
+      M0 .94
+      C0 .975 .025 1 .06 1
+      H.82
 
+      C.88 1 .90 .97 .90 .93
+      V.76
+
+      C.90 .68 .94 .64 .98 .62
+      C.995 .61 1 .59 1 .56
+
+      V.06
+      C1 .025 .975 0 .94 0
+
+      H.06
+      C.025 0 0 .025 0 .06
+      Z
+    "
+                      />
+                    </clipPath>
+                  </defs>
+                </svg>
+                {creator?.coverPhoto ? (
+                  <img
+                    src={creator.coverPhoto}
+                    alt="cover"
+                    className="absolute inset-0 w-full h-full object-cover"
+                    style={{ clipPath: 'url(#cover-clip-s1)' }}
+                  />
+                ) : (
+                  <div
+                    className="absolute inset-0 bg-gradient-to-r from-blue-700 to-indigo-900"
+                    style={{ clipPath: 'url(#cover-clip-s1)' }}
+                  />
+                )}
+                {/* Niche badge – top-right */}
+                <span className="absolute right-3 top-3 bg-white text-gray-800 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase shadow-sm z-10">
+                  {creator?.niches?.[0] || 'Influencer'}
+                </span>
+                {/* Bookmark – sits in the lower-right notch, outside the clip */}
+                <button
+                  onClick={() => setSaved(!saved)}
+                  className="absolute bottom-0 right-0 w-8 h-10 flex items-center justify-center z-10 cursor-pointer"
+                  title="Save creator"
+                >
+                  <svg
+                    width="16"
+                    height="20"
+                    viewBox="0 0 24 28"
+                    className="transition-colors duration-200"
+                    fill={saved ? "#0012FF" : "gray"}
+                  >
+                    <path d="M19 25L12 19L5 25V4C5 2.9 5.9 2 7 2H17C18.1 2 19 2.9 19 4V25Z" />
+                  </svg>
+                </button>
+              </div>
               {/* Avatar Picture */}
               <div className="absolute top-14 left-[24px] w-24 h-24 rounded-full border-4 border-white shadow-md overflow-hidden bg-gray-100">
                 <img
