@@ -518,7 +518,7 @@ export default function ExploreCreatorsPage() {
                         </strong>
                       </span>
                       <Link
-                        href={`/creators/${creator.username}`}
+                        href={`/creators/${creator.username}/book-session`}
                         className="text-xs font-sans font-bold text-blue-600 underline hover:text-blue-800 transition-colors"
                       >
                         Book Now

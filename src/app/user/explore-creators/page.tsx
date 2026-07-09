@@ -417,7 +417,7 @@ export default function UserExploreCreatorsPage() {
                   <p className="font-sans text-xs text-[#F9F6F2] opacity-50 mb-2">@{creator.username}</p>
                   <p className="font-sans text-xs text-[#F9F6F2] opacity-60 mb-4 h-8 line-clamp-2">{creator.shortBio}</p>
                   <p className="font-sans text-sm text-[#F9F6F2] mb-3">Starting from <span className="font-semibold text-[#C8A97E]">{creator.startingPrice}</span></p>
-                  <Link href={`/creators/${creator.username}`} className="w-full block text-center bg-[#C8A97E] text-[#0C0C0C] font-sans font-semibold py-3 rounded-full hover:opacity-90 transition-all">
+                  <Link href={`/creators/${creator.username}/book-session`} className="w-full block text-center bg-[#C8A97E] text-[#0C0C0C] font-sans font-semibold py-3 rounded-full hover:opacity-90 transition-all">
                     Book Now
                   </Link>
                 </div>
