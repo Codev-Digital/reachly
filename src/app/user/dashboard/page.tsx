@@ -1,18 +1,17 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
 import LoginToExplore from '@/components/LoginToExplore';
+import UserNavbar from '@/components/UserNavbar';
 
 export default function UserDashboard() {
   const router = useRouter();
   const pathname = usePathname();
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [activeNavItem, setActiveNavItem] = useState('Dashboard');
   const [activeBookingTab, setActiveBookingTab] = useState<'Upcoming' | 'Past' | 'Cancelled'>('Upcoming');
   const [favorites, setFavorites] = useState<string[]>(['Sarah Khan']);
 
@@ -45,50 +44,41 @@ export default function UserDashboard() {
   }, []);
 
   const toggleFavorite = (name: string) => {
-    setFavorites(prev => 
+    setFavorites(prev =>
       prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]
     );
   };
 
-  const navItems = [
-    { name: 'Dashboard', href: '/user/dashboard', icon: 'dashboard' },
-    { name: 'Events', href: '/explore-creators', icon: 'events' },
-    { name: 'Bookings', href: '/user/bookings', icon: 'bookings' },
-    { name: 'Referrals', href: '#', icon: 'referrals' },
-    { name: 'Wallet', href: '/user/payments', icon: 'wallet' },
-    { name: 'Settings', href: '/user/settings', icon: 'settings' },
-  ];
-
   const creators = [
-    { 
-      name: 'Sarah Khan', 
-      handle: '@sarahkhan', 
-      tag: 'Sponsored', 
-      img: '/Avatars/12.jpg', 
-      rating: '4.9', 
-      description: "Ayesha Khan is one of Pakistan's leading fashion and lifestyle content creators....", 
-      price: '1200 PKR', 
-      isVerified: false 
+    {
+      name: 'Sarah Khan',
+      handle: '@sarahkhan',
+      tag: 'Sponsored',
+      img: '/Avatars/12.jpg',
+      rating: '4.9',
+      description: "Ayesha Khan is one of Pakistan's leading fashion and lifestyle content creators....",
+      price: '1200 PKR',
+      isVerified: false
     },
-    { 
-      name: 'Dananeer Mobeen', 
-      handle: '@dananeermobeen', 
-      tag: 'Verified', 
-      img: '/Avatars/5.jpg', 
-      rating: '4.9', 
-      description: "Ayesha Khan is one of Pakistan's leading fashion and lifestyle content creators....", 
-      price: '1200 PKR', 
-      isVerified: true 
+    {
+      name: 'Dananeer Mobeen',
+      handle: '@dananeermobeen',
+      tag: 'Verified',
+      img: '/Avatars/5.jpg',
+      rating: '4.9',
+      description: "Ayesha Khan is one of Pakistan's leading fashion and lifestyle content creators....",
+      price: '1200 PKR',
+      isVerified: true
     },
-    { 
-      name: 'Bilal Abbas', 
-      handle: '@bilalabbas', 
-      tag: 'Sponsored', 
-      img: '/Avatars/10.jpg', 
-      rating: '4.9', 
-      description: "Ayesha Khan is one of Pakistan's leading fashion and lifestyle content creators....", 
-      price: '1200 PKR', 
-      isVerified: false 
+    {
+      name: 'Bilal Abbas',
+      handle: '@bilalabbas',
+      tag: 'Sponsored',
+      img: '/Avatars/10.jpg',
+      rating: '4.9',
+      description: "Ayesha Khan is one of Pakistan's leading fashion and lifestyle content creators....",
+      price: '1200 PKR',
+      isVerified: false
     },
   ];
 
@@ -191,179 +181,33 @@ export default function UserDashboard() {
   return (
     <div className="min-h-screen bg-[#F8F8FA] pb-12 text-black">
       {/* Redesigned Floating Top Navigation Bar */}
-      <div className="px-4 sm:px-6 pt-4">
-        <nav className="bg-white shadow-sm border border-gray-100 sticky top-0 z-50 rounded-full max-w-7xl mx-auto px-8 py-3 flex items-center justify-between">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
-            <img
-              src="/assets/logo1.png"
-              alt="Reachly"
-              className="object-contain h-8 w-auto"
-            />
-          </Link>
-
-          {/* Centered Navigation Items */}
-          <div className="hidden md:flex items-center gap-2">
-            {navItems.map((item) => {
-              const isActive = activeNavItem === item.name || (item.name === 'Dashboard' && pathname === '/user/dashboard');
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  onClick={() => item.href !== '#' && setActiveNavItem(item.name)}
-                  className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition-all ${
-                    isActive
-                      ? ' text-[#0012FF]'
-                      : 'text-gray-500 hover:text-[#0012FF] hover:bg-gray-50'
-                  }`}
-                >
-                  {/* Dashboard Icon */}
-                  {item.icon === 'dashboard' && (
-                    isActive ? (
-                      <img
-  src="/assets/dashboard.png"
-  alt="Dashboard"
-  className="w-[38px] h-[38px] object-contain"
-/>
-                    ) : (
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <rect x="3" y="3" width="7" height="9" rx="1" />
-                        <rect x="14" y="3" width="7" height="5" rx="1" />
-                        <rect x="14" y="11" width="7" height="10" rx="1" />
-                        <rect x="3" y="14" width="7" height="7" rx="1" />
-                      </svg>
-                    )
-                  )}
-
-                  {/* Events Icon */}
-                  {item.icon === 'events' && (
-                    isActive ? (
-                      <img
-                        src="/assets/calendar.svg"
-                        alt="Events"
-                        className="w-5 h-5 object-contain"
-                      />
-                    ) : (
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                        <polyline points="14 2 14 8 20 8" />
-                      </svg>
-                    )
-                  )}
-
-                  {/* Bookings Icon */}
-                  {item.icon === 'bookings' && (
-                    isActive ? (
-                      <img
-                        src="/assets/calendar.svg"
-                        alt="Bookings"
-                        className="w-5 h-5 object-contain"
-                      />
-                    ) : (
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                        <line x1="16" y1="2" x2="16" y2="6" />
-                        <line x1="8" y1="2" x2="8" y2="6" />
-                        <line x1="3" y1="10" x2="21" y2="10" />
-                      </svg>
-                    )
-                  )}
-
-                  {/* Referrals Icon */}
-                  {item.icon === 'referrals' && (
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-                      <polyline points="16 6 12 2 8 6" />
-                      <line x1="12" y1="2" x2="12" y2="15" />
-                    </svg>
-                  )}
-
-                  {/* Wallet Icon */}
-                  {item.icon === 'wallet' && (
-                    isActive ? (
-                      <img
-                        src="/assets/wallet.svg"
-                        alt="Wallet"
-                        className="w-5 h-5 object-contain"
-                      />
-                    ) : (
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <rect x="2" y="5" width="20" height="14" rx="2" />
-                        <line x1="2" y1="10" x2="22" y2="10" />
-                      </svg>
-                    )
-                  )}
-
-                  {/* Settings Icon */}
-                  {item.icon === 'settings' && (
-                    isActive ? (
-                      <img
-                        src="/assets/settings.svg.png"
-                        alt="Settings"
-                        className="w-5 h-5 object-contain"
-                      />
-                    ) : (
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="12" cy="12" r="3" />
-                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0-2.83l-.06-.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                      </svg>
-                    )
-                  )}
-
-                  {item.name}
-                </Link>
-              );
-            })}
-          </div>
-
-          {/* Right Section */}
-          <div className="flex items-center gap-4">
-            {/* Notification Bell */}
-            <button className="relative w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-50 transition-all">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-              </svg>
-              <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-blue-600 rounded-full border-2 border-white"></span>
-            </button>
-
-            {/* Profile Avatar */}
-            <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white bg-gray-200 flex items-center justify-center shadow-sm">
-              {profilePhoto ? (
-                <img src={profilePhoto} alt={displayName} className="w-full h-full object-cover" />
-              ) : (
-                <img src="/Avatars/1.jpg" alt="User Avatar" className="w-full h-full object-cover" />
-              )}
-            </div>
-          </div>
-        </nav>
-      </div>
+      <UserNavbar displayName={displayName} profilePhoto={profilePhoto} />
 
       {/* Main Grid Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         {/* Welcome Headers */}
         <div className="mb-8">
           <p className="text-gray-500 text-sm font-sans mb-1">Hello {displayName.split(' ')[0]}!</p>
-          <h1 className="text-4xl font-extrabold text-black font-sans tracking-tight">
-            Your <span className="text-[#0012FF] font-black italic">Dashboard</span> <span className="text-gray-400 font-light text-2xl">at a glance</span>
+          <h1 className="text-4xl font-black text-black font-anton tracking-tight">
+            Your <span className="text-[#0012FF] font-black ">Dashboard</span> <span className="text-gray-400 font-light text-2xl font-sans">at a glance</span>
           </h1>
         </div>
 
         {/* 2-Column Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          
+
           {/* Left Column (takes 8 cols) */}
           <div className="lg:col-span-8 space-y-10">
-            
+
             {/* Stats Cards Grid (using uc-1, uc-2, uc-3) */}
-          <div className="flex items-stretch -ml-10 gap-2">
-              
+            <div className="flex items-stretch -ml-10 gap-2">
+
               {/* Card 1: Total Bookings */}
-             <div className="relative w-full h-[160px] z-30 pl-6 pt-4">
+              <div className="relative w-full h-[160px] z-30 pl-6 pt-4">
                 <img
                   src="/assets/uc-1.svg"
                   alt=""
-                className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10 rounded-2xl"
+                  className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10 rounded-2xl"
                 />
                 <div>
                   <div className="w-12 h-12 bg-white/70 rounded-xl flex items-center justify-center mb-1 shadow-sm">
@@ -381,7 +225,7 @@ export default function UserDashboard() {
               </div>
 
               {/* Card 2: Total Referrals */}
-             <div className="relative w-full h-[160px] -ml-8 z-20 pl-13 pt-4">
+              <div className="relative w-full h-[160px] -ml-8 z-20 pl-13 pt-4">
                 <img
                   src="/assets/uc-2.svg"
                   alt=""
@@ -408,7 +252,7 @@ export default function UserDashboard() {
                 <img
                   src="/assets/uc-3.svg"
                   alt=""
-               className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10 rounded-2xl"
+                  className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10 rounded-2xl"
                 />
                 <div>
                   <div className="w-12 h-12 bg-white/70 rounded-xl flex items-center justify-center mb-1 shadow-sm">
@@ -430,7 +274,7 @@ export default function UserDashboard() {
             {/* Top Creators Section */}
             <div>
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-3xl font-black text-black tracking-tight">Top Creators</h2>
+                <h2 className="text-3xl font-black text-black font-anton tracking-tight">Top Creators</h2>
                 <button
                   onClick={() => router.push('/explore-creators')}
                   className="flex items-center gap-2 bg-[#0012FF] text-white px-5 py-2.5 rounded-full font-bold text-sm hover:bg-[#0012FF]/90 transition-all shadow-md shadow-[#0012FF]/10"
@@ -442,39 +286,42 @@ export default function UserDashboard() {
                 </button>
               </div>
 
-              {/* Exact Homepage Card Grid */}
+              {/* Updated Cards to match new design */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {creators.map((creator, index) => {
                   const clipId = `cardClip-dashboard-${index}`;
                   return (
                     <motion.div
                       key={index}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: index * 0.1 }}
-                 className="flex flex-col w-full rounded-3xl shadow-sm"
+                      initial={{ opacity: 0, y: 30 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.5, delay: index * 0.1 }}
+                      className="flex flex-col w-full shrink-0 transition-all duration-300 hover:-translate-y-3 hover:scale-[1.04] p-3 rounded-[24px] border border-gray-100/80 group"
                     >
                       {/* Image with SVG clip notch */}
-                      <div className="relative w-full h-[250px]">
+                      <div className="relative w-full h-[280px]">
                         <svg width="0" height="0" className="absolute">
                           <defs>
                             <clipPath id={clipId} clipPathUnits="objectBoundingBox">
                               <path
                                 d="
-                                  M0 0
-                                  H0.87
-                                  C0.885 0 .895 .01 .895 .03
-                                  V.09
-                                  C.895 .12 .905 .14 .93 .14
-                                  H.96
-                                  C.99 .14 1 .15 1 .175
-                                  V.94
-                                  C1 .975 .975 1 .94 1
-                                  H.06
-                                  C.025 1 0 .975 0 .94
-                                  V0
-                                  Z
-                                "
+ M0 .06
+ C0 .025 .025 0 .06 0
+ H0.80
+ C0.855 0 .865 .01 .865 .03
+ V.10
+ C.865 .12 .885 .14 .91 .14
+ H.95
+ C.985 .14 1 .15 1 .175
+ V.91
+ C1 .975 .975 1 .94 1
+ H.06
+ C.025 1 0 .975 0 .94
+ V.06
+ C0 .025 0 .025 0 .06
+ Z
+ "
                               />
                             </clipPath>
                           </defs>
@@ -483,99 +330,93 @@ export default function UserDashboard() {
                         <img
                           src={creator.img}
                           alt={creator.name}
-                          className="w-full h-full object-cover object-top rounded-2xl"
+                          className="w-full h-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.02]"
                           style={{ clipPath: `url(#${clipId})` }}
                         />
 
                         {/* Tag */}
-                        <span className={`absolute top-3 left-4 px-3 py-1 rounded-full text-[11px] font-bold ${
-                          creator.tag === 'Sponsored'
-                            ? 'bg-blue-100 text-blue-700'
-                            : 'bg-emerald-100 text-emerald-700'
-                        }`}>
+                        <span className={`absolute top-3 left-4 px-3 py-1 rounded-full text-xs font-semibold ${creator.tag === 'Sponsored'
+                          ? 'bg-white text-blue-600'
+                          : 'bg-white text-emerald-600'
+                          }`}>
                           {creator.tag}
                         </span>
 
-                        {/* Heart icon button in the notch */}
-                      <button
-  onClick={() => toggleFavorite(creator.name)}
-  className="absolute top-1 right-1 flex items-center justify-center hover:scale-105 transition-all"
->
+                        {/* Heart — sits in the notch area */}
+                        <button
+                          onClick={() => toggleFavorite(creator.name)}
+                          className="absolute top-2 right-0 z-20 flex items-center justify-center hover:scale-110 transition-transform"
+                        >
                           <svg
-  className={`w-6 h-6 transition-colors duration-200 ${
-    favorites.includes(creator.name)
-      ? "text-red-500"
-      : "text-gray-300"
-  }`}
-  viewBox="0 0 24 24"
->
-  <defs>
-    <filter id="heartGlow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="0.6" result="blur" />
-      <feMerge>
-        <feMergeNode in="blur" />
-        <feMergeNode in="SourceGraphic" />
-      </feMerge>
-    </filter>
-  </defs>
+                            className={`w-6 h-6 transition-colors duration-200 ${favorites.includes(creator.name)
+                              ? "text-red-500"
+                              : "text-gray-300"
+                              }`}
+                            viewBox="0 0 24 24"
+                          >
+                            <defs>
+                              <filter id="heartGlow" x="-50%" y="-50%" width="200%" height="200%">
+                                <feGaussianBlur stdDeviation="0.6" result="blur" />
+                                <feMerge>
+                                  <feMergeNode in="blur" />
+                                  <feMergeNode in="SourceGraphic" />
+                                </feMerge>
+                              </filter>
+                            </defs>
 
-  {/* Heart */}
-  <path
-    fill="currentColor"
-    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-  />
+                            {/* Heart */}
+                            <path
+                              fill="currentColor"
+                              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                            />
 
-  {/* Glow */}
-  <path
-    d="M15.2 6.2c1.5 0 2.7 1.2 2.7 2.7 0 1-.4 1.9-1 2.8"
-    stroke="white"
-    strokeWidth="2.4"
-    strokeOpacity="0.35"
-    strokeLinecap="round"
-    fill="none"
-    filter="url(#heartGlow)"
-  />
+                            {/* Glow */}
+                            <path
+                              d="M15.2 6.2c1.5 0 2.7 1.2 2.7 2.7 0 1-.4 1.9-1 2.8"
+                              stroke="white"
+                              strokeWidth="2.4"
+                              strokeOpacity="0.35"
+                              strokeLinecap="round"
+                              fill="none"
+                              filter="url(#heartGlow)"
+                            />
 
-  {/* Main shine */}
-  <path
-    d="M15.2 6.2c1.5 0 2.7 1.2 2.7 2.7 0 1-.4 1.9-1 2.8"
-    stroke="white"
-    strokeWidth="1.3"
-    strokeOpacity="0.95"
-    strokeLinecap="round"
-    fill="none"
-  />
-</svg>
+                            {/* Main shine */}
+                            <path
+                              d="M15.2 6.2c1.5 0 2.7 1.2 2.7 2.7 0 1-.4 1.9-1 2.8"
+                              stroke="white"
+                              strokeWidth="1.3"
+                              strokeOpacity="0.95"
+                              strokeLinecap="round"
+                              fill="none"
+                            />
+                          </svg>
                         </button>
                       </div>
 
-                      {/* Creator Info */}
-                      <div className="pt-4 pb-2 px-2 flex-1 flex flex-col justify-between">
-                        <div>
-                          <div className="flex items-center justify-between">
-                            <h3 className="font-sans font-bold text-lg text-black flex items-center gap-1">
-                              {creator.name}
-                              {creator.isVerified && (
-                                <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-                                  <g transform="translate(4 4) scale(0.83)">
-                                    <path fill="#34C759" d="M24 2.5c2.8 0 5 2.4 7.5 3.2 2.6.8 5.8.1 8 1.8 2.2 1.7 2.9 4.9 4.6 7.1 1.7 2.2 4.8 3.8 5.6 6.4.8 2.6-.8 5.6-.8 8.3s1.6 5.7.8 8.3c-.8 2.6-3.9 4.2-5.6 6.4-1.7 2.2-2.4 5.4-4.6 7.1-2.2 1.7-5.4 1-8 1.8-2.5.8-4.7 3.2-7.5 3.2s-5-2.4-7.5-3.2c-2.6-.8-5.8-.1-8-1.8-2.2-1.7-2.9-4.9-4.6-7.1-1.7-2.2-4.8-3.8-5.6-6.4-.8-2.6.8-5.6.8-8.3s-1.6-5.7-.8-8.3c.8-2.6 3.9-4.2 5.6-6.4 1.7-2.2 2.4-5.4 4.6-7.1 2.2-1.7 5.4-1 8-1.8C19 4.9 21.2 2.5 24 2.5z"/>
-                                  </g>
-                                  <path d="M17 24L22.5 29.5L32 19" fill="none" stroke="white" strokeWidth="4.8" strokeLinecap="round" strokeLinejoin="round"/>
-                                </svg>
-                              )}
-                            </h3>
-                            <span className="flex items-center gap-0.5 text-sm font-bold text-black">
-                              <svg className="w-4 h-4 text-amber-400 fill-current" viewBox="0 0 20 20">
-                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                      {/* Info */}
+                      <div className="pt-4 pb-2 px-1">
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-sans font-bold text-lg text-black flex items-center gap-1.5">
+                            {creator.name}
+                            {creator.isVerified && (
+                              <svg className="w-5 h-5" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                                <g transform="translate(4 4) scale(0.83)">
+                                  <path fill="#34C759" d="M24 2.5c2.8 0 5 2.4 7.5 3.2 2.6.8 5.8.1 8 1.8 2.2 1.7 2.9 4.9 4.6 7.1 1.7 2.2 4.8 3.8 5.6 6.4.8 2.6-.8 5.6-.8 8.3s1.6 5.7.8 8.3c-.8 2.6-3.9 4.2-5.6 6.4-1.7 2.2-2.4 5.4-4.6 7.1-2.2 1.7-5.4 1-8 1.8-2.5.8-4.7 3.2-7.5 3.2s-5-2.4-7.5-3.2c-2.6-.8-5.8-.1-8-1.8-2.2-1.7-2.9-4.9-4.6-7.1-1.7-2.2-4.8-3.8-5.6-6.4-.8-2.6.8-5.6.8-8.3s-1.6-5.7-.8-8.3c.8-2.6 3.9-4.2 5.6-6.4 1.7-2.2 2.4-5.4 4.6-7.1 2.2-1.7 5.4-1 8-1.8C19 4.9 21.2 2.5 24 2.5z" />
+                                </g>
+                                <path d="M17 24L22.5 29.5L32 19" fill="none" stroke="white" strokeWidth="4.8" strokeLinecap="round" strokeLinejoin="round" />
                               </svg>
-                              {creator.rating}
-                            </span>
-                          </div>
-                          <p className="text-[11px] text-gray-400 font-sans mt-0.5">{creator.handle}</p>
-                          <p className="text-[12px] text-gray-500 font-sans mt-2 leading-relaxed line-clamp-2">{creator.description}</p>
+                            )}
+                          </h3>
+                          <span className="flex items-center gap-1 text-sm font-bold text-black">
+                            <svg className="w-4 h-4 text-amber-500 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                            {creator.rating}
+                          </span>
                         </div>
+                        <p className="text-xs text-gray-400 font-sans mt-0.5">{creator.handle}</p>
+                        <p className="text-xs text-gray-500 font-sans mt-2.5 line-clamp-2">{creator.description}</p>
                         <div className="flex items-center justify-between mt-4">
-                          <span className="text-[11px] font-sans text-gray-500">Starting from <strong className="text-black font-black text-sm">{creator.price}</strong></span>
+                          <span className="text-xs font-sans text-gray-500">Starting from <strong className="text-black font-black">{creator.price}</strong></span>
                           <Link href="/welcome" className="text-xs font-sans font-bold text-blue-600 underline hover:text-blue-800 transition-colors">Book Now</Link>
                         </div>
                       </div>
@@ -598,11 +439,10 @@ export default function UserDashboard() {
                   <button
                     key={tab}
                     onClick={() => setActiveBookingTab(tab)}
-                    className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${
-                      isActive
+                    className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${isActive
                         ? 'bg-[#0012FF] text-white shadow-md'
                         : 'text-gray-500 hover:text-gray-900'
-                    }`}
+                      }`}
                   >
                     {tab} ({count})
                   </button>
@@ -707,7 +547,7 @@ export default function UserDashboard() {
                       strokeLinejoin="round"
                     >
                       <line x1="7" y1="17" x2="17" y2="7" />
-                      <polyline points="12,7 17,7 17,12" />
+                      <polyline points="12 7 17 7 17 12" />
                     </svg>
                   </div>
                 </div>
