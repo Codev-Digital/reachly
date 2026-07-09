@@ -1,13 +1,11 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { useMemo } from 'react';
 import BookingProgress from '@/components/booking/BookingProgress';
 import { useBooking } from '../layout';
-import Link from 'next/link';
 
 const formatDateLong = (date: Date) => {
-  return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  return date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
 };
 
 export default function BookSessionStep5() {
@@ -16,218 +14,209 @@ export default function BookSessionStep5() {
   const { booking } = useBooking();
   const creator = booking.creator;
 
-  // Use bookingRef from state
-  const bookingRef = booking.bookingRef || 'RCH-XXXXXX';
-
-  const beforeSessionTips = [
-    'Test your camera and microphone',
-    'Find a quiet, well-lit space',
-    'Prepare your questions in advance',
-    'Join the call 2 minutes early',
-  ];
-
   return (
-    <div>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-20 pt-2">
+      {/* Step Progress Indicator */}
       <BookingProgress currentStep={5} />
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-12">
+      <div className="grid grid-cols-1 lg:grid-cols-[370px_1fr] gap-8 items-start justify-items-center">
+        {/* ============ LEFT COLUMN: CREATOR PROFILE CARD ============ */}
+        <div className="relative w-full max-w-[370px] h-[619px] bg-transparent overflow-visible isolate select-none">
+          {/* Background SVG template */}
+          <img
+            src="/assets/creator-data.svg"
+            alt=""
+            className="absolute inset-0 w-full h-full object-fill pointer-events-none z-0"
+          />
 
-        {/* ── Confirmation Header ── */}
-        <div className="text-center mb-8">
-          <div className="relative w-20 h-20 mx-auto mb-4">
-            {/* Animated ring */}
-            <div className="absolute inset-0 rounded-full border-2 border-[#C8A97E] animate-ping opacity-20" />
-            <div className="w-20 h-20 rounded-full bg-[rgba(200,169,126,0.1)] border border-[#C8A97E] flex items-center justify-center">
-              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20 6L9 17L4 12" />
-              </svg>
+          {/* Content */}
+          <div className="relative z-10 p-6 pt-7 pb-6 flex flex-col h-full justify-between">
+            <div>
+              {/* Header Banner */}
+              <div className="w-full h-24 bg-gradient-to-r from-blue-700 to-indigo-900 rounded-2xl relative overflow-hidden mb-12">
+                <span className="absolute right-3 top-3 bg-white text-gray-800 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase shadow-sm">
+                  Influencer
+                </span>
+              </div>
+
+              {/* Avatar Picture */}
+              <div className="absolute top-14 left-[24px] w-24 h-24 rounded-full border-4 border-white shadow-md overflow-hidden bg-gray-100">
+                <img
+                  src={creator?.profilePhoto || '/merium.png'}
+                  alt={creator?.displayName}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+
+              {/* Name & Handle */}
+              <div className="pl-[116px] min-h-[72px] flex flex-col justify-center">
+                <h3 className="font-bold text-lg text-gray-900 leading-tight">
+                  {creator?.displayName || 'Sophia Reed'}
+                </h3>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  @{creator?.username || 'sophiareed'}
+                </p>
+              </div>
+
+              {/* Location & Languages */}
+              <div className="flex items-center gap-4 mt-3 text-xs text-gray-500 font-medium pl-2">
+                <span className="flex items-center gap-1">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-[#0012FF]">
+                    <path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z" />
+                    <circle cx="12" cy="10" r="3" />
+                  </svg>
+                  Lahore
+                </span>
+                <span className="flex items-center gap-1">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-[#0012FF]">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="2" y1="12" x2="22" y2="12" />
+                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                  </svg>
+                  Urdu, English
+                </span>
+              </div>
+
+              {/* Stats Row */}
+              <div className="grid grid-cols-3 gap-2 w-full border-t border-b border-gray-100 py-3 mt-4 text-center">
+                <div>
+                  <span className="block font-anton font-black text-[24px] leading-[24px] tracking-[0em] text-gray-900">12k+</span>
+                  <span className="text-[9px] text-gray-400 font-semibold block leading-tight">Sessions completed</span>
+                </div>
+                <div className="border-l border-r border-gray-100">
+                  <span className="block font-anton font-black text-[24px] leading-[24px] tracking-[0em] text-gray-900">50k+</span>
+                  <span className="text-[9px] text-gray-400 font-semibold block leading-tight">Happy Users</span>
+                </div>
+                <div>
+                  <span className="block font-anton font-black text-[24px] leading-[24px] tracking-[0em] text-gray-900">8</span>
+                  <span className="text-[9px] text-gray-400 font-semibold block leading-tight">Total Categories</span>
+                </div>
+              </div>
+
+              {/* Book a Session button */}
+              <button className="bg-[#0012FF] hover:bg-[#0010d0] text-white w-full py-2.5 rounded-xl font-bold text-xs transition-colors mt-4 shadow-sm">
+                Book a Session
+              </button>
+
+              {/* About section */}
+              <div className="w-full text-left mt-4">
+                <h4 className="font-bold text-xs text-gray-900 uppercase tracking-wide">About</h4>
+                <p className="text-[11px] text-gray-500 mt-1 leading-relaxed line-clamp-3">
+                  {creator?.shortBio || "Ayesha Khan is one of Pakistan's leading fashion and lifestyle content creators. With over 500K followers across Instagram and TikTok..."}
+                </p>
+                <button className="text-[#0012FF] text-[10px] font-bold mt-0.5 hover:underline">
+                  Read more
+                </button>
+              </div>
+
+              {/* Category Tags */}
+              <div className="flex flex-wrap gap-1.5 w-full mt-3">
+                {(creator?.niches && creator.niches.length > 0 ? creator.niches : ['Fashion Tips', 'Style Guide', 'Shopping']).map(tag => (
+                  <span key={tag} className="bg-red-50 text-red-500 text-[9px] font-bold px-2 py-0.5 rounded-md">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Social Icons inside bottom notch (Real SVGs) */}
+            <div className="absolute bottom-[10px] left-1/2 -translate-x-1/2 translate-y-4 flex items-center justify-center gap-2.5 w-[130px] h-[24px] z-20">
+              {/* Facebook */}
+              <a href="#" className="w-5 h-5 rounded-full bg-[#0012FF] flex items-center justify-center text-white hover:opacity-90 transition-opacity">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M9 8h-3v4h3v12h5v-12h3.642l.358-4h-4v-1.667c0-.955.192-1.333 1.115-1.333h2.885v-5h-3.808c-3.596 0-5.192 1.583-5.192 4.615v3.385z"/>
+                </svg>
+              </a>
+              {/* Instagram */}
+              <a href="#" className="w-5 h-5 rounded-full bg-[#0012FF] flex items-center justify-center text-white hover:opacity-90 transition-opacity">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                  <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+                </svg>
+              </a>
+              {/* YouTube */}
+              <a href="#" className="w-5 h-5 rounded-full bg-[#0012FF] flex items-center justify-center text-white hover:opacity-90 transition-opacity">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z" />
+                  <polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="currentColor" />
+                </svg>
+              </a>
+              {/* TikTok */}
+              <a href="#" className="w-5 h-5 rounded-full bg-[#0012FF] flex items-center justify-center text-white hover:opacity-90 transition-opacity">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.02 1.62 4.15 1.25 1.32 2.98 2.04 4.79 2.07v3.83a8.88 8.88 0 0 1-5.18-1.74c-.05 2.82.01 5.63-.04 8.44-.09 2.53-1.12 5.04-3.13 6.64-2.28 1.83-5.46 2.37-8.19 1.4A8.72 8.72 0 0 1 .47 16.92c-.67-2.61-.17-5.5 1.4-7.65 1.76-2.4 4.73-3.66 7.68-3.15V9.92a4.91 4.91 0 0 0-4.63 4.22c-.37 2.45.92 4.98 3.2 5.68 2.22.68 4.77-.37 5.48-2.52.26-.81.23-1.67.24-2.52l.02-14.76z" />
+                </svg>
+              </a>
             </div>
           </div>
-          <h3 className="font-serif text-2xl sm:text-3xl font-bold text-[#C8A97E] mb-2">Your booking is confirmed!</h3>
-          <p className="font-sans text-sm text-[#F9F6F2] opacity-60">
-            Details have been sent to <span className="text-[#C8A97E]">{booking.userDetails.email || 'your email'}</span> and WhatsApp
-          </p>
         </div>
 
-        {/* ── Booking Reference ── */}
-        <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-xl px-6 py-4 text-center mb-4 flex items-center justify-between">
-          <div>
-            <p className="font-sans text-xs text-[#F9F6F2] opacity-50 mb-1">Booking Reference</p>
-            <p className="font-serif text-lg font-bold text-[#C8A97E] tracking-widest">{bookingRef}</p>
-          </div>
-          <button
-            onClick={() => navigator.clipboard.writeText(bookingRef)}
-            className="flex items-center gap-1.5 text-xs font-sans text-[#C8A97E] border border-[rgba(200,169,126,0.3)] px-3 py-1.5 rounded-lg hover:border-[#C8A97E] transition-all"
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-            </svg>
-            Copy
-          </button>
-        </div>
-
-        {/* ── Creator Info ── */}
-        {creator && (
-          <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-xl px-6 py-5 flex items-center gap-4 mb-4">
+        {/* ============ RIGHT COLUMN: BOOKING CONFIRMATION ============ */}
+        <div className="w-full">
+          <div className="bg-white rounded-3xl border border-gray-200/80 p-8 sm:p-10 shadow-sm flex flex-col items-center text-center w-full max-w-[790px] mx-auto">
+            {/* Booking Confirm Illustration */}
             <img
-              src={creator.profilePhoto}
-              alt={creator.displayName}
-              className="w-14 h-14 rounded-full border-2 border-[rgba(200,169,126,0.4)] object-cover"
+              src="/assets/booking-confirm.png"
+              className="w-[160px] h-[160px] object-contain mb-6 select-none"
+              alt=""
             />
-            <div className="flex-1">
-              <p className="font-sans text-xs text-[#F9F6F2] opacity-50 mb-0.5">You booked a session with</p>
-              <h4 className="font-serif text-base font-bold text-[#F9F6F2]">{creator.displayName}</h4>
-              <p className="font-sans text-xs text-[#C8A97E]">@{creator.username}</p>
-            </div>
-            {creator.niches?.[0] && (
-              <span className="bg-[rgba(200,169,126,0.1)] text-[#C8A97E] border border-[rgba(200,169,126,0.3)] px-3 py-1 rounded-full text-xs font-semibold capitalize">
-                {creator.niches[0]}
-              </span>
-            )}
-          </div>
-        )}
 
-        {/* ── Session + Booker Details ── */}
-        <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-xl px-6 py-5 mb-4">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4 pb-4 border-b border-[rgba(255,255,255,0.07)]">
-            {[
-              {
-                icon: <><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></>,
-                label: 'Date',
-                value: booking.selectedDate ? formatDateLong(booking.selectedDate) : '—',
-              },
-              {
-                icon: <><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></>,
-                label: 'Time',
-                value: booking.selectedTime ? `${booking.selectedTime} PKT` : '—',
-              },
-              {
-                icon: <><rect x="2" y="4" width="20" height="16" rx="2" /><rect x="2" y="10" width="20" height="10" rx="2" /></>,
-                label: 'Session',
-                value: booking.selectedSession?.title || '—',
-              },
-              {
-                icon: <><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></>,
-                label: 'Duration',
-                value: booking.selectedSession?.duration || '—',
-              },
-            ].map((item, i) => (
-              <div key={i} className="flex items-start gap-2">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="2" className="mt-0.5 flex-shrink-0">
-                  {item.icon}
+            {/* Success Heading */}
+            <h3 className="text-[20px] font-black text-gray-950 mb-1 leading-tight">
+              Your Booking Is Confirmed
+            </h3>
+            <p className="text-[12px] text-gray-400 font-semibold leading-relaxed">
+              We&apos;ve sent the details to your email and WhatsApp
+            </p>
+
+            {/* Quick Details strip */}
+            <div className="flex flex-wrap items-center justify-center gap-6 mt-8 py-2.5 px-6 bg-gray-50/50 rounded-2xl border border-gray-100 text-xs text-gray-500 font-bold select-none">
+              {/* Date */}
+              <div className="flex items-center gap-1.5">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2.5">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
                 </svg>
-                <div>
-                  <p className="font-sans text-xs text-[#F9F6F2] opacity-50 mb-0.5">{item.label}</p>
-                  <p className="font-sans text-sm font-semibold text-[#F9F6F2]">{item.value}</p>
-                </div>
+                {booking.selectedDate ? formatDateLong(booking.selectedDate) : 'Tuesday, 2 July'}
               </div>
-            ))}
-          </div>
 
-          {/* Booker details */}
-          {booking.userDetails.fullName && (
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="font-sans text-xs text-[#F9F6F2] opacity-50 mb-0.5">Booked by</p>
-                <p className="font-sans text-sm font-semibold text-[#F9F6F2]">{booking.userDetails.fullName}</p>
-              </div>
-              {booking.userDetails.whatsapp && (
-                <div>
-                  <p className="font-sans text-xs text-[#F9F6F2] opacity-50 mb-0.5">WhatsApp</p>
-                  <p className="font-sans text-sm font-semibold text-[#F9F6F2]">+92 {booking.userDetails.whatsapp}</p>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+              {/* Divider dot */}
+              <div className="w-1.5 h-1.5 rounded-full bg-gray-300"></div>
 
-        {/* ── Meet Link ── */}
-        <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-xl px-6 py-6 text-center mb-4">
-          <div className="w-12 h-12 rounded-full bg-[rgba(200,169,126,0.1)] border border-[rgba(200,169,126,0.3)] flex items-center justify-center mx-auto mb-3">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="2">
-              <path d="M23 7l-7 5 7 5V7z" /><rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
-            </svg>
-          </div>
-          <p className="font-serif text-sm font-semibold text-[#F9F6F2] mb-4">Your Google Meet link</p>
-          <a
-            href="https://meet.google.com/iqj-bsq-bze"
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-2 bg-[#C8A97E] text-[#0C0C0C] font-serif font-semibold py-2 px-8 rounded-full text-sm mb-4 hover:opacity-90 transition-all"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M23 7l-7 5 7 5V7z" /><rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
-            </svg>
-            Join Google Meet
-          </a>
-          <div className="bg-[#0C0C0C] border border-[rgba(200,169,126,0.2)] rounded-lg px-4 py-2">
-            <p className="font-mono text-xs text-[#F9F6F2] opacity-50">https://meet.google.com/iqj-bsq-bze</p>
-          </div>
-          <p className="font-sans text-xs text-[#F9F6F2] opacity-40 mt-3">Save this link — it will also arrive via email and WhatsApp.</p>
-        </div>
-
-        {/* ── Add to Calendar ── */}
-        <div className="grid grid-cols-3 gap-3 mb-6">
-          {[
-            { label: 'Google Calendar', icon: <><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /><line x1="12" y1="13" x2="12" y2="19" /><line x1="9" y1="16" x2="15" y2="16" /></> },
-            { label: 'Apple Calendar', icon: <><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></> },
-            { label: 'Outlook', icon: <><rect x="2" y="4" width="20" height="16" rx="2" /><path d="M22 7l-10 7L2 7" /></> },
-          ].map((item, i) => (
-            <button key={i} className="bg-[#141414] border border-[rgba(200,169,126,0.3)] text-[#F9F6F2] font-sans text-xs font-semibold py-3 px-4 rounded-xl flex items-center justify-center gap-2 hover:border-[#C8A97E] transition-all">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="2">{item.icon}</svg>
-              {item.label}
-            </button>
-          ))}
-        </div>
-
-        {/* ── Before Your Session ── */}
-        <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-xl px-6 py-5 mb-6">
-          <h5 className="font-serif text-sm font-semibold text-[#C8A97E] mb-4">Before Your Session</h5>
-          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {beforeSessionTips.map((tip, i) => (
-              <li key={i} className="flex items-center gap-2 font-sans text-xs text-[#F9F6F2] opacity-70">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="2.5">
-                  <polyline points="20 6 9 17 4 12" />
+              {/* Time */}
+              <div className="flex items-center gap-1.5">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2.5">
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
                 </svg>
-                {tip}
-              </li>
-            ))}
-          </ul>
-        </div>
+                {booking.selectedTime ? booking.selectedTime : '03:00 PM to 04:00 PM'}
+              </div>
 
-        {/* ── Actions ── */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-6">
-          <Link
-            href="/user/bookings"
-            className="flex-1 bg-[#C8A97E] text-[#0C0C0C] font-serif font-semibold py-3 px-6 rounded-full text-sm hover:opacity-90 transition-all text-center"
-          >
-            View My Bookings
-          </Link>
-          <button
-            onClick={() => router.push(`/creators/${params.username}`)}
-            className="flex-1 border border-[rgba(200,169,126,0.3)] text-[#C8A97E] font-serif font-semibold py-3 px-6 rounded-full text-sm hover:border-[#C8A97E] transition-all"
-          >
-            Book Another Session
-          </button>
-        </div>
+              {/* Divider dot */}
+              <div className="w-1.5 h-1.5 rounded-full bg-gray-300"></div>
 
-        {/* ── Share Section ── */}
-        <div className="bg-[#141414] border border-[rgba(200,169,126,0.3)] rounded-xl px-6 py-5 text-center">
-          <h5 className="font-serif text-sm font-semibold text-[#C8A97E] mb-1">Loved Reachly?</h5>
-          <p className="font-sans text-xs text-[#F9F6F2] opacity-60 mb-4">Share with friends and earn credits when they book</p>
-          <div className="inline-flex items-center gap-3 bg-[#0C0C0C] border border-[rgba(200,169,126,0.3)] rounded-lg px-5 py-2.5">
-            <span className="font-mono text-sm text-[#C8A97E] font-semibold tracking-widest">{bookingRef}</span>
+              {/* Duration */}
+              <div className="flex items-center gap-1.5">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2.5">
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+                {booking.selectedSession?.duration || '1 hour'}
+              </div>
+            </div>
+
+            {/* Dashboard Redirect Action Button */}
             <button
-              onClick={() => navigator.clipboard.writeText(bookingRef)}
-              className="text-[#C8A97E] hover:opacity-70 transition-all"
+              onClick={() => router.push('/user/bookings')}
+              className="bg-[#0012FF] text-white hover:bg-[#0010d0] font-bold py-2.5 px-8 rounded-full text-xs transition-colors shadow-sm mt-8"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="2">
-                <path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7" /><path d="M12 16V3" /><path d="M7 8l5-5 5 5" />
-              </svg>
+              Go to Dashboard Bookings
             </button>
           </div>
         </div>
-
       </div>
     </div>
   );

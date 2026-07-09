@@ -27,7 +27,6 @@ export default function BookSessionStep2() {
   const getDatesList = () => {
     const dates = [];
     const base = new Date();
-    // Adjust base to start of today
     base.setHours(0, 0, 0, 0);
     for (let i = 0; i < 21; i++) {
       const d = new Date(base);
@@ -56,7 +55,6 @@ export default function BookSessionStep2() {
       if (data.success && data.slots?.length > 0) {
         setSlots(data.slots);
       } else {
-        // Fallback mock slots matching mockup if DB yields empty list
         setSlots([
           "11 AM - 12 PM",
           "12 PM - 1 PM",
@@ -75,7 +73,6 @@ export default function BookSessionStep2() {
       setFetchedDate(iso);
     } catch (err) {
       console.error('Error fetching slots:', err);
-      // Fallback
       setSlots([
         "11 AM - 12 PM",
         "12 PM - 1 PM",
@@ -128,7 +125,7 @@ export default function BookSessionStep2() {
   const creator = booking.creator;
 
   // Svg cards templates rotated
-  const cardBgs = ['/assets/booking-card1.svg', '/assets/booking-card2.svg', '/assets/booking-card3.svg'];
+  const cardColors = ['#B7C0FF', '#FFEDB5', '#FFB3B3'];
   const cardThemes = [
     { text: 'text-[#0012FF]', stroke: 'stroke-[#0012FF]', bg: 'bg-[#EEF2FF]' },
     { text: 'text-[#D97706]', stroke: 'stroke-[#D97706]', bg: 'bg-[#FFFBEB]' },
@@ -143,7 +140,6 @@ export default function BookSessionStep2() {
     }
   };
 
-  // Helper to compare dates
   const isSameDay = (d1: Date, d2: Date | null) => {
     if (!d2) return false;
     return d1.getDate() === d2.getDate() &&
@@ -151,7 +147,6 @@ export default function BookSessionStep2() {
       d1.getFullYear() === d2.getFullYear();
   };
 
-  // Fetch all sessions to display selection grid
   const [sessions, setSessions] = useState<SessionType[]>([]);
   useEffect(() => {
     async function fetchCreatorSessions() {
@@ -234,15 +229,15 @@ export default function BookSessionStep2() {
               {/* Stats Row */}
               <div className="grid grid-cols-3 gap-2 w-full border-t border-b border-gray-100 py-3 mt-4 text-center">
                 <div>
-                  <span className="block font-bold text-gray-900 text-sm">12k+</span>
+                  <span className="block font-anton font-black text-[24px] leading-[24px] tracking-[0em] text-gray-900">12k+</span>
                   <span className="text-[9px] text-gray-400 font-semibold block leading-tight">Sessions completed</span>
                 </div>
                 <div className="border-l border-r border-gray-100">
-                  <span className="block font-bold text-gray-900 text-sm">50k+</span>
+                  <span className="block font-anton font-black text-[24px] leading-[24px] tracking-[0em] text-gray-900">50k+</span>
                   <span className="text-[9px] text-gray-400 font-semibold block leading-tight">Happy Users</span>
                 </div>
                 <div>
-                  <span className="block font-bold text-gray-900 text-sm">8</span>
+                  <span className="block font-anton font-black text-[24px] leading-[24px] tracking-[0em] text-gray-900">8</span>
                   <span className="text-[9px] text-gray-400 font-semibold block leading-tight">Total Categories</span>
                 </div>
               </div>
@@ -273,13 +268,35 @@ export default function BookSessionStep2() {
               </div>
             </div>
 
-            {/* Social Icons inside bottom notch */}
-            <div className="absolute bottom-[6px] left-1/2 -translate-x-1/2 flex items-center justify-center gap-3 w-[124px] h-[24px] z-20">
-              {['facebook', 'instagram', 'youtube', 'tiktok'].map(platform => (
-                <button key={platform} className="w-5 h-5 rounded-full bg-[#0012FF] flex items-center justify-center text-white hover:opacity-90 transition-opacity">
-                  <span className="text-[9px] uppercase font-bold">{platform.charAt(0)}</span>
-                </button>
-              ))}
+            {/* Social Icons inside bottom notch (Real SVGs) */}
+            <div className="absolute bottom-[10px] left-1/2 -translate-x-1/2 translate-y-4 flex items-center justify-center gap-2.5 w-[130px] h-[24px] z-20">
+              {/* Facebook */}
+              <a href="#" className="w-5 h-5 rounded-full bg-[#0012FF] flex items-center justify-center text-white hover:opacity-90 transition-opacity">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M9 8h-3v4h3v12h5v-12h3.642l.358-4h-4v-1.667c0-.955.192-1.333 1.115-1.333h2.885v-5h-3.808c-3.596 0-5.192 1.583-5.192 4.615v3.385z" />
+                </svg>
+              </a>
+              {/* Instagram */}
+              <a href="#" className="w-5 h-5 rounded-full bg-[#0012FF] flex items-center justify-center text-white hover:opacity-90 transition-opacity">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                  <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+                </svg>
+              </a>
+              {/* YouTube */}
+              <a href="#" className="w-5 h-5 rounded-full bg-[#0012FF] flex items-center justify-center text-white hover:opacity-90 transition-opacity">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 1.96C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.96A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z" />
+                  <polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="currentColor" />
+                </svg>
+              </a>
+              {/* TikTok */}
+              <a href="#" className="w-5 h-5 rounded-full bg-[#0012FF] flex items-center justify-center text-white hover:opacity-90 transition-opacity">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.02 1.62 4.15 1.25 1.32 2.98 2.04 4.79 2.07v3.83a8.88 8.88 0 0 1-5.18-1.74c-.05 2.82.01 5.63-.04 8.44-.09 2.53-1.12 5.04-3.13 6.64-2.28 1.83-5.46 2.37-8.19 1.4A8.72 8.72 0 0 1 .47 16.92c-.67-2.61-.17-5.5 1.4-7.65 1.76-2.4 4.73-3.66 7.68-3.15V9.92a4.91 4.91 0 0 0-4.63 4.22c-.37 2.45.92 4.98 3.2 5.68 2.22.68 4.77-.37 5.48-2.52.26-.81.23-1.67.24-2.52l.02-14.76z" />
+                </svg>
+              </a>
             </div>
           </div>
         </div>
@@ -290,7 +307,7 @@ export default function BookSessionStep2() {
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 justify-items-center mb-6">
             {sessions.map((session, index) => {
               const themeIdx = index % 3;
-              const bg = cardBgs[themeIdx];
+              const cardColor = cardColors[themeIdx];
               const theme = cardThemes[themeIdx];
               const isSelected = booking.selectedSession?.id === session.id;
 
@@ -298,21 +315,18 @@ export default function BookSessionStep2() {
                 <div
                   key={session.id}
                   onClick={() => handleSelectSession(session)}
-                  className={`relative w-full max-w-[246px] h-[340px] bg-transparent overflow-visible isolate select-none cursor-pointer transition-all duration-200 hover:-translate-y-1 ${
-                    isSelected ? 'scale-105 filter drop-shadow-lg' : 'hover:drop-shadow-sm'
-                  }`}
+                  className={`relative w-full max-w-[246px] h-[340px] bg-transparent overflow-visible isolate select-none cursor-pointer transition-all duration-200 hover:-translate-y-1 ${isSelected ? 'scale-105 filter drop-shadow-md' : ''
+                    }`}
                 >
-                  {/* Card Background SVG */}
-                  <img
-                    src={bg}
-                    alt=""
-                    className="absolute inset-0 w-full h-full object-fill pointer-events-none z-0"
-                  />
-
-                  {/* Card Selected Border Highlight */}
-                  {isSelected && (
-                    <div className="absolute inset-0 border-2 border-[#0012FF] rounded-3xl pointer-events-none z-30" style={{ margin: '-1px' }} />
-                  )}
+                  {/* Card Background SVG containing the exact notch outline stroke */}
+                  <svg width="246" height="340" viewBox="0 0 246 340" fill="none" xmlns="http://www.w3.org/2000/svg" className="absolute inset-0 w-full h-full pointer-events-none z-0">
+                    <path
+                      d="M1 332C1 336.418 4.58172 340 9 340H237C241.418 340 245 336.418 245 332V35.1559C245 30.7376 241.418 27.1559 237 27.1559H201C196.582 27.1559 193 23.5742 193 19.1559V9C193 4.58173 189.418 1 185 1H9C4.58172 1 1 4.58173 1 9L1 332Z"
+                      fill={cardColor}
+                      stroke={isSelected ? '#0012FF' : 'transparent'}
+                      strokeWidth={isSelected ? '2.2' : '0'}
+                    />
+                  </svg>
 
                   {/* Card Content */}
                   <div className="relative z-10 p-5 pt-6 pb-6 flex flex-col h-full justify-between">
@@ -329,7 +343,7 @@ export default function BookSessionStep2() {
                         </div>
 
                         {/* Duration label in notch */}
-                        <span className={`absolute top-[4px] right-[6px] text-[10px] font-bold flex items-center gap-0.5 ${theme.text}`}>
+                        <span className={`absolute top-[4px] right-[1px] text-[10px] font-bold flex items-center gap-0.5 ${theme.text}`}>
                           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className={theme.stroke}>
                             <circle cx="12" cy="12" r="10" />
                             <polyline points="12 6 12 12 16 14" />
@@ -401,11 +415,10 @@ export default function BookSessionStep2() {
                   <button
                     key={i}
                     onClick={() => handleDateSelect(d)}
-                    className={`flex-shrink-0 w-11 h-13 py-1.5 flex flex-col items-center justify-center rounded-xl transition-all border ${
-                      isSelected
-                        ? 'bg-[#EEF2FF] border-[#0012FF] text-[#0012FF]'
-                        : 'bg-white border-transparent text-gray-500 hover:border-gray-100 hover:bg-gray-50'
-                    }`}
+                    className={`flex-shrink-0 w-11 h-13 py-1.5 flex flex-col items-center justify-center rounded-xl transition-all border ${isSelected
+                      ? 'bg-[#EEF2FF] border-[#0012FF] text-[#0012FF]'
+                      : 'bg-white border-transparent text-gray-500 hover:border-gray-100 hover:bg-gray-50'
+                      }`}
                   >
                     <span className="text-[8px] uppercase tracking-wider font-bold block leading-none mb-0.5">
                       {dayName}
@@ -450,11 +463,10 @@ export default function BookSessionStep2() {
                     <button
                       key={i}
                       onClick={() => handleTimeSelect(time)}
-                      className={`py-3 px-4 rounded-xl text-[11px] font-bold transition-all text-center border shadow-xs ${
-                        isSelected
-                          ? 'bg-[#EEF2FF] border-[#0012FF] text-[#0012FF]'
-                          : 'bg-white border-gray-200 hover:border-gray-300 text-gray-600'
-                      }`}
+                      className={`py-3 px-4 rounded-xl text-[11px] font-bold transition-all text-center border shadow-xs ${isSelected
+                        ? 'bg-[#EEF2FF] border-[#0012FF] text-[#0012FF]'
+                        : 'bg-white border-gray-200 hover:border-gray-300 text-gray-600'
+                        }`}
                     >
                       {time}
                     </button>
@@ -488,11 +500,10 @@ export default function BookSessionStep2() {
               <button
                 onClick={handleContinue}
                 disabled={!booking.selectedDate || !booking.selectedTime}
-                className={`py-2 px-6 rounded-full text-xs font-bold transition-all shadow-sm ${
-                  booking.selectedDate && booking.selectedTime
-                    ? 'bg-[#0012FF] text-white hover:bg-[#0010d0]'
-                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                }`}
+                className={`py-2 px-6 rounded-full text-xs font-bold transition-all shadow-sm ${booking.selectedDate && booking.selectedTime
+                  ? 'bg-[#0012FF] text-white hover:bg-[#0010d0]'
+                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  }`}
               >
                 Continue
               </button>
