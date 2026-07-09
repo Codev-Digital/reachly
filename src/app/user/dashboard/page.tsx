@@ -1,15 +1,44 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import Link from 'next/link';
-import { useRouter, usePathname } from 'next/navigation';
-import LoginToExplore from '@/components/LoginToExplore';
+import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
+import { useEffect, useState, useCallback } from 'react';
 import UserNavbar from '@/components/UserNavbar';
+import Link from 'next/link';
+import { motion } from 'framer-motion';
+
+function LoginToExplore() {
+  const router = useRouter();
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[50vh] text-center px-4">
+      <h2 className="text-2xl font-bold text-gray-900 mb-2">Login to view your dashboard</h2>
+      <p className="text-gray-500 mb-6 max-w-sm">Manage your profile settings, look at upcoming/past sessions and more.</p>
+      <button
+        onClick={() => router.push('/login')}
+        className="bg-[#0012FF] text-white px-8 py-3 rounded-full font-bold text-sm hover:opacity-90 transition-all shadow-lg shadow-[#0012FF]/10"
+      >
+        Login Account
+      </button>
+    </div>
+  );
+}
+
+interface DisplayBooking {
+  id: string | number;
+  name: string;
+  handle: string;
+  avatar: string;
+  time: string;
+  type: string;
+  status: string;
+  amount: string;
+  note: string;
+  scheduledDate?: string;
+}
 
 export default function UserDashboard() {
   const router = useRouter();
-  const pathname = usePathname();
+  const { status } = useSession();
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeBookingTab, setActiveBookingTab] = useState<'Upcoming' | 'Past' | 'Cancelled'>('Upcoming');
@@ -19,29 +48,182 @@ export default function UserDashboard() {
   const [displayName, setDisplayName] = useState<string>('James Richard');
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function checkAuth() {
-      try {
-        const res = await fetch('/api/user/me');
-        if (res.ok) {
-          const data = await res.json();
-          setIsAuthenticated(true);
-          if (data.user) {
-            setDisplayName(data.user.name || 'James Richard');
-            // Check if user has photo
-            setProfilePhoto(data.user.image || null);
-          }
-        } else {
-          setIsAuthenticated(false);
-        }
-      } catch {
-        setIsAuthenticated(false);
-      } finally {
-        setLoading(false);
+  // Bookings list state
+  const [realBookingsList, setRealBookingsList] = useState<{
+    Upcoming: DisplayBooking[];
+    Past: DisplayBooking[];
+    Cancelled: DisplayBooking[];
+  }>({
+    Upcoming: [],
+    Past: [],
+    Cancelled: []
+  });
+
+  const [useFallback, setUseFallback] = useState(false);
+
+  const fallbackBookingsList = {
+    Upcoming: [
+      {
+        id: 'fallback-1',
+        name: 'Sophia Reed',
+        handle: '@sophiareed',
+        avatar: '/Avatars/6.jpg',
+        time: 'Sat at 03:00 PM to 05:00 PM',
+        type: 'In-person',
+        status: 'Accepted',
+        amount: '2500 PKR',
+        note: 'Passionate content creator dedicated to helping brands and businesses connect with their audience through engaging, high-quality content....'
+      },
+      {
+        id: 'fallback-2',
+        name: 'Sophia Reed',
+        handle: '@sophiareed',
+        avatar: '/Avatars/6.jpg',
+        time: 'Sat at 03:00 PM to 05:00 PM',
+        type: 'In-person',
+        status: 'Accepted',
+        amount: '2500 PKR',
+        note: 'Passionate content creator dedicated to helping brands and businesses connect with their audience through engaging, high-quality content....'
+      },
+      {
+        id: 'fallback-3',
+        name: 'Sophia Reed',
+        handle: '@sophiareed',
+        avatar: '/Avatars/6.jpg',
+        time: 'Sat at 03:00 PM to 05:00 PM',
+        type: 'Online',
+        status: 'Accepted',
+        amount: '2500 PKR',
+        note: 'Passionate content creator dedicated to helping brands and businesses connect with their audience through engaging, high-quality content....'
       }
+    ],
+    Past: [
+      {
+        id: 'fallback-4',
+        name: 'Sophia Reed',
+        handle: '@sophiareed',
+        avatar: '/Avatars/6.jpg',
+        time: 'Last Tuesday at 02:00 PM',
+        type: 'Online',
+        status: 'Completed',
+        amount: '2500 PKR',
+        note: 'Great consultation session regarding fashion styles and trends.'
+      }
+    ],
+    Cancelled: [
+      {
+        id: 'fallback-5',
+        name: 'Sophia Reed',
+        handle: '@sophiareed',
+        avatar: '/Avatars/6.jpg',
+        time: 'Cancelled on 5 Jun',
+        type: 'In-person',
+        status: 'Cancelled',
+        amount: '2500 PKR',
+        note: 'Session was cancelled due to scheduling conflicts.'
+      }
+    ]
+  };
+
+  const loadData = useCallback(async () => {
+    try {
+      const res = await fetch('/api/user/me');
+      if (res.ok) {
+        const data = await res.json();
+        setIsAuthenticated(true);
+        if (data.user) {
+          setDisplayName(data.user.name || 'James Richard');
+          setProfilePhoto(data.creatorProfile?.profilePhoto || data.user.image || null);
+        }
+      } else {
+        setIsAuthenticated(false);
+      }
+
+      // Fetch bookings
+      const bookingsRes = await fetch('/api/user/bookings');
+      if (bookingsRes.ok) {
+        const bData = await bookingsRes.json();
+        if (bData.bookings && bData.bookings.length > 0) {
+          const upcomingArr: DisplayBooking[] = [];
+          const pastArr: DisplayBooking[] = [];
+          const cancelledArr: DisplayBooking[] = [];
+
+          bData.bookings.forEach((b: any) => {
+            const displayObj: DisplayBooking = {
+              id: b.id,
+              name: b.creator,
+              handle: `@${b.username}`,
+              avatar: b.image || '/Avatars/12.jpg',
+              time: `${b.shortDate} at ${b.time}`,
+              type: b.paymentMethod === 'Guest' ? 'Online' : 'In-person',
+              status: b.originalStatus === 'cancelled' ? 'Cancelled' : 'Accepted',
+              amount: b.price || '2500 PKR',
+              note: b.preSessionQuestion || 'No description provided.',
+              scheduledDate: b.scheduledDate
+            };
+
+            if (b.originalStatus === 'cancelled') {
+              cancelledArr.push(displayObj);
+            } else if (b.status === 'Upcoming') {
+              upcomingArr.push(displayObj);
+            } else {
+              pastArr.push(displayObj);
+            }
+          });
+
+          setRealBookingsList({
+            Upcoming: upcomingArr,
+            Past: pastArr,
+            Cancelled: cancelledArr
+          });
+          setUseFallback(false);
+        } else {
+          setUseFallback(true);
+        }
+      } else {
+        setUseFallback(true);
+      }
+    } catch (err) {
+      console.error(err);
+      setUseFallback(true);
+    } finally {
+      setLoading(false);
     }
-    checkAuth();
   }, []);
+
+  useEffect(() => {
+    if (status === 'authenticated') {
+      loadData();
+    } else if (status === 'unauthenticated') {
+      setIsAuthenticated(false);
+      setLoading(false);
+    }
+  }, [status, loadData]);
+
+  const handleCancelClick = async (bookingId: string | number) => {
+    if (String(bookingId).startsWith('fallback-')) {
+      alert('Cannot modify fallback bookings.');
+      return;
+    }
+    const confirm = window.confirm('Are you sure you want to cancel this booking?');
+    if (!confirm) return;
+
+    try {
+      const res = await fetch(`/api/user/bookings/${bookingId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'cancelled' })
+      });
+      if (res.ok) {
+        alert('Booking cancelled successfully!');
+        loadData();
+      } else {
+        alert('Failed to cancel appointment');
+      }
+    } catch (err) {
+      alert('Error cancelling appointment');
+    }
+  };
 
   const toggleFavorite = (name: string) => {
     setFavorites(prev =>
@@ -82,69 +264,7 @@ export default function UserDashboard() {
     },
   ];
 
-  const bookingsList = {
-    Upcoming: [
-      {
-        id: 1,
-        name: 'Sophia Reed',
-        handle: '@sophiareed',
-        avatar: '/Avatars/6.jpg',
-        time: 'Sat at 03:00 PM to 05:00 PM',
-        type: 'In-person',
-        status: 'Accepted',
-        amount: '2500 PKR',
-        note: 'Passionate content creator dedicated to helping brands and businesses connect with their audience through engaging, high-quality content....'
-      },
-      {
-        id: 2,
-        name: 'Sophia Reed',
-        handle: '@sophiareed',
-        avatar: '/Avatars/6.jpg',
-        time: 'Sat at 03:00 PM to 05:00 PM',
-        type: 'In-person',
-        status: 'Accepted',
-        amount: '2500 PKR',
-        note: 'Passionate content creator dedicated to helping brands and businesses connect with their audience through engaging, high-quality content....'
-      },
-      {
-        id: 3,
-        name: 'Sophia Reed',
-        handle: '@sophiareed',
-        avatar: '/Avatars/6.jpg',
-        time: 'Sat at 03:00 PM to 05:00 PM',
-        type: 'Online',
-        status: 'Accepted',
-        amount: '2500 PKR',
-        note: 'Passionate content creator dedicated to helping brands and businesses connect with their audience through engaging, high-quality content....'
-      }
-    ],
-    Past: [
-      {
-        id: 4,
-        name: 'Sophia Reed',
-        handle: '@sophiareed',
-        avatar: '/Avatars/6.jpg',
-        time: 'Last Tuesday at 02:00 PM',
-        type: 'Online',
-        status: 'Completed',
-        amount: '2500 PKR',
-        note: 'Great consultation session regarding fashion styles and trends.'
-      }
-    ],
-    Cancelled: [
-      {
-        id: 5,
-        name: 'Sophia Reed',
-        handle: '@sophiareed',
-        avatar: '/Avatars/6.jpg',
-        time: 'Cancelled on 5 Jun',
-        type: 'In-person',
-        status: 'Cancelled',
-        amount: '2500 PKR',
-        note: 'Session was cancelled due to scheduling conflicts.'
-      }
-    ]
-  };
+  const currentBookings = useFallback ? fallbackBookingsList : realBookingsList;
 
   if (loading) {
     return (
@@ -180,7 +300,6 @@ export default function UserDashboard() {
 
   return (
     <div className="min-h-screen bg-[#F8F8FA] pb-12 text-black">
-      {/* Redesigned Floating Top Navigation Bar */}
       <UserNavbar displayName={displayName} profilePhoto={profilePhoto} />
 
       {/* Main Grid Content */}
@@ -217,7 +336,9 @@ export default function UserDashboard() {
                     </svg>
                   </div>
                   <p className="text-xs text-gray-500 font-bold tracking-wide uppercase">Total Bookings</p>
-                  <p className="text-3xl font-black text-[#1B6330] mt-1">18</p>
+                  <p className="text-3xl font-black text-[#1B6330] mt-1">
+                    {useFallback ? 18 : (currentBookings.Upcoming.length + currentBookings.Past.length + currentBookings.Cancelled.length)}
+                  </p>
                 </div>
                 <div className="text-[11px] font-bold text-gray-600 flex items-center gap-1">
                   <span>↑ +18.2% from last month</span>
@@ -364,13 +485,11 @@ export default function UserDashboard() {
                               </filter>
                             </defs>
 
-                            {/* Heart */}
                             <path
                               fill="currentColor"
                               d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
                             />
 
-                            {/* Glow */}
                             <path
                               d="M15.2 6.2c1.5 0 2.7 1.2 2.7 2.7 0 1-.4 1.9-1 2.8"
                               stroke="white"
@@ -381,7 +500,6 @@ export default function UserDashboard() {
                               filter="url(#heartGlow)"
                             />
 
-                            {/* Main shine */}
                             <path
                               d="M15.2 6.2c1.5 0 2.7 1.2 2.7 2.7 0 1-.4 1.9-1 2.8"
                               stroke="white"
@@ -417,7 +535,7 @@ export default function UserDashboard() {
                         <p className="text-xs text-gray-500 font-sans mt-2.5 line-clamp-2">{creator.description}</p>
                         <div className="flex items-center justify-between mt-4">
                           <span className="text-xs font-sans text-gray-500">Starting from <strong className="text-black font-black">{creator.price}</strong></span>
-                          <Link href="/welcome" className="text-xs font-sans font-bold text-blue-600 underline hover:text-blue-800 transition-colors">Book Now</Link>
+                          <Link href="/explore-creators" className="text-xs font-sans font-bold text-blue-600 underline hover:text-blue-800 transition-colors">Book Now</Link>
                         </div>
                       </div>
                     </motion.div>
@@ -433,7 +551,7 @@ export default function UserDashboard() {
             {/* Bookings Tabs */}
             <div className="flex bg-gray-100 p-1.5 rounded-2xl justify-between">
               {(['Upcoming', 'Past', 'Cancelled'] as const).map((tab) => {
-                const count = tab === 'Upcoming' ? 9 : tab === 'Past' ? 6 : 3;
+                const count = currentBookings[tab].length;
                 const isActive = activeBookingTab === tab;
                 return (
                   <button
@@ -452,7 +570,7 @@ export default function UserDashboard() {
 
             {/* List of bookings */}
             <div className="space-y-4">
-              {bookingsList[activeBookingTab].map((booking) => (
+              {currentBookings[activeBookingTab].map((booking) => (
                 <div
                   key={booking.id}
                   className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm relative group hover:shadow-md transition-all flex flex-col justify-between"
@@ -520,19 +638,26 @@ export default function UserDashboard() {
                     {/* Description */}
                     <p className="text-[12px] text-gray-500 mt-3 leading-relaxed">
                       {booking.note}
-                      <span className="text-[#0012FF] font-bold cursor-pointer hover:underline">Read more</span>
                     </p>
                   </div>
 
                   {/* Buttons */}
-                  <div className="flex items-center gap-2 mt-4 pt-3 border-t border-gray-50">
-                    <button className="flex-1 py-1.5 text-xs font-bold border border-gray-200 rounded-full text-gray-600 hover:bg-gray-50 transition-all">
-                      Reschedule
-                    </button>
-                    <button className="flex-1 py-1.5 text-xs font-bold border border-red-200 rounded-full text-red-500 bg-red-50/50 hover:bg-red-50 transition-all">
-                      Cancel Appointment
-                    </button>
-                  </div>
+                  {activeBookingTab === 'Upcoming' && (
+                    <div className="flex items-center gap-2 mt-4 pt-3 border-t border-gray-50">
+                      <button
+                        onClick={() => router.push('/user/bookings')}
+                        className="flex-1 py-1.5 text-xs font-bold border border-gray-200 rounded-full text-gray-600 hover:bg-gray-50 transition-all text-center"
+                      >
+                        Reschedule
+                      </button>
+                      <button
+                        onClick={() => handleCancelClick(booking.id)}
+                        className="flex-1 py-1.5 text-xs font-bold border border-red-200 rounded-full text-red-500 bg-red-50/50 hover:bg-red-50 transition-all text-center"
+                      >
+                        Cancel Appointment
+                      </button>
+                    </div>
+                  )}
 
                   {/* Up-Right Arrow Icon */}
                   <div className="absolute right-3 bottom-3 opacity-0 group-hover:opacity-100 transition-opacity">

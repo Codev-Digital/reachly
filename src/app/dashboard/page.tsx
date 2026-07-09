@@ -20,8 +20,10 @@ export default function DashboardRedirect() {
             return;
           }
           
-          // Case 1: Has Creator Profile
-          if (userData.creatorProfile) {
+          const isCreator = userData.user.approvalStatus !== 'none' || userData.user.onboardingStep > 0;
+
+          // Case 1: Has Creator Profile and is a creator
+          if (userData.creatorProfile && isCreator) {
             if (userData.creatorProfile.isProfileComplete) {
               router.push('/creators/dashboard');
             } else {
@@ -31,13 +33,13 @@ export default function DashboardRedirect() {
           }
           
           // Case 2: Onboarding step >0 → creator (even without CreatorProfile yet)
-          if (userData.user.onboardingStep > 0) {
+          if (userData.user.onboardingStep > 0 && isCreator) {
             router.push(`/creator-onboarding/step-${userData.user.onboardingStep}`);
             return;
           }
           
           // Case 3: Has seen welcome → user dashboard
-          if (userData.user.hasSeenWelcome) {
+          if (userData.user.hasSeenWelcome || userData.user.approvalStatus === 'none') {
             router.push('/user/dashboard');
             return;
           }

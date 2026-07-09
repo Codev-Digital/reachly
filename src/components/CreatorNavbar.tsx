@@ -40,6 +40,8 @@ export default function CreatorNavbar() {
     }
 
     if (currentUserData) {
+      const isCreator = currentUserData.user.approvalStatus !== 'none' || currentUserData.user.onboardingStep > 0;
+
       // Check if user is pending approval first
       if (currentUserData.user.approvalStatus === 'pending') {
         router.push('/creators/pending-approval');
@@ -47,14 +49,13 @@ export default function CreatorNavbar() {
       }
       
       // If user has a creator profile and it's complete and approved → go to creator dashboard
-      if (currentUserData.creatorProfile && currentUserData.creatorProfile.isProfileComplete && currentUserData.user.approvalStatus === 'approved') {
+      if (currentUserData.creatorProfile && currentUserData.creatorProfile.isProfileComplete && currentUserData.user.approvalStatus === 'approved' && isCreator) {
         router.push('/creators/dashboard');
         return;
       }
       
       // If user has a creator profile but it's not complete OR onboardingStep >0 → go to creator onboarding
-      if (currentUserData.creatorProfile || currentUserData.user.onboardingStep > 0) {
-        // But first check if they're not pending (we did that already)
+      if ((currentUserData.creatorProfile || currentUserData.user.onboardingStep > 0) && isCreator) {
         router.push('/creator-onboarding/step-1');
         return;
       }

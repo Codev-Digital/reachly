@@ -1,20 +1,21 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import UserNavbar from '@/components/UserNavbar';
+import { useRouter } from 'next/navigation';
 
 export default function UserSettings() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<'Profile' | 'Security'>('Profile');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  
   const [displayName, setDisplayName] = useState('James Richard');
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
-
-  // Form fields states
   const [emailAddress, setEmailAddress] = useState('jamesrichard@gmail.com');
-  const [bio, setBio] = useState('I want to start a YouTube channel about Pakistani street food. How do I structure my videos and what content should I focus on?');
-  const [city, setCity] = useState('Los Angeles');
-  const [country, setCountry] = useState('United States');
+  const [bio, setBio] = useState('');
+  const [city, setCity] = useState('Karachi');
+  const [country, setCountry] = useState('Pakistan');
   const [selectedLanguage, setSelectedLanguage] = useState('English');
 
   const [oldPassword, setOldPassword] = useState('');
@@ -24,16 +25,26 @@ export default function UserSettings() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     async function loadUser() {
       try {
-        const res = await fetch('/api/user/me');
+        const res = await fetch('/api/user/settings');
         if (res.ok) {
           const data = await res.json();
           if (data.user) {
-            setDisplayName(data.user.name || 'James Richard');
-            setProfilePhoto(data.user.image || null);
+            setDisplayName(data.profile?.displayName || data.user.name || 'James Richard');
             setEmailAddress(data.user.email || 'jamesrichard@gmail.com');
+          }
+          if (data.profile) {
+            setProfilePhoto(data.profile.profilePhoto || null);
+            setBio(data.profile.shortBio || '');
+            setCity(data.profile.city || 'Karachi');
+            setCountry(data.profile.country || 'Pakistan');
+            if (data.profile.languages && data.profile.languages.length > 0) {
+              setSelectedLanguage(data.profile.languages[0]);
+            }
           }
         }
       } catch (err) {
@@ -42,6 +53,105 @@ export default function UserSettings() {
     }
     loadUser();
   }, []);
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert('File size exceeds 5MB limit.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfilePhoto(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSaveChanges = async () => {
+    try {
+      const payload = {
+        displayName,
+        shortBio: bio,
+        city,
+        country,
+        languages: [selectedLanguage],
+        profilePhoto
+      };
+
+      const res = await fetch('/api/user/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        alert('Profile updated successfully!');
+      } else {
+        const err = await res.json();
+        alert(err.error || 'Failed to save changes');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error saving changes');
+    }
+  };
+
+  const handleUpdatePassword = async () => {
+    if (!oldPassword || !newPassword || !confirmPassword) {
+      alert('Please fill all password fields');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      alert('Passwords do not match');
+      return;
+    }
+    try {
+      const res = await fetch('/api/user/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'update-password',
+          oldPassword,
+          newPassword
+        })
+      });
+
+      if (res.ok) {
+        alert('Password updated successfully!');
+        setOldPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+      } else {
+        const err = await res.json();
+        alert(err.error || 'Failed to update password');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error updating password');
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    try {
+      const res = await fetch('/api/user/settings', {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        alert('Account deleted successfully.');
+        router.push('/signup');
+      } else {
+        const err = await res.json();
+        alert(err.error || 'Failed to delete account');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error deleting account');
+    } finally {
+      setShowDeleteModal(false);
+    }
+  };
 
   const languages = ['Urdu', 'English', 'Punjabi', 'Sindhi', 'Pashto'];
 
@@ -66,7 +176,6 @@ export default function UserSettings() {
 
           {/* Settings Tabs */}
           <div className="flex gap-4 mb-8">
-            {/* Profile Tab Button */}
             <button
               onClick={() => setActiveTab('Profile')}
               className="flex flex-col items-center gap-1.5"
@@ -87,7 +196,6 @@ export default function UserSettings() {
               </span>
             </button>
 
-            {/* Security Tab Button */}
             <button
               onClick={() => setActiveTab('Security')}
               className="flex flex-col items-center gap-1.5"
@@ -108,7 +216,7 @@ export default function UserSettings() {
             </button>
           </div>
 
-          {/* Tab Contents */}
+          {/* Profile Tab */}
           {activeTab === 'Profile' && (
             <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 sm:p-8">
               <h2 className="text-xl font-bold text-black font-anton uppercase tracking-wide">Profile</h2>
@@ -116,19 +224,30 @@ export default function UserSettings() {
 
               <div className="w-full h-px bg-gray-100 mb-6" />
 
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handlePhotoChange}
+                accept="image/*"
+                className="hidden"
+              />
+
               {/* Photo Area */}
               <div className="flex items-center gap-6 mb-8">
                 <div className="w-20 h-20 rounded-full overflow-hidden border border-gray-100 bg-gray-50 flex items-center justify-center">
                   {profilePhoto ? (
                     <img src={profilePhoto} alt={displayName} className="w-full h-full object-cover" />
                   ) : (
-                    <img src="/merium in creators section.png" alt="Avatar" className="w-full h-full object-cover" />
+                    <img src="/Avatars/1.jpg" alt="Avatar" className="w-full h-full object-cover" />
                   )}
                 </div>
                 <div>
                   <h3 className="font-bold text-gray-900 text-base">{displayName}</h3>
                   <p className="text-xs text-gray-400 mb-3">@{displayName.toLowerCase().replace(/\s+/g, '')}</p>
-                  <button className="bg-[#0012FF] text-white px-5 py-2.5 rounded-full text-xs font-bold shadow-sm hover:opacity-90 transition-all">
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="bg-[#0012FF] text-white px-5 py-2.5 rounded-full text-xs font-bold shadow-sm hover:opacity-90 transition-all"
+                  >
                     Change Profile Photo
                   </button>
                   <p className="text-[10px] text-gray-400 mt-1.5">JPG or PNG, max 5MB</p>
@@ -151,8 +270,8 @@ export default function UserSettings() {
                   <input
                     type="email"
                     value={emailAddress}
-                    onChange={(e) => setEmailAddress(e.target.value)}
-                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] transition-all"
+                    disabled
+                    className="w-full bg-gray-550 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-600 focus:outline-none cursor-not-allowed"
                   />
                 </div>
               </div>
@@ -182,10 +301,14 @@ export default function UserSettings() {
                     onChange={(e) => setCity(e.target.value)}
                     className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-700 focus:outline-none appearance-none"
                   >
-                    <option value="Los Angeles">Los Angeles</option>
                     <option value="Karachi">Karachi</option>
-                    <option value="London">London</option>
-                    <option value="New York">New York</option>
+                    <option value="Lahore">Lahore</option>
+                    <option value="Islamabad">Islamabad</option>
+                    <option value="Rawalpindi">Rawalpindi</option>
+                    <option value="Faisalabad">Faisalabad</option>
+                    <option value="Multan">Multan</option>
+                    <option value="Peshawar">Peshawar</option>
+                    <option value="Quetta">Quetta</option>
                   </select>
                   <div className="absolute right-4 top-[42px] pointer-events-none text-gray-400">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -200,8 +323,8 @@ export default function UserSettings() {
                     onChange={(e) => setCountry(e.target.value)}
                     className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-700 focus:outline-none appearance-none"
                   >
-                    <option value="United States">United States</option>
                     <option value="Pakistan">Pakistan</option>
+                    <option value="United States">United States</option>
                     <option value="United Kingdom">United Kingdom</option>
                   </select>
                   <div className="absolute right-4 top-[42px] pointer-events-none text-gray-400">
@@ -212,7 +335,7 @@ export default function UserSettings() {
                 </div>
               </div>
 
-              {/* Languages Spoken */}
+              {/* Languages */}
               <div className="mb-8">
                 <label className="font-bold text-xs text-gray-900 block mb-3 font-sans">Languages Spoken</label>
                 <div className="flex flex-wrap gap-2.5">
@@ -232,32 +355,32 @@ export default function UserSettings() {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center justify-between">
-                <button className="flex items-center gap-1.5 bg-white border border-gray-200 text-gray-500 px-6 py-2.5 rounded-full text-xs font-bold hover:bg-gray-50 transition-all shadow-sm">
-                  ← Back
+              <div className="flex items-center justify-end gap-3">
+                <button
+                  onClick={() => router.back()}
+                  className="bg-white border border-gray-200 text-gray-500 px-6 py-2.5 rounded-full text-xs font-bold hover:bg-gray-50 transition-all shadow-sm"
+                >
+                  Cancel
                 </button>
-                <div className="flex items-center gap-3">
-                  <button className="bg-white border border-[#0012FF]/30 text-[#0012FF] px-6 py-2.5 rounded-full text-xs font-bold hover:bg-[#0012FF]/5 transition-all">
-                    Cancel
-                  </button>
-                  <button className="bg-[#0012FF] text-white px-6 py-2.5 rounded-full text-xs font-bold shadow-sm hover:opacity-90 transition-all">
-                    Save Changes
-                  </button>
-                </div>
+                <button
+                  onClick={handleSaveChanges}
+                  className="bg-[#0012FF] text-white px-6 py-2.5 rounded-full text-xs font-bold shadow-sm hover:opacity-90 transition-all"
+                >
+                  Save Changes
+                </button>
               </div>
             </div>
           )}
 
+          {/* Security Tab */}
           {activeTab === 'Security' && (
             <div className="space-y-6">
-              {/* Security Form Card */}
               <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 sm:p-8">
                 <h2 className="text-xl font-bold text-black font-anton uppercase tracking-wide">Security</h2>
                 <p className="text-gray-400 text-sm mb-6">Manage your password and security settings.</p>
 
                 <div className="w-full h-px bg-gray-100 mb-6" />
 
-                {/* Form Fields */}
                 <div className="space-y-6 mb-8">
                   {/* Old Password */}
                   <div className="relative">
@@ -317,14 +440,6 @@ export default function UserSettings() {
                           </svg>
                         )}
                       </button>
-
-                      {/* Password Strength segments */}
-                      <div className="flex gap-1.5 mt-2">
-                        <div className="h-1 rounded-full flex-1 bg-[#0012FF]" />
-                        <div className="h-1 rounded-full flex-1 bg-gray-200" />
-                        <div className="h-1 rounded-full flex-1 bg-gray-200" />
-                        <div className="h-1 rounded-full flex-1 bg-gray-200" />
-                      </div>
                     </div>
 
                     {/* Confirm Password */}
@@ -358,19 +473,24 @@ export default function UserSettings() {
                   </div>
                 </div>
 
-                {/* Action Buttons */}
-                <div className="flex items-center justify-between">
-                  <button className="flex items-center gap-1.5 bg-white border border-gray-200 text-gray-500 px-6 py-2.5 rounded-full text-xs font-bold hover:bg-gray-50 transition-all shadow-sm">
-                    ← Back
+                {/* Save Password Button */}
+                <div className="flex items-center justify-end gap-3">
+                  <button
+                    onClick={() => {
+                      setOldPassword('');
+                      setNewPassword('');
+                      setConfirmPassword('');
+                    }}
+                    className="bg-white border border-gray-200 text-gray-500 px-6 py-2.5 rounded-full text-xs font-bold hover:bg-gray-50 transition-all shadow-sm"
+                  >
+                    Cancel
                   </button>
-                  <div className="flex items-center gap-3">
-                    <button className="bg-white border border-[#0012FF]/30 text-[#0012FF] px-6 py-2.5 rounded-full text-xs font-bold hover:bg-[#0012FF]/5 transition-all">
-                      Cancel
-                    </button>
-                    <button className="bg-[#0012FF] text-white px-6 py-2.5 rounded-full text-xs font-bold shadow-sm hover:opacity-90 transition-all">
-                      Save Changes
-                    </button>
-                  </div>
+                  <button
+                    onClick={handleUpdatePassword}
+                    className="bg-[#0012FF] text-white px-6 py-2.5 rounded-full text-xs font-bold shadow-sm hover:opacity-90 transition-all"
+                  >
+                    Update Password
+                  </button>
                 </div>
               </div>
 
@@ -395,50 +515,37 @@ export default function UserSettings() {
       {/* Delete Account Confirmation Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100] p-4">
-          <div className="relative w-full max-w-lg flex flex-col items-center justify-between p-6 pt-10 pb-6 min-h-[480px] sm:min-h-[500px] z-10">
-            {/* SVG Background notched card */}
-            <img
-              src="/assets/cancel-card.svg"
-              alt=""
-              className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10"
-            />
-            {/* Close Button */}
+          <div className="relative w-full max-w-lg flex flex-col items-center justify-between p-6 pt-10 pb-6 min-h-[480px] sm:min-h-[500px] z-10 bg-white rounded-3xl shadow-xl">
             <button
               onClick={() => setShowDeleteModal(false)}
-              className="absolute -top-1 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center hover:bg-gray-50 transition-all z-20 border border-gray-100/50 cursor-pointer text-gray-500"
+              className="absolute top-4 right-4 text-gray-400 hover:text-black"
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
+              ✕
             </button>
 
-            {/* Illustration */}
-            <div className="mt-10 mb-15 flex justify-center w-full">
-              <img
-                src="/assets/no-appointment.png"
-                alt="Are you sure?"
-                className="w-60 h-auto object-contain"
-              />
-            </div>
-
-            {/* Content */}
-            <div className="flex flex-col items-center w-full flex-grow text-center px-4">
+            <div className="flex flex-col items-center w-full flex-grow text-center px-4 mt-6">
               <h3 className="text-xl sm:text-2xl font-bold text-black mb-1 font-sans">Are You Sure?</h3>
               <p className="text-gray-400 text-sm max-w-sm mb-1">
                 Are you sure you want to delete your account?
               </p>
-              <p className="text-gray-400 text-sm max-w-sm mb-4">
+              <p className="text-gray-400 text-sm max-w-sm mb-6">
                 This action cannot be undone.
               </p>
 
-              {/* Action Button */}
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                className="w-full py-3 bg-[#D92D20] hover:bg-red-700 text-white rounded-full text-xs font-bold transition-all shadow-md"
-              >
-                Delete Account
-              </button>
+              <div className="flex gap-3 w-full">
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  className="flex-1 py-3 border border-gray-200 text-gray-600 rounded-full text-xs font-bold hover:bg-gray-50 transition-all"
+                >
+                  Keep Account
+                </button>
+                <button
+                  onClick={handleDeleteAccount}
+                  className="flex-1 py-3 bg-[#D92D20] hover:bg-red-700 text-white rounded-full text-xs font-bold transition-all shadow-md"
+                >
+                  Delete Account
+                </button>
+              </div>
             </div>
           </div>
         </div>

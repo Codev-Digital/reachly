@@ -23,7 +23,7 @@ export default function UserPayments() {
           const userData = await res.json();
           if (userData.user) {
             setDisplayName(userData.user.name || 'James Richard');
-            setProfilePhoto(userData.user.image || null);
+            setProfilePhoto(userData.creatorProfile?.profilePhoto || userData.user.image || null);
           }
         }
       } catch (err) {

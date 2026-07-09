@@ -114,7 +114,28 @@ export async function PUT(req: NextRequest) {
     if (languages !== undefined) creatorProfile.languages = languages;
     if (niches !== undefined) creatorProfile.niches = niches;
     if (socialLinks !== undefined) creatorProfile.socialLinks = socialLinks;
-    if (profilePhoto !== undefined) creatorProfile.profilePhoto = profilePhoto;
+
+    if (profilePhoto && profilePhoto.startsWith('data:image')) {
+      try {
+        const { uploadToSupabase } = await import('@/lib/supabase');
+        const matches = profilePhoto.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+        if (matches && matches.length === 3) {
+          const type = matches[1];
+          const buffer = Buffer.from(matches[2], 'base64');
+          const ext = type.split('/')[1] || 'png';
+          const url = await uploadToSupabase(
+            buffer,
+            type,
+            `profiles/${user._id}/profile_${Date.now()}.${ext}`
+          );
+          creatorProfile.profilePhoto = url;
+        }
+      } catch (uploadErr) {
+        console.error('Error uploading profile photo to supabase:', uploadErr);
+      }
+    } else if (profilePhoto !== undefined) {
+      creatorProfile.profilePhoto = profilePhoto;
+    }
 
     await creatorProfile.save();
 
