@@ -45,12 +45,31 @@ type DayKey = 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Satu
 
 const DAYS: DayKey[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-const TIME_OPTIONS = [
-  '9:00 AM', '9:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM',
-  '12:00 PM', '12:30 PM', '1:00 PM', '1:30 PM', '2:00 PM', '2:30 PM',
-  '3:00 PM', '3:30 PM', '4:00 PM', '4:30 PM', '5:00 PM', '5:30 PM',
-  '6:00 PM', '6:30 PM', '7:00 PM', '8:00 PM',
+const TIME_OPTIONS_12 = [
+  '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM',
+  '12:00 PM', '12:30 PM', '01:00 PM', '01:30 PM', '02:00 PM', '02:30 PM',
+  '03:00 PM', '03:30 PM', '04:00 PM', '04:30 PM', '05:00 PM', '05:30 PM',
+  '06:00 PM', '06:30 PM', '07:00 PM', '08:00 PM',
 ];
+
+// Helper to convert 12h format to 24h format (HH:MM)
+const to24h = (time12h: string) => {
+  const [time, modifier] = time12h.split(' ');
+  let [hours, minutes] = time.split(':');
+  if (hours === '12') hours = '00';
+  if (modifier === 'PM') hours = String(parseInt(hours, 10) + 12);
+  return `${hours.padStart(2, '0')}:${minutes}`;
+};
+
+// Helper to convert 24h format (HH:MM) to 12h format
+const to12h = (time24h: string) => {
+  if (!time24h) return '09:00 AM';
+  const [hours, minutes] = time24h.split(':');
+  const h = parseInt(hours, 10);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const displayH = h % 12 === 0 ? 12 : h % 12;
+  return `${String(displayH).padStart(2, '0')}:${minutes} ${ampm}`;
+};
 
 const COMMA_SVGS = ['/assets/comma-1.svg', '/assets/comma-2.svg', '/assets/comma3.svg'];
 
@@ -85,6 +104,30 @@ export default function CreatorSettings() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
+  // Availability States
+  const [enabledDays, setEnabledDays] = useState<Record<string, boolean>>({
+    monday: true,
+    tuesday: false,
+    wednesday: false,
+    thursday: false,
+    friday: false,
+    saturday: false,
+    sunday: false,
+  });
+
+  const [dayTimes, setDayTimes] = useState<Record<string, { start: string; end: string }>>({
+    monday: { start: '09:00 AM', end: '05:00 PM' },
+    tuesday: { start: '09:00 AM', end: '05:00 PM' },
+    wednesday: { start: '09:00 AM', end: '05:00 PM' },
+    thursday: { start: '09:00 AM', end: '05:00 PM' },
+    friday: { start: '09:00 AM', end: '05:00 PM' },
+    saturday: { start: '09:00 AM', end: '05:00 PM' },
+    sunday: { start: '09:00 AM', end: '05:00 PM' },
+  });
+
+  const [duration, setDuration] = useState('30 minutes');
+  const [locationAddress, setLocationAddress] = useState('');
+
   const [activeTab, setActiveTab] = useState('Profile');
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -93,22 +136,14 @@ export default function CreatorSettings() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [editSession, setEditSession] = useState<typeof SESSIONS[number] | null>(null);
 
-  const [enabledDays, setEnabledDays] = useState<Record<DayKey, boolean>>({
-    Monday: true,
-    Tuesday: false,
-    Wednesday: false,
-    Thursday: false,
-    Friday: false,
-    Saturday: false,
-    Sunday: false,
-  });
-
+  // Load Profile & Availability on mount
   useEffect(() => {
-    async function loadProfile() {
+    async function loadAllData() {
       try {
-        const res = await fetch('/api/user/settings');
-        if (res.ok) {
-          const data = await res.json();
+        // Fetch Profile
+        const profileRes = await fetch('/api/user/settings');
+        if (profileRes.ok) {
+          const data = await profileRes.json();
           if (data.success) {
             setEmail(data.user?.email || '');
             if (data.profile) {
@@ -130,13 +165,44 @@ export default function CreatorSettings() {
             }
           }
         }
+
+        // Fetch Availability Settings
+        const availRes = await fetch('/api/creator-onboarding/step-5');
+        if (availRes.ok) {
+          const data = await availRes.json();
+          if (data.availability) {
+            const avail = data.availability;
+            if (avail.schedule) {
+              const newEnabled: Record<string, boolean> = {};
+              const newTimes: Record<string, { start: string; end: string }> = {};
+
+              Object.keys(avail.schedule).forEach((dayKey) => {
+                const s = avail.schedule[dayKey];
+                newEnabled[dayKey] = s.enabled || false;
+                if (s.slots && s.slots.length > 0) {
+                  newTimes[dayKey] = {
+                    start: to12h(s.slots[0].start),
+                    end: to12h(s.slots[0].end),
+                  };
+                } else {
+                  newTimes[dayKey] = { start: '09:00 AM', end: '05:00 PM' };
+                }
+              });
+
+              setEnabledDays(newEnabled);
+              setDayTimes(newTimes);
+            }
+            if (avail.duration) setDuration(avail.duration);
+            if (avail.location) setLocationAddress(avail.location.address || '');
+          }
+        }
       } catch (err) {
-        console.error('Failed to load profile:', err);
+        console.error('Failed to load settings:', err);
       } finally {
         setLoading(false);
       }
     }
-    loadProfile();
+    loadAllData();
   }, []);
 
   const handleSaveProfile = async () => {
@@ -161,6 +227,52 @@ export default function CreatorSettings() {
         alert('Profile saved successfully!');
       } else {
         alert(data.error || 'Failed to save profile');
+      }
+    } catch (err) {
+      alert('Network error, please try again');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveAvailability = async () => {
+    // Check if at least one day is enabled
+    const hasEnabledDay = Object.values(enabledDays).some(val => val);
+    if (!hasEnabledDay) {
+      alert('Please enable at least one day in your weekly schedule.');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      // Build schedule format for DB
+      const schedule: Record<string, any> = {};
+      Object.keys(enabledDays).forEach((dayKey) => {
+        const times = dayTimes[dayKey] || { start: '09:00 AM', end: '05:00 PM' };
+        schedule[dayKey] = {
+          enabled: enabledDays[dayKey],
+          slots: enabledDays[dayKey] ? [{
+            start: to24h(times.start),
+            end: to24h(times.end)
+          }] : []
+        };
+      });
+
+      const res = await fetch('/api/creator-onboarding/step-5', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          schedule,
+          duration,
+          location: locationAddress,
+          timezone: 'Asia/Karachi'
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        alert('Availability saved successfully!');
+      } else {
+        alert(data.error || 'Failed to save availability');
       }
     } catch (err) {
       alert('Network error, please try again');
@@ -298,8 +410,18 @@ export default function CreatorSettings() {
     });
   };
 
-  const toggleDay = (day: DayKey) => {
-    setEnabledDays((prev) => ({ ...prev, [day]: !prev[day] }));
+  const toggleDayState = (dayName: string) => {
+    setEnabledDays((prev) => ({ ...prev, [dayName]: !prev[dayName] }));
+  };
+
+  const handleTimeChange = (dayName: string, field: 'start' | 'end', val: string) => {
+    setDayTimes((prev) => ({
+      ...prev,
+      [dayName]: {
+        ...prev[dayName],
+        [field]: val,
+      }
+    }));
   };
 
   if (loading) {
@@ -655,56 +777,70 @@ export default function CreatorSettings() {
                 <h4 className="text-xl font-bold text-black mb-6">Weekly Schedule</h4>
 
                 <div className="space-y-4">
-                  {DAYS.map((day) => (
-                    <div
-                      key={day}
-                      className={`rounded-2xl px-5 py-4 ${enabledDays[day] ? 'bg-[#F7F7FA]' : 'bg-[#F4F4F6]'}`}
-                    >
-                      <div className="flex items-center gap-3 flex-wrap">
-                        {/* Toggle */}
-                        <button
-                          onClick={() => toggleDay(day)}
-                          className={`w-11 h-6 rounded-full relative transition-all flex-shrink-0 ${enabledDays[day] ? 'bg-[#0012FF]' : 'bg-gray-300'
-                            }`}
-                        >
-                          <span
-                            className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${enabledDays[day] ? 'right-0.5' : 'left-0.5'
+                  {DAYS.map((day) => {
+                    const dayKey = day.toLowerCase();
+                    const isEnabled = enabledDays[dayKey] || false;
+                    const times = dayTimes[dayKey] || { start: '09:00 AM', end: '05:00 PM' };
+
+                    return (
+                      <div
+                        key={day}
+                        className={`rounded-2xl px-5 py-4 ${isEnabled ? 'bg-[#F7F7FA]' : 'bg-[#F4F4F6]'}`}
+                      >
+                        <div className="flex items-center gap-3 flex-wrap">
+                          {/* Toggle */}
+                          <button
+                            onClick={() => toggleDayState(dayKey)}
+                            className={`w-11 h-6 rounded-full relative transition-all flex-shrink-0 ${isEnabled ? 'bg-[#0012FF]' : 'bg-gray-300'
                               }`}
-                          />
-                        </button>
+                          >
+                            <span
+                              className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${isEnabled ? 'right-0.5' : 'left-0.5'
+                                }`}
+                            />
+                          </button>
 
-                        <span className={`text-sm sm:text-base font-medium w-20 sm:w-24 ${enabledDays[day] ? 'text-black' : 'text-gray-400'}`}>
-                          {day}
-                        </span>
+                          <span className={`text-sm sm:text-base font-medium w-20 sm:w-24 ${isEnabled ? 'text-black' : 'text-gray-400'}`}>
+                            {day}
+                          </span>
 
-                        {enabledDays[day] && (
-                          <div className="flex items-center gap-2 flex-1 flex-wrap sm:flex-nowrap">
-                            <div className="relative">
-                              <select className="appearance-none bg-white border border-gray-200 rounded-lg pl-3 pr-7 py-2 text-xs sm:text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] cursor-pointer max-w-[110px] sm:max-w-none">
-                                {TIME_OPTIONS.map((t) => (
-                                  <option key={t}>{t}</option>
-                                ))}
-                              </select>
-                              <svg className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <polyline points="6 9 12 15 18 9" />
-                              </svg>
+                          {isEnabled && (
+                            <div className="flex items-center gap-2 flex-1 flex-wrap sm:flex-nowrap">
+                              <div className="relative">
+                                <select
+                                  value={times.start}
+                                  onChange={(e) => handleTimeChange(dayKey, 'start', e.target.value)}
+                                  className="appearance-none bg-white border border-gray-200 rounded-lg pl-3 pr-7 py-2 text-xs sm:text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] cursor-pointer max-w-[110px] sm:max-w-none"
+                                >
+                                  {TIME_OPTIONS_12.map((t) => (
+                                    <option key={t} value={t}>{t}</option>
+                                  ))}
+                                </select>
+                                <svg className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <polyline points="6 9 12 15 18 9" />
+                                </svg>
+                              </div>
+                              <span className="text-sm text-gray-500">to</span>
+                              <div className="relative">
+                                <select
+                                  value={times.end}
+                                  onChange={(e) => handleTimeChange(dayKey, 'end', e.target.value)}
+                                  className="appearance-none bg-white border border-gray-200 rounded-lg pl-3 pr-7 py-2 text-xs sm:text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] cursor-pointer max-w-[110px] sm:max-w-none"
+                                >
+                                  {TIME_OPTIONS_12.map((t) => (
+                                    <option key={t} value={t}>{t}</option>
+                                  ))}
+                                </select>
+                                <svg className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <polyline points="6 9 12 15 18 9" />
+                                </svg>
+                              </div>
                             </div>
-                            <span className="text-sm text-gray-500">to</span>
-                            <div className="relative">
-                              <select defaultValue="5:00 PM" className="appearance-none bg-white border border-gray-200 rounded-lg pl-3 pr-7 py-2 text-xs sm:text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] cursor-pointer max-w-[110px] sm:max-w-none">
-                                {TIME_OPTIONS.map((t) => (
-                                  <option key={t}>{t}</option>
-                                ))}
-                              </select>
-                              <svg className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <polyline points="6 9 12 15 18 9" />
-                              </svg>
-                            </div>
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
@@ -716,12 +852,15 @@ export default function CreatorSettings() {
                 <div className="mb-5">
                   <label className="text-sm font-semibold text-black block mb-2">Duration</label>
                   <div className="relative">
-                    <select className="w-full appearance-none bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] cursor-pointer">
-                      <option>Custom</option>
-                      <option>15 minutes</option>
-                      <option>30 minutes</option>
-                      <option>45 minutes</option>
-                      <option>1 hour</option>
+                    <select
+                      value={duration}
+                      onChange={(e) => setDuration(e.target.value)}
+                      className="w-full appearance-none bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] cursor-pointer"
+                    >
+                      <option value="15 minutes">15 minutes</option>
+                      <option value="30 minutes">30 minutes</option>
+                      <option value="45 minutes">45 minutes</option>
+                      <option value="1 hour">1 hour</option>
                     </select>
                     <svg className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <polyline points="6 9 12 15 18 9" />
@@ -731,18 +870,27 @@ export default function CreatorSettings() {
 
                 {/* Location */}
                 <div className="mb-4">
-                  <label className="text-sm font-semibold text-black block mb-2">Location</label>
-                  <div className="flex items-center justify-between bg-white border border-gray-200 rounded-xl px-4 py-3.5">
-                    <div className="flex items-center gap-2 text-gray-900 text-sm">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                        <circle cx="12" cy="10" r="3" />
-                      </svg>
-                      In-person
-                    </div>
-                  </div>
+                  <label className="text-sm font-semibold text-black block mb-2">Location name/address</label>
+                  <input
+                    type="text"
+                    value={locationAddress}
+                    onChange={(e) => setLocationAddress(e.target.value)}
+                    placeholder="1234 Sunset Blvd, Los Angeles, CA 90026"
+                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
+                  />
                 </div>
               </div>
+            </div>
+
+            {/* Bottom Buttons */}
+            <div className="flex flex-wrap items-center justify-end gap-3">
+              <button
+                onClick={handleSaveAvailability}
+                disabled={saving}
+                className="bg-[#0012FF] text-white px-8 py-2.5 rounded-full text-sm font-semibold hover:bg-[#0010d0] transition-all disabled:bg-gray-400"
+              >
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
             </div>
           </div>
         )}

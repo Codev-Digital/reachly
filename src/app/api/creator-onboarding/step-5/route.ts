@@ -63,7 +63,16 @@ export async function PUT(req: NextRequest) {
     if (minNoticeHours !== undefined) availability.minNoticeHours = minNoticeHours;
     if (blockedDates) availability.blockedDates = blockedDates;
     if (duration) availability.duration = duration;
-    if (location !== undefined) availability.location = location;
+    if (location !== undefined) {
+      if (typeof location === 'string') {
+        availability.location = {
+          type: 'in-person',
+          address: location
+        };
+      } else {
+        availability.location = location;
+      }
+    }
     if (meetingLimits) availability.meetingLimits = meetingLimits;
     
     availability.isAvailabilityComplete = true;
