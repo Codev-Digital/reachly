@@ -20,15 +20,23 @@ export default function BookSessionStep2() {
   const [slots, setSlots] = useState<string[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [fetchedDate, setFetchedDate] = useState<string | null>(null);
+  const [schedule, setSchedule] = useState<Record<string, { enabled: boolean }> | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Generate 21 days starting from today
+  // Returns true if this calendar date is enabled in the creator's schedule
+  const isDayEnabled = (d: Date) => {
+    if (!schedule) return true; // still loading → show all
+    const dayName = d.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+    return schedule[dayName]?.enabled ?? false;
+  };
+
+  // Generate 60 days starting from today
   const getDatesList = () => {
     const dates = [];
     const base = new Date();
     base.setHours(0, 0, 0, 0);
-    for (let i = 0; i < 21; i++) {
+    for (let i = 0; i < 60; i++) {
       const d = new Date(base);
       d.setDate(base.getDate() + i);
       dates.push(d);
@@ -38,55 +46,44 @@ export default function BookSessionStep2() {
 
   const datesList = getDatesList();
 
-  // If no date selected yet, default to today
+  // Fetch full schedule once on mount
   useEffect(() => {
-    if (!booking.selectedDate) {
+    async function fetchSchedule() {
+      try {
+        const res = await fetch(`/api/creators/${params.username}/availability`);
+        const data = await res.json();
+        if (data.success && data.schedule) {
+          setSchedule(data.schedule);
+        }
+      } catch { /* silent */ }
+    }
+    fetchSchedule();
+  }, [params.username]);
+
+  // Default selected date to the first enabled day
+  useEffect(() => {
+    if (!booking.selectedDate && schedule) {
+      const firstEnabled = datesList.find(isDayEnabled);
+      if (firstEnabled) setBooking(b => ({ ...b, selectedDate: firstEnabled }));
+    } else if (!booking.selectedDate && !schedule) {
       setBooking(b => ({ ...b, selectedDate: new Date() }));
     }
-  }, [booking.selectedDate, setBooking]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [booking.selectedDate, schedule]);
 
   const fetchSlots = useCallback(async (date: Date) => {
     const iso = toISO(date);
     if (iso === fetchedDate) return;
     setLoadingSlots(true);
+    setSlots([]); // clear while loading
     try {
       const res = await fetch(`/api/creators/${params.username}/availability?date=${iso}`);
       const data = await res.json();
-      if (data.success && data.slots?.length > 0) {
-        setSlots(data.slots);
-      } else {
-        setSlots([
-          "11 AM - 12 PM",
-          "12 PM - 1 PM",
-          "1 PM - 2 PM",
-          "2 PM - 3 PM",
-          "3 PM - 4 PM",
-          "4 PM - 5 PM",
-          "5 PM - 6 PM",
-          "6 PM - 7 PM",
-          "7 PM - 8 PM",
-          "8 PM - 9 PM",
-          "9 PM - 10 PM",
-          "10 PM - 11 PM"
-        ]);
-      }
+      setSlots(data.success && data.slots ? data.slots : []);
       setFetchedDate(iso);
     } catch (err) {
       console.error('Error fetching slots:', err);
-      setSlots([
-        "11 AM - 12 PM",
-        "12 PM - 1 PM",
-        "1 PM - 2 PM",
-        "2 PM - 3 PM",
-        "3 PM - 4 PM",
-        "4 PM - 5 PM",
-        "5 PM - 6 PM",
-        "6 PM - 7 PM",
-        "7 PM - 8 PM",
-        "8 PM - 9 PM",
-        "9 PM - 10 PM",
-        "10 PM - 11 PM"
-      ]);
+      setSlots([]);
     } finally {
       setLoadingSlots(false);
     }
@@ -436,17 +433,22 @@ export default function BookSessionStep2() {
             >
               {datesList.map((d, i) => {
                 const isSelected = isSameDay(d, booking.selectedDate);
+                const enabled = isDayEnabled(d);
                 const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
                 const dayNum = String(d.getDate()).padStart(2, '0');
 
                 return (
                   <button
                     key={i}
-                    onClick={() => handleDateSelect(d)}
-                    className={`flex-shrink-0 w-11 h-13 py-1.5 flex flex-col items-center justify-center rounded-xl transition-all border ${isSelected
-                      ? 'bg-[#EEF2FF] border-[#0012FF] text-[#0012FF]'
-                      : 'bg-white border-transparent text-gray-500 hover:border-gray-100 hover:bg-gray-50'
-                      }`}
+                    onClick={() => enabled && handleDateSelect(d)}
+                    disabled={!enabled}
+                    className={`flex-shrink-0 w-11 py-1.5 flex flex-col items-center justify-center rounded-xl transition-all border ${
+                      isSelected
+                        ? 'bg-[#EEF2FF] border-[#0012FF] text-[#0012FF]'
+                        : enabled
+                        ? 'bg-white border-transparent text-gray-500 hover:border-gray-100 hover:bg-gray-50'
+                        : 'bg-gray-50 border-transparent text-gray-300 cursor-not-allowed'
+                    }`}
                   >
                     <span className="text-[8px] uppercase tracking-wider font-bold block leading-none mb-0.5">
                       {dayName}
@@ -479,8 +481,15 @@ export default function BookSessionStep2() {
                 ))}
               </div>
             ) : slots.length === 0 ? (
-              <div className="bg-white border border-gray-200 rounded-2xl p-8 text-center text-gray-500 text-xs">
-                No slots available on this date.
+              <div className="bg-white border border-gray-200 rounded-2xl p-8 text-center">
+                <svg className="mx-auto mb-3 text-gray-300" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <rect x="3" y="4" width="18" height="18" rx="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+                <p className="text-gray-500 text-sm font-semibold">No sessions available</p>
+                <p className="text-gray-400 text-xs mt-1">The creator isn't available on this day. Please select another date.</p>
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">

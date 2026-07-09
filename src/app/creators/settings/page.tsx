@@ -3,11 +3,9 @@
 import { useState, useEffect, type ReactNode } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import CreatorDashboardNav from '@/components/CreatorDashboardNav';
 
-// Card with a concave notch carved at the top-center (via radial mask) so the
-// close button nests in it. Grows freely in height without distorting — replaces
-// the stretched cancel-card.svg. drop-shadow traces the notched silhouette.
 function ModalShell({
   onClose,
   children,
@@ -54,7 +52,6 @@ const TIME_OPTIONS = [
   '6:00 PM', '6:30 PM', '7:00 PM', '8:00 PM',
 ];
 
-// comma-1 = green, comma-2 = red, comma3 = yellow
 const COMMA_SVGS = ['/assets/comma-1.svg', '/assets/comma-2.svg', '/assets/comma3.svg'];
 
 const SESSIONS = [
@@ -65,12 +62,32 @@ const SESSIONS = [
 ];
 
 export default function CreatorSettings() {
+  const router = useRouter();
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string>('');
-  const [activeTab, setActiveTab] = useState('Profile');
+  const [email, setEmail] = useState<string>('');
+  const [shortBio, setShortBio] = useState<string>('');
+  const [longBio, setLongBio] = useState<string>('');
+  const [city, setCity] = useState<string>('Karachi');
+  const [country, setCountry] = useState<string>('Pakistan');
+  const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
+  const [selectedNiches, setSelectedNiches] = useState<string[]>([]);
+  const [coverPhoto, setCoverPhoto] = useState<string | null>(null);
+  
+  // Social links
+  const [instagram, setInstagram] = useState('');
+  const [tiktok, setTiktok] = useState('');
+  const [youtube, setYoutube] = useState('');
+  const [linkedin, setLinkedin] = useState('');
 
-  const [selectedLanguages, setSelectedLanguages] = useState<string[]>(['English']);
-  const [selectedNiches, setSelectedNiches] = useState<string[]>(['Lifestyle']);
+  // Password States
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  const [activeTab, setActiveTab] = useState('Profile');
+  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -89,20 +106,123 @@ export default function CreatorSettings() {
   useEffect(() => {
     async function loadProfile() {
       try {
-        const res = await fetch('/api/user/me');
+        const res = await fetch('/api/user/settings');
         if (res.ok) {
           const data = await res.json();
-          const name = data.creatorProfile?.displayName || data.user?.name || '';
-          const photo = data.creatorProfile?.profilePhoto || null;
-          setDisplayName(name);
-          setProfilePhoto(photo);
+          if (data.success) {
+            setEmail(data.user?.email || '');
+            if (data.profile) {
+              setDisplayName(data.profile.displayName || '');
+              setProfilePhoto(data.profile.profilePhoto || null);
+              setShortBio(data.profile.shortBio || '');
+              setLongBio(data.profile.longBio || '');
+              setCity(data.profile.city || 'Karachi');
+              setCountry(data.profile.country || 'Pakistan');
+              setSelectedLanguages(data.profile.languages || []);
+              setSelectedNiches(data.profile.niches || []);
+              setCoverPhoto(data.profile.coverPhoto || null);
+              
+              const links = data.profile.socialLinks || {};
+              setInstagram(links.instagram || '');
+              setTiktok(links.tiktok || '');
+              setYoutube(links.youtube || '');
+              setLinkedin(links.linkedin || '');
+            }
+          }
         }
       } catch (err) {
         console.error('Failed to load profile:', err);
+      } finally {
+        setLoading(false);
       }
     }
     loadProfile();
   }, []);
+
+  const handleSaveProfile = async () => {
+    setSaving(true);
+    try {
+      const res = await fetch('/api/user/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          displayName,
+          shortBio,
+          longBio,
+          city,
+          country,
+          languages: selectedLanguages,
+          niches: selectedNiches,
+          socialLinks: { instagram, tiktok, youtube, linkedin },
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        alert('Profile saved successfully!');
+      } else {
+        alert(data.error || 'Failed to save profile');
+      }
+    } catch (err) {
+      alert('Network error, please try again');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleUpdatePassword = async () => {
+    if (!oldPassword || !newPassword || !confirmPassword) {
+      alert('Please fill out all password fields');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      alert('Passwords do not match');
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await fetch('/api/user/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'update-password',
+          oldPassword,
+          newPassword
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        alert('Password updated successfully!');
+        setOldPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+      } else {
+        alert(data.error || 'Failed to update password');
+      }
+    } catch (err) {
+      alert('Network error, please try again');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    try {
+      const res = await fetch('/api/user/settings', {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        alert('Account deleted successfully');
+        router.push('/');
+      } else {
+        alert(data.error || 'Failed to delete account');
+      }
+    } catch (err) {
+      alert('Error deleting account');
+    } finally {
+      setShowDeleteModal(false);
+    }
+  };
 
   const tabs = [
     {
@@ -182,6 +302,14 @@ export default function CreatorSettings() {
     setEnabledDays((prev) => ({ ...prev, [day]: !prev[day] }));
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F7F7FA] flex items-center justify-center">
+        <p className="text-gray-500 font-semibold animate-pulse">Loading settings...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#F7F7FA]">
       <CreatorDashboardNav profilePhoto={profilePhoto} displayName={displayName} />
@@ -190,7 +318,7 @@ export default function CreatorSettings() {
       <main className="px-3 sm:px-4 lg:px-6 py-6 sm:py-8">
         {/* Header */}
         <div className="mb-5 sm:mb-6">
-          <p className="text-gray-500 font-sans mb-1 text-sm sm:text-base">Hello {displayName ? displayName.split(' ')[0] : 'Sophia Reed'}!</p>
+          <p className="text-gray-500 font-sans mb-1 text-sm sm:text-base">Hello {displayName ? displayName.split(' ')[0] : 'Creator'}!</p>
           <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-black font-sans">
               Account <span className="text-[#0012FF]">Settings</span>
@@ -224,32 +352,30 @@ export default function CreatorSettings() {
             {/* Banner */}
             <div className="relative rounded-3xl overflow-hidden mb-4">
               <div className="relative h-56 sm:h-64">
-                <Image
-                  src="/assets/new-bg-image.png"
-                  alt="Cover"
-                  fill
-                  className="object-cover"
-                />
+                {coverPhoto ? (
+                  <img
+                    src={coverPhoto}
+                    alt="Cover"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <Image
+                    src="/assets/new-bg-image.png"
+                    alt="Cover"
+                    fill
+                    className="object-cover"
+                  />
+                )}
                 <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-black/70" />
-
-                {/* Edit pencil */}
-                <button className="absolute top-5 right-5 w-11 h-11 rounded-full bg-white flex items-center justify-center text-[#0012FF] shadow-md hover:bg-gray-50 transition-all">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                  </svg>
-                </button>
 
                 {/* Banner text */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
-                  <h2 className="text-white text-4xl sm:text-5xl font-bold mb-4 drop-shadow-lg">Nageen Shah</h2>
-                  <div className="border border-white/70 rounded-full px-6 py-2 mb-4">
-                    <span className="text-white text-lg font-medium">Software Engineering</span>
+                  <h2 className="text-white text-4xl sm:text-5xl font-bold mb-2 drop-shadow-lg">{displayName || 'Sophia Reed'}</h2>
+                  <div className="border border-white/70 rounded-full px-6 py-1 mb-2">
+                    <span className="text-white text-sm font-medium">{selectedNiches?.[0] || 'Influencer'}</span>
                   </div>
-                  <div className="flex items-center gap-4 text-white text-sm sm:text-base">
-                    <span>+ 123-456-7890</span>
-                    <span className="text-white/50">|</span>
-                    <span>hello@reallygreatsite.com</span>
+                  <div className="flex items-center gap-4 text-white text-xs sm:text-sm">
+                    <span>{email}</span>
                   </div>
                 </div>
               </div>
@@ -259,7 +385,7 @@ export default function CreatorSettings() {
             <div className="flex flex-col sm:flex-row sm:items-end gap-4 -mt-16 sm:-mt-24 px-2 mb-8 relative z-10">
               <div className="w-28 h-28 sm:w-40 sm:h-40 rounded-full overflow-hidden border-4 border-white bg-gray-200 shadow-lg flex-shrink-0">
                 <Image
-                  src="/Avatars/3.jpg"
+                  src={profilePhoto || '/merium.png'}
                   alt="Profile"
                   width={160}
                   height={160}
@@ -280,7 +406,8 @@ export default function CreatorSettings() {
                 <label className="text-sm font-semibold text-black block mb-2">Display Name</label>
                 <input
                   type="text"
-                  defaultValue="Sophia Reed"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
                   className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
                 />
               </div>
@@ -288,8 +415,9 @@ export default function CreatorSettings() {
                 <label className="text-sm font-semibold text-black block mb-2">Email Address</label>
                 <input
                   type="email"
-                  defaultValue="sophiareed@gmail.con"
-                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
+                  value={email}
+                  disabled
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-400 focus:outline-none"
                 />
               </div>
             </div>
@@ -299,12 +427,13 @@ export default function CreatorSettings() {
               <label className="text-sm font-semibold text-black block mb-2">Short Bio</label>
               <textarea
                 rows={3}
-                defaultValue="Passionate content creator dedicated to helping brands and businesses connect with their audience through engaging, high-quality content."
+                value={shortBio}
+                onChange={(e) => setShortBio(e.target.value)}
                 className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] resize-none"
               />
               <div className="flex justify-between text-gray-400 text-xs mt-1.5">
                 <span>Appears on your cards in search results</span>
-                <span>0/140</span>
+                <span>{shortBio.length}/140</span>
               </div>
             </div>
 
@@ -313,43 +442,31 @@ export default function CreatorSettings() {
               <label className="text-sm font-semibold text-black block mb-2">Long Bio</label>
               <textarea
                 rows={5}
-                defaultValue="Hi, I'm Sophia. Passionate about helping people create healthier habits, build confidence, and find balance in their everyday lives. Through personalized coaching sessions, practical guidance, and mindset-focused strategies, I help individuals make meaningful lifestyle changes that last. My goal is to empower you to become the best version of yourself—one step at a time."
+                value={longBio}
+                onChange={(e) => setLongBio(e.target.value)}
                 className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] resize-none"
               />
-              <div className="flex justify-between text-gray-400 text-xs mt-1.5">
-                <span>Appears on your cards in search results</span>
-                <span>0/140</span>
-              </div>
             </div>
 
             {/* City + Country */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
               <div>
                 <label className="text-sm font-semibold text-black block mb-2">City</label>
-                <div className="relative">
-                  <select className="w-full appearance-none bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] cursor-pointer">
-                    <option>Los Angeles</option>
-                    <option>New York</option>
-                    <option>Karachi</option>
-                    <option>Lahore</option>
-                  </select>
-                  <svg className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="6 9 12 15 18 9" />
-                  </svg>
-                </div>
+                <input
+                  type="text"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
+                />
               </div>
               <div>
                 <label className="text-sm font-semibold text-black block mb-2">Country</label>
-                <div className="relative">
-                  <select className="w-full appearance-none bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] cursor-pointer">
-                    <option>United States</option>
-                    <option>Pakistan</option>
-                    <option>United Kingdom</option>
-                  </select>
-                  <svg className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="6 9 12 15 18 9" />
-                  </svg>
-                </div>
+                <input
+                  type="text"
+                  value={country}
+                  onChange={(e) => setCountry(e.target.value)}
+                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
+                />
               </div>
             </div>
 
@@ -417,6 +534,8 @@ export default function CreatorSettings() {
                   </div>
                   <input
                     type="text"
+                    value={instagram}
+                    onChange={(e) => setInstagram(e.target.value)}
                     placeholder="instagram.com/yourhandle"
                     className="w-full bg-white border border-gray-200 rounded-xl pl-12 pr-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
                   />
@@ -430,6 +549,8 @@ export default function CreatorSettings() {
                   </div>
                   <input
                     type="text"
+                    value={tiktok}
+                    onChange={(e) => setTiktok(e.target.value)}
                     placeholder="tiktok.com/yourhandle"
                     className="w-full bg-white border border-gray-200 rounded-xl pl-12 pr-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
                   />
@@ -444,6 +565,8 @@ export default function CreatorSettings() {
                   </div>
                   <input
                     type="text"
+                    value={youtube}
+                    onChange={(e) => setYoutube(e.target.value)}
                     placeholder="youtube.com/yourhandle"
                     className="w-full bg-white border border-gray-200 rounded-xl pl-12 pr-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
                   />
@@ -459,6 +582,8 @@ export default function CreatorSettings() {
                   </div>
                   <input
                     type="text"
+                    value={linkedin}
+                    onChange={(e) => setLinkedin(e.target.value)}
                     placeholder="linkedin.com/yourhandle"
                     className="w-full bg-white border border-gray-200 rounded-xl pl-12 pr-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
                   />
@@ -467,22 +592,14 @@ export default function CreatorSettings() {
             </div>
 
             {/* Bottom Buttons */}
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <button className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-gray-50 transition-all">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="19" y1="12" x2="5" y2="12" />
-                  <polyline points="12 19 5 12 12 5" />
-                </svg>
-                Back
+            <div className="flex flex-wrap items-center justify-end gap-3">
+              <button
+                onClick={handleSaveProfile}
+                disabled={saving}
+                className="bg-[#0012FF] text-white px-8 py-2.5 rounded-full text-sm font-semibold hover:bg-[#0010d0] transition-all disabled:bg-gray-400"
+              >
+                {saving ? 'Saving...' : 'Save Changes'}
               </button>
-              <div className="flex gap-3">
-                <button className="border border-[#0012FF] text-[#0012FF] px-5 sm:px-8 py-2.5 rounded-full text-sm font-semibold hover:bg-[#0012FF]/5 transition-all">
-                  Cancel
-                </button>
-                <button className="bg-[#0012FF] text-white px-5 sm:px-8 py-2.5 rounded-full text-sm font-semibold hover:bg-[#0010d0] transition-all">
-                  Save Changes
-                </button>
-              </div>
             </div>
           </div>
         )}
@@ -586,16 +703,6 @@ export default function CreatorSettings() {
                           </div>
                         )}
                       </div>
-
-                      {enabledDays[day] && (
-                        <button className="flex items-center gap-2 text-[#0012FF] text-sm font-medium mt-3 ml-[60px]">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <line x1="12" y1="5" x2="12" y2="19" />
-                            <line x1="5" y1="12" x2="19" y2="12" />
-                          </svg>
-                          Add Another Time Block
-                        </button>
-                      )}
                     </div>
                   ))}
                 </div>
@@ -622,47 +729,6 @@ export default function CreatorSettings() {
                   </div>
                 </div>
 
-                {/* Time + Unit */}
-                <div className="grid grid-cols-2 gap-4 mb-5">
-                  <div>
-                    <label className="text-sm font-semibold text-black block mb-2">Time</label>
-                    <input
-                      type="text"
-                      defaultValue="1"
-                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-semibold text-black block mb-2">Unit</label>
-                    <div className="relative">
-                      <select className="w-full appearance-none bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] cursor-pointer">
-                        <option>Hour</option>
-                        <option>Minutes</option>
-                      </select>
-                      <svg className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <polyline points="6 9 12 15 18 9" />
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Buffer */}
-                <div className="mb-5">
-                  <label className="text-sm font-semibold text-black block mb-2">Buffer Between Bookings</label>
-                  <div className="relative">
-                    <select className="w-full appearance-none bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] cursor-pointer">
-                      <option>15 mins</option>
-                      <option>No buffer</option>
-                      <option>5 mins</option>
-                      <option>10 mins</option>
-                      <option>30 mins</option>
-                    </select>
-                    <svg className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <polyline points="6 9 12 15 18 9" />
-                    </svg>
-                  </div>
-                </div>
-
                 {/* Location */}
                 <div className="mb-4">
                   <label className="text-sm font-semibold text-black block mb-2">Location</label>
@@ -674,87 +740,8 @@ export default function CreatorSettings() {
                       </svg>
                       In-person
                     </div>
-                    <button className="text-gray-400 hover:text-gray-600">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <line x1="18" y1="6" x2="6" y2="18" />
-                        <line x1="6" y1="6" x2="18" y2="18" />
-                      </svg>
-                    </button>
                   </div>
                 </div>
-
-                {/* Location name / address */}
-                <div className="mb-6">
-                  <label className="text-sm text-gray-600 block mb-2">Location name/address</label>
-                  <textarea
-                    rows={2}
-                    placeholder="1234 Sunset Blvd, Los Angeles, CA 90026"
-                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] resize-none"
-                  />
-                </div>
-
-                {/* Followers Can Book Up To */}
-                <div className="mb-5">
-                  <label className="text-sm font-semibold text-black block mb-2">Followers Can Book Up To</label>
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="text"
-                      defaultValue="30"
-                      className="w-20 bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 text-center focus:outline-none focus:border-[#0012FF]"
-                    />
-                    <span className="text-gray-500 text-sm">days ahead</span>
-                  </div>
-                </div>
-
-                {/* Minimum Notice Required */}
-                <div className="mb-5">
-                  <label className="text-sm font-semibold text-black block mb-2">Minimum Notice Required</label>
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="text"
-                      defaultValue="04"
-                      className="w-20 bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 text-center focus:outline-none focus:border-[#0012FF]"
-                    />
-                    <span className="text-gray-500 text-sm">hours</span>
-                  </div>
-                </div>
-
-                {/* Meeting Limits */}
-                <div>
-                  <label className="text-sm font-semibold text-black block mb-2">Meeting Limits</label>
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="text"
-                      defaultValue="04"
-                      className="w-20 bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 text-center focus:outline-none focus:border-[#0012FF]"
-                    />
-                    <span className="text-gray-500 text-sm">meetings per</span>
-                    <input
-                      type="text"
-                      defaultValue="day"
-                      className="w-20 bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 text-center focus:outline-none focus:border-[#0012FF]"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Bottom Buttons */}
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <button className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-gray-50 transition-all">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="19" y1="12" x2="5" y2="12" />
-                  <polyline points="12 19 5 12 12 5" />
-                </svg>
-                Back
-              </button>
-              <div className="flex gap-3">
-                <button className="border border-[#0012FF] text-[#0012FF] px-5 sm:px-8 py-2.5 rounded-full text-sm font-semibold hover:bg-[#0012FF]/5 transition-all">
-                  Cancel
-                </button>
-                <button className="bg-[#0012FF] text-white px-5 sm:px-8 py-2.5 rounded-full text-sm font-semibold hover:bg-[#0010d0] transition-all">
-                  Save Changes
-                </button>
               </div>
             </div>
           </div>
@@ -771,72 +758,46 @@ export default function CreatorSettings() {
 
               <div className="mb-4">
                 <label className="text-sm font-semibold text-black block mb-2">Old Password</label>
-                <div className="relative">
-                  <input
-                    type="password"
-                    placeholder="Enter old password"
-                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
-                  />
-                  <button className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                      <circle cx="12" cy="12" r="3" />
-                    </svg>
-                  </button>
-                </div>
+                <input
+                  type="password"
+                  value={oldPassword}
+                  onChange={(e) => setOldPassword(e.target.value)}
+                  placeholder="Enter old password"
+                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
+                />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                 <div>
                   <label className="text-sm font-semibold text-black block mb-2">New Password</label>
-                  <div className="relative">
-                    <input
-                      type="password"
-                      placeholder="Enter new password"
-                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
-                    />
-                    <button className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                        <circle cx="12" cy="12" r="3" />
-                      </svg>
-                    </button>
-                  </div>
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Enter new password"
+                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
+                  />
                 </div>
                 <div>
                   <label className="text-sm font-semibold text-black block mb-2">Confirm Password</label>
-                  <div className="relative">
-                    <input
-                      type="password"
-                      placeholder="Confirm new password"
-                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
-                    />
-                    <button className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                        <circle cx="12" cy="12" r="3" />
-                      </svg>
-                    </button>
-                  </div>
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirm new password"
+                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
+                  />
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <button className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-gray-50 transition-all">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <line x1="19" y1="12" x2="5" y2="12" />
-                    <polyline points="12 19 5 12 12 5" />
-                  </svg>
-                  Back
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={handleUpdatePassword}
+                  disabled={saving}
+                  className="bg-[#0012FF] text-white px-8 py-2.5 rounded-full text-sm font-semibold hover:bg-[#0010d0] transition-all disabled:bg-gray-400"
+                >
+                  {saving ? 'Updating...' : 'Update Password'}
                 </button>
-                <div className="flex gap-3">
-                  <button className="border border-[#0012FF] text-[#0012FF] px-5 sm:px-8 py-2.5 rounded-full text-sm font-semibold hover:bg-[#0012FF]/5 transition-all">
-                    Cancel
-                  </button>
-                  <button className="bg-[#0012FF] text-white px-5 sm:px-8 py-2.5 rounded-full text-sm font-semibold hover:bg-[#0010d0] transition-all">
-                    Save Changes
-                  </button>
-                </div>
               </div>
             </div>
 
@@ -870,24 +831,20 @@ export default function CreatorSettings() {
                   key={i}
                   className="relative w-full max-w-[424px] h-[255px] bg-transparent overflow-visible justify-self-center"
                 >
-                  {/* Background SVG template */}
                   <img
                     src="/assets/review.svg"
                     alt=""
                     className="absolute inset-0 w-full h-full object-fill pointer-events-none z-0"
                   />
 
-                  {/* Card Content */}
                   <div className="relative z-10 p-6 pt-7 pr-12 pb-7 flex flex-col justify-between h-full">
                     <div>
-                      {/* Comma quote SVG top-right */}
                       <img
                         src={COMMA_SVGS[commaIdx]}
                         alt="quote"
                         className="absolute -top-7 right-5 w-16 h-16"
                       />
 
-                      {/* Avatar + name */}
                       <div className="flex items-center gap-3 mb-4">
                         <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 border border-gray-100 bg-gray-100">
                           <Image src="/Avatars/8.jpg" alt="Jordan L" width={48} height={48} className="w-full h-full object-cover" />
@@ -898,7 +855,6 @@ export default function CreatorSettings() {
                         </div>
                       </div>
 
-                      {/* Divider */}
                       <div className="border-t border-gray-100/80 mb-4" />
 
                       <p className="text-sm text-gray-500 leading-relaxed font-medium">
@@ -906,7 +862,6 @@ export default function CreatorSettings() {
                       </p>
                     </div>
 
-                    {/* Report / Danger icon bottom-right notch */}
                     <button className="absolute right-[4px] bottom-[4px] z-20 hover:scale-110 transition-transform duration-200">
                       <img src="/assets/danger.svg" alt="report" className="w-[18px] h-[32px]" />
                     </button>
@@ -918,125 +873,28 @@ export default function CreatorSettings() {
         )}
       </main>
 
-      {/* ============ EDIT SESSION MODAL ============ */}
-      {showEditModal && (
-        <ModalShell onClose={() => setShowEditModal(false)} maxWidth="max-w-2xl">
-          {/* Content */}
-          <div className="px-8 sm:px-12 pt-14 pb-10">
-            <div className="flex justify-center mb-2">
-              <Image src="/assets/reschedule.png" alt="Edit session" width={260} height={190} className="object-contain" />
-            </div>
-            <h3 className="text-2xl font-bold text-black text-center mb-1">Edit Styling Session</h3>
-            <p className="text-gray-500 text-center mb-8">Update your session details and preferences.</p>
-
-            <div className="mb-5">
-              <label className="text-sm font-semibold text-black block mb-2">Title</label>
-              <input
-                type="text"
-                defaultValue={editSession?.title ?? ''}
-                placeholder="Style Consultation"
-                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
-              />
-            </div>
-
-            <div className="mb-5">
-              <label className="text-sm font-semibold text-black block mb-2">Description</label>
-              <textarea
-                rows={3}
-                defaultValue={editSession?.description ?? ''}
-                placeholder="Personal styling session to revamp your wardrobe and discover your signature look."
-                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] resize-none"
-              />
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 justify-items-center">
-              <div className="relative">
-                <select className="w-full appearance-none bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] cursor-pointer">
-                  <option>1 hour</option>
-                  <option>30 minutes</option>
-                  <option>45 minutes</option>
-                  <option>2 hours</option>
-                </select>
-                <svg className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polyline points="6 9 12 15 18 9" />
-                </svg>
-              </div>
-              <div>
-                <label className="text-sm font-semibold text-black block mb-2">Price</label>
-                <input
-                  type="text"
-                  defaultValue="1200"
-                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-3">
-              <div>
-                <label className="text-sm font-semibold text-black block mb-2">What&rsquo;s Included</label>
-                <input
-                  type="text"
-                  placeholder="Feature 1"
-                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-semibold text-black block mb-2">Max Bookings Per Day</label>
-                <input
-                  type="text"
-                  defaultValue="4"
-                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
-                />
-              </div>
-            </div>
-
-            <button className="flex items-center gap-2 text-gray-500 text-sm font-medium mb-6 hover:text-[#0012FF]">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
-              Add feature
-            </button>
-
-            <button className="w-full flex items-center justify-center gap-2 border border-dashed border-gray-300 bg-gray-50 text-gray-600 rounded-xl py-4 text-sm font-semibold mb-6 hover:bg-gray-100">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
-              Add Session Type
-            </button>
-
-            <div className="grid grid-cols-2 gap-4">
-              <button
-                onClick={() => setShowEditModal(false)}
-                className="bg-gray-100 text-gray-700 rounded-full py-4 text-sm font-semibold hover:bg-gray-200 transition-all"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => setShowEditModal(false)}
-                className="bg-[#0012FF] text-white rounded-full py-4 text-sm font-semibold hover:bg-[#0010d0] transition-all"
-              >
-                Save Changes
-              </button>
-            </div>
-          </div>
-        </ModalShell>
-      )}
-
       {/* ============ DELETE ACCOUNT MODAL ============ */}
       {showDeleteModal && (
         <ModalShell onClose={() => setShowDeleteModal(false)}>
-          {/* Content */}
           <div className="px-8 sm:px-12 pt-14 pb-12 flex flex-col items-center text-center">
             <Image src="/assets/cancel-appointment.png" alt="Delete account" width={280} height={200} className="object-contain mb-4" />
             <h3 className="text-2xl font-bold text-black mb-2">Are You Sure?</h3>
             <p className="text-gray-500 mb-1">Are you sure you want to delete your account?</p>
             <p className="text-gray-500 mb-8">This action cannot be undone.</p>
-            <button
-              onClick={() => setShowDeleteModal(false)}
-              className="bg-red-600 text-white px-10 py-3.5 rounded-full text-base font-semibold hover:bg-red-700 transition-all"
-            >
-              Delete Account
-            </button>
+            <div className="flex gap-4 w-full">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="flex-1 bg-gray-100 text-gray-700 py-3.5 rounded-full text-base font-semibold hover:bg-gray-250 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                className="flex-1 bg-red-600 text-white py-3.5 rounded-full text-base font-semibold hover:bg-red-700 transition-all"
+              >
+                Delete Account
+              </button>
+            </div>
           </div>
         </ModalShell>
       )}
