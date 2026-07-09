@@ -52,7 +52,6 @@ const TIME_OPTIONS_12 = [
   '06:00 PM', '06:30 PM', '07:00 PM', '08:00 PM',
 ];
 
-// Helper to convert 12h format to 24h format (HH:MM)
 const to24h = (time12h: string) => {
   const [time, modifier] = time12h.split(' ');
   let [hours, minutes] = time.split(':');
@@ -61,7 +60,6 @@ const to24h = (time12h: string) => {
   return `${hours.padStart(2, '0')}:${minutes}`;
 };
 
-// Helper to convert 24h format (HH:MM) to 12h format
 const to12h = (time24h: string) => {
   if (!time24h) return '09:00 AM';
   const [hours, minutes] = time24h.split(':');
@@ -73,12 +71,16 @@ const to12h = (time24h: string) => {
 
 const COMMA_SVGS = ['/assets/comma-1.svg', '/assets/comma-2.svg', '/assets/comma3.svg'];
 
-const SESSIONS = [
-  { id: 1, title: 'Style Consultation', duration: '1 hour', price: '1200 PKR', description: 'Personal styling session to revamp your wardrobe and discover your signature look.' },
-  { id: 2, title: 'Marketing Consultation', duration: '1 hour', price: '1200 PKR', description: 'Personal styling session to revamp your wardrobe and discover your signature look.' },
-  { id: 3, title: 'Style Consultation', duration: '1 hour', price: '1200 PKR', description: 'Personal styling session to revamp your wardrobe and discover your signature look.' },
-  { id: 4, title: 'Designing Consultation', duration: '1 hour', price: '1200 PKR', description: 'Personal styling session to revamp your wardrobe and discover your signature look.' },
-];
+interface DBTypeSession {
+  _id?: string;
+  id?: string;
+  title: string;
+  duration: number | string;
+  price: number | string;
+  description: string;
+  features: string[];
+  maxBookings?: number;
+}
 
 export default function CreatorSettings() {
   const router = useRouter();
@@ -103,6 +105,20 @@ export default function CreatorSettings() {
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+
+  // Sessions State
+  const [sessions, setSessions] = useState<DBTypeSession[]>([]);
+
+  // Edit Session Modal Fields
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editSessionId, setEditSessionId] = useState<string | null>(null);
+  const [sessionTitle, setSessionTitle] = useState('');
+  const [sessionDesc, setSessionDesc] = useState('');
+  const [sessionDuration, setSessionDuration] = useState('60');
+  const [sessionPrice, setSessionPrice] = useState('1200');
+  const [sessionFeatures, setSessionFeatures] = useState<string[]>([]);
+  const [newFeatureText, setNewFeatureText] = useState('');
+  const [sessionMaxBookings, setSessionMaxBookings] = useState('4');
 
   // Availability States
   const [enabledDays, setEnabledDays] = useState<Record<string, boolean>>({
@@ -132,11 +148,9 @@ export default function CreatorSettings() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [editSession, setEditSession] = useState<typeof SESSIONS[number] | null>(null);
 
-  // Load Profile & Availability on mount
+  // Load Profile, Sessions, & Availability on mount
   useEffect(() => {
     async function loadAllData() {
       try {
@@ -163,6 +177,19 @@ export default function CreatorSettings() {
               setYoutube(links.youtube || '');
               setLinkedin(links.linkedin || '');
             }
+          }
+        }
+
+        // Fetch Sessions
+        const sessionsRes = await fetch('/api/creator-onboarding/step-3');
+        if (sessionsRes.ok) {
+          const data = await sessionsRes.json();
+          if (data.sessionTypes) {
+            // Map _id as id for frontend keys
+            setSessions(data.sessionTypes.map((s: any) => ({
+              ...s,
+              id: s._id || s.id
+            })));
           }
         }
 
@@ -235,8 +262,80 @@ export default function CreatorSettings() {
     }
   };
 
+  const handleOpenEditModal = (session: DBTypeSession) => {
+    setEditSessionId(session.id || session._id || null);
+    setSessionTitle(session.title);
+    setSessionDesc(session.description);
+    setSessionDuration(String(session.duration));
+    setSessionPrice(String(session.price));
+    setSessionFeatures(session.features || []);
+    setSessionMaxBookings(String(session.maxBookings || 4));
+    setShowEditModal(true);
+  };
+
+  const handleAddFeature = () => {
+    if (newFeatureText.trim()) {
+      setSessionFeatures((prev) => [...prev, newFeatureText.trim()]);
+      setNewFeatureText('');
+    }
+  };
+
+  const handleRemoveFeature = (idx: number) => {
+    setSessionFeatures((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const handleSaveSessionEdit = async () => {
+    if (!sessionTitle.trim()) {
+      alert('Session title is required');
+      return;
+    }
+    if (!sessionDesc.trim()) {
+      alert('Session description is required');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      // Map modified session back to list
+      const updatedList = sessions.map((s) => {
+        if ((s.id || s._id) === editSessionId) {
+          return {
+            ...s,
+            title: sessionTitle.trim(),
+            description: sessionDesc.trim(),
+            duration: Number(sessionDuration),
+            price: Number(sessionPrice),
+            features: sessionFeatures,
+            maxBookings: Number(sessionMaxBookings)
+          };
+        }
+        return s;
+      });
+
+      const res = await fetch('/api/creator-onboarding/step-3', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionTypes: updatedList
+        })
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setSessions(updatedList);
+        setShowEditModal(false);
+        alert('Session updated successfully!');
+      } else {
+        alert(data.error || 'Failed to update session');
+      }
+    } catch (err) {
+      alert('Error updating session settings');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleSaveAvailability = async () => {
-    // Check if at least one day is enabled
     const hasEnabledDay = Object.values(enabledDays).some(val => val);
     if (!hasEnabledDay) {
       alert('Please enable at least one day in your weekly schedule.');
@@ -245,7 +344,6 @@ export default function CreatorSettings() {
 
     setSaving(true);
     try {
-      // Build schedule format for DB
       const schedule: Record<string, any> = {};
       Object.keys(enabledDays).forEach((dayKey) => {
         const times = dayTimes[dayKey] || { start: '09:00 AM', end: '05:00 PM' };
@@ -666,7 +764,7 @@ export default function CreatorSettings() {
                 <div className="relative">
                   <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#0012FF]">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12.53 1.5h3.34c.2 1.9 1.28 3.63 2.9 4.63.94.58 2.04.9 3.16.9v3.4c-1.53 0-3.02-.4-4.34-1.15v6.8c0 3.4-2.76 6.17-6.16 6.17S5.27 19.48 5.27 16.08c0-3.4 2.76-6.17 6.16-6.17.35 0 .7.03 1.04.09v3.5a2.72 2.72 0 0 0-1.04-.2 2.78 2.78 0 1 0 2.78 2.78V1.5z" />
+                      <path d="M12.53 1.5h3.34c.2 1.9 1.28 3.63(2.9) 4.63.94.58 2.04.9 3.16.9v3.4c-1.53 0-3.02-.4-4.34-1.15v6.8c0 3.4-2.76 6.17-6.16 6.17S5.27 19.48 5.27 16.08c0-3.4 2.76-6.17 6.16-6.17.35 0 .7.03 1.04.09v3.5a2.72 2.72 0 0 0-1.04-.2 2.78 2.78 0 1 0 2.78 2.78V1.5z" />
                     </svg>
                   </div>
                   <input
@@ -729,7 +827,7 @@ export default function CreatorSettings() {
         {/* ============ SESSIONS TAB ============ */}
         {activeTab === 'Sessions' && (
           <div className="space-y-5">
-            {SESSIONS.map((session) => (
+            {sessions.map((session) => (
               <div
                 key={session.id}
                 className="bg-white rounded-2xl border border-gray-200 p-5 sm:p-6 shadow-sm flex flex-col sm:flex-row sm:items-start justify-between gap-4"
@@ -738,19 +836,26 @@ export default function CreatorSettings() {
                   <div className="flex items-center gap-3 flex-wrap mb-3">
                     <h3 className="text-lg sm:text-xl font-bold text-black">{session.title}</h3>
                     <span className="bg-[#FEF3E2] text-[#E8940C] px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap">
-                      {session.duration}
+                      {session.duration} minutes
                     </span>
                     <span className="bg-[#E9E9FF] text-[#0012FF] px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap">
-                      {session.price}
+                      {session.price} PKR
                     </span>
                   </div>
                   <p className="text-gray-400 text-sm sm:text-base">{session.description}</p>
+                  
+                  {session.features && session.features.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {session.features.map((f, i) => (
+                        <span key={i} className="bg-gray-50 border border-gray-150 text-gray-500 rounded-md text-xs px-2.5 py-1">
+                          ✓ {f}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <button
-                  onClick={() => {
-                    setEditSession(session);
-                    setShowEditModal(true);
-                  }}
+                  onClick={() => handleOpenEditModal(session)}
                   className="text-gray-500 hover:text-[#0012FF] transition-all mt-1 self-start sm:self-auto"
                 >
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1020,6 +1125,135 @@ export default function CreatorSettings() {
           </div>
         )}
       </main>
+
+      {/* ============ EDIT SESSION MODAL ============ */}
+      {showEditModal && (
+        <ModalShell onClose={() => setShowEditModal(false)} maxWidth="max-w-2xl">
+          <div className="px-8 sm:px-12 pt-14 pb-10">
+            <div className="flex justify-center mb-2">
+              <Image src="/assets/reschedule.png" alt="Edit session" width={260} height={190} className="object-contain" />
+            </div>
+            <h3 className="text-2xl font-bold text-black text-center mb-1">Edit styling Session</h3>
+            <p className="text-gray-500 text-center mb-8">Update your session details and preferences.</p>
+
+            <div className="mb-5">
+              <label className="text-sm font-semibold text-black block mb-2">Title</label>
+              <input
+                type="text"
+                value={sessionTitle}
+                onChange={(e) => setSessionTitle(e.target.value)}
+                placeholder="Style Consultation"
+                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
+              />
+            </div>
+
+            <div className="mb-5">
+              <label className="text-sm font-semibold text-black block mb-2">Description</label>
+              <textarea
+                rows={3}
+                value={sessionDesc}
+                onChange={(e) => setSessionDesc(e.target.value)}
+                placeholder="Personal styling session to revamp your wardrobe and discover your signature look."
+                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] resize-none"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 mb-5">
+              <div>
+                <label className="text-sm font-semibold text-black block mb-2">Duration (minutes)</label>
+                <div className="relative">
+                  <select
+                    value={sessionDuration}
+                    onChange={(e) => setSessionDuration(e.target.value)}
+                    className="w-full appearance-none bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] cursor-pointer"
+                  >
+                    <option value="15">15 mins</option>
+                    <option value="30">30 mins</option>
+                    <option value="45">45 mins</option>
+                    <option value="60">60 mins</option>
+                    <option value="90">90 mins</option>
+                  </select>
+                  <svg className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-black block mb-2">Price (PKR)</label>
+                <input
+                  type="number"
+                  value={sessionPrice}
+                  onChange={(e) => setSessionPrice(e.target.value)}
+                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
+                />
+              </div>
+            </div>
+
+            <div className="mb-5">
+              <label className="text-sm font-semibold text-black block mb-2">Max Bookings Per Day</label>
+              <input
+                type="number"
+                value={sessionMaxBookings}
+                onChange={(e) => setSessionMaxBookings(e.target.value)}
+                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
+              />
+            </div>
+
+            <div className="mb-6">
+              <label className="text-sm font-semibold text-black block mb-2">What&rsquo;s Included</label>
+              <div className="flex gap-2 mb-3">
+                <input
+                  type="text"
+                  value={newFeatureText}
+                  onChange={(e) => setNewFeatureText(e.target.value)}
+                  placeholder="e.g. 1-on-1 Q&A session"
+                  className="flex-grow bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddFeature}
+                  className="bg-[#0012FF] text-white px-5 rounded-xl text-sm font-semibold hover:bg-[#0010d0]"
+                >
+                  Add
+                </button>
+              </div>
+
+              {sessionFeatures.length > 0 && (
+                <div className="flex flex-col gap-2 max-h-40 overflow-y-auto border border-gray-100 rounded-xl p-3">
+                  {sessionFeatures.map((feat, idx) => (
+                    <div key={idx} className="flex items-center justify-between bg-gray-50 border border-gray-150 text-xs text-gray-600 rounded-lg px-3 py-2">
+                      <span>{feat}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveFeature(idx)}
+                        className="text-red-500 hover:text-red-700 font-bold"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="bg-gray-100 text-gray-700 rounded-full py-4 text-sm font-semibold hover:bg-gray-200 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveSessionEdit}
+                disabled={saving}
+                className="bg-[#0012FF] text-white rounded-full py-4 text-sm font-semibold hover:bg-[#0010d0] transition-all disabled:bg-gray-400"
+              >
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </ModalShell>
+      )}
 
       {/* ============ DELETE ACCOUNT MODAL ============ */}
       {showDeleteModal && (
