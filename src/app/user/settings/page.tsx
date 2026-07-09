@@ -9,14 +9,14 @@ export default function UserSettings() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [displayName, setDisplayName] = useState('James Richard');
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
-  
+
   // Form fields states
   const [emailAddress, setEmailAddress] = useState('jamesrichard@gmail.com');
   const [bio, setBio] = useState('I want to start a YouTube channel about Pakistani street food. How do I structure my videos and what content should I focus on?');
   const [city, setCity] = useState('Los Angeles');
   const [country, setCountry] = useState('United States');
   const [selectedLanguage, setSelectedLanguage] = useState('English');
-  
+
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -48,7 +48,7 @@ export default function UserSettings() {
   return (
     <div className="min-h-screen bg-[#F7F7FA] pb-12">
       <UserNavbar displayName={displayName} profilePhoto={profilePhoto} />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <motion.main
           initial={{ y: 20, opacity: 0 }}
@@ -71,20 +71,18 @@ export default function UserSettings() {
               onClick={() => setActiveTab('Profile')}
               className="flex flex-col items-center gap-1.5"
             >
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${
-                activeTab === 'Profile'
-                  ? 'bg-[#EEF2FF]'
-                  : 'bg-white border border-gray-150'
-              }`}>
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${activeTab === 'Profile'
+                ? 'bg-[#EEF2FF]'
+                : 'bg-white border border-gray-150'
+                }`}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={activeTab === 'Profile' ? '#0012FF' : '#9CA3AF'} strokeWidth="2">
                   <circle cx="12" cy="12" r="10" />
                   <circle cx="12" cy="8" r="3" />
                   <path d="M4 20c1-4 5-6 8-6s7 2 8 6" />
                 </svg>
               </div>
-              <span className={`text-xs font-bold font-sans transition-all ${
-                activeTab === 'Profile' ? 'text-[#0012FF]' : 'text-gray-400'
-              }`}>
+              <span className={`text-xs font-bold font-sans transition-all ${activeTab === 'Profile' ? 'text-[#0012FF]' : 'text-gray-400'
+                }`}>
                 Profile
               </span>
             </button>
@@ -94,19 +92,17 @@ export default function UserSettings() {
               onClick={() => setActiveTab('Security')}
               className="flex flex-col items-center gap-1.5"
             >
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${
-                activeTab === 'Security'
-                  ? 'bg-[#EEF2FF]'
-                  : 'bg-white border border-gray-150'
-              }`}>
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${activeTab === 'Security'
+                ? 'bg-[#EEF2FF]'
+                : 'bg-white border border-gray-150'
+                }`}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={activeTab === 'Security' ? '#0012FF' : '#9CA3AF'} strokeWidth="2">
                   <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                   <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                 </svg>
               </div>
-              <span className={`text-xs font-bold font-sans transition-all ${
-                activeTab === 'Security' ? 'text-[#0012FF]' : 'text-gray-400'
-              }`}>
+              <span className={`text-xs font-bold font-sans transition-all ${activeTab === 'Security' ? 'text-[#0012FF]' : 'text-gray-400'
+                }`}>
                 Security
               </span>
             </button>
@@ -117,7 +113,7 @@ export default function UserSettings() {
             <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 sm:p-8">
               <h2 className="text-xl font-bold text-black font-anton uppercase tracking-wide">Profile</h2>
               <p className="text-gray-400 text-sm mb-6">Keep your information up to date.</p>
-              
+
               <div className="w-full h-px bg-gray-100 mb-6" />
 
               {/* Photo Area */}
@@ -224,11 +220,10 @@ export default function UserSettings() {
                     <button
                       key={lang}
                       onClick={() => setSelectedLanguage(lang)}
-                      className={`px-5 py-2 rounded-xl text-xs font-semibold border transition-all ${
-                        selectedLanguage === lang
-                          ? 'bg-[#0012FF] border-[#0012FF] text-white shadow-sm'
-                          : 'bg-white border-gray-200 text-gray-400 hover:border-gray-300'
-                      }`}
+                      className={`px-5 py-2 rounded-xl text-xs font-semibold border transition-all ${selectedLanguage === lang
+                        ? 'bg-[#0012FF] border-[#0012FF] text-white shadow-sm'
+                        : 'bg-white border-gray-200 text-gray-400 hover:border-gray-300'
+                        }`}
                     >
                       {lang}
                     </button>
@@ -259,7 +254,7 @@ export default function UserSettings() {
               <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 sm:p-8">
                 <h2 className="text-xl font-bold text-black font-anton uppercase tracking-wide">Security</h2>
                 <p className="text-gray-400 text-sm mb-6">Manage your password and security settings.</p>
-                
+
                 <div className="w-full h-px bg-gray-100 mb-6" />
 
                 {/* Form Fields */}
@@ -410,7 +405,7 @@ export default function UserSettings() {
             {/* Close Button */}
             <button
               onClick={() => setShowDeleteModal(false)}
-              className="absolute -top-5 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center hover:bg-gray-50 transition-all z-20 border border-gray-100/50 cursor-pointer text-gray-500"
+              className="absolute -top-1 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center hover:bg-gray-50 transition-all z-20 border border-gray-100/50 cursor-pointer text-gray-500"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <line x1="18" y1="6" x2="6" y2="18" />
@@ -419,11 +414,11 @@ export default function UserSettings() {
             </button>
 
             {/* Illustration */}
-            <div className="mb-4 flex justify-center w-full">
+            <div className="mt-10 mb-15 flex justify-center w-full">
               <img
                 src="/assets/no-appointment.png"
                 alt="Are you sure?"
-                className="w-48 h-auto object-contain"
+                className="w-60 h-auto object-contain"
               />
             </div>
 

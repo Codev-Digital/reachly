@@ -208,9 +208,8 @@ export default function CreatorSettings() {
               className={`flex flex-col items-center gap-1.5 sm:gap-2 flex-shrink-0 ${activeTab === tab.name ? 'text-[#0012FF]' : 'text-gray-500'}`}
             >
               <div
-                className={`w-11 h-11 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all ${
-                  activeTab === tab.name ? 'bg-[#0012FF]/10 text-[#0012FF]' : 'bg-white border border-gray-200 text-gray-500'
-                }`}
+                className={`w-11 h-11 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all ${activeTab === tab.name ? 'bg-[#0012FF]/10 text-[#0012FF]' : 'bg-white border border-gray-200 text-gray-500'
+                  }`}
               >
                 {tab.icon}
               </div>
@@ -364,11 +363,10 @@ export default function CreatorSettings() {
                     <button
                       key={lang}
                       onClick={() => toggleLanguage(lang)}
-                      className={`px-6 py-2.5 rounded-xl text-sm font-medium border transition-all ${
-                        active
-                          ? 'bg-[#0012FF] text-white border-[#0012FF]'
-                          : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
-                      }`}
+                      className={`px-6 py-2.5 rounded-xl text-sm font-medium border transition-all ${active
+                        ? 'bg-[#0012FF] text-white border-[#0012FF]'
+                        : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
+                        }`}
                     >
                       {lang}
                     </button>
@@ -387,11 +385,10 @@ export default function CreatorSettings() {
                     <button
                       key={niche.name}
                       onClick={() => toggleNiche(niche.name)}
-                      className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium border transition-all ${
-                        active
-                          ? 'bg-[#0012FF] text-white border-[#0012FF]'
-                          : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
-                      }`}
+                      className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium border transition-all ${active
+                        ? 'bg-[#0012FF] text-white border-[#0012FF]'
+                        : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
+                        }`}
                     >
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         {niche.icon}
@@ -550,14 +547,12 @@ export default function CreatorSettings() {
                         {/* Toggle */}
                         <button
                           onClick={() => toggleDay(day)}
-                          className={`w-11 h-6 rounded-full relative transition-all flex-shrink-0 ${
-                            enabledDays[day] ? 'bg-[#0012FF]' : 'bg-gray-300'
-                          }`}
+                          className={`w-11 h-6 rounded-full relative transition-all flex-shrink-0 ${enabledDays[day] ? 'bg-[#0012FF]' : 'bg-gray-300'
+                            }`}
                         >
                           <span
-                            className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${
-                              enabledDays[day] ? 'right-0.5' : 'left-0.5'
-                            }`}
+                            className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${enabledDays[day] ? 'right-0.5' : 'left-0.5'
+                              }`}
                           />
                         </button>
 
@@ -866,49 +861,56 @@ export default function CreatorSettings() {
         {activeTab === 'Reviews' && (
           <div className="bg-white rounded-3xl border border-gray-200 p-6 sm:p-8 shadow-sm">
             <div className="border-b border-gray-200 pb-5 mb-8">
-              <h3 className="text-2xl font-bold text-black mb-1">Reviews</h3>
+              <h3 className="text-2xl font-bold text-black mb-1 font-anton uppercase tracking-wide">Reviews</h3>
               <p className="text-gray-500 text-sm">See what clients are saying about your sessions.</p>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 justify-items-center gap-8">
               {[0, 2, 1, 1, 0, 2, 0, 2, 1].map((commaIdx, i) => (
                 <div
                   key={i}
-                  className="relative bg-white border border-gray-200 rounded-2xl rounded-br-[3rem] p-6 pt-7"
+                  className="relative w-full max-w-[424px] h-[255px] bg-transparent overflow-visible justify-self-center"
                 >
-                  {/* Comma quote SVG top-right */}
+                  {/* Background SVG template */}
                   <img
-                    src={COMMA_SVGS[commaIdx]}
-                    alt="quote"
-                    className="absolute -top-6 right-6 w-16 h-16"
+                    src="/assets/review.svg"
+                    alt=""
+                    className="absolute inset-0 w-full h-full object-fill pointer-events-none z-0"
                   />
 
-                  {/* Avatar + name */}
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 border border-gray-100 bg-gray-100">
-                      <Image src="/Avatars/8.jpg" alt="Jordan L" width={48} height={48} className="w-full h-full object-cover" />
-                    </div>
+                  {/* Card Content */}
+                  <div className="relative z-10 p-6 pt-7 pr-12 pb-7 flex flex-col justify-between h-full">
                     <div>
-                      <p className="font-bold text-base text-black leading-tight">Jordan L</p>
-                      <p className="text-sm text-gray-400 mt-0.5">Los Angeles, CA</p>
+                      {/* Comma quote SVG top-right */}
+                      <img
+                        src={COMMA_SVGS[commaIdx]}
+                        alt="quote"
+                        className="absolute -top-7 right-5 w-16 h-16"
+                      />
+
+                      {/* Avatar + name */}
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 border border-gray-100 bg-gray-100">
+                          <Image src="/Avatars/8.jpg" alt="Jordan L" width={48} height={48} className="w-full h-full object-cover" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-base text-gray-900 leading-tight">Jordan L</p>
+                          <p className="text-xs text-gray-400 mt-0.5">Los Angeles, CA</p>
+                        </div>
+                      </div>
+
+                      {/* Divider */}
+                      <div className="border-t border-gray-100/80 mb-4" />
+
+                      <p className="text-sm text-gray-500 leading-relaxed font-medium">
+                        &ldquo;Ayesha helped me find my style, stay consistent, and grow my engagement. I feel much more confident creating content. One of the best investments I&rsquo;ve made for my personal brand!&rdquo;
+                      </p>
                     </div>
+
+                    {/* Report / Danger icon bottom-right notch */}
+                    <button className="absolute right-[4px] bottom-[4px] z-20 hover:scale-110 transition-transform duration-200">
+                      <img src="/assets/danger.svg" alt="report" className="w-[18px] h-[32px]" />
+                    </button>
                   </div>
-
-                  {/* Divider */}
-                  <div className="border-t border-gray-100 mb-4" />
-
-                  <p className="text-sm text-gray-500 leading-relaxed">
-                    &ldquo;Ayesha helped me find my style, stay consistent, and grow my engagement. I feel much more confident creating content. One of the best investments I&rsquo;ve made for my personal brand!&rdquo;
-                  </p>
-
-                  {/* Report icon bottom-right */}
-                  <button className="absolute bottom-4 right-5 text-red-500 hover:text-red-600">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="12" cy="12" r="10" />
-                      <line x1="12" y1="8" x2="12" y2="12" />
-                      <line x1="12" y1="16" x2="12.01" y2="16" />
-                    </svg>
-                  </button>
                 </div>
               ))}
             </div>
@@ -919,124 +921,123 @@ export default function CreatorSettings() {
       {/* ============ EDIT SESSION MODAL ============ */}
       {showEditModal && (
         <ModalShell onClose={() => setShowEditModal(false)} maxWidth="max-w-2xl">
-            {/* Content */}
-            <div className="px-8 sm:px-12 pt-14 pb-10">
-              <div className="flex justify-center mb-2">
-                <Image src="/assets/reschedule.png" alt="Edit session" width={260} height={190} className="object-contain" />
-              </div>
-              <h3 className="text-2xl font-bold text-black text-center mb-1">Edit Styling Session</h3>
-              <p className="text-gray-500 text-center mb-8">Update your session details and preferences.</p>
+          {/* Content */}
+          <div className="px-8 sm:px-12 pt-14 pb-10">
+            <div className="flex justify-center mb-2">
+              <Image src="/assets/reschedule.png" alt="Edit session" width={260} height={190} className="object-contain" />
+            </div>
+            <h3 className="text-2xl font-bold text-black text-center mb-1">Edit Styling Session</h3>
+            <p className="text-gray-500 text-center mb-8">Update your session details and preferences.</p>
 
-              <div className="mb-5">
-                <label className="text-sm font-semibold text-black block mb-2">Title</label>
+            <div className="mb-5">
+              <label className="text-sm font-semibold text-black block mb-2">Title</label>
+              <input
+                type="text"
+                defaultValue={editSession?.title ?? ''}
+                placeholder="Style Consultation"
+                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
+              />
+            </div>
+
+            <div className="mb-5">
+              <label className="text-sm font-semibold text-black block mb-2">Description</label>
+              <textarea
+                rows={3}
+                defaultValue={editSession?.description ?? ''}
+                placeholder="Personal styling session to revamp your wardrobe and discover your signature look."
+                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] resize-none"
+              />
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 justify-items-center">
+              <div className="relative">
+                <select className="w-full appearance-none bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] cursor-pointer">
+                  <option>1 hour</option>
+                  <option>30 minutes</option>
+                  <option>45 minutes</option>
+                  <option>2 hours</option>
+                </select>
+                <svg className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-black block mb-2">Price</label>
                 <input
                   type="text"
-                  defaultValue={editSession?.title ?? ''}
-                  placeholder="Style Consultation"
+                  defaultValue="1200"
                   className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
                 />
               </div>
-
-              <div className="mb-5">
-                <label className="text-sm font-semibold text-black block mb-2">Description</label>
-                <textarea
-                  rows={3}
-                  defaultValue={editSession?.description ?? ''}
-                  placeholder="Personal styling session to revamp your wardrobe and discover your signature look."
-                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] resize-none"
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-3">
+              <div>
+                <label className="text-sm font-semibold text-black block mb-2">What&rsquo;s Included</label>
+                <input
+                  type="text"
+                  placeholder="Feature 1"
+                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
                 />
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
-                  <div className="relative">
-                    <select className="w-full appearance-none bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] cursor-pointer">
-                      <option>1 hour</option>
-                      <option>30 minutes</option>
-                      <option>45 minutes</option>
-                      <option>2 hours</option>
-                    </select>
-                    <svg className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <polyline points="6 9 12 15 18 9" />
-                    </svg>
-                  </div>
-                  <div>
-                    <label className="text-sm font-semibold text-black block mb-2">Price</label>
-                    <input
-                      type="text"
-                      defaultValue="1200"
-                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
-                    />
-                  </div>
-                </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-3">
-                <div>
-                  <label className="text-sm font-semibold text-black block mb-2">What&rsquo;s Included</label>
-                  <input
-                    type="text"
-                    placeholder="Feature 1"
-                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-semibold text-black block mb-2">Max Bookings Per Day</label>
-                  <input
-                    type="text"
-                    defaultValue="4"
-                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
-                  />
-                </div>
-              </div>
-
-              <button className="flex items-center gap-2 text-gray-500 text-sm font-medium mb-6 hover:text-[#0012FF]">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="12" y1="5" x2="12" y2="19" />
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
-                Add feature
-              </button>
-
-              <button className="w-full flex items-center justify-center gap-2 border border-dashed border-gray-300 bg-gray-50 text-gray-600 rounded-xl py-4 text-sm font-semibold mb-6 hover:bg-gray-100">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="12" y1="5" x2="12" y2="19" />
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
-                Add Session Type
-              </button>
-
-              <div className="grid grid-cols-2 gap-4">
-                <button
-                  onClick={() => setShowEditModal(false)}
-                  className="bg-gray-100 text-gray-700 rounded-full py-4 text-sm font-semibold hover:bg-gray-200 transition-all"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => setShowEditModal(false)}
-                  className="bg-[#0012FF] text-white rounded-full py-4 text-sm font-semibold hover:bg-[#0010d0] transition-all"
-                >
-                  Save Changes
-                </button>
+              <div>
+                <label className="text-sm font-semibold text-black block mb-2">Max Bookings Per Day</label>
+                <input
+                  type="text"
+                  defaultValue="4"
+                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
+                />
               </div>
             </div>
+
+            <button className="flex items-center gap-2 text-gray-500 text-sm font-medium mb-6 hover:text-[#0012FF]">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              Add feature
+            </button>
+
+            <button className="w-full flex items-center justify-center gap-2 border border-dashed border-gray-300 bg-gray-50 text-gray-600 rounded-xl py-4 text-sm font-semibold mb-6 hover:bg-gray-100">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              Add Session Type
+            </button>
+
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="bg-gray-100 text-gray-700 rounded-full py-4 text-sm font-semibold hover:bg-gray-200 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="bg-[#0012FF] text-white rounded-full py-4 text-sm font-semibold hover:bg-[#0010d0] transition-all"
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
         </ModalShell>
       )}
 
       {/* ============ DELETE ACCOUNT MODAL ============ */}
       {showDeleteModal && (
         <ModalShell onClose={() => setShowDeleteModal(false)}>
-            {/* Content */}
-            <div className="px-8 sm:px-12 pt-14 pb-12 flex flex-col items-center text-center">
-              <Image src="/assets/cancel-appointment.png" alt="Delete account" width={280} height={200} className="object-contain mb-4" />
-              <h3 className="text-2xl font-bold text-black mb-2">Are You Sure?</h3>
-              <p className="text-gray-500 mb-1">Are you sure you want to delete your account?</p>
-              <p className="text-gray-500 mb-8">This action cannot be undone.</p>
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                className="bg-red-600 text-white px-10 py-3.5 rounded-full text-base font-semibold hover:bg-red-700 transition-all"
-              >
-                Delete Account
-              </button>
-            </div>
+          {/* Content */}
+          <div className="px-8 sm:px-12 pt-14 pb-12 flex flex-col items-center text-center">
+            <Image src="/assets/cancel-appointment.png" alt="Delete account" width={280} height={200} className="object-contain mb-4" />
+            <h3 className="text-2xl font-bold text-black mb-2">Are You Sure?</h3>
+            <p className="text-gray-500 mb-1">Are you sure you want to delete your account?</p>
+            <p className="text-gray-500 mb-8">This action cannot be undone.</p>
+            <button
+              onClick={() => setShowDeleteModal(false)}
+              className="bg-red-600 text-white px-10 py-3.5 rounded-full text-base font-semibold hover:bg-red-700 transition-all"
+            >
+              Delete Account
+            </button>
+          </div>
         </ModalShell>
       )}
     </div>

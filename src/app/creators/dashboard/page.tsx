@@ -19,6 +19,61 @@ const CreatorDashboard = () => {
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string>('');
   const [activePeriod, setActivePeriod] = useState<'daily' | 'weekly' | 'monthly'>('daily');
+  const [currentDate, setCurrentDate] = useState<Date>(new Date(2026, 7, 2)); // Default to August 2, 2026
+  const [activeBarIndex, setActiveBarIndex] = useState<number>(5); // Default to June (index 5)
+  const [monthDropdownOpen, setMonthDropdownOpen] = useState(false);
+  const [yearDropdownOpen, setYearDropdownOpen] = useState(false);
+
+  const selectMonth = (monthIndex: number) => {
+    const d = new Date(currentDate);
+    d.setMonth(monthIndex);
+    setCurrentDate(d);
+    setMonthDropdownOpen(false);
+  };
+
+  const selectYear = (year: number) => {
+    const d = new Date(currentDate);
+    d.setFullYear(year);
+    setCurrentDate(d);
+    setYearDropdownOpen(false);
+  };
+
+  const monthlyData = [
+    { month: 'Jan', earnings: '15,000 PKR', trend: '+12.4%', height: 70 },
+    { month: 'Feb', earnings: '58,000 PKR', trend: '+15.2%', height: 190 },
+    { month: 'Mar', earnings: '35,000 PKR', trend: '+18.2%', height: 120 },
+    { month: 'Apr', earnings: '32,000 PKR', trend: '+18.2%', height: 110 },
+    { month: 'May', earnings: '35,000 PKR', trend: '+18.2%', height: 120 },
+    { month: 'Jun', earnings: '30,000 PKR', trend: '+18.2%', height: 180 },
+    { month: 'Jul', earnings: '28,000 PKR', trend: '+18.2%', height: 100 },
+    { month: 'Aug', earnings: '15,000 PKR', trend: '+18.2%', height: 70 },
+    { month: 'Sep', earnings: '28,000 PKR', trend: '+18.2%', height: 100 },
+    { month: 'Oct', earnings: '15,000 PKR', trend: '+18.2%', height: 70 },
+    { month: 'Nov', earnings: '35,000 PKR', trend: '+18.2%', height: 120 },
+    { month: 'Dec', earnings: '52,000 PKR', trend: '+18.2%', height: 170 },
+  ];
+
+  const getDaysStrip = () => {
+    const days = [];
+    for (let i = -3; i <= 3; i++) {
+      const d = new Date(currentDate);
+      d.setDate(currentDate.getDate() + i);
+      days.push(d);
+    }
+    return days;
+  };
+
+  const prevMonth = () => {
+    const d = new Date(currentDate);
+    d.setMonth(currentDate.getMonth() - 1);
+    setCurrentDate(d);
+  };
+
+  const nextYear = () => {
+    const d = new Date(currentDate);
+    d.setFullYear(currentDate.getFullYear() + 1);
+    setCurrentDate(d);
+  };
 
   useEffect(() => {
     async function loadProfile() {
@@ -105,27 +160,32 @@ const CreatorDashboard = () => {
               <h2 className="text-2xl font-bold text-black font-sans mb-6">Earnings</h2>
 
               <div className="space-y-6">
-                {/* Total Earnings */}
-                <div className="flex items-center justify-center gap-3">
-                  <div className="flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-xl">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2">
-                      <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-black">30,000 PKR</p>
-                    <p className="text-sm text-green-500 flex items-center gap-1">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-                        <polyline points="17 6 23 6 23 12" />
-                      </svg>
-                      +18.2%
-                    </p>
-                  </div>
-                </div>
-
                 {/* Chart */}
                 <div className="relative h-96">
+                  {/* Floating Tooltip */}
+                  <div
+                    className="absolute bg-white border border-gray-100 rounded-2xl shadow-xl p-3 flex items-center gap-3 z-30 transition-all duration-300 pointer-events-none"
+                    style={{
+                      left: `${((50 + activeBarIndex * 40 + 11) / 500) * 100}%`,
+                      top: `${((280 - monthlyData[activeBarIndex].height - 55) / 300) * 100}%`,
+                      transform: 'translate(-50%, -50%)',
+                      width: '210px',
+                    }}
+                  >
+                    <div className="w-10 h-10 bg-[#0012FF]/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2.5">
+                        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                      </svg>
+                    </div>
+                    <div className="flex-grow">
+                      <p className="text-[10px] text-gray-400 font-sans font-semibold uppercase tracking-wider">Total Earnings</p>
+                      <p className="text-sm font-black text-black font-sans">{monthlyData[activeBarIndex].earnings}</p>
+                    </div>
+                    <div className="bg-emerald-50 text-emerald-600 px-2 py-1 rounded-lg text-[10px] font-bold">
+                      {monthlyData[activeBarIndex].trend}
+                    </div>
+                  </div>
+
                   <svg
                     className="w-full h-full"
                     viewBox="0 0 500 300"
@@ -162,47 +222,53 @@ const CreatorDashboard = () => {
                     <text x="10" y="270" fontSize="12" fill="#9CA3AF">0</text>
 
                     {/* Bars */}
-                    {[
-                      { x: 50, height: 70 },
-                      { x: 90, height: 120 },
-                      { x: 130, height: 100 },
-                      { x: 170, height: 150 },
-                      { x: 210, height: 130 },
-                      { x: 250, height: 180 },
-                      { x: 290, height: 160 },
-                      { x: 330, height: 100 },
-                      { x: 370, height: 120 },
-                      { x: 410, height: 140 },
-                      { x: 450, height: 100 },
-                      { x: 490, height: 80 },
-                    ].map((bar, i) => (
-                      <g key={i}>
-                        <rect
-                          x={bar.x}
-                          y={280 - bar.height}
-                          width="22"
-                          height={bar.height}
-                          fill="url(#earningsGradient)"
-                          rx="8"
-                        />
-                        <rect
-                          x={bar.x}
-                          y={280 - bar.height}
-                          width="22"
-                          height={bar.height}
-                          fill="#0012FF"
-                          rx="8"
-                          style={{ clipPath: `inset(30px 0 0 0)` }}
-                        />
-                        {/* Top circle for June */}
-                        {i === 5 && (
-                          <g>
-                            <circle cx={bar.x + 11} cy={280 - bar.height} r="8" fill="#0012FF" />
-                            <circle cx={bar.x + 11} cy={280 - bar.height} r="4" fill="white" />
-                          </g>
-                        )}
-                      </g>
-                    ))}
+                    {monthlyData.map((bar, i) => {
+                      const x = 50 + i * 40;
+                      const isActive = i === activeBarIndex;
+                      return (
+                        <g key={i} className="cursor-pointer" onClick={() => setActiveBarIndex(i)}>
+                          {/* Inactive Bar */}
+                          {!isActive && (
+                            <rect
+                              x={x}
+                              y={280 - bar.height}
+                              width="22"
+                              height={bar.height}
+                              fill="#E5E7EB"
+                              rx="8"
+                              className="hover:fill-gray-300 transition-colors duration-200"
+                            />
+                          )}
+                          {/* Active Bar */}
+                          {isActive && (
+                            <>
+                              <rect
+                                x={x}
+                                y={280 - bar.height}
+                                width="22"
+                                height={bar.height}
+                                fill="url(#earningsGradient)"
+                                rx="8"
+                              />
+                              <rect
+                                x={x}
+                                y={280 - bar.height}
+                                width="22"
+                                height={bar.height}
+                                fill="#0012FF"
+                                rx="8"
+                                style={{ clipPath: `inset(30px 0 0 0)` }}
+                              />
+                              {/* Top Circle */}
+                              <g>
+                                <circle cx={x + 11} cy={280 - bar.height} r="8" fill="#0012FF" />
+                                <circle cx={x + 11} cy={280 - bar.height} r="4" fill="white" />
+                              </g>
+                            </>
+                          )}
+                        </g>
+                      );
+                    })}
                   </svg>
                 </div>
 
@@ -236,34 +302,84 @@ const CreatorDashboard = () => {
               </div>
 
               <div className="flex items-center gap-2 flex-wrap">
-                <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-xl px-3 py-2">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2">
-                    <polyline points="15 18 9 12 15 6" />
-                  </svg>
-                  <div className="flex flex-col">
-                    <span className="text-[10px] text-gray-400">Month</span>
-                    <span className="text-xs sm:text-sm text-gray-700 font-semibold">August</span>
+                {/* Month Selector */}
+                <div className="relative">
+                  <div
+                    onClick={() => { setMonthDropdownOpen(!monthDropdownOpen); setYearDropdownOpen(false); }}
+                    className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-3 py-2 cursor-pointer hover:bg-gray-50 transition-all select-none min-w-[110px]"
+                  >
+                    <div className="flex flex-col">
+                      <span className="text-[10px] text-gray-400">Month</span>
+                      <span className="text-xs sm:text-sm text-gray-700 font-semibold">
+                        {currentDate.toLocaleString('default', { month: 'long' })}
+                      </span>
+                    </div>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={`transition-transform duration-200 ${monthDropdownOpen ? 'rotate-180' : ''}`}>
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
                   </div>
+                  {monthDropdownOpen && (
+                    <div className="absolute left-0 top-[calc(100%+6px)] w-40 bg-white rounded-2xl shadow-xl border border-gray-100 py-1.5 z-[50] max-h-60 overflow-y-auto">
+                      {['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].map((m, idx) => (
+                        <button
+                          key={m}
+                          onClick={() => selectMonth(idx)}
+                          className={`w-full text-left px-4 py-2 text-xs font-semibold hover:bg-[#0012FF]/5 transition-colors ${currentDate.getMonth() === idx ? 'text-[#0012FF] bg-[#0012FF]/5' : 'text-gray-600'}`}
+                        >
+                          {m}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
+
+                {/* Days Strip */}
                 <div className="hidden sm:flex items-center gap-1 bg-white border border-gray-200 rounded-xl px-2 py-2">
-                  {['01', '02', '03', '04', '05', '06', '07'].map((day, i) => (
-                    <span
-                      key={i}
-                      className={`w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg text-xs sm:text-sm font-semibold ${i === 1 ? 'bg-[#0012FF] text-white' : 'text-gray-500'
+                  {getDaysStrip().map((day, i) => {
+                    const isSelected = day.getDate() === currentDate.getDate() &&
+                                       day.getMonth() === currentDate.getMonth() &&
+                                       day.getFullYear() === currentDate.getFullYear();
+                    return (
+                      <span
+                        key={i}
+                        onClick={() => setCurrentDate(day)}
+                        className={`w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg text-xs sm:text-sm font-semibold cursor-pointer transition-all ${
+                          isSelected ? 'bg-[#0012FF] text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'
                         }`}
-                    >
-                      {day}
-                    </span>
-                  ))}
+                      >
+                        {day.getDate().toString().padStart(2, '0')}
+                      </span>
+                    );
+                  })}
                 </div>
-                <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-xl px-3 py-2">
-                  <div className="flex flex-col">
-                    <span className="text-[10px] text-gray-400">Year</span>
-                    <span className="text-xs sm:text-sm text-gray-700 font-semibold">2026</span>
+
+                {/* Year Selector */}
+                <div className="relative">
+                  <div
+                    onClick={() => { setYearDropdownOpen(!yearDropdownOpen); setMonthDropdownOpen(false); }}
+                    className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-3 py-2 cursor-pointer hover:bg-gray-50 transition-all select-none min-w-[90px]"
+                  >
+                    <div className="flex flex-col">
+                      <span className="text-[10px] text-gray-400">Year</span>
+                      <span className="text-xs sm:text-sm text-gray-700 font-semibold">{currentDate.getFullYear()}</span>
+                    </div>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={`transition-transform duration-200 ${yearDropdownOpen ? 'rotate-180' : ''}`}>
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
                   </div>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2">
-                    <polyline points="9 18 15 12 9 6" />
-                  </svg>
+                  {yearDropdownOpen && (
+                    <div className="absolute right-0 top-[calc(100%+6px)] w-28 bg-white rounded-2xl shadow-xl border border-gray-100 py-1.5 z-[50]">
+                      {[2024, 2025, 2026, 2027, 2028, 2029].map((y) => (
+                        <button
+                          key={y}
+                          onClick={() => selectYear(y)}
+                          className={`w-full text-left px-4 py-2 text-xs font-semibold hover:bg-[#0012FF]/5 transition-colors ${currentDate.getFullYear() === y ? 'text-[#0012FF] bg-[#0012FF]/5' : 'text-gray-600'}`}
+                        >
+                          {y}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -497,7 +613,7 @@ const CreatorDashboard = () => {
                       </div>
                       <div>
                         <div className="w-full h-px bg-gray-200 mb-4"></div>
-                        <div className="flex items-center gap-3 px-4">
+                        <div className="flex items-center gap-3 pr-9 pl-0">
                           <button className="flex-grow py-2 border-2 border-gray-200 rounded-2xl text-sm font-semibold text-gray-500 hover:bg-gray-50 transition-all bg-white">
                             Reschedule
                           </button>
