@@ -38,7 +38,6 @@ export default function DashboardRedirect() {
             return;
           }
           
-          // Case 3: Has seen welcome → user dashboard
           if (userData.user.hasSeenWelcome || userData.user.approvalStatus === 'none') {
             router.push('/user/dashboard');
             return;
