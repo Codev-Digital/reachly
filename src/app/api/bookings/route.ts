@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
             },
             scheduledDate: new Date(date),
             scheduledTime: time,
-            status: 'pending', // Creator needs to approve first
+            status: 'confirmed', // Auto-approved
             paymentStatus: 'paid', // Mark as paid since payment is simulated
             paymentMethod: paymentMethod || 'jazzcash',
             price: originalPrice,
@@ -109,6 +109,21 @@ export async function POST(request: NextRequest) {
         });
 
         await booking.save();
+
+        // Create a real Notification for the creator
+        try {
+            const Notification = (await import('@/models/Notification')).default;
+            await new Notification({
+                userId: creatorProfile.userId,
+                title: 'New Session Booked',
+                message: `${userDetails.fullName} booked a "${sessionType.title}" session on ${formatDate(new Date(date))} at ${time}.`,
+                type: 'booking',
+                read: false,
+                time: 'Just now'
+            }).save();
+        } catch (notifErr) {
+            console.error('Error creating creator notification:', notifErr);
+        }
 
         // Send confirmation email
         const emailHtml = generateBookingConfirmationEmail({

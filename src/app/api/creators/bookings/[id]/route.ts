@@ -31,9 +31,9 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }
 
-        const { status } = await request.json();
+        const { status, selectedDate, selectedTime } = await request.json();
         
-        if (!['confirmed', 'cancelled', 'completed'].includes(status)) {
+        if (status && !['confirmed', 'cancelled', 'completed'].includes(status)) {
             return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
         }
 
@@ -55,9 +55,18 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
             return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
         }
 
-        const updatePayload: any = { status };
-        if (status === 'cancelled' && booking.paymentStatus === 'paid') {
-            updatePayload.paymentStatus = 'refunded';
+        const updatePayload: any = {};
+        if (status) {
+            updatePayload.status = status;
+            if (status === 'cancelled' && booking.paymentStatus === 'paid') {
+                updatePayload.paymentStatus = 'refunded';
+            }
+        }
+        if (selectedDate) {
+            updatePayload.selectedDate = new Date(selectedDate);
+        }
+        if (selectedTime) {
+            updatePayload.selectedTime = selectedTime;
         }
 
         const updatedBooking = await Booking.findByIdAndUpdate(
