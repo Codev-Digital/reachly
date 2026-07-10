@@ -16,7 +16,7 @@ function ModalShell({
   children: ReactNode;
   maxWidth?: string;
 }) {
-  const notch = 'radial-gradient(circle 30px at 50% 0, transparent 29px, #000 30px)';
+  const notch = `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 500 500' preserveAspectRatio='none'><path d='M 0,0 H 196 C 201 0, 207 2, 211 6 L 233 25 C 243 33, 256 33, 266 25 L 288 6 C 292 2, 298 0, 303 0 H 500 V 500 H 0 Z' fill='black'/></svg>")`;
   return (
     <div className="fixed inset-0 bg-black/40 flex items-start justify-center z-[60] p-4 overflow-y-auto">
       <div className={`relative w-full ${maxWidth} my-8`}>
@@ -32,7 +32,13 @@ function ModalShell({
         <div style={{ filter: 'drop-shadow(0 25px 50px rgba(0,0,0,0.12))' }}>
           <div
             className="bg-white"
-            style={{ borderRadius: 32, WebkitMaskImage: notch, maskImage: notch }}
+            style={{
+              borderRadius: 32,
+              WebkitMaskImage: notch,
+              maskImage: notch,
+              WebkitMaskSize: '100% 100%',
+              maskSize: '100% 100%'
+            }}
           >
             {children}
           </div>
