@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import CreatorSidebar from '@/components/CreatorSidebar';
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 
 type BookingStatus = 'Upcoming' | 'Past' | 'Cancelled' | 'Pending Action';
 
@@ -42,6 +43,11 @@ const CreatorBookings = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [bookingToAction, setBookingToAction] = useState<string | null>(null);
+
+  // Success Modal States
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successModalType, setSuccessModalType] = useState<'cancelled'>('cancelled');
+
   const statusOptions = ['All statuses', 'Upcoming', 'Pending Action', 'Past', 'Cancelled'];
 
   useEffect(() => {
@@ -124,6 +130,8 @@ const CreatorBookings = () => {
           booking.id === bookingId ? { ...booking, statusRaw: 'cancelled', status: 'Cancelled' } : booking
         )
       );
+      setSuccessModalType('cancelled');
+      setShowSuccessModal(true);
     } catch (error) {
       console.error('Error rejecting booking:', error);
     }
@@ -657,22 +665,55 @@ const CreatorBookings = () => {
                 </div>
               </div>
             )}
-
             {/* Cancel Booking Modal */}
             {showCancelModal && (
-              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                <div className="bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-xl p-8 max-w-md w-full mx-4">
-                  <h3 className="font-serif text-2xl font-bold text-[#F9F6F2] mb-4">Reject this booking?</h3>
-                  <p className="font-sans text-sm text-[#F9F6F2] opacity-70 mb-8">
-                    Are you sure you want to reject this booking? The follower will receive a full refund and a notification.
+              <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100] p-4">
+                <div className="relative overflow-visible w-full max-w-lg flex flex-col items-center p-4 xs:p-6 sm:p-8 pt-10 sm:pt-12 pb-6 sm:pb-8 z-10">
+                  {/* SVG Background */}
+                  <img
+                    src="/assets/cancel-card.svg"
+                    alt=""
+                    className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10"
+                  />
+                  {/* Close Button */}
+                  <button
+                    onClick={() => {
+                      setShowCancelModal(false);
+                      setBookingToAction(null);
+                    }}
+                    className="absolute -top-0 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center border border-gray-100/50 text-gray-500 hover:bg-gray-50 transition-all z-20"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                  </button>
+
+                  {/* Illustration */}
+                  <div className="w-20 xs:w-28 sm:w-36 md:w-44 lg:w-56 mt-2 sm:mt-3 mb-3 sm:mb-4">
+                    <Image
+                      src="/assets/cancel-appointment.png"
+                      alt="Cancel Booking"
+                      width={240}
+                      height={170}
+                      className="w-full h-auto object-contain"
+                    />
+                  </div>
+
+                  <h3 className="text-lg sm:text-2xl font-bold text-black mb-2 text-center">
+                    Reject Booking
+                  </h3>
+                  <p className="text-xs sm:text-sm text-gray-500 text-center mb-4 sm:mb-6">
+                    Are you sure you want to reject this booking? The follower will receive a full refund.
                   </p>
-                  <div className="flex items-center justify-end gap-4">
+
+                  <div className="flex gap-3 w-full">
                     <button
                       onClick={() => {
                         setShowCancelModal(false);
                         setBookingToAction(null);
                       }}
-                      className="bg-[#141414] border border-[rgba(255,255,255,0.1)] px-8 py-2.5 rounded-full text-sm font-sans text-[#F9F6F2]"
+                      className="flex-1 py-2 border border-gray-200 rounded-xl text-xs sm:text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-all bg-white"
                     >
                       Cancel
                     </button>
@@ -684,11 +725,60 @@ const CreatorBookings = () => {
                         setShowCancelModal(false);
                         setBookingToAction(null);
                       }}
-                      className="bg-[#f87171] text-[#0C0C0C] px-8 py-2.5 rounded-full text-sm font-sans"
+                      className="flex-1 py-2 bg-red-600 text-white rounded-xl text-xs sm:text-sm font-semibold hover:bg-red-700 transition-all"
                     >
                       Yes, reject
                     </button>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* Success Modal */}
+            {showSuccessModal && (
+              <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100] p-4">
+                <div className="relative overflow-visible w-full max-w-lg flex flex-col items-center p-4 xs:p-6 sm:p-8 pt-10 sm:pt-12 pb-6 sm:pb-8 z-10">
+                  {/* SVG Background */}
+                  <img
+                    src="/assets/cancel-card.svg"
+                    alt=""
+                    className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10"
+                  />
+                  {/* Close Button */}
+                  <button
+                    onClick={() => setShowSuccessModal(false)}
+                    className="absolute -top-0 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center border border-gray-100/50 text-gray-500 hover:bg-gray-50 transition-all z-20"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                  </button>
+
+                  {/* Illustration */}
+                  <div className="w-20 xs:w-28 sm:w-36 md:w-44 lg:w-56 mt-2 sm:mt-3 mb-3 sm:mb-4">
+                    <Image
+                      src="/assets/cancel-appointment.png"
+                      alt="Booking Cancelled"
+                      width={240}
+                      height={170}
+                      className="w-full h-auto object-contain"
+                    />
+                  </div>
+
+                  <h3 className="text-lg sm:text-2xl font-bold text-black mb-2 text-center">
+                    Booking Rejected
+                  </h3>
+                  <p className="text-xs sm:text-sm text-gray-500 text-center mb-4 sm:mb-6">
+                    The booking has been successfully rejected and cancelled.
+                  </p>
+
+                  <button
+                    onClick={() => setShowSuccessModal(false)}
+                    className="w-full py-2 bg-[#0012FF] text-white rounded-xl text-xs sm:text-sm font-semibold hover:bg-[#0010d0] transition-all"
+                  >
+                    Close
+                  </button>
                 </div>
               </div>
             )}
