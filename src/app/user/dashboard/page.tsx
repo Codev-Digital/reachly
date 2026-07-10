@@ -565,106 +565,80 @@ export default function UserDashboard() {
               {currentBookings[activeBookingTab].map((booking) => (
                 <div
                   key={booking.id}
-                  className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm relative group hover:shadow-md transition-all flex flex-col justify-between"
+                  className="relative w-full min-h-[200px] flex flex-col"
+                  style={{ backgroundImage: 'url(/assets/rec-card.png)', backgroundSize: '100% 100%', backgroundRepeat: 'no-repeat' }}
                 >
-                  <div>
-                    {/* Header */}
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={booking.avatar}
-                          alt={booking.name}
-                          className="w-12 h-12 rounded-full object-cover"
-                        />
-                        <div>
-                          <h4 className="font-bold text-base text-black flex items-center gap-1">
-                            {booking.name}
-                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
-                              <circle cx="12" cy="12" r="10" fill="#34C759" />
-                              <path d="M8 12l3 3 5-5" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                          </h4>
-                          <span className="text-xs text-gray-400">{booking.handle}</span>
+                  {/* Content */}
+                  <div className="relative w-full pl-5 pr-10 pt-5 pb-5 flex flex-col justify-between flex-grow">
+                    <div>
+                      {/* Header */}
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-3">
+                          <div className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0">
+                            <img
+                              src={booking.avatar}
+                              alt={booking.name}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-base text-black leading-tight">{booking.name}</h4>
+                            <p className="text-xs text-gray-500">{booking.handle}</p>
+                          </div>
+                        </div>
+                        <p className="font-bold text-base text-[#0012FF] whitespace-nowrap">{booking.amount}</p>
+                      </div>
+
+                      {/* Time and Type */}
+                      <div className="flex items-center gap-4 text-xs text-gray-600 mb-2">
+                        <div className="flex items-center gap-1.5">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2">
+                            <circle cx="12" cy="12" r="10" />
+                            <polyline points="12 6 12 12 16 14" />
+                          </svg>
+                          <span>{booking.time}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2">
+                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+                            <polyline points="3.5 20 8 17 16 17 20.5 20" />
+                          </svg>
+                          <span>{booking.type}</span>
                         </div>
                       </div>
-                      <div className="flex flex-col items-end">
-                        <span className="text-xs bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full font-bold">
-                          {booking.status}
-                        </span>
-                        <span className="text-sm font-bold text-[#0012FF] mt-1">
-                          {booking.amount}
-                        </span>
-                      </div>
+
+                      {/* Description */}
+                      <p className="text-xs text-gray-500 mb-3 line-clamp-2 pr-4">
+                        {booking.note}
+                      </p>
                     </div>
 
-                    {/* Time and Type */}
-                    <div className="mt-3.5 flex flex-wrap items-center gap-3 text-xs text-gray-500 font-medium">
-                      <div className="flex items-center gap-1">
-                        <svg className="w-3.5 h-3.5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                          <circle cx="12" cy="12" r="10" />
-                          <polyline points="12 6 12 12 16 14" />
-                        </svg>
-                        <span>{booking.time}</span>
+                    {/* Buttons */}
+                    {activeBookingTab === 'Upcoming' && (
+                      <div>
+                        <div className="w-full h-px bg-gray-200 mb-3" />
+                        <div className="flex items-center gap-2 px-1">
+                          <button
+                            onClick={() => router.push('/user/bookings')}
+                            className="flex-1 py-1.5 border-2 border-gray-200 rounded-2xl text-xs font-semibold text-gray-500 hover:bg-gray-50 transition-all bg-white"
+                          >
+                            Reschedule
+                          </button>
+                          <button
+                            onClick={() => handleCancelClick(booking.id)}
+                            className="flex-1 py-1.5 border-2 border-red-200 rounded-2xl text-xs font-semibold text-red-500 bg-red-50 hover:bg-red-100 transition-all"
+                          >
+                            Cancel Appointment
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1">
-                        {booking.type === 'In-person' ? (
-                          <>
-                            <svg className="w-3.5 h-3.5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                              <path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z" />
-                              <circle cx="12" cy="10" r="3" />
-                            </svg>
-                            <span>In-person</span>
-                          </>
-                        ) : (
-                          <>
-                            <svg className="w-3.5 h-3.5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                              <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
-                              <path d="M10 17v4M14 17v4M6 21h12" />
-                            </svg>
-                            <span>Online</span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Description */}
-                    <p className="text-[12px] text-gray-500 mt-3 leading-relaxed">
-                      {booking.note}
-                    </p>
+                    )}
                   </div>
 
-                  {/* Buttons */}
-                  {activeBookingTab === 'Upcoming' && (
-                    <div className="flex items-center gap-2 mt-4 pt-3 border-t border-gray-50">
-                      <button
-                        onClick={() => router.push('/user/bookings')}
-                        className="flex-1 py-1.5 text-xs font-bold border border-gray-200 rounded-full text-gray-600 hover:bg-gray-50 transition-all text-center"
-                      >
-                        Reschedule
-                      </button>
-                      <button
-                        onClick={() => handleCancelClick(booking.id)}
-                        className="flex-1 py-1.5 text-xs font-bold border border-red-200 rounded-full text-red-500 bg-red-50/50 hover:bg-red-50 transition-all text-center"
-                      >
-                        Cancel Appointment
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Up-Right Arrow Icon */}
-                  <div className="absolute right-3 bottom-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="#0012FF"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <line x1="7" y1="17" x2="17" y2="7" />
-                      <polyline points="12 7 17 7 17 12" />
+                  {/* Arrow indicator */}
+                  <div className="absolute right-1 bottom-1">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M7 17L17 7M17 7H10M17 7V14" stroke="#0012FF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </div>
                 </div>
