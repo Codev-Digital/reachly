@@ -415,18 +415,18 @@ export default function CreatorCalendar() {
                   </div>
                   <div>
                     <div className="w-full h-px bg-gray-200 mb-2.5"></div>
-                    <div className="flex items-center gap-2 pr-8">
+                    <div className="flex items-center gap-2">
                       <button
                         onClick={() => handleRescheduleClick(booking)}
-                        className="flex-grow py-1.5 border border-gray-200 rounded-xl text-xs font-semibold text-gray-500 hover:bg-gray-50 transition-all bg-white"
+                        className="flex-1 py-1.5 border border-gray-200 rounded-xl text-xs font-semibold text-gray-500 hover:bg-gray-50 transition-all bg-white"
                       >
                         Reschedule
                       </button>
                       <button
                         onClick={() => handleCancelClick(booking)}
-                        className="flex-grow py-1.5 border border-red-200 rounded-xl text-xs font-semibold text-red-500 bg-red-50 hover:bg-red-100 transition-all"
+                        className="flex-1 py-1.5 border border-red-200 rounded-xl text-xs font-semibold text-red-500 bg-red-50 hover:bg-red-100 transition-all"
                       >
-                        Cancel
+                        Cancel Appointment
                       </button>
                     </div>
                   </div>

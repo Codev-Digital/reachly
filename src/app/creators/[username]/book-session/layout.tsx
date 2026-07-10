@@ -3,6 +3,7 @@
 import { useState, createContext, useContext, ReactNode, useEffect } from 'react';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
+import { AnimatePresence, motion } from 'framer-motion';
 
 export interface SessionType {
   id: string;
@@ -100,6 +101,7 @@ export default function BookSessionLayout({ children }: { children: ReactNode })
   const [booking, setBookingRaw] = useState<BookingState>(emptyBooking);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState<'user' | 'creator' | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // On mount, try to restore from sessionStorage (for auth redirect return)
   useEffect(() => {
@@ -153,62 +155,87 @@ export default function BookSessionLayout({ children }: { children: ReactNode })
 
   return (
     <BookingContext.Provider value={{ booking, setBooking, nextStep, prevStep, saveToStorage }}>
-      <div className="min-h-screen bg-[#F8F8FA] text-gray-900 flex flex-col">
+      <div className="min-h-screen bg-[#F8F8FA] text-gray-900 flex flex-col overflow-x-hidden">
         {/* Public Header */}
         <header className="bg-white border-b border-gray-200/80 sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2">
-              <img
-                src="/assets/logo1.png"
-                alt="Reachly"
-                className="object-contain h-8 w-auto"
-              />
+            <Link href="/" className="flex items-center gap-2 flex-shrink-0">
+              <img src="/assets/logo1.png" alt="Reachly" className="object-contain h-8 w-auto" />
             </Link>
 
-            {/* Navigation links */}
+            {/* Desktop Navigation links */}
             <div className="hidden md:flex items-center gap-6 lg:gap-8">
-              <Link href="/explore-creators" className="text-sm font-semibold text-gray-600 hover:text-[#0012FF] transition-colors">
-                Explore Creators
-              </Link>
-              <Link href="/explore-creators" className="text-sm font-semibold text-gray-600 hover:text-[#0012FF] transition-colors">
-                Events
-              </Link>
-              <Link href="/for-creators" className="text-sm font-semibold text-gray-600 hover:text-[#0012FF] transition-colors">
-                For Creators
-              </Link>
-              <Link href="/about" className="text-sm font-semibold text-gray-600 hover:text-[#0012FF] transition-colors">
-                About
-              </Link>
+              <Link href="/explore-creators" className="text-sm font-semibold text-gray-600 hover:text-[#0012FF] transition-colors">Explore Creators</Link>
+              <Link href="/explore-creators" className="text-sm font-semibold text-gray-600 hover:text-[#0012FF] transition-colors">Events</Link>
+              <Link href="/for-creators" className="text-sm font-semibold text-gray-600 hover:text-[#0012FF] transition-colors">For Creators</Link>
+              <Link href="/about" className="text-sm font-semibold text-gray-600 hover:text-[#0012FF] transition-colors">About</Link>
             </div>
 
-            {/* Auth Actions */}
-            <div className="flex items-center gap-4">
-              {isLoggedIn ? (
-                <Link
-                  href={userRole === 'creator' ? '/creators/dashboard' : '/user/dashboard'}
-                  className="bg-[#0012FF] text-white px-5 py-2 rounded-full text-sm font-bold hover:bg-[#0010d0] transition-all shadow-sm"
-                >
-                  Dashboard
-                </Link>
-              ) : (
-                <>
-                  <Link
-                    href="/login"
-                    className="text-sm font-bold text-gray-700 hover:text-[#0012FF] transition-colors px-3 py-2"
-                  >
-                    Login
+            {/* Right: Auth + hamburger */}
+            <div className="flex items-center gap-3">
+              {/* Desktop auth */}
+              <div className="hidden md:flex items-center gap-3">
+                {isLoggedIn ? (
+                  <Link href={userRole === 'creator' ? '/creators/dashboard' : '/user/dashboard'} className="bg-[#0012FF] text-white px-5 py-2 rounded-full text-sm font-bold hover:bg-[#0010d0] transition-all shadow-sm">
+                    Dashboard
                   </Link>
-                  <Link
-                    href="/signup"
-                    className="bg-[#0012FF] text-white px-5 py-2.5 rounded-full text-sm font-bold hover:bg-[#0010d0] transition-all shadow-sm"
-                  >
-                    Sign up
-                  </Link>
-                </>
-              )}
+                ) : (
+                  <>
+                    <Link href="/login" className="text-sm font-bold text-gray-700 hover:text-[#0012FF] transition-colors px-3 py-2">Login</Link>
+                    <Link href="/signup" className="bg-[#0012FF] text-white px-5 py-2.5 rounded-full text-sm font-bold hover:bg-[#0010d0] transition-all shadow-sm">Sign up</Link>
+                  </>
+                )}
+              </div>
+
+              {/* Mobile hamburger */}
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="md:hidden w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-600"
+                aria-label="Toggle menu"
+              >
+                {mobileMenuOpen ? (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                ) : (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
+                  </svg>
+                )}
+              </button>
             </div>
           </div>
+
+          {/* Mobile dropdown */}
+          <AnimatePresence>
+            {mobileMenuOpen && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="md:hidden overflow-hidden border-t border-gray-100 bg-white"
+              >
+                <div className="px-4 py-4 flex flex-col gap-3">
+                  <Link href="/explore-creators" onClick={() => setMobileMenuOpen(false)} className="text-sm font-semibold text-gray-700 py-2">Explore Creators</Link>
+                  <Link href="/explore-creators" onClick={() => setMobileMenuOpen(false)} className="text-sm font-semibold text-gray-700 py-2">Events</Link>
+                  <Link href="/for-creators" onClick={() => setMobileMenuOpen(false)} className="text-sm font-semibold text-gray-700 py-2">For Creators</Link>
+                  <Link href="/about" onClick={() => setMobileMenuOpen(false)} className="text-sm font-semibold text-gray-700 py-2">About</Link>
+                  <div className="flex gap-2 pt-2 border-t border-gray-100">
+                    {isLoggedIn ? (
+                      <Link href={userRole === 'creator' ? '/creators/dashboard' : '/user/dashboard'} className="flex-1 text-center bg-[#0012FF] text-white px-4 py-2.5 rounded-full text-sm font-bold">Dashboard</Link>
+                    ) : (
+                      <>
+                        <Link href="/login" className="flex-1 text-center border border-gray-200 text-gray-700 px-4 py-2.5 rounded-full text-sm font-bold">Login</Link>
+                        <Link href="/signup" className="flex-1 text-center bg-[#0012FF] text-white px-4 py-2.5 rounded-full text-sm font-bold">Sign up</Link>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </header>
 
         <main className="flex-1">{children}</main>
