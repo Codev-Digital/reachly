@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { updateCreatorProfile, getCurrentUser } from '@/lib/auth-client';
+import LoadingAnimation from '@/components/LoadingAnimation';
 
 // ─── Required fields (must all be non-empty to continue) ───────────────────────
 const REQUIRED: Record<string, string> = {
@@ -251,13 +252,7 @@ export default function CreatorOnboardingStep2() {
     }
   };
 
-  if (fetchingData) {
-    return (
-      <div className="min-h-screen bg-[#F7F7FA] flex items-center justify-center">
-        <div className="text-[#0012FF] text-lg animate-pulse">Loading your profile…</div>
-      </div>
-    );
-  }
+  if (fetchingData) return <LoadingAnimation />;
 
   const missingFields = getMissingFields();
   const allTouched = Object.keys(REQUIRED).every(k => touched[k]);

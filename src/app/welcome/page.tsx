@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Logo from '../components/Logo';
 import HeroImage from '../components/HeroImage';
+import LoadingAnimation from '@/components/LoadingAnimation';
 
 export default function WelcomePage() {
   const router = useRouter();
@@ -72,19 +73,7 @@ export default function WelcomePage() {
     }
   }, [status, redirected, router]);
 
-  if (isLoading || status === 'loading') {
-    return (
-      <div className="min-h-screen bg-[#0C0C0C] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <svg className="animate-spin h-8 w-8 text-[#C8A97E]" viewBox="0 0 24 24" fill="none">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-          </svg>
-          <p className="text-[#F9F6F2] font-sans">Loading...</p>
-        </div>
-      </div>
-    );
-  }
+  if (isLoading || status === 'loading') return <LoadingAnimation />;
 
   const handleBookSessions = async () => {
     setIsLoadingButton(true);

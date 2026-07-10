@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { updateSessionTypes } from '@/lib/auth-client';
+import LoadingAnimation from '@/components/LoadingAnimation';
 
 /* ─── types ─────────────────────────────────────────────────────────────── */
 interface SessionData {
@@ -179,13 +180,7 @@ export default function CreatorOnboardingStep3() {
   };
 
   /* ── Render ──────────────────────────────────────────────────────────── */
-  if (fetchingData) {
-    return (
-      <div className="min-h-screen bg-[#F7F7FA] flex items-center justify-center">
-        <div className="text-[#0012FF] text-lg animate-pulse">Loading your sessions…</div>
-      </div>
-    );
-  }
+  if (fetchingData) return <LoadingAnimation />;
 
   return (
     <div className="min-h-screen bg-[#F7F7FA]">

@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import CreatorDashboardNav from '@/components/CreatorDashboardNav';
+import LoadingAnimation from '@/components/LoadingAnimation';
 
 function ModalShell({
   onClose,
@@ -522,13 +523,7 @@ export default function CreatorSettings() {
     }));
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#F7F7FA] flex items-center justify-center">
-        <p className="text-gray-500 font-semibold animate-pulse">Loading settings...</p>
-      </div>
-    );
-  }
+  if (loading) return <LoadingAnimation />;
 
   return (
     <div className="min-h-screen bg-[#F7F7FA]">

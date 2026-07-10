@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
+import LoadingAnimation from '@/components/LoadingAnimation';
 
 export default function DashboardRedirect() {
   const router = useRouter();
@@ -57,7 +58,5 @@ export default function DashboardRedirect() {
     }
   }, [status, router]);
 
-  return <div className="min-h-screen bg-[#0C0C0C] flex items-center justify-center">
-    <div className="text-[#F9F6F2]">Loading...</div>
-  </div>;
+  return <LoadingAnimation />;
 }

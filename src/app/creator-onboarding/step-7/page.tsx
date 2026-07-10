@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import CreatorNavbar from '@/components/CreatorNavbar';
+import LoadingAnimation from '@/components/LoadingAnimation';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Checklist {
@@ -170,11 +171,7 @@ export default function CreatorOnboardingStep7() {
   const languages = profile?.languages?.join(', ') || '—';
   const niche = profile?.niches?.[0] || '';
 
-  if (fetchingData) return (
-    <div className="min-h-screen bg-[#0C0C0C] flex items-center justify-center">
-      <p className="text-[#C8A97E] font-serif text-lg animate-pulse">Preparing your profile…</p>
-    </div>
-  );
+  if (fetchingData) return <LoadingAnimation />;
 
   return (
     <div className="min-h-screen bg-[#0C0C0C]">

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import CreatorNavbar from '@/components/CreatorNavbar';
+import LoadingAnimation from '@/components/LoadingAnimation';
 
 export default function CreatorLayout({
   children,
@@ -39,13 +40,7 @@ export default function CreatorLayout({
     checkApproval();
   }, [pathname, router]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#0C0C0C] flex items-center justify-center">
-        <p className="text-[#C8A97E] font-serif text-lg animate-pulse">Loading...</p>
-      </div>
-    );
-  }
+  if (loading) return <LoadingAnimation />;
 
   return (
     <>

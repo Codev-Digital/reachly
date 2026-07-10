@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import LoadingAnimation from '@/components/LoadingAnimation';
 
 export default function CreatorPendingApproval() {
   const router = useRouter();
@@ -36,13 +37,7 @@ export default function CreatorPendingApproval() {
     checkUserStatus();
   }, [router]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#F7F7FA] flex items-center justify-center">
-        <div className="text-[#0012FF] text-lg animate-pulse font-semibold">Loading...</div>
-      </div>
-    );
-  }
+  if (loading) return <LoadingAnimation />;
 
   return (
     <div className="min-h-screen bg-[#F7F7FA] flex flex-col justify-between">

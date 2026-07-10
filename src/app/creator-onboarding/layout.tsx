@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import LoadingAnimation from '@/components/LoadingAnimation';
 
 export default function CreatorOnboardingLayout({
   children,
@@ -31,13 +32,7 @@ export default function CreatorOnboardingLayout({
     checkApproval();
   }, [router]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#F7F7FA] flex items-center justify-center">
-        <p className="text-[#0012FF] text-lg animate-pulse">Loading...</p>
-      </div>
-    );
-  }
+  if (loading) return <LoadingAnimation />;
 
   return <>{children}</>;
 }

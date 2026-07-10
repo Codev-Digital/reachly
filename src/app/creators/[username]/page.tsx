@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import CreatorNavbar from '@/components/CreatorNavbar';
 import Footer from '@/components/Footer';
+import LoadingAnimation from '@/components/LoadingAnimation';
 
 export default function CreatorProfilePage() {
   const params = useParams();
@@ -55,13 +56,7 @@ export default function CreatorProfilePage() {
 
   const slots = ['Mon 2PM', 'Tue 3PM', 'Wed 10AM', 'Thu 4PM', 'Fri 11AM', 'Sat 1PM', 'Sun 3PM'];
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#0c0c0c] text-[#F9F6F2] flex items-center justify-center">
-        <p className="text-[#C8A97E] font-serif text-lg animate-pulse">Loading creator...</p>
-      </div>
-    );
-  }
+  if (loading) return <LoadingAnimation />;
 
   if (!creator) {
     return (

@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useEffect, useState, useCallback } from 'react';
 import UserNavbar from '@/components/UserNavbar';
+import LoadingAnimation from '@/components/LoadingAnimation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 
@@ -266,16 +267,7 @@ export default function UserDashboard() {
 
   const currentBookings = useFallback ? fallbackBookingsList : realBookingsList;
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#F8F8FA] flex items-center justify-center">
-        <svg className="animate-spin h-8 w-8 text-[#0012FF]" viewBox="0 0 24 24" fill="none">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-        </svg>
-      </div>
-    );
-  }
+  if (loading) return <LoadingAnimation />;
 
   if (!isAuthenticated) {
     return (

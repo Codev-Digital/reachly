@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import CreatorDashboardNav from '@/components/CreatorDashboardNav';
+import LoadingAnimation from '@/components/LoadingAnimation';
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -250,13 +251,7 @@ export default function CreatorCalendar() {
     return list;
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#F8F8FA] flex items-center justify-center">
-        <p className="text-gray-500 font-semibold animate-pulse">Loading calendar...</p>
-      </div>
-    );
-  }
+  if (loading) return <LoadingAnimation />;
 
   return (
     <div className="min-h-screen bg-[#F8F8FA]">

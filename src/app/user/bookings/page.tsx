@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import UserNavbar from '@/components/UserNavbar';
+import LoadingAnimation from '@/components/LoadingAnimation';
 import { motion, useInView } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -213,13 +214,7 @@ export default function UserBookingsPage() {
   const countPast = bookings.filter((b) => b.status === 'Past').length;
   const countCancelled = bookings.filter((b) => b.originalStatus === 'cancelled').length;
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#F8F8FA] flex items-center justify-center">
-        <p className="text-gray-500 font-semibold animate-pulse">Loading bookings...</p>
-      </div>
-    );
-  }
+  if (loading) return <LoadingAnimation />;
 
   return (
     <div className="min-h-screen bg-[#F8F8FA]">

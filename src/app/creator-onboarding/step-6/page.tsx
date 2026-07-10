@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import LoadingAnimation from '@/components/LoadingAnimation';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type PaymentMethod = 'jazzcash' | 'easypaisa' | 'bank';
@@ -194,11 +195,7 @@ export default function CreatorOnboardingStep6() {
       ? 'border-red-500/70 focus:border-red-500'
       : 'border-[rgba(200,169,126,0.15)] focus:border-[#C8A97E]';
 
-  if (fetchingData) return (
-    <div className="min-h-screen bg-[#0C0C0C] flex items-center justify-center">
-      <p className="text-[#C8A97E] font-serif text-lg animate-pulse">Loading payment info…</p>
-    </div>
-  );
+  if (fetchingData) return <LoadingAnimation />;
 
   return (
     <div className="min-h-screen bg-[#0C0C0C]">

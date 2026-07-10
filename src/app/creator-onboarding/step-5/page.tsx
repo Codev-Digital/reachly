@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import LoadingAnimation from '@/components/LoadingAnimation';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface CreatorProfile {
@@ -93,13 +94,7 @@ export default function CreatorOnboardingStep5() {
     }
   };
 
-  if (fetchingData) {
-    return (
-      <div className="min-h-screen bg-[#F7F7FA] flex items-center justify-center">
-        <div className="text-[#0012FF] text-lg animate-pulse">Loading preview…</div>
-      </div>
-    );
-  }
+  if (fetchingData) return <LoadingAnimation />;
 
   return (
     <div className="min-h-screen bg-[#F7F7FA]">

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import LoadingAnimation from '@/components/LoadingAnimation';
 
 interface RequestItem {
   _id: string;
@@ -62,13 +63,7 @@ export default function AdminRequestsPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <p className="text-[#C8A97E] font-serif text-lg animate-pulse">Loading requests...</p>
-      </div>
-    );
-  }
+  if (loading) return <LoadingAnimation />;
 
   return (
     <div>
