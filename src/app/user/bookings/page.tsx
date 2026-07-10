@@ -350,16 +350,26 @@ export default function UserBookingsPage() {
       {/* Reschedule Appointment Modal */}
       {showRescheduleModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100] p-4">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl relative">
+          <div className="relative w-full max-w-lg flex flex-col items-center justify-between p-8 pt-12 pb-8 min-h-[520px] z-10">
+            {/* SVG Background notched card */}
+            <img
+              src="/assets/cancel-card.svg"
+              alt=""
+              className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10"
+            />
+            {/* Close Button */}
             <button
               onClick={() => setShowRescheduleModal(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-black"
+              className="absolute -top-0 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center hover:bg-gray-50 transition-all z-20 border border-gray-100/50 cursor-pointer text-gray-500"
             >
-              ✕
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
             </button>
-            <div className="flex flex-col items-center">
-              <h3 className="text-xl font-bold text-black mb-1">Reschedule Appointment</h3>
-              <p className="text-gray-500 text-center mb-6 text-sm">
+            <div className="flex flex-col items-center w-full flex-grow pt-3">
+              <h3 className="text-[22px] font-bold text-black mb-1">Reschedule Appointment</h3>
+              <p className="text-gray-500 text-center mb-6 text-[13px]">
                 Choose a new date and time for your session.
               </p>
 
@@ -367,9 +377,9 @@ export default function UserBookingsPage() {
               <div className="flex items-center gap-1.5 overflow-x-auto w-full no-scrollbar pb-3 mb-6 border-b border-gray-100">
                 {getRescheduleDays().map((d, idx) => {
                   const isSelected = rescheduleDate.getDate() === d.getDate() &&
-                                     rescheduleDate.getMonth() === d.getMonth() &&
-                                     rescheduleDate.getFullYear() === d.getFullYear();
-                  
+                    rescheduleDate.getMonth() === d.getMonth() &&
+                    rescheduleDate.getFullYear() === d.getFullYear();
+
                   const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
                   const dayNum = String(d.getDate()).padStart(2, '0');
 
@@ -390,7 +400,7 @@ export default function UserBookingsPage() {
               </div>
 
               {/* Time Slots Grid */}
-              <div className="w-full mb-6">
+              <div className="w-full mb-3">
                 {loadingSlots ? (
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -405,7 +415,7 @@ export default function UserBookingsPage() {
                       <button
                         key={slot}
                         onClick={() => setSelectedRescheduleTimeSlot(slot)}
-                        className={`py-2 px-1 border rounded-xl text-xs font-semibold text-center transition-all ${selectedRescheduleTimeSlot === slot
+                        className={`py-1 px-1 border rounded-xl text-xs font-semibold text-center transition-all ${selectedRescheduleTimeSlot === slot
                           ? 'bg-[#EEF2FF] border-[#0012FF] text-[#0012FF]'
                           : 'border-gray-200 text-gray-600 hover:bg-gray-50 bg-white'
                           }`}
@@ -421,14 +431,14 @@ export default function UserBookingsPage() {
               <div className="flex gap-3 w-full">
                 <button
                   onClick={() => setShowRescheduleModal(false)}
-                  className="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-all"
+                  className="flex-1 py-1 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-all bg-white"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleConfirmReschedule}
                   disabled={!selectedRescheduleTimeSlot}
-                  className="flex-1 py-2.5 bg-[#0012FF] text-white rounded-xl text-sm font-semibold hover:bg-[#0010d0] transition-all disabled:bg-gray-200 disabled:text-gray-400"
+                  className="flex-1 py-1 bg-[#0012FF] text-white rounded-xl text-sm font-semibold hover:bg-[#0010d0] transition-all disabled:bg-gray-200 disabled:text-gray-400"
                 >
                   Confirm Reschedule
                 </button>

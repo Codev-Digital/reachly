@@ -515,15 +515,34 @@ export default function UserSettings() {
       {/* Delete Account Confirmation Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100] p-4">
-          <div className="relative w-full max-w-lg flex flex-col items-center justify-between p-6 pt-10 pb-6 min-h-[480px] sm:min-h-[500px] z-10 bg-white rounded-3xl shadow-xl">
+          <div className="relative w-full max-w-lg flex flex-col items-center justify-between p-6 pt-10 pb-6 min-h-[480px] sm:min-h-[500px] z-10">
+            {/* SVG Background notched card */}
+            <img
+              src="/assets/cancel-card.svg"
+              alt=""
+              className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10"
+            />
+            {/* Close Button */}
             <button
               onClick={() => setShowDeleteModal(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-black"
+              className="absolute -top-5 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center hover:bg-gray-50 transition-all z-20 border border-gray-100/50 cursor-pointer text-gray-500"
             >
-              ✕
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
             </button>
 
-            <div className="flex flex-col items-center w-full flex-grow text-center px-4 mt-6">
+            {/* Illustration */}
+            <div className="mb-4 flex justify-center w-full">
+              <img
+                src="/assets/no-appointment.png"
+                alt="Are you sure?"
+                className="w-48 h-auto object-contain"
+              />
+            </div>
+
+            <div className="flex flex-col items-center w-full flex-grow text-center px-4">
               <h3 className="text-xl sm:text-2xl font-bold text-black mb-1 font-sans">Are You Sure?</h3>
               <p className="text-gray-400 text-sm max-w-sm mb-1">
                 Are you sure you want to delete your account?
@@ -535,7 +554,7 @@ export default function UserSettings() {
               <div className="flex gap-3 w-full">
                 <button
                   onClick={() => setShowDeleteModal(false)}
-                  className="flex-1 py-3 border border-gray-200 text-gray-600 rounded-full text-xs font-bold hover:bg-gray-50 transition-all"
+                  className="flex-1 py-3 border border-gray-200 text-gray-600 rounded-full text-xs font-bold hover:bg-gray-50 transition-all bg-white"
                 >
                   Keep Account
                 </button>
