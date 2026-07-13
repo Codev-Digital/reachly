@@ -21,18 +21,41 @@ interface Creator {
   onboardingStep?: string;
   niches?: string[];
   bio?: string;
+  bannerName?: string;
+  bannerNiche?: string;
+  bannerContact?: string;
 }
 
 export default function AdminCreatorsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<'All Statuses' | 'Active' | 'Pending' | 'Inactive' | 'Suspended'>('All Statuses');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  
+  // Modal states
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [creatorToReject, setCreatorToReject] = useState<Creator | null>(null);
+  
+  const [showAcceptModal, setShowAcceptModal] = useState(false);
+  const [creatorToAccept, setCreatorToAccept] = useState<Creator | null>(null);
+  
+  const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
+  
   const [currentPage, setCurrentPage] = useState(1);
   
   // Track selected creator for full detail view
   const [activeDetailCreator, setActiveDetailCreator] = useState<Creator | null>(null);
+
+  const categories = [
+    'Software Engineering',
+    'Fashion & Lifestyle',
+    'Finance & Business',
+    'Health & Fitness',
+    'Digital Marketing',
+    'Food & Travel',
+    'Education'
+  ];
 
   const initialCreators: Creator[] = [
     { 
@@ -50,8 +73,11 @@ export default function AdminCreatorsPage() {
       languages: 'English',
       startingPrice: '15,000 PKR',
       onboardingStep: '7 / 7',
-      niches: ['Fashion', 'Lifestyle'],
-      bio: 'Sophia is a fashion and lifestyle vlogger documenting daily trends and styling tips.'
+      niches: ['Fashion Tips', 'Style Guide', 'Shopping'],
+      bio: 'Fashion creator sharing timeless style, seasonal trends, and everyday outfit inspiration for every occasion.',
+      bannerName: 'Nageen Shah',
+      bannerNiche: 'Software Engineering',
+      bannerContact: '+ 123-456-7890   |   hello@reallygreatsite.com'
     },
     { 
       id: 'CRT-10246', 
@@ -69,7 +95,10 @@ export default function AdminCreatorsPage() {
       startingPrice: '20,000 PKR',
       onboardingStep: '5 / 7',
       niches: ['Travel', 'Food'],
-      bio: 'Sophia explores local cuisines and hidden travel spots around Europe.'
+      bio: 'Sophia explores local cuisines and hidden travel spots around Europe.',
+      bannerName: 'Nageen Shah',
+      bannerNiche: 'Travel Vlogging',
+      bannerContact: '+ 123-456-7890   |   hello@reallygreatsite.com'
     },
     { 
       id: 'CRT-10247', 
@@ -87,7 +116,10 @@ export default function AdminCreatorsPage() {
       startingPrice: '10,000 PKR',
       onboardingStep: '6 / 7',
       niches: ['Tech', 'Gadgets'],
-      bio: 'Unboxing and reviewing the latest tech products and smart home devices.'
+      bio: 'Unboxing and reviewing the latest tech products and smart home devices.',
+      bannerName: 'Nageen Shah',
+      bannerNiche: 'Tech Reviewing',
+      bannerContact: '+ 123-456-7890   |   hello@reallygreatsite.com'
     },
     { 
       id: 'CRT-10248', 
@@ -105,7 +137,10 @@ export default function AdminCreatorsPage() {
       startingPrice: '30,000 PKR',
       onboardingStep: '7 / 7',
       niches: ['Business', 'Finance'],
-      bio: 'Helping young entrepreneurs scale their brands using digital platforms.'
+      bio: 'Helping young entrepreneurs scale their brands using digital platforms.',
+      bannerName: 'Nageen Shah',
+      bannerNiche: 'Business Growth',
+      bannerContact: '+ 123-456-7890   |   hello@reallygreatsite.com'
     },
     { 
       id: 'CRT-10249', 
@@ -123,7 +158,10 @@ export default function AdminCreatorsPage() {
       startingPrice: '12,000 PKR',
       onboardingStep: '7 / 7',
       niches: ['Education', 'Skill Development'],
-      bio: 'Sharing tutorials and courses on UI/UX design and development.'
+      bio: 'Sharing tutorials and courses on UI/UX design and development.',
+      bannerName: 'Nageen Shah',
+      bannerNiche: 'UI/UX Design',
+      bannerContact: '+ 123-456-7890   |   hello@reallygreatsite.com'
     },
     { 
       id: 'CRT-10250', 
@@ -141,7 +179,10 @@ export default function AdminCreatorsPage() {
       startingPrice: '25,000 PKR',
       onboardingStep: '4 / 7',
       niches: ['Fitness', 'Wellness'],
-      bio: 'Sophia is a certified trainer sharing workout routines and meal plans.'
+      bio: 'Sophia is a certified trainer sharing workout routines and meal plans.',
+      bannerName: 'Nageen Shah',
+      bannerNiche: 'Fitness Training',
+      bannerContact: '+ 123-456-7890   |   hello@reallygreatsite.com'
     },
     { 
       id: 'CRT-10251', 
@@ -159,7 +200,10 @@ export default function AdminCreatorsPage() {
       startingPrice: '18,000 PKR',
       onboardingStep: '7 / 7',
       niches: ['Art', 'Design'],
-      bio: 'Digital artist showcasing illustration processes and design tutorials.'
+      bio: 'Digital artist showcasing illustration processes and design tutorials.',
+      bannerName: 'Nageen Shah',
+      bannerNiche: 'Digital Art',
+      bannerContact: '+ 123-456-7890   |   hello@reallygreatsite.com'
     }
   ];
 
@@ -192,10 +236,27 @@ export default function AdminCreatorsPage() {
     }
   };
 
-  const handleAcceptCreator = (creator: Creator) => {
-    setCreators(prev => prev.map(c => c.id === creator.id ? { ...c, status: 'Active' } : c));
-    if (activeDetailCreator?.id === creator.id) {
-      setActiveDetailCreator(prev => prev ? { ...prev, status: 'Active' } : null);
+  const handleAcceptClick = (creator: Creator) => {
+    setCreatorToAccept(creator);
+    setShowAcceptModal(true);
+  };
+
+  const handleConfirmAccept = () => {
+    if (creatorToAccept) {
+      setCreators(prev => prev.map(c => c.id === creatorToAccept.id ? { ...c, status: 'Active' } : c));
+      setShowAcceptModal(false);
+      setCreatorToAccept(null);
+      if (activeDetailCreator?.id === creatorToAccept.id) {
+        setActiveDetailCreator(prev => prev ? { ...prev, status: 'Active' } : null);
+      }
+    }
+  };
+
+  const handleAddCategorySubmit = () => {
+    if (selectedCategory) {
+      alert(`Category "${selectedCategory}" added successfully!`);
+      setShowAddCategoryModal(false);
+      setSelectedCategory('');
     }
   };
 
@@ -223,104 +284,222 @@ export default function AdminCreatorsPage() {
           </h1>
         </div>
 
-        {/* Creator Detail Card */}
-        <div className="bg-white rounded-[32px] p-8 border border-gray-100 shadow-sm flex flex-col md:flex-row gap-8 items-stretch">
-          {/* Left Column: Avatar & Name */}
-          <div className="flex flex-col items-center text-center justify-center md:border-r md:border-gray-100 md:pr-10 flex-shrink-0">
-            <div className="w-32 h-32 rounded-full overflow-hidden border-2 border-gray-100 shadow-inner mb-4">
+        {/* Premium Creator Detail Card with creator-detail-card.svg background */}
+        <div className="relative bg-white rounded-[32px] p-8 border border-gray-100 shadow-sm overflow-hidden z-10">
+          <img
+            src="/assets/creator-detail-card.svg"
+            alt=""
+            className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10"
+          />
+
+          {/* Banner Graphic Header */}
+          <div className="relative w-full aspect-[1140/320] rounded-2xl overflow-hidden mb-6 flex items-center justify-end p-8 sm:p-12 text-white">
+            {/* Background Graphic Mockup */}
+            <div className="absolute inset-0 bg-[#0012FF]/85 z-0" />
+            <img
+              src="/welcome-creator.png"
+              alt=""
+              className="absolute inset-0 w-full h-full object-cover opacity-35 mix-blend-overlay"
+              onError={(e) => {
+                // Fallback blue gradient if image doesn't load
+                (e.target as HTMLImageElement).className = "absolute inset-0 w-full h-full bg-gradient-to-r from-blue-700 to-indigo-900 z-[-1]";
+              }}
+            />
+
+            {/* Profile circular overlay positioned inside the banner layout */}
+            <div className="absolute left-8 sm:left-12 -bottom-16 w-32 h-32 sm:w-40 sm:h-40 rounded-full overflow-hidden border-[6px] border-white shadow-lg bg-white z-20 flex-shrink-0">
               <img
                 src={activeDetailCreator.avatar}
                 alt={activeDetailCreator.name}
                 className="w-full h-full object-cover"
               />
             </div>
-            <h2 className="text-xl font-bold text-black">{activeDetailCreator.name}</h2>
-            <p className="text-sm text-gray-400 font-medium mt-0.5">{activeDetailCreator.username}</p>
+
+            {/* Text Overlay Details */}
+            <div className="relative z-10 text-right max-w-xl">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-black font-sans leading-tight">
+                {activeDetailCreator.bannerName || 'Nageen Shah'}
+              </h2>
+              <div className="mt-2.5 inline-block px-5 py-1.5 border border-white/40 rounded-full text-xs sm:text-sm font-semibold bg-white/10 backdrop-blur-sm">
+                {activeDetailCreator.bannerNiche || 'Software Engineering'}
+              </div>
+              <p className="mt-4 text-[10px] sm:text-xs text-white/80 font-bold uppercase tracking-wider">
+                {activeDetailCreator.bannerContact || '+ 123-456-7890   |   hello@reallygreatsite.com'}
+              </p>
+            </div>
           </div>
 
-          {/* Right Column: Grid Details & Bio */}
-          <div className="flex-1 flex flex-col justify-between pt-2">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-6">
-              {/* Display Name */}
-              <div>
-                <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Display Name</p>
-                <p className="text-sm font-bold text-black mt-1">{activeDetailCreator.name}</p>
+          {/* Profile Name & Social Pills (Aligned below banner) */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mt-20 gap-4 border-b border-gray-50 pb-6 mb-8">
+            <div>
+              <div className="flex items-center gap-3 flex-wrap">
+                <h3 className="text-2xl font-black text-black leading-none">{activeDetailCreator.name}</h3>
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-[#0012FF] capitalize">
+                  Influencer
+                </span>
+              </div>
+              <p className="text-sm text-gray-400 font-bold mt-1.5">{activeDetailCreator.username}</p>
+            </div>
+
+            {/* Niches List */}
+            {activeDetailCreator.niches && activeDetailCreator.niches.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {activeDetailCreator.niches.map((n, i) => {
+                  const colors = [
+                    'bg-rose-50 text-rose-500 border border-rose-100',
+                    'bg-emerald-50 text-emerald-500 border border-emerald-100',
+                    'bg-amber-50 text-amber-500 border border-amber-100'
+                  ];
+                  return (
+                    <span 
+                      key={i} 
+                      className={`px-3 py-1 rounded-full text-[10px] font-bold capitalize ${colors[i % colors.length]}`}
+                    >
+                      {n}
+                    </span>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Main Layout Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            {/* Left Block (Details Grid & Bio) */}
+            <div className="lg:col-span-3 flex flex-col gap-6">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-y-6 gap-x-6">
+                {/* Display Name */}
+                <div>
+                  <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Display Name</p>
+                  <p className="text-sm font-bold text-black mt-1">{activeDetailCreator.name}</p>
+                </div>
+
+                {/* City */}
+                <div>
+                  <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">City</p>
+                  <p className="text-sm font-bold text-black mt-1">{activeDetailCreator.city || 'N/A'}</p>
+                </div>
+
+                {/* Languages Spoken */}
+                <div>
+                  <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Languages Spoken</p>
+                  <p className="text-sm font-bold text-black mt-1">{activeDetailCreator.languages || 'N/A'}</p>
+                </div>
+
+                {/* Joined Date */}
+                <div>
+                  <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Joined Date</p>
+                  <p className="text-sm font-bold text-black mt-1">{activeDetailCreator.joinedDate}</p>
+                </div>
+
+                {/* Email */}
+                <div>
+                  <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Email</p>
+                  <p className="text-sm font-bold text-black mt-1 break-all">{activeDetailCreator.email}</p>
+                </div>
+
+                {/* Country */}
+                <div>
+                  <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Country</p>
+                  <p className="text-sm font-bold text-black mt-1">{activeDetailCreator.country || 'N/A'}</p>
+                </div>
+
+                {/* Status */}
+                <div>
+                  <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Status</p>
+                  <p className={`text-sm font-black mt-1 ${
+                    activeDetailCreator.status === 'Active'
+                      ? 'text-[#10B981]'
+                      : activeDetailCreator.status === 'Pending'
+                      ? 'text-[#F59E0B]'
+                      : 'text-rose-500'
+                  }`}>
+                    {activeDetailCreator.status}
+                  </p>
+                </div>
+
+                {/* Joined Timing */}
+                <div>
+                  <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Joined Timing</p>
+                  <p className="text-sm font-bold text-black mt-1">{activeDetailCreator.time}</p>
+                </div>
               </div>
 
-              {/* City */}
-              <div>
-                <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">City</p>
-                <p className="text-sm font-bold text-black mt-1">{activeDetailCreator.city || 'N/A'}</p>
-              </div>
-
-              {/* Starting Price */}
-              <div>
-                <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Starting Price</p>
-                <p className="text-sm font-bold text-black mt-1">{activeDetailCreator.startingPrice || '—'}</p>
-              </div>
-
-              {/* Joined Date */}
-              <div>
-                <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Joined Date</p>
-                <p className="text-sm font-bold text-black mt-1">{activeDetailCreator.joinedDate}</p>
-              </div>
-
-              {/* Email */}
-              <div className="col-span-1">
-                <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Email</p>
-                <p className="text-sm font-bold text-black mt-1 break-all">{activeDetailCreator.email}</p>
-              </div>
-
-              {/* Country */}
-              <div>
-                <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Country</p>
-                <p className="text-sm font-bold text-black mt-1">{activeDetailCreator.country || 'N/A'}</p>
-              </div>
-
-              {/* Status */}
-              <div>
-                <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Status</p>
-                <p className={`text-sm font-black mt-1 ${
-                  activeDetailCreator.status === 'Active'
-                    ? 'text-emerald-500'
-                    : activeDetailCreator.status === 'Pending'
-                    ? 'text-amber-500'
-                    : activeDetailCreator.status === 'Inactive'
-                    ? 'text-rose-500'
-                    : 'text-gray-500'
-                }`}>
-                  {activeDetailCreator.status}
+              {/* Bio Field 1 */}
+              <div className="mt-4 pt-4 border-t border-gray-50">
+                <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Short Bio</p>
+                <p className="text-sm text-gray-500 font-bold mt-2">
+                  Fashion creator sharing timeless style, seasonal trends, and everyday outfit inspiration for every occasion.
                 </p>
               </div>
 
-              {/* Onboarding Step */}
-              <div>
-                <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Onboarding Step</p>
-                <p className="text-sm font-bold text-black mt-1">{activeDetailCreator.onboardingStep || '7 / 7'}</p>
+              {/* Bio Field 2 */}
+              <div className="pt-2">
+                <p className="text-xs text-gray-500 font-medium leading-relaxed max-w-4xl">
+                  Fashion and lifestyle creator passionate about inspiring confidence through style, creativity, and authenticity. I share outfit inspiration, seasonal fashion trends, styling advice, beauty favorites, and everyday lifestyle content designed to help people express their unique personalities. My goal is to make fashion accessible, effortless, and empowering while collaborating with brands that value quality, innovation, and self-expression. Every piece of content I create reflects my love for elegant fashion, modern aesthetics, and meaningful storytelling.
+                </p>
               </div>
             </div>
 
-            {/* Niches */}
-            {activeDetailCreator.niches && activeDetailCreator.niches.length > 0 && (
-              <div className="mt-6 pt-4 border-t border-gray-50">
-                <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Niches</p>
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {activeDetailCreator.niches.map((n, i) => (
-                    <span key={i} className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-semibold capitalize">
-                      {n}
-                    </span>
-                  ))}
-                </div>
+            {/* Right Block (Vertical Stats) */}
+            <div className="lg:col-span-1 border-t lg:border-t-0 lg:border-l border-gray-100 pt-6 lg:pt-0 lg:pl-8 flex flex-col justify-between items-center gap-6">
+              {/* Stat 1 */}
+              <div className="text-center w-full">
+                <p className="text-4xl font-black text-[#0012FF] leading-none mb-1">12K+</p>
+                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Sessions completed</p>
               </div>
-            )}
 
-            {/* Short Bio */}
-            <div className="mt-6 pt-4 border-t border-gray-50">
-              <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Short Bio</p>
-              <p className="text-sm text-gray-600 font-medium leading-relaxed mt-2 max-w-3xl">
-                {activeDetailCreator.bio || 'This creator has not set a bio yet.'}
-              </p>
+              {/* Divider */}
+              <div className="w-16 h-[1px] bg-gray-50" />
+
+              {/* Stat 2 */}
+              <div className="text-center w-full">
+                <p className="text-4xl font-black text-[#10B981] leading-none mb-1">50K+</p>
+                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Happy Users</p>
+              </div>
+
+              {/* Divider */}
+              <div className="w-16 h-[1px] bg-gray-50" />
+
+              {/* Stat 3 */}
+              <div className="text-center w-full">
+                <p className="text-4xl font-black text-[#F59E0B] leading-none mb-1">8</p>
+                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Total Categories</p>
+              </div>
             </div>
+          </div>
+
+          {/* Social Icons Row */}
+          <div className="mt-12 flex justify-center items-center gap-4">
+            {/* Facebook */}
+            <a href="#" className="w-10 h-10 rounded-full bg-[#1877F2] flex items-center justify-center text-white shadow-sm hover:opacity-90 transition-opacity">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.8c4.56-.93 8-4.96 8-9.8z" />
+              </svg>
+            </a>
+            
+            {/* Instagram */}
+            <a href="#" className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#FFB13B] via-[#DD2A7B] to-[#8134AF] flex items-center justify-center text-white shadow-sm hover:opacity-90 transition-opacity">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+              </svg>
+            </a>
+
+            {/* YouTube */}
+            <a href="#" className="w-10 h-10 rounded-full bg-[#FF0000] flex items-center justify-center text-white shadow-sm hover:opacity-90 transition-opacity">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M23.498 6.163a3.003 3.003 0 0 0-2.11-2.107C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.388.511a3.002 3.002 0 0 0-2.11 2.107C0 8.053 0 12 0 12s0 3.947.502 5.837a3.003 3.003 0 0 0 2.11 2.107C4.495 20.455 12 20.455 12 20.455s7.505 0 9.388-.511a3.002 3.002 0 0 0 2.11-2.107C24 15.947 24 12 24 12s0-3.947-.502-5.837zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+              </svg>
+            </a>
+
+            {/* TikTok */}
+            <a href="#" className="w-10 h-10 rounded-full bg-black flex items-center justify-center text-white shadow-sm hover:opacity-90 transition-opacity">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.59-.99v6.5c0 1.9-.53 3.86-1.67 5.37-1.43 1.93-3.86 3.1-6.27 3.09-2.91.02-5.74-1.53-7.07-4.12-1.47-2.77-1.12-6.39.88-8.8 1.58-1.94 4.09-2.97 6.57-2.77V11.3c-1.04-.11-2.13.08-3.03.65-.96.6-1.6 1.66-1.72 2.78-.17 1.29.35 2.63 1.34 3.44.96.8 2.29 1.11 3.52.82.99-.21 1.89-.83 2.4-1.71.4-.66.58-1.44.57-2.22V.02z" />
+              </svg>
+            </a>
           </div>
         </div>
       </motion.div>
@@ -345,7 +524,10 @@ export default function AdminCreatorsPage() {
         </div>
         
         {/* Add Creator Category Button */}
-        <button className="sm:self-end px-6 py-3 bg-[#0012FF] text-white rounded-2xl text-sm font-bold shadow-md shadow-[#0012FF]/20 hover:bg-[#0012FF]/95 transition-all">
+        <button 
+          onClick={() => setShowAddCategoryModal(true)}
+          className="sm:self-end px-6 py-3 bg-[#0012FF] text-white rounded-2xl text-sm font-bold shadow-md shadow-[#0012FF]/20 hover:bg-[#0012FF]/95 transition-all"
+        >
           + Add Creator Category
         </button>
       </div>
@@ -589,7 +771,7 @@ export default function AdminCreatorsPage() {
                     <td className="py-4 px-4" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-center gap-2">
                         <button
-                          onClick={() => handleAcceptCreator(creator)}
+                          onClick={() => handleAcceptClick(creator)}
                           className="px-4 py-1.5 border border-emerald-100 rounded-full text-xs font-bold text-emerald-600 hover:bg-emerald-50 transition-colors"
                         >
                           Accept
@@ -741,6 +923,227 @@ export default function AdminCreatorsPage() {
                   className="flex-1 py-2.5 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700 transition-all"
                 >
                   Reject Creator
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Accept Confirmation Modal */}
+      <AnimatePresence>
+        {showAcceptModal && (
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100] p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowAcceptModal(false)}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="relative overflow-visible w-full max-w-lg flex flex-col items-center p-8 pt-12 pb-8 z-10 bg-transparent"
+            >
+              {/* SVG Background */}
+              <img
+                src="/assets/cancel-card.svg"
+                alt=""
+                className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10"
+              />
+
+              {/* Close Button */}
+              <button
+                onClick={() => setShowAcceptModal(false)}
+                className="absolute -mt-20 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center border border-gray-100/50 text-gray-500 hover:bg-gray-50 transition-all z-20"
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                >
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+
+              {/* Responsive Illustration */}
+              <div className="w-28 sm:w-36 md:w-44 lg:w-56 mt-3 mb-4">
+                <Image
+                  src="/assets/booking-confirm.png"
+                  alt="Accept creator"
+                  width={240}
+                  height={170}
+                  className="w-full h-auto object-contain"
+                />
+              </div>
+
+              <h3 className="text-xl sm:text-2xl font-bold text-black mb-2 text-center">
+                Accept Creator
+              </h3>
+
+              <p className="text-xs sm:text-sm text-gray-500 text-center">
+                Are you sure you want to accept this creator?
+              </p>
+
+              <p className="text-xs sm:text-sm text-gray-500 text-center mb-6">
+                This action cannot be undone.
+              </p>
+
+              <div className="flex gap-3 w-full">
+                <button
+                  onClick={() => setShowAcceptModal(false)}
+                  className="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-all bg-white"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  onClick={handleConfirmAccept}
+                  className="flex-1 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 transition-all"
+                >
+                  Accept Creator
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Add Category Modal */}
+      <AnimatePresence>
+        {showAddCategoryModal && (
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100] p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowAddCategoryModal(false)}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="relative overflow-visible w-full max-w-lg flex flex-col items-center p-8 pt-12 pb-8 z-10 bg-transparent animate-fade-in"
+            >
+              {/* SVG Background */}
+              <img
+                src="/assets/cancel-card.svg"
+                alt=""
+                className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10"
+              />
+
+              {/* Close Button */}
+              <button
+                onClick={() => setShowAddCategoryModal(false)}
+                className="absolute -mt-20 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center border border-gray-100/50 text-gray-500 hover:bg-gray-50 transition-all z-20"
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                >
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+
+              {/* Responsive Illustration */}
+              <div className="w-28 sm:w-36 md:w-44 lg:w-56 mt-3 mb-4">
+                <Image
+                  src="/assets/add-category.png"
+                  alt="Add category"
+                  width={240}
+                  height={170}
+                  className="w-full h-auto object-contain"
+                />
+              </div>
+
+              <h3 className="text-xl sm:text-2xl font-bold text-black mb-2 text-center">
+                Add Creator Category
+              </h3>
+
+              <p className="text-xs sm:text-sm text-gray-500 text-center mb-6">
+                Add a new category for creators.
+              </p>
+
+              {/* Custom Input / Dropdown Container */}
+              <div className="w-full mb-6 relative">
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Category</label>
+                <button
+                  onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
+                  className="w-full flex items-center justify-between px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-semibold text-gray-800 hover:bg-gray-50 transition-all text-left"
+                >
+                  <span>{selectedCategory || 'Select Category'}</span>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    className={`transition-transform duration-200 ${isCategoryDropdownOpen ? 'rotate-180' : ''}`}
+                  >
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </button>
+
+                <AnimatePresence>
+                  {isCategoryDropdownOpen && (
+                    <>
+                      <div className="fixed inset-0 z-20" onClick={() => setIsCategoryDropdownOpen(false)} />
+                      <motion.div
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 5 }}
+                        className="absolute left-0 right-0 mt-1 bg-white border border-gray-100 rounded-xl shadow-xl z-30 max-h-48 overflow-y-auto py-1"
+                      >
+                        {categories.map((cat) => (
+                          <button
+                            key={cat}
+                            onClick={() => {
+                              setSelectedCategory(cat);
+                              setIsCategoryDropdownOpen(false);
+                            }}
+                            className={`w-full text-left px-4 py-2.5 text-sm font-semibold transition-all ${
+                              selectedCategory === cat
+                                ? 'bg-[#0012FF] text-white'
+                                : 'text-gray-600 hover:bg-gray-50'
+                            }`}
+                          >
+                            {cat}
+                          </button>
+                        ))}
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 w-full">
+                <button
+                  onClick={() => setShowAddCategoryModal(false)}
+                  className="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-all bg-white"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  onClick={handleAddCategorySubmit}
+                  disabled={!selectedCategory}
+                  className="flex-1 py-2.5 bg-[#0012FF] disabled:bg-blue-300 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-all"
+                >
+                  Add
                 </button>
               </div>
             </motion.div>
