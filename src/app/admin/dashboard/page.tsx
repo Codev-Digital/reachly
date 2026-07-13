@@ -363,7 +363,6 @@ const AdminDashboard = () => {
                 return (
                   <div
                     key={index}
-                    className="flex flex-col bg-white p-3 rounded-[24px] border border-gray-100 group shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
                   >
                     {/* Image with SVG clip notch */}
                     <div className="relative w-full h-48 sm:h-52 md:h-56 overflow-hidden rounded-t-[18px]">
@@ -411,7 +410,7 @@ Z
                       </span>
 
                       {/* Heart Icon sits in the notch */}
-                      <button className="absolute top-2 right-1.5 z-20 flex items-center justify-center hover:scale-110 transition-transform">
+                      <button className="absolute top-2 right-0.25 z-20 flex items-center justify-center hover:scale-110 transition-transform">
                         <svg className="w-5 h-5 text-gray-300 hover:text-red-500 transition-colors" viewBox="0 0 24 24" fill="currentColor">
                           <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
                         </svg>
