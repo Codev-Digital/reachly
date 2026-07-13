@@ -1,6 +1,6 @@
-# Walkthrough - Creator Redesigns (Dashboard, Calendar, Settings, Navbar, Wallet, Backend Integration, Homepage)
+# Walkthrough - Creator Redesigns (Dashboard, Calendar, Settings, Navbar, Wallet, Backend Integration, Homepage, Auth Redirections)
 
-Redesigned the Creator Dashboard, Calendar, Settings, and Wallet pages, enhanced the navigation bar, integrated full backend support for metrics/views tracking, and improved the homepage creator card layouts.
+Redesigned the Creator Dashboard, Calendar, Settings, and Wallet pages, enhanced the navigation bar, integrated full backend support for metrics/views tracking, improved the homepage creator card layouts, and patched critical authentication redirection issues.
 
 ## Changes Made
 
@@ -74,6 +74,12 @@ Redesigned the Creator Dashboard, Calendar, Settings, and Wallet pages, enhanced
   - Removed the card borders entirely (`border-0`) and relied on a soft shadow (`shadow-sm`) with a clean white background (`bg-white`).
 - **Explore Creators Redirection**:
   - Re-routed all "Book Now" buttons on the homepage to navigate to the `/explore-creators` page.
+
+### 7. Redirection Guards for Non-Creator Users
+- **Redirection Logic Tightened**:
+  - Fixed a critical logical error where `isCreator` evaluated to `true` if `approvalStatus` was `undefined`/`null` (because `undefined !== 'none'` yields `true`).
+  - Corrected this in [page.tsx](file:///c:/Users/Hassan/Desktop/new-reachly/reachly/src/app/dashboard/page.tsx) and [CreatorNavbar.tsx](file:///c:/Users/Hassan/Desktop/new-reachly/reachly/src/components/CreatorNavbar.tsx) to explicitly verify that `approvalStatus` is neither falsy nor `'none'` before classifying a user as a creator.
+  - Patched [LoginPage.tsx](file:///c:/Users/Hassan/Desktop/new-reachly/reachly/src/app/login/LoginPage.tsx) to verify that `isCreator` is `true` before routing to `/creator-onboarding/step-1`, ensuring regular clients are consistently routed to `/user/dashboard`.
 
 ## Verification & Validation
 

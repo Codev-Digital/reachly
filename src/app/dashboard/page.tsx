@@ -22,7 +22,9 @@ export default function DashboardRedirect() {
             return;
           }
           
-          const isCreator = userData.user.approvalStatus !== 'none' || userData.user.onboardingStep > 0;
+          const isCreator = 
+            (userData.user.approvalStatus && userData.user.approvalStatus !== 'none') || 
+            (userData.user.onboardingStep && userData.user.onboardingStep > 0);
 
           // Case 1: Has Creator Profile and is a creator
           if (userData.creatorProfile && isCreator) {

@@ -40,7 +40,9 @@ export default function CreatorNavbar() {
     }
 
     if (currentUserData) {
-      const isCreator = currentUserData.user.approvalStatus !== 'none' || currentUserData.user.onboardingStep > 0;
+      const isCreator = 
+        (currentUserData.user.approvalStatus && currentUserData.user.approvalStatus !== 'none') || 
+        (currentUserData.user.onboardingStep && currentUserData.user.onboardingStep > 0);
 
       // Check if user is pending approval first
       if (currentUserData.user.approvalStatus === 'pending') {

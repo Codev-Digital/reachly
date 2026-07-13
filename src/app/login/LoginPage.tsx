@@ -38,11 +38,12 @@ export default function LoginPage() {
         const res = await fetch('/api/user/me');
         if (res.ok) {
           const userData = await res.json();
+          const isCreator = userData.user.approvalStatus !== 'none' || userData.user.onboardingStep > 0;
           if (email.toLowerCase() === 'abdullahgotaccess@gmail.com') {
             router.push('/admin/dashboard');
-          } else if (userData.creatorProfile && userData.creatorProfile.isProfileComplete) {
+          } else if (userData.creatorProfile && userData.creatorProfile.isProfileComplete && isCreator) {
             router.push('/creators/dashboard');
-          } else if (userData.creatorProfile || userData.user.onboardingStep > 0) {
+          } else if ((userData.creatorProfile || userData.user.onboardingStep > 0) && isCreator) {
             router.push('/creator-onboarding/step-1');
           } else {
             router.push('/user/dashboard');
