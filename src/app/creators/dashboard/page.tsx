@@ -6,6 +6,24 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import CreatorDashboardNav from '@/components/CreatorDashboardNav';
+import { TrendingUp, BookOpen, Calendar, Eye, Users, Copy, Check } from 'lucide-react';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer } from 'recharts';
+
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from "@/components/ui/chart";
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -18,11 +36,17 @@ const CreatorDashboard = () => {
   const pathname = usePathname();
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string>('');
-  const [activePeriod, setActivePeriod] = useState<'daily' | 'weekly' | 'monthly'>('daily');
+  const [activePeriod, setActivePeriod] = useState<'daily' | 'weekly' | 'monthly'>('monthly');
   const [currentDate, setCurrentDate] = useState<Date>(new Date(2026, 7, 2)); // Default to August 2, 2026
-  const [activeBarIndex, setActiveBarIndex] = useState<number>(5); // Default to June (index 5)
   const [monthDropdownOpen, setMonthDropdownOpen] = useState(false);
   const [yearDropdownOpen, setYearDropdownOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(window.location.origin + `/creators/${displayName.toLowerCase().replace(/\s+/g, '-')}`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const selectMonth = (monthIndex: number) => {
     const d = new Date(currentDate);
@@ -38,20 +62,27 @@ const CreatorDashboard = () => {
     setYearDropdownOpen(false);
   };
 
-  const monthlyData = [
-    { month: 'Jan', earnings: '15,000 PKR', trend: '+12.4%', height: 70 },
-    { month: 'Feb', earnings: '58,000 PKR', trend: '+15.2%', height: 190 },
-    { month: 'Mar', earnings: '35,000 PKR', trend: '+18.2%', height: 120 },
-    { month: 'Apr', earnings: '32,000 PKR', trend: '+18.2%', height: 110 },
-    { month: 'May', earnings: '35,000 PKR', trend: '+18.2%', height: 120 },
-    { month: 'Jun', earnings: '30,000 PKR', trend: '+18.2%', height: 180 },
-    { month: 'Jul', earnings: '28,000 PKR', trend: '+18.2%', height: 100 },
-    { month: 'Aug', earnings: '15,000 PKR', trend: '+18.2%', height: 70 },
-    { month: 'Sep', earnings: '28,000 PKR', trend: '+18.2%', height: 100 },
-    { month: 'Oct', earnings: '15,000 PKR', trend: '+18.2%', height: 70 },
-    { month: 'Nov', earnings: '35,000 PKR', trend: '+18.2%', height: 120 },
-    { month: 'Dec', earnings: '52,000 PKR', trend: '+18.2%', height: 170 },
+  const monthlyChartData = [
+    { month: 'Jan', earnings: 15000 },
+    { month: 'Feb', earnings: 58000 },
+    { month: 'Mar', earnings: 35000 },
+    { month: 'Apr', earnings: 32000 },
+    { month: 'May', earnings: 35000 },
+    { month: 'Jun', earnings: 30000 },
+    { month: 'Jul', earnings: 28000 },
+    { month: 'Aug', earnings: 15000 },
+    { month: 'Sep', earnings: 28000 },
+    { month: 'Oct', earnings: 15000 },
+    { month: 'Nov', earnings: 35000 },
+    { month: 'Dec', earnings: 52000 },
   ];
+
+  const chartConfig = {
+    earnings: {
+      label: "Earnings (PKR)",
+      color: "#0012FF",
+    },
+  } satisfies ChartConfig;
 
   const getDaysStrip = () => {
     const days = [];
@@ -61,18 +92,6 @@ const CreatorDashboard = () => {
       days.push(d);
     }
     return days;
-  };
-
-  const prevMonth = () => {
-    const d = new Date(currentDate);
-    d.setMonth(currentDate.getMonth() - 1);
-    setCurrentDate(d);
-  };
-
-  const nextYear = () => {
-    const d = new Date(currentDate);
-    d.setFullYear(currentDate.getFullYear() + 1);
-    setCurrentDate(d);
   };
 
   useEffect(() => {
@@ -94,10 +113,38 @@ const CreatorDashboard = () => {
   }, []);
 
   const stats = [
-    { label: 'Total Bookings this month', value: '12', valueColor: '#22C55E', svg: 'Rectangle-1.svg', icon: 'bookings' },
-    { label: 'Upcoming Sessions', value: '3', valueColor: '#F59E0B', svg: 'Rectangle-2.svg', icon: 'calendar' },
-    { label: 'Profile Views', value: '1,256', valueColor: '#EF4444', svg: 'Rectangle-3.svg', icon: 'eye' },
-    { label: 'Upcoming Sessions', value: '3', valueColor: '#0012FF', svg: 'Rectangle-4.svg', icon: 'users' },
+    { 
+      label: 'Total Bookings this month', 
+      value: '12', 
+      trend: '+18.2% from last month',
+      bg: '#AFE8B9', 
+      textColor: '#0A4A1C',
+      icon: BookOpen 
+    },
+    { 
+      label: 'Upcoming Sessions', 
+      value: '3', 
+      trend: '+5.4% from last month',
+      bg: '#FFEDB5', 
+      textColor: '#6C4800',
+      icon: Calendar 
+    },
+    { 
+      label: 'Profile Views', 
+      value: '1,256', 
+      trend: '+24.1% from last month',
+      bg: '#FFB3B3', 
+      textColor: '#701C1C',
+      icon: Eye 
+    },
+    { 
+      label: 'Total Customers', 
+      value: '28', 
+      trend: '+12.8% from last month',
+      bg: '#B7C0FF', 
+      textColor: '#000A7D',
+      icon: Users 
+    },
   ];
 
   const bookings = [
@@ -127,199 +174,161 @@ const CreatorDashboard = () => {
     <div className="min-h-screen bg-[#F8F8FA]">
       <CreatorDashboardNav profilePhoto={profilePhoto} displayName={displayName} />
 
-      {/* Main Content */}
-      <main className="px-3 sm:px-4 lg:px-6 py-6 sm:py-8">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 sm:mb-8 gap-3">
+      {/* Main Content Area - Constrained Max Width */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        {/* Header Section */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
           <div>
-            <p className="text-gray-500 font-sans mb-1 text-sm sm:text-base">Hello {displayName ? displayName.split(' ')[0] : 'there'}!</p>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-black font-sans">
+            <p className="text-gray-500 font-sans mb-1 text-sm sm:text-base">{getGreeting()}, {displayName ? displayName.split(' ')[0] : 'there'}!</p>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-black font-sans tracking-tight">
               You Have <span className="text-[#0012FF]">10 Appointments</span> <span className="text-gray-400 font-normal text-base sm:text-lg">/ This week</span>
             </h1>
           </div>
 
-          <button className="flex items-center gap-2 bg-[#0012FF] text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-semibold text-sm sm:text-base hover:bg-[#0012FF]/90 transition-all shadow-md w-fit">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-            </svg>
-            Copy Booking Link
+          <button 
+            onClick={handleCopyLink}
+            className="flex items-center gap-2 bg-[#0012FF] text-white px-5 py-3 rounded-2xl font-semibold text-sm sm:text-base hover:bg-[#0012FF]/90 transition-all shadow-md active:scale-95 w-fit"
+          >
+            {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+            {copied ? 'Copied!' : 'Copy Booking Link'}
           </button>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-          {/* Left Column - Earnings Graph (takes 6 columns) */}
-          <div className="lg:col-span-6">
-            {/* Earnings Card */}
+        {/* Stats Row - Horizontal Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {stats.map((stat, idx) => {
+            const Icon = stat.icon;
+            return (
+              <motion.div
+                key={stat.label}
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: idx * 0.05 }}
+                className="rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col justify-between h-40 transition-all duration-300 hover:scale-[1.02] hover:shadow-md cursor-default"
+                style={{ backgroundColor: stat.bg, color: stat.textColor }}
+              >
+                <div className="flex justify-between items-start">
+                  <div className="flex flex-col">
+                    <span className="text-xs font-semibold opacity-75 uppercase tracking-wider mb-1 font-sans">{stat.label}</span>
+                    <span className="text-3xl font-bold tracking-tight font-sans">{stat.value}</span>
+                  </div>
+                  <div className="w-12 h-12 bg-white/40 rounded-2xl flex items-center justify-center backdrop-blur-sm shadow-sm">
+                    <Icon className="h-6 w-6" style={{ color: stat.textColor }} />
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 text-xs font-medium opacity-85">
+                  <TrendingUp className="h-3.5 w-3.5" />
+                  <span>{stat.trend}</span>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+
+        {/* Split Layout: Chart (Left) & Bookings (Right) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          
+          {/* Earnings Chart Section */}
+          <div className="lg:col-span-8 space-y-6">
             <motion.div
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.1 }}
-              className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm relative overflow-hidden"
+              transition={{ delay: 0.2 }}
             >
-              <h2 className="text-2xl font-bold text-black font-sans mb-6">Earnings</h2>
-
-              <div className="space-y-6">
-                {/* Chart */}
-                <div className="relative h-96">
-                  {/* Floating Tooltip */}
-                  <div
-                    className="absolute bg-white border border-gray-100 rounded-2xl shadow-xl p-3 flex items-center gap-3 z-30 transition-all duration-300 pointer-events-none"
-                    style={{
-                      left: `${((50 + activeBarIndex * 40 + 11) / 500) * 100}%`,
-                      top: `${((280 - monthlyData[activeBarIndex].height - 55) / 300) * 100}%`,
-                      transform: 'translate(-50%, -50%)',
-                      width: '210px',
-                    }}
-                  >
-                    <div className="w-10 h-10 bg-[#0012FF]/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2.5">
-                        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                      </svg>
-                    </div>
-                    <div className="flex-grow">
-                      <p className="text-[10px] text-gray-400 font-sans font-semibold uppercase tracking-wider">Total Earnings</p>
-                      <p className="text-sm font-black text-black font-sans">{monthlyData[activeBarIndex].earnings}</p>
-                    </div>
-                    <div className="bg-emerald-50 text-emerald-600 px-2 py-1 rounded-lg text-[10px] font-bold">
-                      {monthlyData[activeBarIndex].trend}
-                    </div>
+              <Card className="rounded-3xl border border-gray-200 bg-white p-2 sm:p-4 shadow-sm overflow-hidden">
+                <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 gap-4">
+                  <div>
+                    <CardTitle className="text-2xl font-bold font-sans text-black">Earnings Overview</CardTitle>
+                    <CardDescription className="text-gray-500 font-sans mt-1">Monthly breakdown of your income</CardDescription>
                   </div>
-
-                  <svg
-                    className="w-full h-full"
-                    viewBox="0 0 500 300"
-                    preserveAspectRatio="none"
-                  >
-                    <defs>
-                      <linearGradient id="earningsGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stopColor="#0012FF" stopOpacity="0.3" />
-                        <stop offset="100%" stopColor="#0012FF" stopOpacity="0" />
-                      </linearGradient>
-                    </defs>
-
-                    {/* Grid lines */}
-                    {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
-                      <line
-                        key={i}
-                        x1="0"
-                        y1={i * 35}
-                        x2="500"
-                        y2={i * 35}
-                        stroke="#E5E7EB"
-                        strokeWidth="1"
-                      />
+                  
+                  {/* Period Filter */}
+                  <div className="flex bg-gray-100 p-1 rounded-2xl self-start sm:self-center">
+                    {['daily', 'weekly', 'monthly'].map((period) => (
+                      <button
+                        key={period}
+                        onClick={() => setActivePeriod(period as any)}
+                        className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+                          activePeriod === period
+                            ? 'bg-[#0012FF] text-white shadow-sm'
+                            : 'text-gray-500 hover:text-gray-900'
+                        }`}
+                      >
+                        {period.charAt(0).toUpperCase() + period.slice(1)}
+                      </button>
                     ))}
+                  </div>
+                </CardHeader>
 
-                    {/* Y-axis labels */}
-                    <text x="10" y="30" fontSize="12" fill="#9CA3AF">70k</text>
-                    <text x="10" y="65" fontSize="12" fill="#9CA3AF">60k</text>
-                    <text x="10" y="100" fontSize="12" fill="#9CA3AF">50k</text>
-                    <text x="10" y="135" fontSize="12" fill="#9CA3AF">40k</text>
-                    <text x="10" y="170" fontSize="12" fill="#9CA3AF">30k</text>
-                    <text x="10" y="205" fontSize="12" fill="#9CA3AF">20k</text>
-                    <text x="10" y="240" fontSize="12" fill="#9CA3AF">10k</text>
-                    <text x="10" y="270" fontSize="12" fill="#9CA3AF">0</text>
+                <CardContent className="px-2 sm:px-6">
+                  <ChartContainer config={chartConfig} className="w-full h-80 min-h-[320px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={monthlyChartData} margin={{ top: 20, right: 10, left: 10, bottom: 0 }}>
+                        <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#F1F5F9" />
+                        <XAxis
+                          dataKey="month"
+                          tickLine={false}
+                          tickMargin={10}
+                          axisLine={false}
+                          tick={{ fill: '#94A3B8', fontSize: 12, fontWeight: 500 }}
+                        />
+                        <YAxis
+                          tickLine={false}
+                          axisLine={false}
+                          tickMargin={8}
+                          tick={{ fill: '#94A3B8', fontSize: 11 }}
+                          tickFormatter={(value) => `${value / 1000}k`}
+                        />
+                        <ChartTooltip
+                          cursor={{ fill: 'rgba(0, 18, 255, 0.04)', radius: 8 }}
+                          content={<ChartTooltipContent hideLabel />}
+                        />
+                        <Bar 
+                          dataKey="earnings" 
+                          name="Earnings"
+                          fill="#0012FF" 
+                          radius={[6, 6, 0, 0]} 
+                          maxBarSize={32}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </ChartContainer>
+                </CardContent>
 
-                    {/* Bars */}
-                    {monthlyData.map((bar, i) => {
-                      const x = 50 + i * 40;
-                      const isActive = i === activeBarIndex;
-                      return (
-                        <g key={i} className="cursor-pointer" onClick={() => setActiveBarIndex(i)}>
-                          {/* Inactive Bar */}
-                          {!isActive && (
-                            <rect
-                              x={x}
-                              y={280 - bar.height}
-                              width="22"
-                              height={bar.height}
-                              fill="#E5E7EB"
-                              rx="8"
-                              className="hover:fill-gray-300 transition-colors duration-200"
-                            />
-                          )}
-                          {/* Active Bar */}
-                          {isActive && (
-                            <>
-                              <rect
-                                x={x}
-                                y={280 - bar.height}
-                                width="22"
-                                height={bar.height}
-                                fill="url(#earningsGradient)"
-                                rx="8"
-                              />
-                              <rect
-                                x={x}
-                                y={280 - bar.height}
-                                width="22"
-                                height={bar.height}
-                                fill="#0012FF"
-                                rx="8"
-                                style={{ clipPath: `inset(30px 0 0 0)` }}
-                              />
-                              {/* Top Circle */}
-                              <g>
-                                <circle cx={x + 11} cy={280 - bar.height} r="8" fill="#0012FF" />
-                                <circle cx={x + 11} cy={280 - bar.height} r="4" fill="white" />
-                              </g>
-                            </>
-                          )}
-                        </g>
-                      );
-                    })}
-                  </svg>
-                </div>
-
-                {/* X-axis labels */}
-                <div className="flex justify-around text-gray-400 text-sm">
-                  {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((month, i) => (
-                    <span key={i}>{month}</span>
-                  ))}
-                </div>
-              </div>
+                <CardFooter className="flex-row items-center justify-between border-t border-gray-100 pt-6 px-6 text-sm">
+                  <div className="flex items-center gap-2 font-semibold text-black leading-none font-sans">
+                    <span>Trending up by 15.2% this month</span>
+                    <TrendingUp className="h-4 w-4 text-emerald-500" />
+                  </div>
+                  <div className="text-xs text-gray-400 font-sans">
+                    Showing data for year 2026
+                  </div>
+                </CardFooter>
+              </Card>
             </motion.div>
           </div>
 
-          {/* Right Column - Stats and Bookings (takes 6 columns) */}
-          <div className="lg:col-span-6 space-y-6">
-            {/* Period Tabs and Bookings Header */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 flex-wrap">
-              <div className="flex bg-gray-100 p-1.5 rounded-2xl">
-                {['daily', 'weekly', 'monthly'].map((period) => (
-                  <button
-                    key={period}
-                    onClick={() => setActivePeriod(period as any)}
-                    className={`px-4 sm:px-6 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${activePeriod === period
-                      ? 'bg-[#0012FF] text-white shadow-md'
-                      : 'text-gray-500 hover:text-gray-900'
-                      }`}
-                  >
-                    {period.charAt(0).toUpperCase() + period.slice(1)}
-                  </button>
-                ))}
-              </div>
-
-              <div className="flex items-center gap-2 flex-wrap">
-                {/* Month Selector */}
+          {/* Bookings Section */}
+          <div className="lg:col-span-4 space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold text-black font-sans">Upcoming Bookings</h2>
+              
+              {/* Month / Year Selectors */}
+              <div className="flex items-center gap-2">
+                {/* Month Dropdown */}
                 <div className="relative">
-                  <div
+                  <button
                     onClick={() => { setMonthDropdownOpen(!monthDropdownOpen); setYearDropdownOpen(false); }}
-                    className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-3 py-2 cursor-pointer hover:bg-gray-50 transition-all select-none min-w-[110px]"
+                    className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 shadow-sm"
                   >
-                    <div className="flex flex-col">
-                      <span className="text-[10px] text-gray-400">Month</span>
-                      <span className="text-xs sm:text-sm text-gray-700 font-semibold">
-                        {currentDate.toLocaleString('default', { month: 'long' })}
-                      </span>
-                    </div>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={`transition-transform duration-200 ${monthDropdownOpen ? 'rotate-180' : ''}`}>
+                    <span>{currentDate.toLocaleString('default', { month: 'short' })}</span>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       <polyline points="6 9 12 15 18 9" />
                     </svg>
-                  </div>
+                  </button>
                   {monthDropdownOpen && (
-                    <div className="absolute left-0 top-[calc(100%+6px)] w-40 bg-white rounded-2xl shadow-xl border border-gray-100 py-1.5 z-[50] max-h-60 overflow-y-auto">
+                    <div className="absolute right-0 top-[calc(100%+6px)] w-36 bg-white rounded-2xl shadow-xl border border-gray-100 py-1.5 z-[50] max-h-60 overflow-y-auto">
                       {['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].map((m, idx) => (
                         <button
                           key={m}
@@ -333,42 +342,19 @@ const CreatorDashboard = () => {
                   )}
                 </div>
 
-                {/* Days Strip */}
-                <div className="hidden sm:flex items-center gap-1 bg-white border border-gray-200 rounded-xl px-2 py-2">
-                  {getDaysStrip().map((day, i) => {
-                    const isSelected = day.getDate() === currentDate.getDate() &&
-                                       day.getMonth() === currentDate.getMonth() &&
-                                       day.getFullYear() === currentDate.getFullYear();
-                    return (
-                      <span
-                        key={i}
-                        onClick={() => setCurrentDate(day)}
-                        className={`w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg text-xs sm:text-sm font-semibold cursor-pointer transition-all ${
-                          isSelected ? 'bg-[#0012FF] text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'
-                        }`}
-                      >
-                        {day.getDate().toString().padStart(2, '0')}
-                      </span>
-                    );
-                  })}
-                </div>
-
-                {/* Year Selector */}
+                {/* Year Dropdown */}
                 <div className="relative">
-                  <div
+                  <button
                     onClick={() => { setYearDropdownOpen(!yearDropdownOpen); setMonthDropdownOpen(false); }}
-                    className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-3 py-2 cursor-pointer hover:bg-gray-50 transition-all select-none min-w-[90px]"
+                    className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 shadow-sm"
                   >
-                    <div className="flex flex-col">
-                      <span className="text-[10px] text-gray-400">Year</span>
-                      <span className="text-xs sm:text-sm text-gray-700 font-semibold">{currentDate.getFullYear()}</span>
-                    </div>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={`transition-transform duration-200 ${yearDropdownOpen ? 'rotate-180' : ''}`}>
+                    <span>{currentDate.getFullYear()}</span>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       <polyline points="6 9 12 15 18 9" />
                     </svg>
-                  </div>
+                  </button>
                   {yearDropdownOpen && (
-                    <div className="absolute right-0 top-[calc(100%+6px)] w-28 bg-white rounded-2xl shadow-xl border border-gray-100 py-1.5 z-[50]">
+                    <div className="absolute right-0 top-[calc(100%+6px)] w-24 bg-white rounded-2xl shadow-xl border border-gray-100 py-1.5 z-[50]">
                       {[2024, 2025, 2026, 2027, 2028, 2029].map((y) => (
                         <button
                           key={y}
@@ -384,253 +370,78 @@ const CreatorDashboard = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-[380px_1fr] gap-4">
-              {/* Stats Cards */}
-              <div className="">
-                {/* Card 0 - Total Bookings */}
+            {/* Bookings Cards Stack */}
+            <div className="space-y-4">
+              {bookings.map((booking, index) => (
                 <motion.div
+                  key={booking.id}
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.2 }}
-                  className="relative"
+                  transition={{ delay: 0.3 + index * 0.05 }}
+                  className="relative w-full bg-white rounded-3xl p-5 border border-gray-200 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between min-h-[180px]"
                 >
-                  <div className="relative">
-                    <Image
-                      src="/assets/Rectangle-1.svg"
-                      alt=""
-                      width={420}
-                      height={180}
-                      className="w-[120%] -mr-[20%] h-auto"
-                    />
-                    <div className="absolute top-6 left-6 right-6 bottom-6">
-                      <div className="flex items-center gap-4 mb-3">
-                        <div className="w-16 h-16 bg-white/60 rounded-xl flex items-center justify-center flex-shrink-0">
-                          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                            <line x1="16" y1="2" x2="16" y2="6" />
-                            <line x1="8" y1="2" x2="8" y2="6" />
-                            <line x1="3" y1="10" x2="21" y2="10" />
-                          </svg>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-700 font-sans mb-1">Total Bookings this month</p>
-                          <p className="text-3xl font-bold font-sans" style={{ color: "#22C55E" }}>12</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1 text-white">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-                          <polyline points="17 6 23 6 23 12" />
-                        </svg>
-                        <span className="text-sm font-semibold">+18.2% from last month</span>
-                      </div>
-                    </div>
-                  </div>
-
-                </motion.div>
-
-                {/* Card 1 - Upcoming Sessions */}
-                <motion.div
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.25 }}
-                  className="relative -mt-12 z-10"
-                >
-                  <div className="relative">
-                    <Image
-                      src="/assets/Rectangle-2.svg"
-                      alt=""
-                      width={420}
-                      height={180}
-                      className="w-[120%] -mr-[20%] h-auto"
-                    />
-                    <div className="absolute top-19 left-6 right-6 bottom-6">
-                      <div className="flex items-center gap-4 mb-3">
-                        <div className="w-16 h-16 bg-white/60 rounded-xl flex items-center justify-center flex-shrink-0">
-                          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2">
-                            <circle cx="12" cy="12" r="10" />
-                            <polyline points="12 6 12 12 16 14" />
-                          </svg>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-700 font-sans mb-1">Upcoming Sessions</p>
-                          <p className="text-3xl font-bold font-sans" style={{ color: "#F59E0B" }}>3</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1 text-white">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-                          <polyline points="17 6 23 6 23 12" />
-                        </svg>
-                        <span className="text-sm font-semibold">+18.2% from last month</span>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-
-                {/* Card 2 - Profile Views */}
-                <motion.div
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.3 }}
-                  className="relative -mt-12 z-10"
-                >
-                  <div className="relative">
-                    <Image
-                      src="/assets/Rectangle-3.svg"
-                      alt=""
-                      width={420}
-                      height={180}
-                      className="w-[120%] -mr-[20%] h-auto"
-                    />
-                    <div className="absolute top-19 left-6 right-6 bottom-6">
-                      <div className="flex items-center gap-4 mb-3">
-                        <div className="w-16 h-16 bg-white/60 rounded-xl flex items-center justify-center flex-shrink-0">
-                          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                            <circle cx="12" cy="12" r="3" />
-                          </svg>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-700 font-sans mb-1">Profile Views</p>
-                          <p className="text-3xl font-bold font-sans" style={{ color: "#EF4444" }}>1,256</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1 text-white">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-                          <polyline points="17 6 23 6 23 12" />
-                        </svg>
-                        <span className="text-sm font-semibold">+18.2% from last month</span>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-
-                {/* Card 3 - Upcoming Sessions */}
-                <motion.div
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.35 }}
-                  className="relative -mt-12 z-10"
-                >
-                  <div className="relative">
-                    <Image
-                      src="/assets/Rectangle-4.svg"
-                      alt=""
-                      width={420}
-                      height={180}
-                      className="w-[120%] -mr-[20%] h-auto"
-                    />
-                    <div className="absolute top-19 left-6 right-6 bottom-6">
-                      <div className="flex items-center gap-4 mb-3">
-                        <div className="w-16 h-16 bg-white/60 rounded-xl flex items-center justify-center flex-shrink-0">
-                          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2">
-                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                            <circle cx="9" cy="7" r="4" />
-                            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                          </svg>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-700 font-sans mb-1">Upcoming Sessions</p>
-                          <p className="text-3xl font-bold font-sans" style={{ color: "#0012FF" }}>3</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1 text-white">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-                          <polyline points="17 6 23 6 23 12" />
-                        </svg>
-                        <span className="text-sm font-semibold">+18.2% from last month</span>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              </div>
-
-              {/* Bookings List */}
-              <div className="space-y-4">
-                {bookings.map((booking, index) => (
-                  <motion.div
-                    key={booking.id}
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.3 + index * 0.05 }}
-                    className="relative w-full h-auto min-h-[170px] z-10 flex flex-col"
-                  >
-                    {/* Background Card Image */}
-                    <Image
-                      src="/assets/rec-card.png"
-                      alt=""
-                      fill
-                      className="object-fill pointer-events-none -z-10"
-                    />
-                    {/* Content */}
-                    <div className="relative w-full pl-4 pr-12 pt-4 pb-4 flex flex-col justify-between flex-grow">
-                      <div>
-                        <div className="flex items-start justify-between mb-2.5">
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
-                              <Image src={booking.avatar} alt={booking.name} className="w-full h-full object-cover" width={40} height={40} />
-                            </div>
-                            <div>
-                              <h3 className="font-bold text-sm text-black leading-tight">{booking.name}</h3>
-                              <p className="text-xs text-gray-500">{booking.handle}</p>
-                            </div>
-                          </div>
-                          <p className="font-bold text-sm text-[#0012FF] whitespace-nowrap">{booking.amount}</p>
-                        </div>
-                        <div className="flex items-center gap-3 text-xs text-gray-600 mb-2">
-                          <div className="flex items-center gap-1">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2">
-                              <circle cx="12" cy="12" r="10" />
-                              <polyline points="12 6 12 12 16 14" />
-                            </svg>
-                            <span>{booking.time}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            {booking.type === 'In-person' ? (
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2">
-                                <circle cx="12" cy="12" r="10" />
-                                <circle cx="12" cy="12" r="3" />
-                              </svg>
-                            ) : (
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2">
-                                <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
-                                <polyline points="3.5 20 8 17 16 17 20.5 20" />
-                              </svg>
-                            )}
-                            <span>{booking.type}</span>
-                          </div>
-                        </div>
-                        <p className="text-xs text-gray-500 mb-3 line-clamp-2 pr-2">
-                          {booking.note} <span className="text-[#0012FF] cursor-pointer font-semibold">Read more</span>
-                        </p>
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0 bg-gray-100 relative">
+                        <Image 
+                          src={booking.avatar} 
+                          alt={booking.name} 
+                          className="w-full h-full object-cover" 
+                          width={44} 
+                          height={44} 
+                        />
                       </div>
                       <div>
-                        <div className="w-full h-px bg-gray-200 mb-2.5"></div>
-                        <div className="flex items-center gap-2 pr-8">
-                          <button className="flex-grow py-1.5 border border-gray-200 rounded-xl text-xs font-semibold text-gray-500 hover:bg-gray-50 transition-all bg-white">
-                            Reschedule
-                          </button>
-                          <button className="flex-grow py-1.5 border border-red-200 rounded-xl text-xs font-semibold text-red-500 bg-red-50 hover:bg-red-100 transition-all">
-                            Cancel Appointment
-                          </button>
-                        </div>
-                      </div>
-                      {/* Arrow indicator */}
-                      <div className="absolute right-0.5 bottom-0.5">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M7 17L17 7M17 7H10M17 7V14" stroke="#0012FF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
+                        <h3 className="font-bold text-sm text-black leading-tight">{booking.name}</h3>
+                        <p className="text-xs text-gray-500">{booking.handle}</p>
                       </div>
                     </div>
-                  </motion.div>
-                ))}
-              </div>
+                    <p className="font-bold text-sm text-[#0012FF] whitespace-nowrap">{booking.amount}</p>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5 text-xs text-gray-600 mb-3">
+                    <div className="flex items-center gap-1.5">
+                      <Calendar className="h-3.5 w-3.5 text-[#0012FF]" />
+                      <span>{booking.time}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-3.5 h-3.5 flex items-center justify-center">
+                        {booking.type === 'In-person' ? (
+                          <div className="w-2 h-2 rounded-full bg-[#0012FF]" />
+                        ) : (
+                          <div className="w-2.5 h-2 bg-[#0012FF] rounded-sm" />
+                        )}
+                      </div>
+                      <span className="font-medium text-gray-700">{booking.type}</span>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-gray-500 mb-4 line-clamp-2 pr-2 leading-relaxed">
+                    {booking.note} <span className="text-[#0012FF] cursor-pointer font-semibold hover:underline">Read more</span>
+                  </p>
+
+                  <div className="w-full h-px bg-gray-100 mb-4"></div>
+
+                  <div className="flex items-center gap-2">
+                    <button className="flex-grow py-2 border border-gray-200 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-all bg-white shadow-sm active:scale-98">
+                      Reschedule
+                    </button>
+                    <button className="flex-grow py-2 border border-red-100 rounded-xl text-xs font-semibold text-red-500 bg-red-50 hover:bg-red-100/70 transition-all active:scale-98">
+                      Cancel Appointment
+                    </button>
+                  </div>
+
+                  {/* Top-right corner arrow link icon */}
+                  <div className="absolute right-4 top-4 text-gray-300 hover:text-[#0012FF] transition-colors cursor-pointer">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M7 17L17 7M17 7H10M17 7V14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </div>
+                </motion.div>
+              ))}
             </div>
           </div>
+
         </div>
       </main>
     </div>

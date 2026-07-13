@@ -6,6 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import CreatorDashboardNav from '@/components/CreatorDashboardNav';
 import LoadingAnimation from '@/components/LoadingAnimation';
+import { Calendar, Clock, Video, MapPin, MessageSquare, AlertTriangle, CheckCircle, ArrowUpRight, X } from 'lucide-react';
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -103,7 +104,7 @@ export default function CreatorCalendar() {
             time: b.time || 'N/A',
             type: b.type || 'Online',
             note: b.preSessionQuestion || 'No notes provided',
-            amount: b.amount || '2500 PKR',
+            amount: b.amount || '2,500 PKR',
             selectedDate: b.scheduledDate,
             selectedTime: b.time,
             status: b.statusRaw,
@@ -263,53 +264,86 @@ export default function CreatorCalendar() {
     <div className="min-h-screen bg-[#F8F8FA]">
       <CreatorDashboardNav profilePhoto={profilePhoto} displayName={displayName} />
 
-      {/* Main Content */}
-      <main className="px-3 sm:px-4 lg:px-6 py-6 sm:py-8">
+      {/* Main Content Area - Constrained Max Width */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 sm:mb-8 gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
           <div>
-            <p className="text-gray-500 font-sans mb-1 text-sm sm:text-base">Hello {displayName ? displayName.split(' ')[0] : 'there'}!</p>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-black font-sans">
+            <p className="text-gray-500 font-sans mb-1 text-sm sm:text-base">{getGreeting()}, {displayName ? displayName.split(' ')[0] : 'there'}!</p>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-black font-sans tracking-tight">
               You Have <span className="text-[#0012FF]">{currentBookings.length} Appointments</span> <span className="text-gray-400 font-normal text-base sm:text-lg">/ Today</span>
             </h1>
           </div>
         </div>
 
-        {/* Period Tabs and Date Selector */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 flex-wrap mb-6 sm:mb-8">
-          {/* Month Selector Dropdown */}
-          <div className="relative">
-            <div
-              onClick={() => { setMonthDropdownOpen(!monthDropdownOpen); setYearDropdownOpen(false); }}
-              className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-3 py-2 cursor-pointer hover:bg-gray-50 transition-all select-none min-w-[110px]"
-            >
-              <div className="flex flex-col">
-                <span className="text-[10px] text-gray-400">Month</span>
-                <span className="text-xs sm:text-sm text-gray-700 font-semibold">
-                  {currentDate.toLocaleString('default', { month: 'long' })}
-                </span>
-              </div>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={`transition-transform duration-200 ${monthDropdownOpen ? 'rotate-180' : ''}`}>
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
+        {/* Date Selector Navigation Bar */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 p-4 bg-white rounded-3xl border border-gray-200 shadow-sm mb-8">
+          
+          <div className="flex items-center gap-3">
+            {/* Month Selector Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => { setMonthDropdownOpen(!monthDropdownOpen); setYearDropdownOpen(false); }}
+                className="flex items-center justify-between gap-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-2xl px-4 py-2.5 cursor-pointer transition-all select-none min-w-[130px]"
+              >
+                <div className="flex flex-col text-left">
+                  <span className="text-[9px] uppercase tracking-wider text-gray-450 font-bold">Month</span>
+                  <span className="text-sm text-gray-800 font-bold">
+                    {currentDate.toLocaleString('default', { month: 'long' })}
+                  </span>
+                </div>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={`text-gray-500 transition-transform duration-200 ${monthDropdownOpen ? 'rotate-180' : ''}`}>
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
+              {monthDropdownOpen && (
+                <div className="absolute left-0 top-[calc(100%+6px)] w-44 bg-white rounded-2xl shadow-xl border border-gray-100 py-1.5 z-[50] max-h-60 overflow-y-auto">
+                  {['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].map((m, idx) => (
+                    <button
+                      key={m}
+                      onClick={() => selectMonth(idx)}
+                      className={`w-full text-left px-4 py-2 text-xs font-semibold hover:bg-[#0012FF]/5 transition-colors ${currentDate.getMonth() === idx ? 'text-[#0012FF] bg-[#0012FF]/5' : 'text-gray-600'}`}
+                    >
+                      {m}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-            {monthDropdownOpen && (
-              <div className="absolute left-0 top-[calc(100%+6px)] w-40 bg-white rounded-2xl shadow-xl border border-gray-100 py-1.5 z-[50] max-h-60 overflow-y-auto">
-                {['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].map((m, idx) => (
-                  <button
-                    key={m}
-                    onClick={() => selectMonth(idx)}
-                    className={`w-full text-left px-4 py-2 text-xs font-semibold hover:bg-[#0012FF]/5 transition-colors ${currentDate.getMonth() === idx ? 'text-[#0012FF] bg-[#0012FF]/5' : 'text-gray-600'}`}
-                  >
-                    {m}
-                  </button>
-                ))}
-              </div>
-            )}
+
+            {/* Year Selector Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => { setYearDropdownOpen(!yearDropdownOpen); setMonthDropdownOpen(false); }}
+                className="flex items-center justify-between gap-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-2xl px-4 py-2.5 cursor-pointer transition-all select-none min-w-[100px]"
+              >
+                <div className="flex flex-col text-left">
+                  <span className="text-[9px] uppercase tracking-wider text-gray-450 font-bold">Year</span>
+                  <span className="text-sm text-gray-800 font-bold">{currentDate.getFullYear()}</span>
+                </div>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={`text-gray-500 transition-transform duration-200 ${yearDropdownOpen ? 'rotate-180' : ''}`}>
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
+              {yearDropdownOpen && (
+                <div className="absolute right-0 top-[calc(100%+6px)] w-32 bg-white rounded-2xl shadow-xl border border-gray-100 py-1.5 z-[50]">
+                  {[2024, 2025, 2026, 2027, 2028, 2029].map((y) => (
+                    <button
+                      key={y}
+                      onClick={() => selectYear(y)}
+                      className={`w-full text-left px-4 py-2 text-xs font-semibold hover:bg-[#0012FF]/5 transition-colors ${currentDate.getFullYear() === y ? 'text-[#0012FF] bg-[#0012FF]/5' : 'text-gray-600'}`}
+                    >
+                      {y}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Days Strip */}
-          <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-xl px-2 py-2 overflow-x-auto max-w-full flex-1">
+          <div className="flex items-center gap-1.5 overflow-x-auto py-1 px-1 max-w-full flex-1 no-scrollbar sm:justify-start">
             {getDaysInMonth().map((day, i) => {
               const isSelected = currentDate.getDate() === i + 1;
               return (
@@ -320,144 +354,124 @@ export default function CreatorCalendar() {
                     newDate.setDate(i + 1);
                     setCurrentDate(newDate);
                   }}
-                  className={`w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg text-xs sm:text-sm font-semibold transition-all flex-shrink-0 ${isSelected ? 'bg-[#0012FF] text-white shadow-md' : 'text-gray-500 hover:bg-gray-100'
-                    }`}
+                  className={`w-10 h-10 flex items-center justify-center rounded-xl text-sm font-bold transition-all flex-shrink-0 border ${
+                    isSelected 
+                      ? 'bg-[#0012FF] border-[#0012FF] text-white shadow-md shadow-blue-200 scale-105' 
+                      : 'border-transparent text-gray-500 hover:bg-gray-100 hover:text-gray-800'
+                  }`}
                 >
                   {day}
                 </button>
               );
             })}
           </div>
-
-          {/* Year Selector Dropdown */}
-          <div className="relative">
-            <div
-              onClick={() => { setYearDropdownOpen(!yearDropdownOpen); setMonthDropdownOpen(false); }}
-              className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-3 py-2 cursor-pointer hover:bg-gray-50 transition-all select-none min-w-[90px]"
-            >
-              <div className="flex flex-col">
-                <span className="text-[10px] text-gray-400">Year</span>
-                <span className="text-xs sm:text-sm text-gray-700 font-semibold">{currentDate.getFullYear()}</span>
-              </div>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={`transition-transform duration-200 ${yearDropdownOpen ? 'rotate-180' : ''}`}>
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
-            </div>
-            {yearDropdownOpen && (
-              <div className="absolute right-0 top-[calc(100%+6px)] w-28 bg-white rounded-2xl shadow-xl border border-gray-100 py-1.5 z-[50]">
-                {[2024, 2025, 2026, 2027, 2028, 2029].map((y) => (
-                  <button
-                    key={y}
-                    onClick={() => selectYear(y)}
-                    className={`w-full text-left px-4 py-2 text-xs font-semibold hover:bg-[#0012FF]/5 transition-colors ${currentDate.getFullYear() === y ? 'text-[#0012FF] bg-[#0012FF]/5' : 'text-gray-600'}`}
-                  >
-                    {y}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
         </div>
 
-        {/* Bookings or No Appointments */}
+        {/* Bookings Grid or Empty State */}
         {currentBookings.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {currentBookings.map((booking, index) => (
               <motion.div
                 key={booking.id}
-                initial={{ y: 20, opacity: 0 }}
+                initial={{ y: 25, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.1 + index * 0.05 }}
-                className="relative w-full h-auto min-h-[170px] z-10 flex flex-col"
+                transition={{ delay: index * 0.05 }}
+                className="relative bg-white rounded-3xl p-6 border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-300 hover:scale-[1.01] flex flex-col justify-between min-h-[220px] group overflow-hidden"
               >
-                {/* Background Card Image */}
-                <Image
-                  src="/assets/rec-card.png"
-                  alt=""
-                  fill
-                  className="object-fill pointer-events-none -z-10"
-                />
-                {/* Content */}
-                <div className="relative w-full pl-4 pr-12 pt-4 pb-4 flex flex-col justify-between flex-grow">
-                  <div>
-                    <div className="flex items-start justify-between mb-2.5">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
-                          <Image src={booking.avatar} alt={booking.name} className="w-full h-full object-cover" width={40} height={40} />
-                        </div>
-                        <div>
-                          <h3 className="font-bold text-sm text-black leading-tight">{booking.name}</h3>
-                          <p className="text-xs text-gray-500">{booking.handle}</p>
-                        </div>
+                {/* Background soft hover glow */}
+                <div className="absolute inset-0 bg-gradient-to-tr from-[#0012FF]/0 via-[#0012FF]/0 to-[#0012FF]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+
+                {/* Top Section: Client Meta */}
+                <div>
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 bg-gray-150 border-2 border-white shadow-sm ring-1 ring-gray-100">
+                        <Image 
+                          src={booking.avatar} 
+                          alt={booking.name} 
+                          className="w-full h-full object-cover" 
+                          width={48} 
+                          height={48} 
+                        />
                       </div>
-                      <p className="font-bold text-sm text-[#0012FF] whitespace-nowrap">{booking.amount}</p>
-                    </div>
-                    <div className="flex items-center gap-3 text-xs text-gray-600 mb-2">
-                      <div className="flex items-center gap-1">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2">
-                          <circle cx="12" cy="12" r="10" />
-                          <polyline points="12 6 12 12 16 14" />
-                        </svg>
-                        <span>{booking.time}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        {booking.type === 'In-person' ? (
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2">
-                            <circle cx="12" cy="12" r="10" />
-                            <circle cx="12" cy="12" r="3" />
-                          </svg>
-                        ) : (
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2">
-                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
-                            <polyline points="3.5 20 8 17 16 17 20.5 20" />
-                          </svg>
-                        )}
-                        <span>{booking.type}</span>
+                      <div>
+                        <h3 className="font-bold text-base text-black leading-tight group-hover:text-[#0012FF] transition-colors">{booking.name}</h3>
+                        <p className="text-xs text-gray-400 font-medium">{booking.handle}</p>
                       </div>
                     </div>
-                    <p className="text-xs text-gray-500 mb-3 line-clamp-2 pr-2">
+                    <span className="font-extrabold text-sm text-[#0012FF] bg-blue-50/80 px-3 py-1.5 rounded-xl border border-blue-100/50">
+                      {booking.amount}
+                    </span>
+                  </div>
+
+                  {/* Middleware Details */}
+                  <div className="flex flex-col gap-2 text-xs text-gray-500 mb-4 bg-gray-50/50 p-3 rounded-2xl border border-gray-100/60">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-3.5 w-3.5 text-[#0012FF] shrink-0" />
+                      <span className="font-semibold text-gray-700">{booking.time}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {booking.type === 'Online' ? (
+                        <>
+                          <Video className="h-3.5 w-3.5 text-[#0012FF] shrink-0" />
+                          <span className="font-medium text-gray-600">Google Meet (Online)</span>
+                        </>
+                      ) : (
+                        <>
+                          <MapPin className="h-3.5 w-3.5 text-[#0012FF] shrink-0" />
+                          <span className="font-medium text-gray-600">In-person Meeting</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Pre-session query note */}
+                  <div className="flex items-start gap-2 mb-4 bg-[#F8F8FA] p-3 rounded-2xl border border-gray-100/40">
+                    <MessageSquare className="h-4 w-4 text-gray-400 shrink-0 mt-0.5" />
+                    <p className="text-xs text-gray-500 leading-relaxed line-clamp-2 pr-1">
                       {booking.note}
                     </p>
                   </div>
-                  <div>
-                    <div className="w-full h-px bg-gray-200 mb-2.5"></div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleRescheduleClick(booking)}
-                        className="flex-1 py-1.5 border border-gray-200 rounded-xl text-xs font-semibold text-gray-500 hover:bg-gray-50 transition-all bg-white"
-                      >
-                        Reschedule
-                      </button>
-                      <button
-                        onClick={() => handleCancelClick(booking)}
-                        className="flex-1 py-1.5 border border-red-200 rounded-xl text-xs font-semibold text-red-500 bg-red-50 hover:bg-red-100 transition-all"
-                      >
-                        Cancel Appointment
-                      </button>
-                    </div>
+                </div>
+
+                {/* Bottom Section: Action Buttons */}
+                <div>
+                  <div className="w-full h-px bg-gray-100 mb-4"></div>
+                  <div className="flex items-center gap-2.5">
+                    <button
+                      onClick={() => handleRescheduleClick(booking)}
+                      className="flex-1 py-2.5 border border-gray-200 rounded-2xl text-xs font-bold text-gray-600 hover:bg-gray-50 hover:text-black hover:border-gray-300 transition-all bg-white shadow-sm active:scale-[0.98]"
+                    >
+                      Reschedule
+                    </button>
+                    <button
+                      onClick={() => handleCancelClick(booking)}
+                      className="flex-1 py-2.5 border border-red-100 rounded-2xl text-xs font-bold text-red-500 bg-red-50 hover:bg-red-100/80 transition-all active:scale-[0.98]"
+                    >
+                      Cancel
+                    </button>
                   </div>
-                  {/* Arrow indicator */}
-                  <div className="absolute right-0.5 bottom-0.5">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M7 17L17 7M17 7H10M17 7V14" stroke="#0012FF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </div>
+                </div>
+
+                {/* Top-Right Arrow Link icon */}
+                <div className="absolute right-4 top-4 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-1 -translate-y-1 group-hover:translate-x-0 group-hover:translate-y-0 text-gray-300 hover:text-[#0012FF] cursor-pointer">
+                  <ArrowUpRight className="h-4 w-4 stroke-[2.5]" />
                 </div>
               </motion.div>
             ))}
           </div>
         ) : (
-          <div className="bg-white rounded-3xl border border-gray-200 shadow-sm p-12 flex flex-col items-center justify-center text-center">
+          <div className="bg-white rounded-3xl border border-gray-200 shadow-sm p-16 flex flex-col items-center justify-center text-center">
             <Image
               src="/assets/no-appointment.png"
               alt="No Appointments"
-              width={260}
-              height={260}
-              className="mb-8"
+              width={220}
+              height={220}
+              className="mb-8 opacity-85"
             />
             <h2 className="text-xl font-bold text-black mb-2">No Appointments Today</h2>
-            <p className="text-gray-500 max-w-md">
-              There are currently no appointments for the selected date. Check other dates in the selector.
+            <p className="text-gray-500 max-w-sm text-sm">
+              You are free! There are no sessions scheduled for this date. Click other dates to view bookings.
             </p>
           </div>
         )}
@@ -465,66 +479,43 @@ export default function CreatorCalendar() {
 
       {/* Cancel Appointment Modal */}
       {showCancelModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100] p-4">
-          <div className="relative overflow-visible w-full max-w-lg flex flex-col items-center px-5 sm:px-7 lg:px-8 pt-10 sm:pt-12 pb-6 sm:pb-8 z-10">
-            {/* SVG Background */}
-            <img
-              src="/assets/cancel-card.svg"
-              alt=""
-              className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10"
-            />
-
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[100] p-4">
+          <div className="relative w-full max-w-md bg-white rounded-3xl border border-gray-200 shadow-2xl p-6 sm:p-8 flex flex-col items-center">
             {/* Close Button */}
             <button
               onClick={() => setShowCancelModal(false)}
-              className="absolute -top-1 sm:-top-3 left-1/2 -translate-x-1/2 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white shadow-md flex items-center justify-center border border-gray-100/50 text-gray-500 hover:bg-gray-50 transition-all z-20"
+              className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-all"
             >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-              >
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
+              <X className="h-5 w-5" />
             </button>
 
-            {/* Illustration */}
-            <div className="w-24 sm:w-36 md:w-44 lg:w-56 mt-2 sm:mt-3 mb-3 sm:mb-4">
-              <Image
-                src="/assets/cancel-appointment.png"
-                alt="Cancel Appointment"
-                width={240}
-                height={170}
-                className="w-full h-auto object-contain"
-              />
+            {/* Icon Banner */}
+            <div className="w-16 h-16 bg-red-50 border border-red-100 rounded-2xl flex items-center justify-center mb-6">
+              <AlertTriangle className="h-8 w-8 text-red-500" />
             </div>
 
             {/* Title */}
-            <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-black text-center mb-2">
+            <h3 className="text-xl font-bold text-black text-center mb-2">
               Cancel Appointment
             </h3>
 
             {/* Description */}
-            <p className="text-xs sm:text-sm text-gray-500 text-center mb-5 sm:mb-6">
-              Are you sure you want to cancel this booking?
+            <p className="text-sm text-gray-500 text-center mb-6 leading-relaxed">
+              Are you sure you want to cancel this appointment with <strong className="text-gray-800 font-semibold">{bookingToCancel?.name}</strong>? This action cannot be undone.
             </p>
 
             {/* Actions */}
-            <div className="flex justify-center gap-3 w-full">
+            <div className="flex gap-3 w-full">
               <button
                 onClick={() => setShowCancelModal(false)}
-                className="px-6 sm:px-8 py-2 sm:py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-all bg-white"
+                className="flex-1 py-3 border border-gray-200 rounded-2xl text-sm font-bold text-gray-600 hover:bg-gray-50 transition-all bg-white"
               >
-                Cancel
+                Go Back
               </button>
 
               <button
                 onClick={handleConfirmCancel}
-                className="px-6 sm:px-8 py-2 sm:py-2.5 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700 transition-all"
+                className="flex-1 py-3 bg-red-600 text-white rounded-2xl text-sm font-bold hover:bg-red-700 transition-all active:scale-[0.98]"
               >
                 Yes, Cancel
               </button>
@@ -535,32 +526,24 @@ export default function CreatorCalendar() {
 
       {/* Reschedule Appointment Modal */}
       {showRescheduleModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100] p-4">
-          <div className="relative w-full max-w-lg flex flex-col items-center justify-between p-4 xs:p-6 sm:p-8 pt-10 sm:pt-12 pb-6 sm:pb-8 min-h-[460px] sm:min-h-[520px] z-10">
-            {/* SVG Background notched card */}
-            <img
-              src="/assets/cancel-card.svg"
-              alt=""
-              className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10"
-            />
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[100] p-4">
+          <div className="relative w-full max-w-md bg-white rounded-3xl border border-gray-200 shadow-2xl p-6 sm:p-8 flex flex-col items-center">
             {/* Close Button */}
             <button
               onClick={() => setShowRescheduleModal(false)}
-              className="absolute -top-0 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center hover:bg-gray-50 transition-all z-20 border border-gray-100/50 cursor-pointer text-gray-500"
+              className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-all"
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
+              <X className="h-5 w-5" />
             </button>
-            <div className="flex flex-col items-center w-full flex-grow pt-3">
-              <h3 className="text-lg sm:text-[22px] font-bold text-black mb-1">Reschedule Appointment</h3>
-              <p className="text-gray-500 text-center mb-4 sm:mb-6 text-xs sm:text-[13px]">
-                Choose a new date and time for your session.
+
+            <div className="flex flex-col items-center w-full">
+              <h3 className="text-xl font-bold text-black mb-1">Reschedule Session</h3>
+              <p className="text-gray-500 text-center mb-6 text-xs sm:text-sm">
+                Choose a new slot for your appointment with <strong className="text-gray-700">{bookingToReschedule?.name}</strong>.
               </p>
 
               {/* Next 14 Days Slider */}
-              <div className="flex items-center gap-1.5 overflow-x-auto w-full no-scrollbar pb-3 mb-4 sm:mb-6 border-b border-gray-100">
+              <div className="flex items-center gap-1.5 overflow-x-auto w-full no-scrollbar pb-3.5 mb-6 border-b border-gray-150">
                 {getRescheduleDays().map((d, idx) => {
                   const isSelected = rescheduleDate.getDate() === d.getDate() &&
                     rescheduleDate.getMonth() === d.getMonth() &&
@@ -573,37 +556,37 @@ export default function CreatorCalendar() {
                     <button
                       key={idx}
                       onClick={() => setRescheduleDate(d)}
-                      className={`flex flex-col items-center justify-center min-w-[48px] py-1.5 rounded-xl text-xs transition-all border shrink-0 ${isSelected
-                        ? 'bg-[#EEF2FF] border-[#0012FF] text-[#0012FF] font-bold'
+                      className={`flex flex-col items-center justify-center min-w-[50px] py-2 rounded-2xl text-xs transition-all border shrink-0 ${isSelected
+                        ? 'bg-blue-50 border-[#0012FF] text-[#0012FF] font-bold shadow-sm'
                         : 'border-gray-200 text-gray-400 hover:bg-gray-50 bg-white'
                         }`}
                     >
-                      <span className="text-[8px] uppercase font-bold mb-0.5">{dayName}</span>
-                      <span className="text-xs sm:text-sm font-black">{dayNum}</span>
+                      <span className="text-[8px] uppercase font-bold mb-0.5 tracking-wider">{dayName}</span>
+                      <span className="text-sm font-extrabold">{dayNum}</span>
                     </button>
                   );
                 })}
               </div>
 
               {/* Time Slots Grid */}
-              <div className="w-full mb-3">
+              <div className="w-full mb-6">
                 {loadingSlots ? (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {[1, 2, 3, 4, 5, 6].map((i) => (
-                      <div key={i} className="h-9 sm:h-10 bg-gray-100 rounded-xl animate-pulse" />
+                  <div className="grid grid-cols-2 gap-2">
+                    {[1, 2, 3, 4].map((i) => (
+                      <div key={i} className="h-10 bg-gray-100 rounded-2xl animate-pulse" />
                     ))}
                   </div>
                 ) : rescheduleSlots.length === 0 ? (
-                  <p className="text-gray-400 text-center text-xs sm:text-sm">No slots available on this date.</p>
+                  <p className="text-gray-400 text-center text-xs py-4">No available timeslots on this date.</p>
                 ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-40 sm:max-h-48 overflow-y-auto pr-1">
+                  <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
                     {rescheduleSlots.map((slot) => (
                       <button
                         key={slot}
                         onClick={() => setSelectedRescheduleTime(slot)}
-                        className={`py-1 px-1 border rounded-xl text-[11px] sm:text-xs font-semibold text-center transition-all ${selectedRescheduleTime === slot
-                          ? 'bg-[#EEF2FF] border-[#0012FF] text-[#0012FF]'
-                          : 'border-gray-200 text-gray-600 hover:bg-gray-50 bg-white'
+                        className={`py-2 px-3 border rounded-2xl text-xs font-bold text-center transition-all ${selectedRescheduleTime === slot
+                          ? 'bg-[#0012FF] border-[#0012FF] text-white shadow-sm'
+                          : 'border-gray-200 text-gray-650 hover:bg-gray-55 bg-white'
                           }`}
                       >
                         {slot}
@@ -614,10 +597,10 @@ export default function CreatorCalendar() {
               </div>
 
               {/* Actions */}
-              <div className="flex gap-3 w-full mt-2">
+              <div className="flex gap-3 w-full">
                 <button
                   onClick={() => setShowRescheduleModal(false)}
-                  className="flex-1 py-1 border border-gray-200 rounded-xl text-xs sm:text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-all bg-white"
+                  className="flex-1 py-3 border border-gray-200 rounded-2xl text-sm font-bold text-gray-600 hover:bg-gray-50 transition-all bg-white"
                 >
                   Cancel
                 </button>
@@ -625,9 +608,9 @@ export default function CreatorCalendar() {
                 <button
                   onClick={handleConfirmReschedule}
                   disabled={!selectedRescheduleTime}
-                  className="flex-1 py-1 bg-[#0012FF] text-white rounded-xl text-xs sm:text-sm font-semibold hover:bg-[#0010d0] transition-all disabled:bg-gray-200 disabled:text-gray-400"
+                  className="flex-1 py-3 bg-[#0012FF] text-white rounded-2xl text-sm font-bold hover:bg-[#0010d0] transition-all disabled:bg-gray-100 disabled:text-gray-400 active:scale-[0.98]"
                 >
-                  Confirm Reschedule
+                  Reschedule
                 </button>
               </div>
 
@@ -635,73 +618,43 @@ export default function CreatorCalendar() {
           </div>
         </div>
       )}
+
       {/* Success Modal (Cancelled or Rescheduled) */}
       {showSuccessModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100] p-4">
-          <div className="relative overflow-visible w-full max-w-lg flex flex-col items-center px-5 sm:px-7 lg:px-8 pt-10 sm:pt-12 pb-6 sm:pb-8 z-10">
-            {/* SVG Background */}
-            <img
-              src="/assets/cancel-card.svg"
-              alt=""
-              className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10"
-            />
-
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[100] p-4">
+          <div className="relative w-full max-w-md bg-white rounded-3xl border border-gray-200 shadow-2xl p-6 sm:p-8 flex flex-col items-center">
             {/* Close Button */}
             <button
               onClick={() => setShowSuccessModal(false)}
-              className="absolute -top-3 sm:-top-4 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center border border-gray-100/50 text-gray-500 hover:bg-gray-50 transition-all z-20"
+              className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-all"
             >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-              >
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
+              <X className="h-5 w-5" />
             </button>
 
-            {/* Illustration */}
-            <div className="w-24 sm:w-36 md:w-44 lg:w-56 mt-2 sm:mt-3 mb-3 sm:mb-4">
-              <Image
-                src={
-                  successModalType === "cancelled"
-                    ? "/assets/cancel-appointment.png"
-                    : "/assets/reschedule.png"
-                }
-                alt={
-                  successModalType === "cancelled"
-                    ? "Booking Cancelled"
-                    : "Booking Rescheduled"
-                }
-                width={240}
-                height={170}
-                className="w-full h-auto object-contain"
-              />
+            {/* Icon Banner */}
+            <div className="w-16 h-16 bg-emerald-55 border border-emerald-100 rounded-2xl flex items-center justify-center mb-6">
+              <CheckCircle className="h-8 w-8 text-emerald-500" />
             </div>
 
             {/* Title */}
-            <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-black text-center mb-2">
+            <h3 className="text-xl font-bold text-black text-center mb-2">
               {successModalType === "cancelled"
                 ? "Booking Cancelled"
                 : "Booking Rescheduled"}
             </h3>
 
             {/* Description */}
-            <p className="text-xs sm:text-sm text-gray-500 text-center mb-5 sm:mb-6">
+            <p className="text-sm text-gray-550 text-center mb-6 leading-relaxed">
               {successModalType === "cancelled"
-                ? "Your booking has been cancelled successfully."
-                : "Your booking has been rescheduled successfully."}
+                ? "The session has been cancelled and the client has been notified."
+                : "The session has been rescheduled successfully."}
             </p>
 
             {/* Action */}
             <div className="flex justify-center w-full">
               <button
                 onClick={() => setShowSuccessModal(false)}
-                className="w-32 sm:w-36 py-2 sm:py-2.5 bg-[#0012FF] text-white rounded-xl text-sm font-semibold hover:bg-[#0010d0] transition-all"
+                className="w-full py-3 bg-[#0012FF] text-white rounded-2xl text-sm font-bold hover:bg-[#0010d0] transition-all active:scale-[0.98]"
               >
                 Close
               </button>
