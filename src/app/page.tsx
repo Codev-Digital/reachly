@@ -300,7 +300,7 @@ export default function Home() {
           <motion.div
             animate={{ x: featuredPage === 0 ? 0 : -10 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 max-w-[1100px] mx-auto"
           >
             {[
               { name: 'Sarah Khan', handle: '@sarahkhan', tag: 'Sponsored', img: '/Avatars/12.jpg', rating: '4.9', description: "Pakistan's leading fashion and lifestyle content creator.", price: '1200 PKR', isVerified: false },
@@ -316,7 +316,7 @@ export default function Home() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="flex flex-col w-full max-w-[260px] mx-auto transition-all duration-300 hover:-translate-y-3 hover:scale-[1.04]  p-3 rounded-[24px] border border-gray-100/80 group"
+                  className="flex flex-col w-full max-w-[260px] mx-auto p-3.5 bg-white rounded-[24px] border-0 shadow-sm group"
                 >
                   {/* Image with SVG clip notch */}
                   <div className="relative w-full h-[280px]">
@@ -349,7 +349,7 @@ Z
                     <img
                       src={creator.img}
                       alt={creator.name}
-                      className="w-full h-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.02]"
+                      className="w-full h-full object-cover object-top"
                       style={{ clipPath: `url(#${clipId})` }}
                     />
 
@@ -438,7 +438,7 @@ Z
                     <p className="text-xs text-gray-500 font-sans mt-2.5 line-clamp-2">{creator.description}</p>
                     <div className="flex items-center justify-between mt-4">
                       <span className="text-xs font-sans text-gray-500">Starting from <strong className="text-black font-black">{creator.price}</strong></span>
-                      <Link href="/welcome" className="text-xs font-sans font-bold text-blue-600 underline hover:text-blue-800 transition-colors">Book Now</Link>
+                      <Link href="/explore-creators" className="text-xs font-sans font-bold text-blue-600 underline hover:text-blue-800 transition-colors">Book Now</Link>
                     </div>
                   </div>
                 </motion.div>
@@ -577,9 +577,9 @@ Z
 
               <div className="relative  w-full">
                 <motion.div
-                  animate={{ x: -categoryIndex * 284 }}
+                  animate={{ x: -categoryIndex * 268 }}
                   transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                  className="flex gap-6 pb-4"
+                  className="flex gap-2 pb-4"
                 >
                   {filteredCategoryCreators.map((creator, index) => {
                     const clipId = `cardClip-category-${index}`;
@@ -590,7 +590,7 @@ Z
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ duration: 0.5, delay: index * 0.1 }}
-                        className="flex flex-col w-[260px] shrink-0 transition-all duration-300 hover:-translate-y-3 hover:scale-[1.04]  p-3 rounded-[24px] border border-gray-100/80 group"
+                        className="flex flex-col w-[260px] shrink-0 p-3.5 bg-white rounded-[24px] border-0 shadow-sm group"
                       >
                         {/* Image with SVG clip notch */}
                         <div className="relative w-full h-[280px]">
@@ -623,7 +623,7 @@ Z
                           <img
                             src={creator.img}
                             alt={creator.name}
-                            className="w-full h-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.02]"
+                            className="w-full h-full object-cover object-top"
                             style={{ clipPath: `url(#${clipId})` }}
                           />
 
@@ -710,7 +710,7 @@ Z
                           <p className="text-xs text-gray-500 font-sans mt-2.5 line-clamp-2">{creator.description}</p>
                           <div className="flex items-center justify-between mt-4">
                             <span className="text-xs font-sans text-gray-500">Starting from <strong className="text-black font-black">{creator.price}</strong></span>
-                            <Link href="/welcome" className="text-xs font-sans font-bold text-blue-600 underline hover:text-blue-800 transition-colors">Book Now</Link>
+                            <Link href="/explore-creators" className="text-xs font-sans font-bold text-blue-600 underline hover:text-blue-800 transition-colors">Book Now</Link>
                           </div>
                         </div>
                       </motion.div>
@@ -803,7 +803,7 @@ Z
                       </div>
                     </div>
                   </div>
-                  <Link href="/welcome" className="shrink-0 bg-white text-blue-600 hover:bg-white/95 px-5 py-2.5 rounded-full font-sans font-bold text-xs sm:text-sm tracking-wide shadow-lg transition-all active:scale-95 whitespace-nowrap">Book Now</Link>
+                  <Link href="/explore-creators" className="shrink-0 bg-white text-blue-600 hover:bg-white/95 px-5 py-2.5 rounded-full font-sans font-bold text-xs sm:text-sm tracking-wide shadow-lg transition-all active:scale-95 whitespace-nowrap">Book Now</Link>
                 </div>
               </motion.div>
             ))}

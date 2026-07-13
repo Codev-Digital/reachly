@@ -6,6 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import CreatorDashboardNav from '@/components/CreatorDashboardNav';
+import LoadingAnimation from '@/components/LoadingAnimation';
 import { TrendingUp, BookOpen, Calendar, Eye, Users, Copy, Check } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 
@@ -42,8 +43,19 @@ const CreatorDashboard = () => {
   const [yearDropdownOpen, setYearDropdownOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  // Real stats & bookings state
+  const [dashboardStats, setDashboardStats] = useState({
+    totalBookingsThisMonth: 0,
+    upcomingSessions: 0,
+    profileViews: 0,
+    totalCustomers: 0,
+  });
+  const [bookingsList, setBookingsList] = useState<any[]>([]);
+  const [loadingData, setLoadingData] = useState(true);
+
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(window.location.origin + `/creators/${displayName.toLowerCase().replace(/\s+/g, '-')}`);
+    const linkStr = window.location.origin + `/creators/${displayName.toLowerCase().replace(/\s+/g, '-')}`;
+    navigator.clipboard.writeText(linkStr);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -84,38 +96,42 @@ const CreatorDashboard = () => {
     },
   } satisfies ChartConfig;
 
-  const getDaysStrip = () => {
-    const days = [];
-    for (let i = -3; i <= 3; i++) {
-      const d = new Date(currentDate);
-      d.setDate(currentDate.getDate() + i);
-      days.push(d);
-    }
-    return days;
-  };
-
+  // Load profile and dashboard stats
   useEffect(() => {
-    async function loadProfile() {
+    async function loadData() {
       try {
-        const res = await fetch('/api/user/me');
-        if (res.ok) {
-          const data = await res.json();
+        // Fetch Profile
+        const profileRes = await fetch('/api/user/me');
+        if (profileRes.ok) {
+          const data = await profileRes.json();
           const name = data.creatorProfile?.displayName || data.user?.name || '';
           const photo = data.creatorProfile?.profilePhoto || null;
           setDisplayName(name);
           setProfilePhoto(photo);
         }
+
+        // Fetch Dashboard Stats & Bookings
+        const statsRes = await fetch('/api/creators/dashboard');
+        if (statsRes.ok) {
+          const data = await statsRes.json();
+          if (data.success) {
+            setDashboardStats(data.stats);
+            setBookingsList(data.bookings || []);
+          }
+        }
       } catch (err) {
-        console.error('Failed to load profile:', err);
+        console.error('Failed to load dashboard:', err);
+      } finally {
+        setLoadingData(false);
       }
     }
-    loadProfile();
+    loadData();
   }, []);
 
   const stats = [
     { 
       label: 'Total Bookings this month', 
-      value: '12', 
+      value: String(dashboardStats.totalBookingsThisMonth), 
       trend: '+18.2% from last month',
       bg: '#AFE8B9', 
       textColor: '#0A4A1C',
@@ -123,7 +139,7 @@ const CreatorDashboard = () => {
     },
     { 
       label: 'Upcoming Sessions', 
-      value: '3', 
+      value: String(dashboardStats.upcomingSessions), 
       trend: '+5.4% from last month',
       bg: '#FFEDB5', 
       textColor: '#6C4800',
@@ -131,7 +147,7 @@ const CreatorDashboard = () => {
     },
     { 
       label: 'Profile Views', 
-      value: '1,256', 
+      value: String(dashboardStats.profileViews), 
       trend: '+24.1% from last month',
       bg: '#FFB3B3', 
       textColor: '#701C1C',
@@ -139,7 +155,7 @@ const CreatorDashboard = () => {
     },
     { 
       label: 'Total Customers', 
-      value: '28', 
+      value: String(dashboardStats.totalCustomers), 
       trend: '+12.8% from last month',
       bg: '#B7C0FF', 
       textColor: '#000A7D',
@@ -147,28 +163,79 @@ const CreatorDashboard = () => {
     },
   ];
 
-  const bookings = [
-    {
-      id: 1,
-      name: 'James Richard',
-      handle: '@jamesrichard',
-      avatar: '/Avatars/3.jpg',
-      time: 'Sat at 03:00 PM to 05:00 PM',
-      type: 'In-person',
-      note: 'I want to start a YouTube channel about Pakistani street food. How do I structure my videos and what...',
-      amount: '2500 PKR'
-    },
-    {
-      id: 2,
-      name: 'James Richard',
-      handle: '@jamesrichard',
-      avatar: '/Avatars/5.jpg',
-      time: 'Sat at 03:00 PM to 05:00 PM',
-      type: 'Online',
-      note: 'I want to start a YouTube channel about Pakistani street food. How do I structure my videos and what...',
-      amount: '2500 PKR'
-    },
-  ];
+  // Helper to render booking cards in the original vertical format
+  const renderBookingCard = (booking: any, index: number) => (
+    <motion.div
+      key={booking.id}
+      initial={{ y: 20, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ delay: 0.3 + index * 0.05 }}
+      className="relative w-full bg-white rounded-3xl p-5 border border-gray-200 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between min-h-[180px]"
+    >
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0 bg-gray-100 relative">
+            <Image 
+              src={booking.avatar} 
+              alt={booking.name} 
+              className="w-full h-full object-cover" 
+              width={44} 
+              height={44} 
+            />
+          </div>
+          <div>
+            <h3 className="font-bold text-sm text-black leading-tight">{booking.name}</h3>
+            <p className="text-xs text-gray-500">{booking.handle}</p>
+          </div>
+        </div>
+        <p className="font-bold text-sm text-[#0012FF] whitespace-nowrap">{booking.amount}</p>
+      </div>
+
+      <div className="flex flex-col gap-1.5 text-xs text-gray-600 mb-3">
+        <div className="flex items-center gap-1.5">
+          <Calendar className="h-3.5 w-3.5 text-[#0012FF]" />
+          <span>{booking.time}</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3.5 h-3.5 flex items-center justify-center">
+            {booking.type === 'In-person' ? (
+              <div className="w-2 h-2 rounded-full bg-[#0012FF]" />
+            ) : (
+              <div className="w-2.5 h-2 bg-[#0012FF] rounded-sm" />
+            )}
+          </div>
+          <span className="font-medium text-gray-700 capitalize">{booking.type}</span>
+        </div>
+      </div>
+
+      <p className="text-xs text-gray-500 mb-4 line-clamp-2 pr-2 leading-relaxed">
+        {booking.note}
+      </p>
+
+      <div className="w-full h-px bg-gray-100 mb-4"></div>
+
+      <div className="flex items-center gap-2">
+        <button className="flex-grow py-2 border border-[#0012FF] text-[#0012FF] hover:bg-[#0012FF]/5 rounded-xl text-xs font-semibold bg-white transition-all active:scale-98 cursor-pointer">
+          Reschedule
+        </button>
+        <button className="flex-grow py-2 border border-red-100 rounded-xl text-xs font-semibold text-red-500 bg-red-550 hover:bg-red-700 transition-all active:scale-98 cursor-pointer">
+          Cancel Appointment
+        </button>
+      </div>
+
+      {/* Top-right corner arrow link icon */}
+      <div className="absolute right-4 top-4 text-gray-300 hover:text-[#0012FF] transition-colors cursor-pointer">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M7 17L17 7M17 7H10M17 7V14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </div>
+    </motion.div>
+  );
+
+  const columnBookings = bookingsList.slice(0, 2);
+  const extraBookings = bookingsList.slice(2);
+
+  if (loadingData) return <LoadingAnimation />;
 
   return (
     <div className="min-h-screen bg-[#F8F8FA]">
@@ -182,13 +249,13 @@ const CreatorDashboard = () => {
           <div>
             <p className="text-gray-500 font-sans mb-1 text-sm sm:text-base">{getGreeting()}, {displayName ? displayName.split(' ')[0] : 'there'}!</p>
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-black font-sans tracking-tight">
-              You Have <span className="text-[#0012FF]">10 Appointments</span> <span className="text-gray-400 font-normal text-base sm:text-lg">/ This week</span>
+              You Have <span className="text-[#0012FF]">{dashboardStats.upcomingSessions} Appointments</span> <span className="text-gray-400 font-normal text-base sm:text-lg">/ Scheduled</span>
             </h1>
           </div>
 
           <button 
             onClick={handleCopyLink}
-            className="flex items-center gap-2 bg-[#0012FF] text-white px-5 py-3 rounded-2xl font-semibold text-sm sm:text-base hover:bg-[#0012FF]/90 transition-all shadow-md active:scale-95 w-fit"
+            className="flex items-center gap-2 bg-[#0012FF] text-white px-5 py-3 rounded-2xl font-semibold text-sm sm:text-base hover:bg-[#0012FF]/90 transition-all shadow-md active:scale-95 w-fit cursor-pointer"
           >
             {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
             {copied ? 'Copied!' : 'Copy Booking Link'}
@@ -226,7 +293,7 @@ const CreatorDashboard = () => {
           })}
         </div>
 
-        {/* Split Layout: Chart (Left) & Bookings (Right) */}
+        {/* Split Layout: Chart (Left) & Bookings List (Right) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           
           {/* Earnings Chart Section */}
@@ -309,7 +376,7 @@ const CreatorDashboard = () => {
             </motion.div>
           </div>
 
-          {/* Bookings Section */}
+          {/* Bookings Section (Right Column - Max 2 Cards) */}
           <div className="lg:col-span-4 space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-bold text-black font-sans">Upcoming Bookings</h2>
@@ -320,7 +387,7 @@ const CreatorDashboard = () => {
                 <div className="relative">
                   <button
                     onClick={() => { setMonthDropdownOpen(!monthDropdownOpen); setYearDropdownOpen(false); }}
-                    className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 shadow-sm"
+                    className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 shadow-sm cursor-pointer"
                   >
                     <span>{currentDate.toLocaleString('default', { month: 'short' })}</span>
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -333,7 +400,7 @@ const CreatorDashboard = () => {
                         <button
                           key={m}
                           onClick={() => selectMonth(idx)}
-                          className={`w-full text-left px-4 py-2 text-xs font-semibold hover:bg-[#0012FF]/5 transition-colors ${currentDate.getMonth() === idx ? 'text-[#0012FF] bg-[#0012FF]/5' : 'text-gray-600'}`}
+                          className={`w-full text-left px-4 py-2 text-xs font-semibold hover:bg-[#0012FF]/5 transition-colors cursor-pointer ${currentDate.getMonth() === idx ? 'text-[#0012FF] bg-[#0012FF]/5' : 'text-gray-600'}`}
                         >
                           {m}
                         </button>
@@ -346,7 +413,7 @@ const CreatorDashboard = () => {
                 <div className="relative">
                   <button
                     onClick={() => { setYearDropdownOpen(!yearDropdownOpen); setMonthDropdownOpen(false); }}
-                    className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 shadow-sm"
+                    className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 shadow-sm cursor-pointer"
                   >
                     <span>{currentDate.getFullYear()}</span>
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -359,7 +426,7 @@ const CreatorDashboard = () => {
                         <button
                           key={y}
                           onClick={() => selectYear(y)}
-                          className={`w-full text-left px-4 py-2 text-xs font-semibold hover:bg-[#0012FF]/5 transition-colors ${currentDate.getFullYear() === y ? 'text-[#0012FF] bg-[#0012FF]/5' : 'text-gray-600'}`}
+                          className={`w-full text-left px-4 py-2 text-xs font-semibold hover:bg-[#0012FF]/5 transition-colors cursor-pointer ${currentDate.getFullYear() === y ? 'text-[#0012FF] bg-[#0012FF]/5' : 'text-gray-600'}`}
                         >
                           {y}
                         </button>
@@ -370,79 +437,56 @@ const CreatorDashboard = () => {
               </div>
             </div>
 
-            {/* Bookings Cards Stack */}
+            {/* Bookings Stack */}
             <div className="space-y-4">
-              {bookings.map((booking, index) => (
-                <motion.div
-                  key={booking.id}
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.3 + index * 0.05 }}
-                  className="relative w-full bg-white rounded-3xl p-5 border border-gray-200 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between min-h-[180px]"
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0 bg-gray-100 relative">
-                        <Image 
-                          src={booking.avatar} 
-                          alt={booking.name} 
-                          className="w-full h-full object-cover" 
-                          width={44} 
-                          height={44} 
-                        />
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-sm text-black leading-tight">{booking.name}</h3>
-                        <p className="text-xs text-gray-500">{booking.handle}</p>
-                      </div>
-                    </div>
-                    <p className="font-bold text-sm text-[#0012FF] whitespace-nowrap">{booking.amount}</p>
+              {bookingsList.length === 0 ? (
+                <div className="flex flex-col items-center justify-center text-center py-12 px-4 bg-white rounded-[2rem] border border-gray-200 shadow-sm">
+                  <div className="relative w-40 h-40 mb-4 opacity-90">
+                    <Image
+                      src="/assets/no-appointment.png"
+                      alt="No bookings till now"
+                      fill
+                      className="object-contain"
+                    />
                   </div>
-
-                  <div className="flex flex-col gap-1.5 text-xs text-gray-600 mb-3">
-                    <div className="flex items-center gap-1.5">
-                      <Calendar className="h-3.5 w-3.5 text-[#0012FF]" />
-                      <span>{booking.time}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-3.5 h-3.5 flex items-center justify-center">
-                        {booking.type === 'In-person' ? (
-                          <div className="w-2 h-2 rounded-full bg-[#0012FF]" />
-                        ) : (
-                          <div className="w-2.5 h-2 bg-[#0012FF] rounded-sm" />
-                        )}
-                      </div>
-                      <span className="font-medium text-gray-700">{booking.type}</span>
-                    </div>
-                  </div>
-
-                  <p className="text-xs text-gray-500 mb-4 line-clamp-2 pr-2 leading-relaxed">
-                    {booking.note} <span className="text-[#0012FF] cursor-pointer font-semibold hover:underline">Read more</span>
+                  <h3 className="text-base font-extrabold text-black font-sans mb-1">No bookings till now</h3>
+                  <p className="text-xs text-gray-500 max-w-[240px] leading-relaxed">
+                    When clients start scheduling sessions with you, they will appear right here.
                   </p>
-
-                  <div className="w-full h-px bg-gray-100 mb-4"></div>
-
-                  <div className="flex items-center gap-2">
-                    <button className="flex-grow py-2 border border-gray-200 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-all bg-white shadow-sm active:scale-98">
-                      Reschedule
-                    </button>
-                    <button className="flex-grow py-2 border border-red-100 rounded-xl text-xs font-semibold text-red-500 bg-red-50 hover:bg-red-100/70 transition-all active:scale-98">
-                      Cancel Appointment
-                    </button>
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-4">
+                    {columnBookings.map((booking, idx) => renderBookingCard(booking, idx))}
                   </div>
 
-                  {/* Top-right corner arrow link icon */}
-                  <div className="absolute right-4 top-4 text-gray-300 hover:text-[#0012FF] transition-colors cursor-pointer">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M7 17L17 7M17 7H10M17 7V14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </div>
-                </motion.div>
-              ))}
+                  {bookingsList.length > 2 && (
+                    <div className="pt-2">
+                      <Link
+                        href="/creators/calendar"
+                        className="w-full block text-center bg-white border border-[#0012FF] hover:bg-[#0012FF] hover:text-white text-[#0012FF] font-bold py-3 rounded-2xl text-xs transition-all shadow-sm cursor-pointer"
+                      >
+                        Show All
+                      </Link>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           </div>
 
         </div>
+
+        {/* Extra Bookings Section - Placed Below the Split Grid if bookings > 2 */}
+        {bookingsList.length > 2 && (
+          <div className="mt-10 border-t border-gray-150 pt-8 space-y-6">
+            <h2 className="text-2xl font-bold text-black font-sans">More Upcoming Bookings</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {extraBookings.map((booking, idx) => renderBookingCard(booking, idx + 2))}
+            </div>
+          </div>
+        )}
+
       </main>
     </div>
   );

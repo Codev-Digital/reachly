@@ -16,7 +16,16 @@ export async function GET(
             return NextResponse.json({ error: 'Username is required' }, { status: 400 });
         }
 
-        const profile = await CreatorProfile.findOne({ username });
+        const lowerUsername = username.toLowerCase();
+        const cleanUsername = lowerUsername.replace(/-/g, '');
+        const profile = await CreatorProfile.findOneAndUpdate(
+            { $or: [
+                { username: lowerUsername },
+                { username: cleanUsername }
+            ]},
+            { $inc: { views: 1 } },
+            { new: true }
+        );
         if (!profile) {
             return NextResponse.json({ error: 'Creator not found' }, { status: 404 });
         }

@@ -24,6 +24,7 @@ export interface ICreatorProfile extends Document {
   };
   // Step completion flag — only true when all required fields are filled
   isProfileComplete: boolean;
+  views?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -63,6 +64,7 @@ const CreatorProfileSchema = new Schema<ICreatorProfile>(
       youtube: { type: String, default: '' },
       linkedin: { type: String, default: '' },
     },
+    views: { type: Number, default: 0 },
     isProfileComplete: { type: Boolean, default: false },
   },
   { timestamps: true }

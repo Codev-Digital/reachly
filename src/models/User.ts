@@ -21,6 +21,7 @@ export interface IUser extends Document {
   hasSeenWelcome: boolean; // Track if user has seen the welcome page
   approvalStatus: 'none' | 'pending' | 'approved' | 'rejected'; // Creator approval status
   createdAt: Date;
+  profilePhoto?: string;
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
@@ -55,6 +56,7 @@ const UserSchema = new Schema<IUser>(
       enum: ['none', 'pending', 'approved', 'rejected'], 
       default: 'none' 
     },
+    profilePhoto: { type: String },
   },
   { timestamps: true }
 );
