@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
+import { signOut } from 'next-auth/react';
 
 const NAV_ITEMS = [
   { name: 'Dashboard', href: '/creators/dashboard', icon: 'dashboard' },
@@ -55,7 +56,7 @@ function NavIcon({ icon, active }: { icon: string; active: boolean }) {
     );
   }
   if (icon === 'settings') {
-    if (active) return <Image src="/assets/settings.svg.png" alt="Settings" width={22} height={22} className="object-contain flex-shrink-0" />;
+    if (active) return <Image src="/assets/settings.svg.png" alt="Settings" width={36} height={22} className="object-contain flex-shrink-0" />;
     return (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="flex-shrink-0">
         <circle cx="12" cy="12" r="3" />
@@ -75,10 +76,13 @@ export default function CreatorDashboardNav({
 }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   // Close menu on route change
   useEffect(() => {
     setMobileOpen(false);
+    setProfileDropdownOpen(false);
   }, [pathname]);
 
   // Lock body scroll when mobile menu open
@@ -143,22 +147,25 @@ export default function CreatorDashboardNav({
     }
   };
 
-  // Close notifications on click outside
+  // Close notifications and profile dropdown on click outside
   useEffect(() => {
-    if (!notificationsOpen) return;
     const handleOutsideClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      if (!target.closest('.notification-panel-container') && !target.closest('.notification-bell-btn')) {
+
+      // Notification close check
+      if (notificationsOpen && !target.closest('.notification-panel-container') && !target.closest('.notification-bell-btn')) {
         setNotificationsOpen(false);
       }
+
+      // Profile dropdown close check
+      if (profileDropdownOpen && !target.closest('.profile-dropdown-container')) {
+        setProfileDropdownOpen(false);
+      }
     };
+
     document.addEventListener('mousedown', handleOutsideClick);
     return () => document.removeEventListener('mousedown', handleOutsideClick);
-  }, [notificationsOpen]);
-
-  const activeItem = NAV_ITEMS.find(item =>
-    pathname === item.href || pathname.startsWith(item.href + '/')
-  );
+  }, [notificationsOpen, profileDropdownOpen]);
 
   return (
     <div className="px-3 sm:px-4 lg:px-6 pt-3 sm:pt-4">
@@ -242,7 +249,7 @@ export default function CreatorDashboardNav({
                         {/* Clear All Button */}
                         <button
                           onClick={handleClearAll}
-                          className="absolute top-[-22px] right-[-22px] border border-gray-200 bg-white hover:bg-gray-50 transition-colors text-gray-500 rounded-full px-3.5 py-1.5 text-xs font-bold flex items-center gap-1.5 shadow-sm"
+                          className="absolute top-[-22px] right-[-22px] border border-gray-200 bg-white hover:bg-gray-55 transition-colors text-gray-500 rounded-full px-3.5 py-1.5 text-xs font-bold flex items-center gap-1.5 shadow-sm"
                         >
                           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                             <line x1="18" y1="6" x2="6" y2="18" />
@@ -301,7 +308,7 @@ export default function CreatorDashboardNav({
                                       </svg>
                                     </div>
                                     <div className="flex flex-col">
-                                      <span className="font-bold text-sm text-gray-650 leading-tight">{n.title}</span>
+                                      <span className="font-bold text-sm text-gray-600 leading-tight">{n.title}</span>
                                       <span className="text-xs text-gray-400 mt-1 leading-normal pr-4">{n.message}</span>
                                     </div>
                                   </div>
@@ -328,14 +335,44 @@ export default function CreatorDashboardNav({
                 )}
               </div>
 
-              {/* Avatar */}
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 border-white bg-gray-200 flex items-center justify-center flex-shrink-0">
-                {profilePhoto ? (
-                  <Image src={profilePhoto} alt={displayName || 'User'} className="w-full h-full object-cover" width={40} height={40} />
-                ) : displayName ? (
-                  <span className="text-gray-700 font-bold text-sm">{displayName.charAt(0).toUpperCase()}</span>
-                ) : (
-                  <Image src="/Avatars/1.jpg" alt="User" className="w-full h-full object-cover" width={40} height={40} />
+              {/* Interactive Profile Picture Container */}
+              <div className="relative profile-dropdown-container">
+                <button
+                  onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 border-white bg-gray-200 flex items-center justify-center flex-shrink-0 cursor-pointer focus:outline-none hover:shadow-md transition-all active:scale-95"
+                >
+                  {profilePhoto ? (
+                    <Image src={profilePhoto} alt={displayName || 'User'} className="w-full h-full object-cover" width={40} height={40} />
+                  ) : displayName ? (
+                    <span className="text-gray-700 font-bold text-sm">{displayName.charAt(0).toUpperCase()}</span>
+                  ) : (
+                    <Image src="/Avatars/1.jpg" alt="User" className="w-full h-full object-cover" width={40} height={40} />
+                  )}
+                </button>
+
+                {/* Profile Dropdown Menu in settings theme */}
+                {profileDropdownOpen && (
+                  <div className="absolute right-0 top-[48px] sm:top-[52px] w-56 bg-white rounded-2xl shadow-xl border border-gray-100 py-2.5 z-[100] text-left animate-in fade-in slide-in-from-top-2 duration-150">
+                    <div className="px-4 py-2 border-b border-gray-100/80 mb-1.5">
+                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Signed In As</p>
+                      <p className="text-sm font-bold text-black truncate mt-0.5">{displayName || 'Creator'}</p>
+                    </div>
+                    <Link
+                      href="/creators/settings"
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 font-semibold transition-colors"
+                    >
+                      Account Settings
+                    </Link>
+                    <button
+                      onClick={() => {
+                        setProfileDropdownOpen(false);
+                        setShowLogoutModal(true);
+                      }}
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50/70 font-semibold transition-colors text-left cursor-pointer"
+                    >
+                      Sign Out
+                    </button>
+                  </div>
                 )}
               </div>
 
@@ -394,6 +431,68 @@ export default function CreatorDashboardNav({
           )}
         </AnimatePresence>
       </nav>
+
+      {/* Modern Royal Blue / White Logout Confirmation Modal */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[150] p-4">
+          <div className="relative w-full max-w-md bg-white rounded-3xl border border-gray-200 shadow-2xl p-6 sm:p-8 flex flex-col items-center">
+            {/* Close Button */}
+            <button
+              onClick={() => setShowLogoutModal(false)}
+              className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 text-gray-400 transition-all cursor-pointer"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+
+            {/* Logout Warning Icon banner */}
+            <div className="w-16 h-16 bg-red-50 border border-red-100 rounded-2xl flex items-center justify-center mb-6">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.5">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                <line x1="12" y1="9" x2="12" y2="13" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
+            </div>
+
+            <h3 className="text-xl font-bold text-black text-center mb-2">
+              Confirm Logout
+            </h3>
+
+            <p className="text-sm text-gray-500 text-center mb-6 leading-relaxed">
+              Are you sure you want to sign out of Reachly? We will clear your session storage and cookies to protect your account from hacking and glitches.
+            </p>
+
+            <div className="flex gap-3 w-full">
+              <button
+                onClick={() => setShowLogoutModal(false)}
+                className="flex-1 py-3 border border-gray-200 rounded-2xl text-sm font-bold text-gray-600 hover:bg-gray-50 transition-all bg-white cursor-pointer"
+              >
+                Go Back
+              </button>
+
+              <button
+                onClick={() => {
+                  // Clear all cookies
+                  document.cookie.split(";").forEach((c) => {
+                    document.cookie = c
+                      .replace(/^ +/, "")
+                      .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+                  });
+                  // Clear localStorage & sessionStorage
+                  localStorage.clear();
+                  sessionStorage.clear();
+                  signOut({ callbackUrl: '/login' });
+                }}
+                className="flex-1 py-3 bg-[#0012FF] text-white rounded-2xl text-sm font-bold hover:bg-[#0010d0] transition-all active:scale-[0.98] cursor-pointer"
+              >
+                Yes, Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

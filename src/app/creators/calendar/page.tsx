@@ -288,7 +288,7 @@ export default function CreatorCalendar() {
                 className="flex items-center justify-between gap-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-2xl px-4 py-2.5 cursor-pointer transition-all select-none min-w-[130px]"
               >
                 <div className="flex flex-col text-left">
-                  <span className="text-[9px] uppercase tracking-wider text-gray-450 font-bold">Month</span>
+                  <span className="text-[9px] uppercase tracking-wider text-gray-400 font-extrabold">Month</span>
                   <span className="text-sm text-gray-800 font-bold">
                     {currentDate.toLocaleString('default', { month: 'long' })}
                   </span>
@@ -319,7 +319,7 @@ export default function CreatorCalendar() {
                 className="flex items-center justify-between gap-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-2xl px-4 py-2.5 cursor-pointer transition-all select-none min-w-[100px]"
               >
                 <div className="flex flex-col text-left">
-                  <span className="text-[9px] uppercase tracking-wider text-gray-450 font-bold">Year</span>
+                  <span className="text-[9px] uppercase tracking-wider text-gray-400 font-extrabold">Year</span>
                   <span className="text-sm text-gray-800 font-bold">{currentDate.getFullYear()}</span>
                 </div>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={`text-gray-500 transition-transform duration-200 ${yearDropdownOpen ? 'rotate-180' : ''}`}>
@@ -343,7 +343,7 @@ export default function CreatorCalendar() {
           </div>
 
           {/* Days Strip */}
-          <div className="flex items-center gap-1.5 overflow-x-auto py-1 px-1 max-w-full flex-1 no-scrollbar sm:justify-start">
+          <div className="flex items-center gap-1 overflow-x-auto py-1 px-1 max-w-full flex-1 no-scrollbar sm:justify-start">
             {getDaysInMonth().map((day, i) => {
               const isSelected = currentDate.getDate() === i + 1;
               return (
@@ -354,10 +354,10 @@ export default function CreatorCalendar() {
                     newDate.setDate(i + 1);
                     setCurrentDate(newDate);
                   }}
-                  className={`w-10 h-10 flex items-center justify-center rounded-xl text-sm font-bold transition-all flex-shrink-0 border ${
+                  className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold transition-all flex-shrink-0 border ${
                     isSelected 
                       ? 'bg-[#0012FF] border-[#0012FF] text-white shadow-md shadow-blue-200 scale-105' 
-                      : 'border-transparent text-gray-500 hover:bg-gray-100 hover:text-gray-800'
+                      : 'border-transparent text-gray-500 hover:bg-gray-100 hover:text-gray-850'
                   }`}
                 >
                   {day}
@@ -451,11 +451,6 @@ export default function CreatorCalendar() {
                       Cancel
                     </button>
                   </div>
-                </div>
-
-                {/* Top-Right Arrow Link icon */}
-                <div className="absolute right-4 top-4 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-1 -translate-y-1 group-hover:translate-x-0 group-hover:translate-y-0 text-gray-300 hover:text-[#0012FF] cursor-pointer">
-                  <ArrowUpRight className="h-4 w-4 stroke-[2.5]" />
                 </div>
               </motion.div>
             ))}
