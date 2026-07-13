@@ -39,7 +39,7 @@ export default function LoginPage() {
         if (res.ok) {
           const userData = await res.json();
           if (email.toLowerCase() === 'abdullahgotaccess@gmail.com') {
-            router.push('/admin/requests');
+            router.push('/admin/dashboard');
           } else if (userData.creatorProfile && userData.creatorProfile.isProfileComplete) {
             router.push('/creators/dashboard');
           } else if (userData.creatorProfile || userData.user.onboardingStep > 0) {
