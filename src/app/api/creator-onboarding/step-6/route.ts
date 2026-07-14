@@ -35,12 +35,17 @@ export async function PUT(req: NextRequest) {
     if (contentType.includes('application/json')) {
       const body = await req.json();
       if (body.isActive) {
+        // Go Live — submit for admin review
         user.approvalStatus = 'pending';
-        if (user.onboardingStep < 5) {
-          user.onboardingStep = 5;
-        }
+        if (user.onboardingStep < 5) user.onboardingStep = 5;
         await user.save();
-        return NextResponse.json({ success: true });
+        return NextResponse.json({ success: true, activated: true });
+      }
+      if (body.isActive === false) {
+        // Save as Draft — just advance onboarding step, do NOT touch approvalStatus
+        if (user.onboardingStep < 5) user.onboardingStep = 5;
+        await user.save();
+        return NextResponse.json({ success: true, activated: false, draft: true });
       }
     }
 

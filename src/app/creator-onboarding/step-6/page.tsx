@@ -200,26 +200,7 @@ export default function CreatorOnboardingStep6() {
   return (
     <div className="min-h-screen bg-[#0C0C0C]">
 
-      {/* Progress */}
-      <div className="border-b border-[rgba(255,255,255,0.08)]">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8 lg:py-10">
-          <div className="flex items-center justify-between overflow-x-auto pb-2">
-            <StepItem num={1} label="Welcome"      status="completed" />
-            <div className="flex-1 h-px bg-[#C8A97E] mx-1 sm:mx-2" />
-            <StepItem num={2} label="Profile"      status="completed" />
-            <div className="flex-1 h-px bg-[#C8A97E] mx-1 sm:mx-2" />
-            <StepItem num={3} label="Sessions"     status="completed" />
-            <div className="flex-1 h-px bg-[#C8A97E] mx-1 sm:mx-2" />
-            <StepItem num={4} label="Pricing"      status="completed" />
-            <div className="flex-1 h-px bg-[#C8A97E] mx-1 sm:mx-2" />
-            <StepItem num={5} label="Availability" status="completed" />
-            <div className="flex-1 h-px bg-[#C8A97E] mx-1 sm:mx-2" />
-            <StepItem num={6} label="Verification" status="active" />
-            <div className="flex-1 h-px bg-[rgba(200,169,126,0.2)] mx-1 sm:mx-2" />
-            <StepItem num={7} label="Go Live"      status="upcoming" />
-          </div>
-        </div>
-      </div>
+
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-10 lg:py-12">
 
@@ -598,22 +579,4 @@ export default function CreatorOnboardingStep6() {
   );
 }
 
-// ─── StepItem ──────────────────────────────────────────────────────────────────
-function StepItem({ num, label, status }: { num: number; label: string; status: 'completed' | 'active' | 'upcoming' }) {
-  return (
-    <div className="flex flex-col items-center gap-1.5 sm:gap-2 min-w-[60px] sm:min-w-[80px]">
-      <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-serif text-sm sm:text-base font-semibold transition-all ${
-        status === 'completed' ? 'bg-[#141414] text-[#C8A97E] border border-[#C8A97E]'
-        : status === 'active'  ? 'bg-[#C8A97E] text-[#0C0C0C]'
-        :                        'bg-[#141414] text-[#F9F6F2] border border-[rgba(200,169,126,0.3)] opacity-60'
-      }`}>
-        {status === 'completed'
-          ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="2.5"><polyline points="20 6 9 17 4 12" /></svg>
-          : num}
-      </div>
-      <span className={`text-[10px] sm:text-xs font-sans font-medium text-center ${
-        status === 'completed' || status === 'active' ? 'text-[#C8A97E]' : 'text-[#F9F6F2] opacity-60'
-      }`}>{label}</span>
-    </div>
-  );
-}
+

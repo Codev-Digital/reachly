@@ -182,39 +182,9 @@ export default function CreatorOnboardingStep4() {
 
   return (
     <div className="min-h-screen bg-[#F7F7FA]">
-      {/* Navigation Bar */}
-      <nav className="bg-white border-b border-gray-100 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
-          <div className="flex items-center justify-between">
-            <img src="/assets/logo1.png" alt="Reachly Logo" className="h-10 w-auto" />
-            <div className="hidden md:flex items-center gap-10">
-              <button className="text-gray-400 font-sans text-sm">Explore Creators</button>
-              <button className="text-gray-400 font-sans text-sm">Events</button>
-              <button className="text-gray-400 font-sans text-sm">For Creators</button>
-              <button className="text-gray-400 font-sans text-sm">About</button>
-            </div>
-            <div className="flex items-center gap-4">
-              <button className="text-[#0012FF] font-sans font-semibold text-sm">Login</button>
-              <button className="bg-[#0012FF] text-white px-5 py-2.5 rounded-full font-sans font-semibold text-sm">Sign up</button>
-            </div>
-          </div>
-        </div>
-      </nav>
 
-      {/* Progress Steps */}
-      <div className="bg-[#F7F7FA] border-b border-gray-100">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
-          <div className="flex items-center justify-center gap-6">
-            <StepItem num={1} status="completed" />
-            <div className="flex-1 max-w-[100px] h-0.5 bg-[#0012FF]" />
-            <StepItem num={2} status="completed" />
-            <div className="flex-1 max-w-[100px] h-0.5 bg-[#0012FF]" />
-            <StepItem num={3} status="active" />
-            <div className="flex-1 max-w-[100px] h-0.5 bg-gray-200" />
-            <StepItem num={4} status="upcoming" />
-          </div>
-        </div>
-      </div>
+
+
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
         {/* Heading */}
@@ -722,23 +692,4 @@ export default function CreatorOnboardingStep4() {
   );
 }
 
-// ─── StepItem ──────────────────────────────────────────────────────────────────
-function StepItem({ num, status }: { num: number; status: 'completed' | 'active' | 'upcoming' }) {
-  return (
-    <div className="flex flex-col items-center gap-1.5">
-      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all ${
-        status === 'completed'
-          ? 'bg-[#0012FF] text-white border border-[#0012FF]'
-          : status === 'active'
-          ? 'bg-[#E0E7FF] text-[#0012FF] border-2 border-[#0012FF]'
-          : 'bg-white text-gray-400 border border-gray-200'
-      }`}>
-        {status === 'completed' ? (
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-        ) : num}
-      </div>
-    </div>
-  );
-}
+

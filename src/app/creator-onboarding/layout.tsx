@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import LoadingAnimation from '@/components/LoadingAnimation';
+import OnboardingNavbar from '@/components/OnboardingNavbar';
 
 export default function CreatorOnboardingLayout({
   children,
@@ -34,5 +35,10 @@ export default function CreatorOnboardingLayout({
 
   if (loading) return <LoadingAnimation />;
 
-  return <>{children}</>;
+  return (
+    <>
+      <OnboardingNavbar />
+      {children}
+    </>
+  );
 }

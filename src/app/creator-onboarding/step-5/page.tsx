@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import LoadingAnimation from '@/components/LoadingAnimation';
@@ -33,48 +33,276 @@ interface Session {
   features: string[];
 }
 
+// ─── Preview Modal ────────────────────────────────────────────────────────────
+function PreviewModal({
+  profile,
+  sessions,
+  availability,
+  onClose,
+}: {
+  profile: CreatorProfile | null;
+  sessions: Session[];
+  availability: any;
+  onClose: () => void;
+}) {
+  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6"
+      style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(6px)' }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="bg-[#F7F7FA] rounded-3xl w-full max-w-lg max-h-[92vh] overflow-y-auto shadow-2xl flex flex-col">
+
+        {/* ── Header: Cover + Avatar + Close ── */}
+        <div className="relative flex-shrink-0">
+          {/* Cover strip */}
+          <div className="h-36 w-full rounded-t-3xl overflow-hidden bg-gradient-to-br from-[#0012FF] via-blue-600 to-indigo-800">
+            {profile?.coverPhoto && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={profile.coverPhoto}
+                alt="Cover"
+                className="w-full h-full object-cover"
+              />
+            )}
+          </div>
+
+          {/* Close button */}
+          <button
+            onClick={onClose}
+            className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white transition-all flex items-center justify-center shadow-md"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="2.5">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+
+          {/* Preview badge */}
+          <div className="absolute top-3 left-3">
+            <span className="bg-black/40 backdrop-blur-sm text-white text-[11px] font-semibold px-2.5 py-1 rounded-full border border-white/20">
+              Profile Preview
+            </span>
+          </div>
+
+          {/* Avatar */}
+          <div className="absolute left-5 bottom-0 translate-y-1/2">
+            <div className="w-20 h-20 rounded-2xl border-[3px] border-white bg-gray-100 overflow-hidden shadow-xl">
+              {profile?.profilePhoto ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={profile.profilePhoto} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-[#EEF2FF]">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#6B7AFF" strokeWidth="1.5">
+                    <circle cx="12" cy="8" r="5" /><path d="M4 20c0-4.418 3.582-8 8-8s8 3.582 8 8" />
+                  </svg>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* ── Name / Meta block ── */}
+        <div className="pt-14 px-5 pb-4 bg-white mx-3 mt-3 rounded-2xl shadow-sm">
+          <div className="flex items-start justify-between gap-2 mb-2">
+            <div>
+              <h2 className="font-anton text-xl text-black leading-tight">
+                {profile?.displayName || 'Your Name'}
+              </h2>
+              <p className="text-gray-400 text-xs font-sans mt-0.5">@{profile?.username || 'username'}</p>
+            </div>
+            {/* Niche pill */}
+            {profile?.niches?.[0] && (
+              <span className="bg-[#EEF2FF] text-[#0012FF] text-[11px] font-semibold px-3 py-1 rounded-full border border-[#0012FF]/20 flex-shrink-0 mt-1">
+                {profile.niches[0]}
+              </span>
+            )}
+          </div>
+
+          {/* Meta row */}
+          <div className="flex flex-wrap items-center gap-3 text-[11px] text-gray-400 font-sans">
+            {profile?.city && (
+              <div className="flex items-center gap-1">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2">
+                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
+                  <circle cx="12" cy="9" r="2.5" />
+                </svg>
+                {profile.city}{profile.country ? `, ${profile.country}` : ''}
+              </div>
+            )}
+            {(profile?.languages?.length ?? 0) > 0 && (
+              <div className="flex items-center gap-1">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                </svg>
+                {profile?.languages?.join(' · ')}
+              </div>
+            )}
+          </div>
+
+          {/* Bio */}
+          {profile?.shortBio && (
+            <p className="text-xs text-gray-600 leading-relaxed font-sans mt-3 pt-3 border-t border-gray-100">
+              {profile.shortBio}
+            </p>
+          )}
+
+          {/* Social Links */}
+          {profile?.socialLinks && Object.values(profile.socialLinks).some(Boolean) && (
+            <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100 flex-wrap">
+              {profile.socialLinks.instagram && (
+                <span className="flex items-center gap-1.5 text-[11px] font-semibold text-white bg-gradient-to-r from-pink-500 to-orange-400 px-2.5 py-1 rounded-lg">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="5" /><circle cx="12" cy="12" r="4" /></svg>
+                  @{profile.socialLinks.instagram}
+                </span>
+              )}
+              {profile.socialLinks.youtube && (
+                <span className="flex items-center gap-1.5 text-[11px] font-semibold text-white bg-red-500 px-2.5 py-1 rounded-lg">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="white"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z" /></svg>
+                  {profile.socialLinks.youtube}
+                </span>
+              )}
+              {profile.socialLinks.linkedin && (
+                <span className="flex items-center gap-1.5 text-[11px] font-semibold text-white bg-[#0077B5] px-2.5 py-1 rounded-lg">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="white"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452z" /></svg>
+                  {profile.socialLinks.linkedin}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* ── Sessions ── */}
+        {sessions.length > 0 && (
+          <div className="px-3 mt-3">
+            <div className="bg-white rounded-2xl shadow-sm p-4">
+              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Sessions Offered</h3>
+              <div className="space-y-2">
+                {sessions.map((s, i) => (
+                  <div key={i} className="flex items-center justify-between gap-3 bg-[#F7F7FA] rounded-xl p-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-black font-sans truncate">{s.title}</p>
+                      <p className="text-[11px] text-gray-400 font-sans mt-0.5">{s.duration} min{s.description ? ` · ${s.description.slice(0, 50)}${s.description.length > 50 ? '…' : ''}` : ''}</p>
+                      {s.features?.length > 0 && (
+                        <div className="flex gap-1.5 mt-1.5 flex-wrap">
+                          {s.features.slice(0, 3).map((f, fi) => (
+                            <span key={fi} className="text-[10px] bg-white border border-gray-200 text-gray-500 rounded-full px-2 py-0.5">{f}</span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-shrink-0 text-right">
+                      <p className="text-[#0012FF] font-bold text-sm font-sans">Rs {s.price}</p>
+                      <p className="text-[10px] text-gray-400">/ session</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Availability ── */}
+        <div className="px-3 mt-3 mb-3">
+          <div className="bg-white rounded-2xl shadow-sm p-4">
+            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Weekly Availability</h3>
+            <div className="grid grid-cols-7 gap-1">
+              {days.map((day) => {
+                const isEnabled = availability?.schedule?.[day.toLowerCase()]?.enabled ?? false;
+                const slots = availability?.schedule?.[day.toLowerCase()]?.slots;
+                return (
+                  <div
+                    key={day}
+                    className={`rounded-xl p-2 text-center transition-all ${isEnabled ? 'bg-[#EEF2FF]' : 'bg-gray-50'}`}
+                  >
+                    <p className={`text-[10px] font-bold font-sans ${isEnabled ? 'text-[#0012FF]' : 'text-gray-300'}`}>
+                      {day.slice(0, 3)}
+                    </p>
+                    {isEnabled && slots?.[0] && (
+                      <p className="text-[9px] text-gray-400 mt-0.5 leading-tight">{slots[0].start}</p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* ── Footer ── */}
+        <div className="px-3 pb-3 flex-shrink-0">
+          <button
+            onClick={onClose}
+            className="w-full bg-[#0012FF] text-white text-sm font-semibold py-3 rounded-2xl hover:bg-[#0012FF]/90 transition-all"
+          >
+            Close Preview
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function CreatorOnboardingStep5() {
   const router = useRouter();
 
   const [fetchingData, setFetchingData] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
   const [error, setError] = useState('');
+  const [draftSaved, setDraftSaved] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
   const [profile, setProfile] = useState<CreatorProfile | null>(null);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [availability, setAvailability] = useState<any>(null);
 
   // ── Load saved data on mount ──────────────────────────────────────────────
-  useEffect(() => {
-    (async () => {
-      try {
-        // Load profile data from step 2
-        const profileRes = await fetch('/api/creator-onboarding/step-2', { cache: 'no-store' });
-        if (profileRes.ok) {
-          const data = await profileRes.json();
-          setProfile(data.profile);
-        }
-
-        // Load sessions data from step 3
-        const sessionsRes = await fetch('/api/creator-onboarding/step-3', { cache: 'no-store' });
-        if (sessionsRes.ok) {
-          const data = await sessionsRes.json();
-          setSessions(data.sessionTypes || []);
-        }
-
-        // Load availability data from step 5 (which is the schedule API)
-        const availabilityRes = await fetch('/api/creator-onboarding/step-5', { cache: 'no-store' });
-        if (availabilityRes.ok) {
-          const data = await availabilityRes.json();
-          setAvailability(data.availability);
-        }
-      } finally {
-        setFetchingData(false);
-      }
-    })();
+  const loadData = useCallback(async () => {
+    try {
+      const [profileRes, sessionsRes, availabilityRes] = await Promise.all([
+        fetch('/api/creator-onboarding/step-2', { cache: 'no-store' }),
+        fetch('/api/creator-onboarding/step-3', { cache: 'no-store' }),
+        fetch('/api/creator-onboarding/step-5', { cache: 'no-store' }),
+      ]);
+      if (profileRes.ok) { const d = await profileRes.json(); setProfile(d.profile); }
+      if (sessionsRes.ok) { const d = await sessionsRes.json(); setSessions(d.sessionTypes || []); }
+      if (availabilityRes.ok) { const d = await availabilityRes.json(); setAvailability(d.availability); }
+    } finally {
+      setFetchingData(false);
+    }
   }, []);
 
-  // ── Handle go live ─────────────────────────────────────────────────────────
+  useEffect(() => { loadData(); }, [loadData]);
+
+  // ── Save as Draft (no status change, just mark onboardingStep) ─────────────
+  const handleSaveAsDraft = async () => {
+    setSavingDraft(true);
+    setError('');
+    try {
+      // Call step-6 API with activate: false to save state without sending to admin
+      const res = await fetch('/api/creator-onboarding/step-6', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isActive: false }), // draft only
+      });
+      const data = await res.json();
+      if (data.success) {
+        setDraftSaved(true);
+        setTimeout(() => setDraftSaved(false), 3000);
+      } else {
+        setError(data.error || 'Failed to save draft. Try again.');
+      }
+    } catch {
+      setError('Network error. Please try again.');
+    } finally {
+      setSavingDraft(false);
+    }
+  };
+
+  // ── Handle go live (submit to admin review) ─────────────────────────────────
   const handleGoLive = async () => {
     setSaving(true);
     setError('');
@@ -98,45 +326,15 @@ export default function CreatorOnboardingStep5() {
 
   return (
     <div className="min-h-screen bg-[#F7F7FA]">
-      {/* Navigation Bar */}
-      <nav className="bg-white border-b border-gray-100 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
-          <div className="flex items-center justify-between">
-            <Image src="/assets/logo1.png" alt="Reachly Logo" width={120} height={40} className="h-10 w-auto" />
-            <div className="hidden md:flex items-center gap-10">
-              <button className="text-gray-400 font-sans text-sm">Explore Creators</button>
-              <button className="text-gray-400 font-sans text-sm">Events</button>
-              <button className="text-gray-400 font-sans text-sm">For Creators</button>
-              <button className="text-gray-400 font-sans text-sm">About</button>
-            </div>
-            <div className="flex items-center gap-4">
-              <button className="text-[#0012FF] font-sans font-semibold text-sm">Login</button>
-              <button className="bg-[#0012FF] text-white px-5 py-2.5 rounded-full font-sans font-semibold text-sm">Sign up</button>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      {/* Progress Steps */}
-    {/* Progress Steps */}
-<div className="bg-[#F7F7FA] border-b border-gray-100">
-  <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
-    <div className="flex items-center justify-center">
-
-      <StepItem num={1} status="completed" />
-      <div className="w-24 h-[2px] bg-[#0012FF]" />
-
-      <StepItem num={2} status="completed" />
-      <div className="w-24 h-[2px] bg-[#0012FF]" />
-
-      <StepItem num={3} status="completed" />
-      <div className="w-24 h-[2px] bg-[#8B95FF]" />
-
-      <StepItem num={4} status="active" />
-
-    </div>
-  </div>
-</div>
+      {/* Preview Modal */}
+      {showPreview && (
+        <PreviewModal
+          profile={profile}
+          sessions={sessions}
+          availability={availability}
+          onClose={() => setShowPreview(false)}
+        />
+      )}
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
         {/* Heading + Preview Button */}
@@ -146,11 +344,18 @@ export default function CreatorOnboardingStep5() {
               You're Ready To Go <span className="text-[#0012FF]">Live</span>
             </h1>
             <p className="text-xs text-gray-400">
-              Review you profile then activate to start accepting bookings
+              Review your profile then activate to start accepting bookings
             </p>
           </div>
-          <button className="bg-[#0012FF] text-white px-5 py-2.5 rounded-full font-sans font-semibold text-xs hover:bg-[#0012FF]/90 transition-all">
-            Preview
+          <button
+            onClick={() => setShowPreview(true)}
+            className="flex items-center gap-2 bg-[#0012FF] text-white px-5 py-2.5 rounded-full font-sans font-semibold text-xs hover:bg-[#0012FF]/90 transition-all"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+            Preview Profile
           </button>
         </div>
 
@@ -158,6 +363,16 @@ export default function CreatorOnboardingStep5() {
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
             <p className="text-sm text-red-600">{error}</p>
+          </div>
+        )}
+
+        {/* Draft Saved Toast */}
+        {draftSaved && (
+          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            <p className="text-sm text-green-700 font-semibold">Draft saved! Come back anytime to continue.</p>
           </div>
         )}
 
@@ -204,7 +419,7 @@ export default function CreatorOnboardingStep5() {
                   <h3 className="font-anton text-2xl font-bold text-black">
                     {profile?.displayName || 'Your Name'}
                   </h3>
-                  <button 
+                  <button
                     onClick={() => router.push('/creator-onboarding/step-2')}
                     className="text-[#0012FF] font-sans text-xs font-semibold flex items-center gap-1 hover:opacity-80 transition-opacity"
                   >
@@ -231,7 +446,7 @@ export default function CreatorOnboardingStep5() {
                   </div>
                   <div className="flex items-center gap-1.5 text-gray-500 text-xs font-sans">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2">
-                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 0 2 2z" />
                     </svg>
                     {profile?.languages?.[0] || 'English'}
                   </div>
@@ -240,9 +455,7 @@ export default function CreatorOnboardingStep5() {
                   {profile?.niches?.[0] || 'Influencer'}
                 </div>
               </div>
-              <button className="bg-[#0012FF] text-white px-5 py-2.5 rounded-full font-sans font-semibold text-xs hover:bg-[#0012FF]/90 transition-all h-fit">
-                Book a Session
-              </button>
+              {/* Book a Session button hidden during onboarding */}
             </div>
 
             {/* Sessions List */}
@@ -270,7 +483,7 @@ export default function CreatorOnboardingStep5() {
                     <span className="text-[#0012FF] font-sans font-semibold text-sm">
                       Rs {sessions[0].price}
                     </span>
-                    <button 
+                    <button
                       onClick={() => router.push('/creator-onboarding/step-3')}
                       className="text-gray-400 hover:text-gray-600 transition-opacity"
                     >
@@ -290,7 +503,7 @@ export default function CreatorOnboardingStep5() {
                 <h4 className="font-sans text-sm font-semibold text-black">
                   Next 7 Days Available
                 </h4>
-                <button 
+                <button
                   onClick={() => router.push('/creator-onboarding/step-4')}
                   className="text-gray-400 hover:text-gray-600 transition-opacity"
                 >
@@ -307,11 +520,10 @@ export default function CreatorOnboardingStep5() {
                   return (
                     <div
                       key={day}
-                      className={`px-3 py-2 rounded-lg text-xs font-sans font-semibold transition-all ${
-                        isEnabled
+                      className={`px-3 py-2 rounded-lg text-xs font-sans font-semibold transition-all ${isEnabled
                           ? 'bg-[#E0E7FF] text-[#0012FF]'
                           : 'bg-gray-100 text-gray-400'
-                      }`}
+                        }`}
                     >
                       {day}
                     </div>
@@ -335,56 +547,62 @@ export default function CreatorOnboardingStep5() {
             Back
           </button>
           <div className="flex gap-3">
+            {/* Save as Draft — saves data only, does NOT submit to admin */}
             <button
               type="button"
-              onClick={() => router.push('/')}
-              className="border border-[#0012FF] text-[#0012FF] px-5 py-2.5 rounded-full font-sans font-semibold text-sm hover:bg-[#0012FF]/5 transition-all"
+              onClick={handleSaveAsDraft}
+              disabled={savingDraft}
+              className="border border-[#0012FF] text-[#0012FF] px-5 py-2.5 rounded-full font-sans font-semibold text-sm hover:bg-[#0012FF]/5 transition-all flex items-center gap-2 disabled:opacity-50"
             >
-              Save as Draft
-            </button>
-            <button
-              type="button"
-              onClick={handleGoLive}
-              disabled={saving}
-              className={`px-5 py-2.5 rounded-full font-sans font-semibold text-sm transition-all ${
-                !saving
-                  ? 'bg-[#0012FF] text-white hover:bg-[#0012FF]/90'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }`}
-            >
-              {saving ? (
+              {savingDraft ? (
                 <>
-                  <svg className="animate-spin w-4 h-4 inline mr-2" viewBox="0 0 24 24" fill="none">
+                  <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                   </svg>
                   Saving…
                 </>
-              ) : 'Continue'}
+              ) : (
+                <>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                    <polyline points="17 21 17 13 7 13 7 21" />
+                    <polyline points="7 3 7 8 15 8" />
+                  </svg>
+                  Save as Draft
+                </>
+              )}
+            </button>
+
+            {/* Go Live — submits to admin */}
+            <button
+              type="button"
+              onClick={handleGoLive}
+              disabled={saving}
+              className={`px-5 py-2.5 rounded-full font-sans font-semibold text-sm transition-all flex items-center gap-2 ${!saving
+                  ? 'bg-[#0012FF] text-white hover:bg-[#0012FF]/90'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
+            >
+              {saving ? (
+                <>
+                  <svg className="animate-spin w-4 h-4 inline" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                  </svg>
+                  Saving…
+                </>
+              ) : (
+                <>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                    <path d="M22 2L11 13" /><path d="M22 2L15 22L11 13L2 9L22 2Z" />
+                  </svg>
+                  Submit & Go Live
+                </>
+              )}
             </button>
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── StepItem ──────────────────────────────────────────────────────────────────
-function StepItem({ num, status }: { num: number; status: 'completed' | 'active' | 'upcoming' }) {
-  return (
-    <div className="flex flex-col items-center gap-1.5">
-      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all ${
-        status === 'completed'
-          ? 'bg-[#0012FF] text-white border border-[#0012FF]'
-          : status === 'active'
-            ? 'bg-[#E0E7FF] text-[#0012FF] border-2 border-[#0012FF]'
-            : 'bg-white text-gray-400 border border-gray-200'
-      }`}>
-        {status === 'completed' ? (
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-        ) : num}
       </div>
     </div>
   );

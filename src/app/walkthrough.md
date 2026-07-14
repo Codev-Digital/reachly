@@ -1,10 +1,23 @@
-# Walkthrough - Creator Redesigns (Welcome Page Redesign & Navigation, Signup & Verify & Set-Password Typography, Dashboard, Calendar, Settings, Navbar, Wallet, Backend Integration, Homepage, Auth Redirections, Calendar Modals, Delete Account Modal, Logout Modal, Dashboard Modals & Filters, Reschedule Slots Colors)
+# Walkthrough - Creator Redesigns (Welcome Page Redesign & Navigation, Signup & Verify & Set-Password Typography, Onboarding Navbar & Sleek Stepper Redesign, Dashboard, Calendar, Settings, Navbar, Wallet, Backend Integration, Homepage, Auth Redirections, Calendar Modals, Delete Account Modal, Logout Modal, Dashboard Modals & Filters, Reschedule Slots Colors)
 
-Redesigned typography styles for auth page headers (Signup, Verify Email, Set Password, and Change Email) to match the Welcome Back header style. Redesigned the Welcome page to match the light theme design in the screenshot and integrated the clickable Reachly logo to home page, new cards with welcome-card-1/2 SVG backgrounds, perfectly aligned notched arrows, Lucide icons, and a secure logout redirection path for the login link. Also redesigned the Creator Dashboard, Calendar, Settings, and Wallet pages, enhanced the navigation bar, integrated full backend support for metrics/views tracking, improved the homepage creator card layouts, patched critical authentication redirection issues, restored original calendar modals, aligned the Delete Account and Logout modals, integrated modals and calendar filters into the Dashboard, and fixed reschedule slot button styles.
+Redesigned the creator onboarding header navigation across all pages to a modern, unified rounded navbar with logout, dashboard, desktop navigation links, custom width restrictions, and a sleek, compact 4-step progress stepper with clear white checkmarks matching the screenshot. Redesigned typography styles for auth page headers (Signup, Verify Email, Set Password, and Change Email) to match the Welcome Back header style. Redesigned the Welcome page to match the light theme design in the screenshot and integrated the clickable Reachly logo to home page, new cards with welcome-card-1/2 SVG backgrounds, perfectly aligned notched arrows, Lucide icons, and a secure logout redirection path for the login link. Also redesigned the Creator Dashboard, Calendar, Settings, and Wallet pages, enhanced the navigation bar, integrated full backend support for metrics/views tracking, improved the homepage creator card layouts, patched critical authentication redirection issues, restored original calendar modals, aligned the Delete Account and Logout modals, integrated modals and calendar filters into the Dashboard, and fixed reschedule slot button styles.
 
 ## Changes Made
 
-### 1. Auth Page Typography Upgrades (Signup, Verify Email, Set Password, Change Email)
+### 1. Onboarding Navbar & Sleek Stepper Redesign
+- **Desktop Navigation Links & Max-Width Constraints**:
+  - Added public website menu links ("Explore Creators", "Events", "For Creators", "About") to the center of [OnboardingNavbar.tsx](file:///c:/Users/Hassan/Desktop/new-reachly/reachly/src/components/OnboardingNavbar.tsx) to match the main public navbar design.
+  - Restricted the onboarding navbar width using `max-w-7xl mx-auto` to prevent layout stretching on wider viewports and perfectly align it with the rest of the application.
+- **Sleek 4-Step Stepper Component & Bold White Checkmarks**:
+  - Replaced the inconsistent step trackers (which varied between 4 and 7 steps across pages) with a single, premium, 4-step horizontal progress tracker (representing the main onboarding form phases) in `OnboardingNavbar`.
+  - Removed all text labels and kept only the clean numbers `1`, `2`, `3`, `4` inside smaller, refined circular nodes (`w-8 h-8`), matching the exact layout in the user's reference screenshot.
+  - Fixed an invalid css definition in the checkmark SVG's `strokeWidth` attribute (`strokeWidth="3 animate-pulse"`) by correcting it to `strokeWidth="3"` and adding `className="w-3.5 h-3.5"`. This makes the checkmarks display as bold, solid, and clear white inside the completed circles.
+  - Reduced the stepper card container width to a sleek `max-w-md mx-auto` to make it compact.
+  - Configured it to only render during active onboarding form steps (steps 2 to 5), hiding itself during the Welcome, Verification (step 6), and Go Live checklist (step 7) pages.
+- **Removed Duplicate Stepper Markups**:
+  - Cleared out redundant progress step HTML elements and obsolete `StepItem` helper functions from all steps [step-2/page.tsx](file:///c:/Users/Hassan/Desktop/new-reachly/reachly/src/app/creator-onboarding/step-2/page.tsx), [step-3/page.tsx](file:///c:/Users/Hassan/Desktop/new-reachly/reachly/src/app/creator-onboarding/step-3/page.tsx), [step-4/page.tsx](file:///c:/Users/Hassan/Desktop/new-reachly/reachly/src/app/creator-onboarding/step-4/page.tsx), [step-5/page.tsx](file:///c:/Users/Hassan/Desktop/new-reachly/reachly/src/app/creator-onboarding/step-5/page.tsx), [step-6/page.tsx](file:///c:/Users/Hassan/Desktop/new-reachly/reachly/src/app/creator-onboarding/step-6/page.tsx), and [step-7/page.tsx](file:///c:/Users/Hassan/Desktop/new-reachly/reachly/src/app/creator-onboarding/step-7/page.tsx).
+
+### 2. Auth Page Typography Upgrades (Signup, Verify Email, Set Password, Change Email)
 - **Create Account Heading Redesign**:
   - Customized the `h1` element in the Signup page [page.tsx](file:///c:/Users/Hassan/Desktop/new-reachly/reachly/src/app/signup/page.tsx) to match the exact font classes: `font-anton font-bold text-black text-2xl sm:text-3xl md:text-4xl leading-tight uppercase mb-3`.
 - **Verify Email Heading Redesign**:
@@ -14,7 +27,7 @@ Redesigned typography styles for auth page headers (Signup, Verify Email, Set Pa
 - **Change Email Heading Redesign**:
   - Customized the `h1` element in the Change Email sub-form of the Set Password page [page.tsx](file:///c:/Users/Hassan/Desktop/new-reachly/reachly/src/app/set-password/page.tsx) to match the identical font classes: `font-anton font-bold text-black text-2xl sm:text-3xl md:text-4xl leading-tight uppercase mb-3 whitespace-nowrap`.
 
-### 2. Welcome Page Redesign & Asset Integration
+### 3. Welcome Page Redesign & Asset Integration
 - **Clean Light Theme Background**:
   - Overhauled the background style of the Welcome page [page.tsx](file:///c:/Users/Hassan/Desktop/new-reachly/reachly/src/app/welcome/page.tsx) from the dark gold theme (`bg-[#0C0C0C]`) to a sleek off-white canvas (`bg-[#F4F5F8]`).
   - Placed the contents inside a clean `bg-white rounded-[32px] shadow-sm` outer layout.
@@ -31,7 +44,7 @@ Redesigned typography styles for auth page headers (Signup, Verify Email, Set Pa
 - **Centered Layout & Clean Typography**:
   - Centered text columns, updated headings to high-contrast black font-sans tracking styles, and simplified footer login navigation links.
 
-### 3. Creator Dashboard Redesign & Backend Integration
+### 4. Creator Dashboard Redesign & Backend Integration
 - **Real-Time Data Connection**:
   - Created `/api/creators/dashboard` API handler to calculate actual statistics dynamically from the database.
   - Linked the dashboard [page.tsx](file:///c:/Users/Hassan/Desktop/new-reachly/reachly/src/app/creators/dashboard/page.tsx) to fetch from this API.
@@ -56,7 +69,7 @@ Redesigned typography styles for auth page headers (Signup, Verify Email, Set Pa
 - **Dashboard Cancel & Reschedule Modal Workflows**:
   - Integrated the Cancel, Reschedule, and Success modals directly into the Creator Dashboard. Clicking these action buttons on the dashboard opens the exact notched backgrounds and slider selectors as on the Calendar page, and correctly updates database records and refreshes metrics upon confirmation.
 
-### 4. Creator Calendar Redesign & Modals Restoration
+### 5. Creator Calendar Redesign & Modals Restoration
 - **Max-Width Wrapper**: Wrapped the calendar's main content inside the `max-w-7xl mx-auto` container to match the dashboard's proportions and prevent stretching.
 - **Interactive CSS Booking Cards**: 
   - Retired the static `/assets/rec-card.png` notched background image.
@@ -73,7 +86,7 @@ Redesigned typography styles for auth page headers (Signup, Verify Email, Set Pa
 - **Fixed Reschedule Slot Style Typos**:
   - Replaced invalid classes `text-gray-650` and `hover:bg-gray-55` with valid, high-visibility equivalents `text-gray-700` and `hover:bg-gray-50` on the Calendar page to make time slot options fully legible on white backgrounds.
 
-### 5. Creator Settings Redesign
+### 6. Creator Settings Redesign
 - **Centered Navigation Bar with Icons & Headings**:
   - Centered the tab menu on the screen and restricted its width using `max-w-2xl mx-auto`.
   - Added back the text headings (Profile, Sessions, Availability, Security, Reviews) next to the icons for perfect readability.
@@ -85,7 +98,7 @@ Redesigned typography styles for auth page headers (Signup, Verify Email, Set Pa
 - **Aligned Delete Account Modal**:
   - Replaced the generic Tailwind Modal in Creator Settings [page.tsx](file:///c:/Users/Hassan/Desktop/new-reachly/reachly/src/app/creators/settings/page.tsx) with the custom notched background SVG (`/assets/cancel-card.svg`) modal and styling exactly as used on the client settings page.
 
-### 6. Interactive Navbar & Aligned Logout Modal
+### 7. Interactive Navbar & Aligned Logout Modal
 - **Interactive Avatar Dropdown**: Made the creator profile avatar button clickable. Toggling it displays a sleek dropdown card with settings and sign-out links.
 - **Aligned Logout Confirmation Modal**:
   - Updated the inline Logout modal in [CreatorDashboardNav.tsx](file:///c:/Users/Hassan/Desktop/new-reachly/reachly/src/components/CreatorDashboardNav.tsx) to match the custom notched background SVG (`/assets/cancel-card.svg`) layout, close button positioning, and illustration banner (`/assets/cancel-appointment.png`) exactly like the Delete Account modal.
@@ -93,14 +106,14 @@ Redesigned typography styles for auth page headers (Signup, Verify Email, Set Pa
   - On confirming logout, programmatically clears all document cookies (`document.cookie`), `localStorage`, and `sessionStorage`.
   - Redirects securely back to the login page via `signOut({ callbackUrl: '/login' })`.
 
-### 7. Creator Wallet Redesign
+### 8. Creator Wallet Redesign
 - **Max-Width Wrapper**: Applied the `max-w-7xl mx-auto px-4 sm:px-6 lg:px-8` container to the wallet main body to prevent any component stretching on wider viewports.
 - **Dashboard Stats Card Layout Match**:
   - Overhauled the 4 stats cards (Available Balance, Lifetime Earning, Pending Earning, Total Paid Out) to match the dashboard's precise layout.
   - Cards now use the shorter height of `h-40` and rounded corners `rounded-3xl`.
   - Content structure matches the dashboard cards: Titles and value metrics are aligned on the left, and corresponding icons are nested inside a clean `backdrop-blur-sm bg-white/40 shadow-sm rounded-2xl w-12 h-12` container on the right.
 
-### 8. Homepage Creator Cards Update
+### 9. Homepage Creator Cards Update
 - **Decreased Gap Spacing & Contained Width**:
   - Decreased gap spacing between cards on the Category list (`gap-2`) and the Featured list (`gap-2`).
   - Added a `max-w-[1100px] mx-auto` constraint to the Featured grid to draw columns closer together and eliminate excessive spacing on wider viewports.
@@ -112,7 +125,7 @@ Redesigned typography styles for auth page headers (Signup, Verify Email, Set Pa
 - **Explore Creators Redirection**:
   - Re-routed all "Book Now" buttons on the homepage to navigate to the `/explore-creators` page.
 
-### 9. Redirection Guards for Non-Creator Users
+### 10. Redirection Guards for Non-Creator Users
 - **Redirection Logic Tightened**:
   - Fixed a critical logical error where `isCreator` evaluated to `true` if `approvalStatus` was `undefined`/`null`.
   - Corrected this in [page.tsx](file:///c:/Users/Hassan/Desktop/new-reachly/reachly/src/app/dashboard/page.tsx) and [CreatorNavbar.tsx](file:///c:/Users/Hassan/Desktop/new-reachly/reachly/src/components/CreatorNavbar.tsx) to explicitly verify that `approvalStatus` is neither falsy nor `'none'` before classifying a user as a creator.
