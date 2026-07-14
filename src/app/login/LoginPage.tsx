@@ -38,14 +38,26 @@ export default function LoginPage() {
         const res = await fetch('/api/user/me');
         if (res.ok) {
           const userData = await res.json();
-          const isCreator = userData.user.approvalStatus !== 'none' || userData.user.onboardingStep > 0;
+          const approvalStatus = userData.user.approvalStatus;
+          const onboardingStep = userData.user.onboardingStep || 0;
+          const isFullyApproved = approvalStatus === 'approved' || approvalStatus === 'active';
+          const isInOnboarding = onboardingStep > 0 && !isFullyApproved && approvalStatus !== 'pending';
+
           if (email.toLowerCase() === 'abdullahgotaccess@gmail.com') {
+            // Admin
             router.push('/admin/dashboard');
-          } else if (userData.creatorProfile && userData.creatorProfile.isProfileComplete && isCreator) {
+          } else if (isFullyApproved) {
+            // Fully approved creator → creator dashboard
             router.push('/creators/dashboard');
-          } else if ((userData.creatorProfile || userData.user.onboardingStep > 0) && isCreator) {
-            router.push('/creator-onboarding/step-1');
+          } else if (approvalStatus === 'pending') {
+            // Submitted but awaiting admin review
+            router.push('/creators/pending-approval');
+          } else if (isInOnboarding) {
+            // Creator who started/saved onboarding draft → resume at their last step
+            const resumeStep = Math.max(1, Math.min(onboardingStep, 7));
+            router.push(`/creator-onboarding/step-${resumeStep}`);
           } else {
+            // Regular user / fresh creator account → user dashboard
             router.push('/user/dashboard');
           }
         } else {
