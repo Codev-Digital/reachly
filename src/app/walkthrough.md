@@ -1,6 +1,6 @@
-# Walkthrough - Creator Redesigns (Dashboard, Calendar, Settings, Navbar, Wallet, Backend Integration, Homepage, Auth Redirections)
+# Walkthrough - Creator Redesigns (Dashboard, Calendar, Settings, Navbar, Wallet, Backend Integration, Homepage, Auth Redirections, Calendar Modals, Delete Account Modal, Logout Modal)
 
-Redesigned the Creator Dashboard, Calendar, Settings, and Wallet pages, enhanced the navigation bar, integrated full backend support for metrics/views tracking, improved the homepage creator card layouts, and patched critical authentication redirection issues.
+Redesigned the Creator Dashboard, Calendar, Settings, and Wallet pages, enhanced the navigation bar, integrated full backend support for metrics/views tracking, improved the homepage creator card layouts, patched critical authentication redirection issues, restored original calendar modals, and aligned both the Delete Account and Logout modals.
 
 ## Changes Made
 
@@ -25,7 +25,7 @@ Redesigned the Creator Dashboard, Calendar, Settings, and Wallet pages, enhanced
 - **Reschedule Button Correction**:
   - Fixed the styling of the "Reschedule" button to be fully active with high-contrast outlines (`border border-[#0012FF] text-[#0012FF] bg-white hover:bg-[#0012FF]/5`) to make it easily readable.
 
-### 2. Creator Calendar Redesign
+### 2. Creator Calendar Redesign & Modals Restoration
 - **Max-Width Wrapper**: Wrapped the calendar's main content inside the `max-w-7xl mx-auto` container to match the dashboard's proportions and prevent stretching.
 - **Interactive CSS Booking Cards**: 
   - Retired the static `/assets/rec-card.png` notched background image.
@@ -35,7 +35,10 @@ Redesigned the Creator Dashboard, Calendar, Settings, and Wallet pages, enhanced
   - Resized the day selection buttons from `w-10 h-10` to a sleeker `w-8 h-8 rounded-lg text-xs` layout.
   - Set up a custom global `.no-scrollbar` rule in [globals.css](file:///c:/Users/Hassan/Desktop/new-reachly/reachly/src/app/globals.css) and hid the horizontal scrollbar.
   - Restored high-contrast, fully visible Month and Year labels.
-- **Responsive Modals**: Replaced image-backed modals for cancellation, rescheduling, and success states with elegant, modern, pure-CSS containers.
+- **Restored Original Modals & Fixed Visibility Typos**:
+  - Restored the original notched SVG background modals (`/assets/cancel-card.svg`) for Cancel, Reschedule, and Success confirmation states in [page.tsx](file:///c:/Users/Hassan/Desktop/new-reachly/reachly/src/app/creators/calendar/page.tsx).
+  - Restored the exact positioning, top center rounded close buttons, illustrations (`/assets/cancel-appointment.png` & `/assets/reschedule.png`), and paddings exactly as they were before the redesign.
+  - Fixed color style typos (`text-gray-550`, `bg-red-655`, `text-gray-650`, `disabled:text-gray-450`) to standard Tailwind classes (`text-gray-500`, `bg-red-600`, `text-gray-600`, `disabled:text-gray-400`), ensuring all text, buttons, and layouts are fully visible.
 
 ### 3. Creator Settings Redesign
 - **Centered Navigation Bar with Icons & Headings**:
@@ -46,12 +49,13 @@ Redesigned the Creator Dashboard, Calendar, Settings, and Wallet pages, enhanced
   - Corrected non-standard Tailwind text color classes to standard Tailwind values.
   - All input labels, description items, and placeholders are now fully visible.
 - **Reviews Layout**: Restored the original SVG review card layout (`/assets/review.svg`) to preserve the aesthetic, but added strict maximum sizing rules so that the cards do not stretch.
+- **Aligned Delete Account Modal**:
+  - Replaced the generic Tailwind Modal in Creator Settings [page.tsx](file:///c:/Users/Hassan/Desktop/new-reachly/reachly/src/app/creators/settings/page.tsx) with the custom notched background SVG (`/assets/cancel-card.svg`) modal and styling exactly as used on the client settings page.
 
-### 4. Interactive Navbar & Secure Logout
+### 4. Interactive Navbar & Aligned Logout Modal
 - **Interactive Avatar Dropdown**: Made the creator profile avatar button clickable. Toggling it displays a sleek dropdown card with settings and sign-out links.
-- **Modern Logout Confirmation Modal**:
-  - Created a custom modal matching the dashboard's theme (rounded-3xl white card, shadow, royal blue buttons).
-  - Displays a clean security warning explaining the logout action.
+- **Aligned Logout Confirmation Modal**:
+  - Updated the inline Logout modal in [CreatorDashboardNav.tsx](file:///c:/Users/Hassan/Desktop/new-reachly/reachly/src/components/CreatorDashboardNav.tsx) to match the custom notched background SVG (`/assets/cancel-card.svg`) layout, close button positioning, and illustration banner (`/assets/cancel-appointment.png`) exactly like the Delete Account modal.
 - **Glitch & Hack Prevention (Secure Session Clearing)**:
   - On confirming logout, programmatically clears all document cookies (`document.cookie`), `localStorage`, and `sessionStorage`.
   - Redirects securely back to the login page via `signOut({ callbackUrl: '/login' })`.
@@ -77,7 +81,7 @@ Redesigned the Creator Dashboard, Calendar, Settings, and Wallet pages, enhanced
 
 ### 7. Redirection Guards for Non-Creator Users
 - **Redirection Logic Tightened**:
-  - Fixed a critical logical error where `isCreator` evaluated to `true` if `approvalStatus` was `undefined`/`null` (because `undefined !== 'none'` yields `true`).
+  - Fixed a critical logical error where `isCreator` evaluated to `true` if `approvalStatus` was `undefined`/`null`.
   - Corrected this in [page.tsx](file:///c:/Users/Hassan/Desktop/new-reachly/reachly/src/app/dashboard/page.tsx) and [CreatorNavbar.tsx](file:///c:/Users/Hassan/Desktop/new-reachly/reachly/src/components/CreatorNavbar.tsx) to explicitly verify that `approvalStatus` is neither falsy nor `'none'` before classifying a user as a creator.
   - Patched [LoginPage.tsx](file:///c:/Users/Hassan/Desktop/new-reachly/reachly/src/app/login/LoginPage.tsx) to verify that `isCreator` is `true` before routing to `/creator-onboarding/step-1`, ensuring regular clients are consistently routed to `/user/dashboard`.
 

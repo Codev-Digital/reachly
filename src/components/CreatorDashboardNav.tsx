@@ -434,42 +434,62 @@ export default function CreatorDashboardNav({
 
       {/* Modern Royal Blue / White Logout Confirmation Modal */}
       {showLogoutModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[150] p-4">
-          <div className="relative w-full max-w-md bg-white rounded-3xl border border-gray-200 shadow-2xl p-6 sm:p-8 flex flex-col items-center">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[150] p-4">
+          <div className="relative overflow-visible w-full max-w-lg flex flex-col items-center p-8 pt-12 pb-8 z-10">
+            {/* SVG Background */}
+            <img
+              src="/assets/cancel-card.svg"
+              alt=""
+              className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10"
+            />
+
             {/* Close Button */}
             <button
               onClick={() => setShowLogoutModal(false)}
-              className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 text-gray-400 transition-all cursor-pointer"
+              className="absolute -mt-20 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center border border-gray-100/50 text-gray-500 hover:bg-gray-50 transition-all z-20 cursor-pointer"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+              >
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />
               </svg>
             </button>
 
-            {/* Logout Warning Icon banner */}
-            <div className="w-16 h-16 bg-red-50 border border-red-100 rounded-2xl flex items-center justify-center mb-6">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.5">
-                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                <line x1="12" y1="9" x2="12" y2="13" />
-                <line x1="12" y1="17" x2="12.01" y2="17" />
-              </svg>
+            {/* Responsive Image */}
+            <div className="w-28 sm:w-36 md:w-44 lg:w-56 mt-3 mb-4">
+              <Image
+                src="/assets/cancel-appointment.png"
+                alt="Confirm Logout"
+                width={240}
+                height={170}
+                className="w-full h-auto object-contain"
+              />
             </div>
 
-            <h3 className="text-xl font-bold text-black text-center mb-2">
+            <h3 className="text-xl sm:text-2xl font-bold text-black mb-2 text-center">
               Confirm Logout
             </h3>
 
-            <p className="text-sm text-gray-500 text-center mb-6 leading-relaxed">
-              Are you sure you want to sign out of Reachly? We will clear your session storage and cookies to protect your account from hacking and glitches.
+            <p className="text-xs sm:text-sm text-gray-500 text-center">
+              Are you sure you want to sign out of Reachly?
+            </p>
+
+            <p className="text-xs sm:text-sm text-gray-500 text-center mb-6">
+              We will clear your session storage and cookies to protect your account.
             </p>
 
             <div className="flex gap-3 w-full">
               <button
                 onClick={() => setShowLogoutModal(false)}
-                className="flex-1 py-3 border border-gray-200 rounded-2xl text-sm font-bold text-gray-600 hover:bg-gray-50 transition-all bg-white cursor-pointer"
+                className="flex-1 py-2 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-all bg-white cursor-pointer"
               >
-                Go Back
+                Cancel
               </button>
 
               <button
@@ -485,9 +505,9 @@ export default function CreatorDashboardNav({
                   sessionStorage.clear();
                   signOut({ callbackUrl: '/login' });
                 }}
-                className="flex-1 py-3 bg-[#0012FF] text-white rounded-2xl text-sm font-bold hover:bg-[#0010d0] transition-all active:scale-[0.98] cursor-pointer"
+                className="flex-1 py-2 bg-[#0012FF] text-white rounded-xl text-sm font-semibold hover:bg-[#0010d0] transition-all cursor-pointer"
               >
-                Yes, Sign Out
+                Sign Out
               </button>
             </div>
           </div>
