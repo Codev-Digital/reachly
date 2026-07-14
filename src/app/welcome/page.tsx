@@ -1,12 +1,12 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
-import Logo from '../components/Logo';
 import HeroImage from '../components/HeroImage';
 import LoadingAnimation from '@/components/LoadingAnimation';
+import { Briefcase, User, ArrowUpRight } from 'lucide-react';
 
 export default function WelcomePage() {
   const router = useRouter();
@@ -23,7 +23,7 @@ export default function WelcomePage() {
         if (res.ok) {
           const data = await res.json();
           setUserData(data);
-          
+
           // Case Admin: Admin user should go straight to admin pending requests page
           if (data.user.email === 'admin@reachly.com' || data.user.email === 'abdullahgotaccess@gmail.com') {
             setRedirected(true);
@@ -50,14 +50,14 @@ export default function WelcomePage() {
             }
             return;
           }
-          
+
           // Case 2: Onboarding step >0 → creator (even without CreatorProfile yet)
           if (data.user.onboardingStep > 0) {
             setRedirected(true);
             router.push(`/creator-onboarding/step-${data.user.onboardingStep}`);
             return;
           }
-          
+
           // Case 3: Has seen welcome → user dashboard
           if (data.user.hasSeenWelcome) {
             setRedirected(true);
@@ -110,132 +110,139 @@ export default function WelcomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0C0C0C] flex items-center justify-center p-4 sm:p-6">
-      <div className="w-full max-w-7xl">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 items-stretch">
-          {/* Left Content */}
-          <div className="p-4 sm:p-6 md:p-8 lg:p-16 flex flex-col justify-center">
-            <div className="mb-8 sm:mb-12 lg:mb-16">
-              <Logo />
-            </div>
+    <div className="min-h-screen bg-[#F4F5F8] flex items-center justify-center p-4 sm:p-6 lg:p-8">
+      <div className="w-full max-w-[1280px] bg-white rounded-[32px] shadow-sm overflow-hidden min-h-[680px] sm:min-h-[780px] flex flex-col lg:flex-row items-stretch">
+        {/* Left Content Column */}
+        <div className="w-full lg:w-1/2 p-8 sm:p-12 lg:p-16 flex flex-col justify-between">
+          {/* Logo */}
+          <div
+            onClick={() => router.push('/')}
+            className="flex justify-start mb-12 lg:mb-0 cursor-pointer hover:opacity-90 transition-opacity"
+          >
+            <img src="/assets/Blue logo svg 1.svg" alt="Reachly Logo" className="h-8 w-auto object-contain" />
+          </div>
 
-            <p className="font-sans text-[#C8A97E] text-xs sm:text-sm font-medium mb-3 sm:mb-4">
-              Step 1 of 2
-            </p>
-
-            <div className="mb-8 sm:mb-10 lg:mb-12">
-              <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-[#C8A97E] mb-3 sm:mb-4">
-                Welcome to Reach<span className="text-white">ly</span>
+          {/* Centered Welcome Content */}
+          <div className="flex-grow flex flex-col justify-center max-w-xl mx-auto w-full my-8 lg:my-0">
+            <div className="text-center mb-10">
+              <h1 className="text-3xl sm:text-4xl font-extrabold text-black font-sans tracking-tight mb-2">
+                Welcome to Reachly
               </h1>
-              <p className="font-sans text-[#F9F6F2] text-sm sm:text-base">
+              <p className="text-sm sm:text-base text-gray-500 font-sans">
                 What brings you here today? Choose your path below.
               </p>
             </div>
 
-            {/* Path Options */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-8 sm:mb-10 lg:mb-12">
-              {/* Book sessions card */}
+            {/* Path Selection Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-8">
+
+              {/* I want to book sessions */}
               <div
-                className="bg-[#141414] border border-[rgba(200,169,126,0.15)] rounded-lg p-5 sm:p-6 md:p-8 cursor-pointer hover:border-[rgba(200,169,126,0.5)] transition-all"
                 onClick={handleBookSessions}
+                className="relative overflow-hidden group rounded-3xl p-6 sm:p-8 cursor-pointer transition-all hover:scale-[1.02] active:scale-98 min-h-[240px] flex flex-col justify-between"
               >
-                <div className="space-y-4 sm:space-y-6">
-                  <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full border border-[rgba(200,169,126,0.3)] flex items-center justify-center">
-                    <Image
-                      src="/Frame 2085668077.svg"
-                      alt="User"
-                      width={28}
-                      height={28}
-                      className="sm:w-8 sm:h-8"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <h3 className="font-serif text-lg sm:text-xl font-bold text-white">
-                      I want to book sessions
-                    </h3>
-                    <p className="font-sans text-[#F9F6F2] text-xs sm:text-sm leading-5 sm:leading-6 opacity-80">
-                      Find creators you admire and book personalized video calls
-                      to learn, grow, and connect.
-                    </p>
-                  </div>
-                  {isLoadingButton ? (
-                    <svg className="animate-spin h-6 w-6 text-[#C8A97E]" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                    </svg>
-                  ) : (
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="sm:w-6 sm:h-6">
-                      <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="#C8A97E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  )}
-                </div>
-              </div>
+                {/* SVG Background */}
+                <img
+                  src="/assets/welcome-card-1.svg"
+                  alt=""
+                  className="absolute inset-0 w-full h-full object-fill pointer-events-none"
+                />
 
-              {/* Become a creator card */}
-              <div
-                className="bg-[#141414] border border-[rgba(200,169,126,0.15)] rounded-lg p-5 sm:p-6 md:p-8 cursor-pointer hover:border-[rgba(200,169,126,0.5)] transition-all"
-                onClick={handleBecomeCreator}
-              >
-                <div className="space-y-4 sm:space-y-6">
-                  <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full border border-[rgba(200,169,126,0.3)] flex items-center justify-center">
-                    <Image
-                      src="/Frame 2085668077.svg"
-                      alt="Creator"
-                      width={28}
-                      height={28}
-                      className="sm:w-8 sm:h-8"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <h3 className="font-serif text-lg sm:text-xl font-bold text-white">
-                      I want to be a creator
-                    </h3>
-                    <p className="font-sans text-[#F9F6F2] text-xs sm:text-sm leading-5 sm:leading-6 opacity-80">
-                      Share your knowledge, connect with your audience, and
-                      monetize your expertise through 1-on-1 sessions.
-                    </p>
-                  </div>
-                  {isLoadingButton ? (
-                    <svg className="animate-spin h-6 w-6 text-[#C8A97E]" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                    </svg>
-                  ) : (
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="sm:w-6 sm:h-6">
-                      <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="#C8A97E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="relative">
-              <div className="absolute top-0 left-0 right-0 h-px bg-[rgba(200,169,126,0.15)]" />
-              <p className="font-sans text-[#F9F6F2] text-sm sm:text-base pt-4 sm:pt-6 text-center">
-                Already have an account?{' '}
-                <span
-                  className="font-semibold text-[#C8A97E] cursor-pointer hover:underline"
-                  onClick={() => router.push('/login')}
+                {/* Arrow up-right */}
+                <div
+                  className="
+    absolute
+    top-1 right-6
+    sm:top-7 sm:right-5
+    md:top-4 md:right-3
+    text-[#0012FF]
+    group-hover:translate-x-0.5
+    group-hover:-translate-y-0.5
+    transition-transform
+    z-10
+  "
                 >
-                  Log In
-                </span>
-              </p>
-            </div>
-          </div>
+                  <ArrowUpRight className="w-5 h-5 sm:w-5 sm:h-6" />
+                </div>
 
-          {/* Right Side — tablets and larger */}
-          <div className="hidden md:block lg:block">
-            <div className="h-full min-h-[400px] md:min-h-[600px] lg:min-h-[800px]">
-              <HeroImage />
-            </div>
-          </div>
+                <div className="space-y-6 relative z-10">
+                  <div className="w-12 h-12 rounded-2xl bg-[#EEF2FF] flex items-center justify-center">
+                    <Briefcase className="h-5 w-5 text-[#0012FF]" />
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-[15px] sm:text-[17px] text-black mb-2 font-sans tracking-tight whitespace-nowrap">
+                      I Want to Book Sessions
+                    </h3>
+                    <p className="text-xs text-gray-500 font-sans leading-relaxed">
+                      Find creators you admire and book personalized video calls to learn, grow and connect
+                    </p>
+                  </div>
+                </div>
+              </div>
 
-          {/* Mobile hero */}
-          <div className="block md:hidden mt-6">
-            <div className="h-[350px] rounded-[20px] overflow-hidden">
-              <HeroImage />
+              {/* I want to be a creator */}
+              <div
+                onClick={handleBecomeCreator}
+                className="relative overflow-hidden group rounded-3xl p-6 sm:p-8 cursor-pointer transition-all hover:scale-[1.02] active:scale-98 min-h-[240px] flex flex-col justify-between"
+              >
+                {/* SVG Background */}
+                <img
+                  src="/assets/welcome-card-2.svg"
+                  alt=""
+                  className="absolute inset-0 w-full h-full object-fill pointer-events-none"
+                />
+
+                {/* Arrow up-right */}
+                <div
+                  className="
+    absolute
+    top-1 right-6
+    sm:top-7 sm:right-5
+    md:top-4 md:right-3
+    text-[#0012FF]
+    group-hover:translate-x-0.5
+    group-hover:-translate-y-0.5
+    transition-transform
+    z-10
+  "
+                >
+                  <ArrowUpRight className="w-5 h-5 sm:w-5 sm:h-6" />
+                </div>
+
+                <div className="space-y-6 relative z-10">
+                  <div className="w-12 h-12 rounded-2xl bg-[#EEF2FF] flex items-center justify-center">
+                    <User className="h-5 w-5 text-[#0012FF]" />
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-[15px] sm:text-[17px] text-black mb-2 font-sans tracking-tight">
+                      I Want to be a Creator
+                    </h3>
+                    <p className="text-xs text-gray-500 font-sans leading-relaxed">
+                      Share your knowledge, connect with your audience and monetize your expertise through 1-on-1 sessions.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
             </div>
+
+            {/* Login Link */}
+            <p className="text-sm text-gray-500 text-center font-sans">
+              Already have an account?{' '}
+              <span
+                onClick={() => signOut({ callbackUrl: '/login' })}
+                className="font-bold text-[#0012FF] cursor-pointer hover:underline"
+              >
+                Log in
+              </span>
+            </p>
+          </div>
+        </div>
+
+        {/* Right Hero Column */}
+        <div className="w-full lg:w-1/2 p-4 sm:p-6 flex items-stretch">
+          <div className="w-full min-h-[350px] sm:min-h-[450px] lg:min-h-0 flex-grow">
+            <HeroImage />
           </div>
         </div>
       </div>

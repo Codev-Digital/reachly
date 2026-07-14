@@ -126,7 +126,7 @@ function VerifyEmailForm() {
             {/* Central Form Container */}
             <div className="my-auto max-w-md mx-auto w-full">
               <div className="text-center mb-8">
-                <h1 className="font-anton text-black text-3xl sm:text-4xl md:text-5xl leading-tight uppercase mb-3">
+                <h1 className="font-anton font-bold text-black text-2xl sm:text-3xl md:text-4xl leading-tight uppercase mb-3">
                   Verify Email
                 </h1>
                 <p className="font-sans text-gray-400 text-sm">
