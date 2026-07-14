@@ -612,7 +612,7 @@ export default function CreatorCalendar() {
                         onClick={() => setSelectedRescheduleTime(slot)}
                         className={`py-1 px-1 border rounded-xl text-[11px] sm:text-xs font-semibold text-center transition-all cursor-pointer ${selectedRescheduleTime === slot
                           ? 'bg-[#EEF2FF] border-[#0012FF] text-[#0012FF]'
-                          : 'border-gray-200 text-gray-600 hover:bg-gray-55 bg-white'
+                          : 'border-gray-200 text-gray-700 hover:bg-gray-50 bg-white'
                           }`}
                       >
                         {slot}

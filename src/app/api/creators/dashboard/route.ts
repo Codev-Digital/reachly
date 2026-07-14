@@ -90,6 +90,7 @@ export async function GET(req: NextRequest) {
         note: b.guestDetails?.notes || b.guestDetails?.whatToDiscuss || 'No special requirements listed.',
         amount: `${b.finalPrice} PKR`,
         status: b.status,
+        scheduledDate: b.scheduledDate,
       };
     }));
 

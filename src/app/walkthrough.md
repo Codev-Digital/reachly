@@ -1,6 +1,6 @@
-# Walkthrough - Creator Redesigns (Dashboard, Calendar, Settings, Navbar, Wallet, Backend Integration, Homepage, Auth Redirections, Calendar Modals, Delete Account Modal, Logout Modal)
+# Walkthrough - Creator Redesigns (Dashboard, Calendar, Settings, Navbar, Wallet, Backend Integration, Homepage, Auth Redirections, Calendar Modals, Delete Account Modal, Logout Modal, Dashboard Modals & Filters)
 
-Redesigned the Creator Dashboard, Calendar, Settings, and Wallet pages, enhanced the navigation bar, integrated full backend support for metrics/views tracking, improved the homepage creator card layouts, patched critical authentication redirection issues, restored original calendar modals, and aligned both the Delete Account and Logout modals.
+Redesigned the Creator Dashboard, Calendar, Settings, and Wallet pages, enhanced the navigation bar, integrated full backend support for metrics/views tracking, improved the homepage creator card layouts, patched critical authentication redirection issues, restored original calendar modals, aligned the Delete Account and Logout modals, and integrated modals and calendar filters into the Dashboard.
 
 ## Changes Made
 
@@ -24,6 +24,10 @@ Redesigned the Creator Dashboard, Calendar, Settings, and Wallet pages, enhanced
   - Added a "Show All" button under the right-column bookings list that links directly to the Calendar page (`/creators/calendar`).
 - **Reschedule Button Correction**:
   - Fixed the styling of the "Reschedule" button to be fully active with high-contrast outlines (`border border-[#0012FF] text-[#0012FF] bg-white hover:bg-[#0012FF]/5`) to make it easily readable.
+- **Dynamic Booking Filters (Month & Year)**:
+  - Associated the Month and Year dropdown selectors on the Dashboard to filter the bookings list on the client side in real-time. Added raw `scheduledDate` to the dashboard API return properties to enable this logic.
+- **Dashboard Cancel & Reschedule Modal Workflows**:
+  - Integrated the Cancel, Reschedule, and Success modals directly into the Creator Dashboard. Clicking these action buttons on the dashboard opens the exact notched backgrounds and slider selectors as on the Calendar page, and correctly updates database records and refreshes metrics upon confirmation.
 
 ### 2. Creator Calendar Redesign & Modals Restoration
 - **Max-Width Wrapper**: Wrapped the calendar's main content inside the `max-w-7xl mx-auto` container to match the dashboard's proportions and prevent stretching.

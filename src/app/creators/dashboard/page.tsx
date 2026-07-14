@@ -37,6 +37,7 @@ const CreatorDashboard = () => {
   const pathname = usePathname();
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string>('');
+  const [username, setUsername] = useState<string>('');
   const [activePeriod, setActivePeriod] = useState<'daily' | 'weekly' | 'monthly'>('monthly');
   const [currentDate, setCurrentDate] = useState<Date>(new Date(2026, 7, 2)); // Default to August 2, 2026
   const [monthDropdownOpen, setMonthDropdownOpen] = useState(false);
@@ -52,6 +53,22 @@ const CreatorDashboard = () => {
   });
   const [bookingsList, setBookingsList] = useState<any[]>([]);
   const [loadingData, setLoadingData] = useState(true);
+
+  // Reschedule & Cancel Modal States
+  const [showCancelModal, setShowCancelModal] = useState<boolean>(false);
+  const [bookingToCancel, setBookingToCancel] = useState<any | null>(null);
+
+  const [showRescheduleModal, setShowRescheduleModal] = useState<boolean>(false);
+  const [bookingToReschedule, setBookingToReschedule] = useState<any | null>(null);
+
+  const [rescheduleDate, setRescheduleDate] = useState<Date>(new Date());
+  const [rescheduleSlots, setRescheduleSlots] = useState<string[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+  const [selectedRescheduleTime, setSelectedRescheduleTime] = useState<string>('');
+
+  // Success Modal States
+  const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false);
+  const [successModalType, setSuccessModalType] = useState<'cancelled' | 'rescheduled'>('cancelled');
 
   const handleCopyLink = () => {
     const linkStr = window.location.origin + `/creators/${displayName.toLowerCase().replace(/\s+/g, '-')}`;
@@ -96,6 +113,22 @@ const CreatorDashboard = () => {
     },
   } satisfies ChartConfig;
 
+  // Helper to load fresh stats & bookings
+  const loadDashboardData = async () => {
+    try {
+      const statsRes = await fetch('/api/creators/dashboard');
+      if (statsRes.ok) {
+        const data = await statsRes.json();
+        if (data.success) {
+          setDashboardStats(data.stats);
+          setBookingsList(data.bookings || []);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load dashboard data:', err);
+    }
+  };
+
   // Load profile and dashboard stats
   useEffect(() => {
     async function loadData() {
@@ -108,17 +141,10 @@ const CreatorDashboard = () => {
           const photo = data.creatorProfile?.profilePhoto || null;
           setDisplayName(name);
           setProfilePhoto(photo);
+          setUsername(data.creatorProfile?.username || '');
         }
 
-        // Fetch Dashboard Stats & Bookings
-        const statsRes = await fetch('/api/creators/dashboard');
-        if (statsRes.ok) {
-          const data = await statsRes.json();
-          if (data.success) {
-            setDashboardStats(data.stats);
-            setBookingsList(data.bookings || []);
-          }
-        }
+        await loadDashboardData();
       } catch (err) {
         console.error('Failed to load dashboard:', err);
       } finally {
@@ -127,6 +153,120 @@ const CreatorDashboard = () => {
     }
     loadData();
   }, []);
+
+  // Fetch reschedule slots when date changes
+  useEffect(() => {
+    if (!showRescheduleModal || !username) return;
+
+    async function fetchRescheduleSlots() {
+      setLoadingSlots(true);
+      setSelectedRescheduleTime('');
+      try {
+        const year = rescheduleDate.getFullYear();
+        const month = String(rescheduleDate.getMonth() + 1).padStart(2, '0');
+        const day = String(rescheduleDate.getDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${day}`;
+
+        const res = await fetch(`/api/creators/${username}/availability?date=${dateStr}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.slots) {
+            setRescheduleSlots(data.slots);
+          } else {
+            setRescheduleSlots([]);
+          }
+        }
+      } catch (err) {
+        console.error(err);
+        setRescheduleSlots([]);
+      } finally {
+        setLoadingSlots(false);
+      }
+    }
+    fetchRescheduleSlots();
+  }, [rescheduleDate, showRescheduleModal, username]);
+
+  const handleCancelClick = (booking: any) => {
+    setBookingToCancel(booking);
+    setShowCancelModal(true);
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!bookingToCancel) return;
+    try {
+      const res = await fetch(`/api/creators/bookings/${bookingToCancel.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'cancelled' })
+      });
+      if (res.ok) {
+        setBookingsList((prev) => prev.filter((b) => b.id !== bookingToCancel.id));
+        setSuccessModalType('cancelled');
+        setShowSuccessModal(true);
+        // Refresh metrics
+        await loadDashboardData();
+      } else {
+        alert('Failed to cancel appointment');
+      }
+    } catch (err) {
+      alert('Error cancelling appointment');
+    } finally {
+      setShowCancelModal(false);
+      setBookingToCancel(null);
+    }
+  };
+
+  const handleRescheduleClick = (booking: any) => {
+    setBookingToReschedule(booking);
+    setRescheduleDate(booking.scheduledDate ? new Date(booking.scheduledDate) : new Date());
+    setShowRescheduleModal(true);
+  };
+
+  const handleConfirmReschedule = async () => {
+    if (!bookingToReschedule || !selectedRescheduleTime) {
+      alert('Please select a new time slot');
+      return;
+    }
+    try {
+      const year = rescheduleDate.getFullYear();
+      const month = String(rescheduleDate.getMonth() + 1).padStart(2, '0');
+      const day = String(rescheduleDate.getDate()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${day}`;
+
+      const res = await fetch(`/api/creators/bookings/${bookingToReschedule.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          selectedDate: dateStr,
+          selectedTime: selectedRescheduleTime,
+        })
+      });
+      if (res.ok) {
+        setSuccessModalType('rescheduled');
+        setShowSuccessModal(true);
+        await loadDashboardData();
+      } else {
+        alert('Failed to reschedule appointment');
+      }
+    } catch (err) {
+      alert('Error rescheduling appointment');
+    } finally {
+      setShowRescheduleModal(false);
+      setBookingToReschedule(null);
+    }
+  };
+
+  const getRescheduleDays = () => {
+    const list = [];
+    const base = new Date();
+    base.setHours(0, 0, 0, 0);
+    for (let i = 0; i < 14; i++) {
+      const d = new Date(base);
+      d.setDate(base.getDate() + i);
+      list.push(d);
+    }
+    return list;
+  };
 
   const stats = [
     { 
@@ -215,10 +355,16 @@ const CreatorDashboard = () => {
       <div className="w-full h-px bg-gray-100 mb-4"></div>
 
       <div className="flex items-center gap-2">
-        <button className="flex-grow py-2 border border-[#0012FF] text-[#0012FF] hover:bg-[#0012FF]/5 rounded-xl text-xs font-semibold bg-white transition-all active:scale-98 cursor-pointer">
+        <button 
+          onClick={() => handleRescheduleClick(booking)}
+          className="flex-grow py-2 border border-[#0012FF] text-[#0012FF] hover:bg-[#0012FF]/5 rounded-xl text-xs font-semibold bg-white transition-all active:scale-98 cursor-pointer"
+        >
           Reschedule
         </button>
-        <button className="flex-grow py-2 border border-red-100 rounded-xl text-xs font-semibold text-red-500 bg-red-550 hover:bg-red-700 transition-all active:scale-98 cursor-pointer">
+        <button 
+          onClick={() => handleCancelClick(booking)}
+          className="flex-grow py-2 border border-red-200 rounded-xl text-xs font-semibold text-red-500 bg-red-50 hover:bg-red-100 transition-all active:scale-98 cursor-pointer"
+        >
           Cancel Appointment
         </button>
       </div>
@@ -232,8 +378,15 @@ const CreatorDashboard = () => {
     </motion.div>
   );
 
-  const columnBookings = bookingsList.slice(0, 2);
-  const extraBookings = bookingsList.slice(2);
+  // Filter bookings based on Month / Year selectors
+  const filteredBookingsList = bookingsList.filter((booking) => {
+    if (!booking.scheduledDate) return false;
+    const date = new Date(booking.scheduledDate);
+    return date.getMonth() === currentDate.getMonth() && date.getFullYear() === currentDate.getFullYear();
+  });
+
+  const columnBookings = filteredBookingsList.slice(0, 2);
+  const extraBookings = filteredBookingsList.slice(2);
 
   if (loadingData) return <LoadingAnimation />;
 
@@ -439,7 +592,7 @@ const CreatorDashboard = () => {
 
             {/* Bookings Stack */}
             <div className="space-y-4">
-              {bookingsList.length === 0 ? (
+              {filteredBookingsList.length === 0 ? (
                 <div className="flex flex-col items-center justify-center text-center py-12 px-4 bg-white rounded-[2rem] border border-gray-200 shadow-sm">
                   <div className="relative w-40 h-40 mb-4 opacity-90">
                     <Image
@@ -451,7 +604,7 @@ const CreatorDashboard = () => {
                   </div>
                   <h3 className="text-base font-extrabold text-black font-sans mb-1">No bookings till now</h3>
                   <p className="text-xs text-gray-500 max-w-[240px] leading-relaxed">
-                    When clients start scheduling sessions with you, they will appear right here.
+                    No sessions scheduled for this month. Choose another date in the selector above or share your booking link.
                   </p>
                 </div>
               ) : (
@@ -460,7 +613,7 @@ const CreatorDashboard = () => {
                     {columnBookings.map((booking, idx) => renderBookingCard(booking, idx))}
                   </div>
 
-                  {bookingsList.length > 2 && (
+                  {filteredBookingsList.length > 2 && (
                     <div className="pt-2">
                       <Link
                         href="/creators/calendar"
@@ -478,7 +631,7 @@ const CreatorDashboard = () => {
         </div>
 
         {/* Extra Bookings Section - Placed Below the Split Grid if bookings > 2 */}
-        {bookingsList.length > 2 && (
+        {filteredBookingsList.length > 2 && (
           <div className="mt-10 border-t border-gray-150 pt-8 space-y-6">
             <h2 className="text-2xl font-bold text-black font-sans">More Upcoming Bookings</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -488,6 +641,254 @@ const CreatorDashboard = () => {
         )}
 
       </main>
+
+      {/* Cancel Appointment Modal */}
+      {showCancelModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100] p-4">
+          <div className="relative overflow-visible w-full max-w-lg flex flex-col items-center px-5 sm:px-7 lg:px-8 pt-10 sm:pt-12 pb-6 sm:pb-8 z-10">
+            {/* SVG Background */}
+            <img
+              src="/assets/cancel-card.svg"
+              alt=""
+              className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10"
+            />
+
+            {/* Close Button */}
+            <button
+              onClick={() => setShowCancelModal(false)}
+              className="absolute -top-1 sm:-top-3 left-1/2 -translate-x-1/2 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white shadow-md flex items-center justify-center border border-gray-100/50 text-gray-500 hover:bg-gray-55 transition-all z-20 cursor-pointer"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+
+            {/* Illustration */}
+            <div className="w-24 sm:w-36 md:w-44 lg:w-56 mt-2 sm:mt-3 mb-3 sm:mb-4">
+              <Image
+                src="/assets/cancel-appointment.png"
+                alt="Cancel Appointment"
+                width={240}
+                height={170}
+                className="w-full h-auto object-contain"
+              />
+            </div>
+
+            {/* Title */}
+            <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-black text-center mb-2">
+              Cancel Appointment
+            </h3>
+
+            {/* Description */}
+            <p className="text-xs sm:text-sm text-gray-500 text-center mb-5 sm:mb-6">
+              Are you sure you want to cancel this booking with <strong className="text-gray-800 font-semibold">{bookingToCancel?.name}</strong>?
+            </p>
+
+            {/* Actions */}
+            <div className="flex justify-center gap-3 w-full">
+              <button
+                onClick={() => setShowCancelModal(false)}
+                className="px-6 sm:px-8 py-2 sm:py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-55 transition-all bg-white cursor-pointer"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={handleConfirmCancel}
+                className="px-6 sm:px-8 py-2 sm:py-2.5 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700 transition-all cursor-pointer"
+              >
+                Yes, Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reschedule Appointment Modal */}
+      {showRescheduleModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100] p-4">
+          <div className="relative w-full max-w-lg flex flex-col items-center justify-between p-4 xs:p-6 sm:p-8 pt-10 sm:pt-12 pb-6 sm:pb-8 min-h-[460px] sm:min-h-[520px] z-10">
+            {/* SVG Background notched card */}
+            <img
+              src="/assets/cancel-card.svg"
+              alt=""
+              className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10"
+            />
+            {/* Close Button */}
+            <button
+              onClick={() => setShowRescheduleModal(false)}
+              className="absolute -top-0 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center hover:bg-gray-55 transition-all z-20 border border-gray-100/50 cursor-pointer text-gray-500"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+            <div className="flex flex-col items-center w-full flex-grow pt-3">
+              <h3 className="text-lg sm:text-[22px] font-bold text-black mb-1">Reschedule Appointment</h3>
+              <p className="text-gray-500 text-center mb-4 sm:mb-6 text-xs sm:text-[13px]">
+                Choose a new slot for your appointment with <strong className="text-gray-700">{bookingToReschedule?.name}</strong>.
+              </p>
+
+              {/* Next 14 Days Slider */}
+              <div className="flex items-center gap-1.5 overflow-x-auto w-full no-scrollbar pb-3 mb-4 sm:mb-6 border-b border-gray-100">
+                {getRescheduleDays().map((d, idx) => {
+                  const isSelected = rescheduleDate.getDate() === d.getDate() &&
+                    rescheduleDate.getMonth() === d.getMonth() &&
+                    rescheduleDate.getFullYear() === d.getFullYear();
+
+                  const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
+                  const dayNum = String(d.getDate()).padStart(2, '0');
+
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => setRescheduleDate(d)}
+                      className={`flex flex-col items-center justify-center min-w-[48px] py-1.5 rounded-xl text-xs transition-all border shrink-0 cursor-pointer ${isSelected
+                        ? 'bg-[#EEF2FF] border-[#0012FF] text-[#0012FF] font-bold'
+                        : 'border-gray-200 text-gray-400 hover:bg-gray-50 bg-white'
+                        }`}
+                    >
+                      <span className="text-[8px] uppercase font-bold mb-0.5">{dayName}</span>
+                      <span className="text-xs sm:text-sm font-black">{dayNum}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Time Slots Grid */}
+              <div className="w-full mb-3">
+                {loadingSlots ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {[1, 2, 3, 4, 5, 6].map((i) => (
+                      <div key={i} className="h-9 sm:h-10 bg-gray-100 rounded-xl animate-pulse" />
+                    ))}
+                  </div>
+                ) : rescheduleSlots.length === 0 ? (
+                  <p className="text-gray-400 text-center text-xs sm:text-sm">No slots available on this date.</p>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-40 sm:max-h-48 overflow-y-auto pr-1">
+                    {rescheduleSlots.map((slot) => (
+                      <button
+                        key={slot}
+                        onClick={() => setSelectedRescheduleTime(slot)}
+                        className={`py-1 px-1 border rounded-xl text-[11px] sm:text-xs font-semibold text-center transition-all cursor-pointer ${selectedRescheduleTime === slot
+                          ? 'bg-[#EEF2FF] border-[#0012FF] text-[#0012FF]'
+                          : 'border-gray-200 text-gray-700 hover:bg-gray-50 bg-white'
+                          }`}
+                      >
+                        {slot}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3 w-full mt-2">
+                <button
+                  onClick={() => setShowRescheduleModal(false)}
+                  className="flex-1 py-1 border border-gray-200 rounded-xl text-xs sm:text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-all bg-white cursor-pointer"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  onClick={handleConfirmReschedule}
+                  disabled={!selectedRescheduleTime}
+                  className="flex-1 py-1 bg-[#0012FF] text-white rounded-xl text-xs sm:text-sm font-semibold hover:bg-[#0010d0] transition-all disabled:bg-gray-100 disabled:text-gray-400 cursor-pointer"
+                >
+                  Confirm Reschedule
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success Modal (Cancelled or Rescheduled) */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100] p-4">
+          <div className="relative overflow-visible w-full max-w-lg flex flex-col items-center px-5 sm:px-7 lg:px-8 pt-10 sm:pt-12 pb-6 sm:pb-8 z-10">
+            {/* SVG Background */}
+            <img
+              src="/assets/cancel-card.svg"
+              alt=""
+              className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10"
+            />
+
+            {/* Close Button */}
+            <button
+              onClick={() => setShowSuccessModal(false)}
+              className="absolute -top-3 sm:-top-4 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center border border-gray-100/50 text-gray-500 hover:bg-gray-50 transition-all z-20 cursor-pointer"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+
+            {/* Illustration */}
+            <div className="w-24 sm:w-36 md:w-44 lg:w-56 mt-2 sm:mt-3 mb-3 sm:mb-4">
+              <Image
+                src={
+                  successModalType === "cancelled"
+                    ? "/assets/cancel-appointment.png"
+                    : "/assets/reschedule.png"
+                }
+                alt={
+                  successModalType === "cancelled"
+                    ? "Booking Cancelled"
+                    : "Booking Rescheduled"
+                }
+                width={240}
+                height={170}
+                className="w-full h-auto object-contain"
+              />
+            </div>
+
+            {/* Title */}
+            <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-black text-center mb-2">
+              {successModalType === "cancelled"
+                ? "Booking Cancelled"
+                : "Booking Rescheduled"}
+            </h3>
+
+            {/* Description */}
+            <p className="text-xs sm:text-sm text-gray-550 text-center mb-5 sm:mb-6">
+              {successModalType === "cancelled"
+                ? "Your booking has been cancelled successfully."
+                : "Your booking has been rescheduled successfully."}
+            </p>
+
+            {/* Action */}
+            <div className="flex justify-center w-full">
+              <button
+                onClick={() => setShowSuccessModal(false)}
+                className="w-32 sm:w-36 py-2 sm:py-2.5 bg-[#0012FF] text-white rounded-xl text-sm font-semibold hover:bg-[#0010d0] transition-all cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
