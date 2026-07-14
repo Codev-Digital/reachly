@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import LoadingAnimation from '@/components/LoadingAnimation';
 
+
 export default function DashboardRedirect() {
   const router = useRouter();
   const { status } = useSession();
