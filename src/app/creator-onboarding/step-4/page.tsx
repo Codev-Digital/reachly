@@ -218,16 +218,17 @@ export default function CreatorOnboardingStep4() {
                 return (
                   <div key={day} className="bg-[#F7F7FA] border border-gray-200 rounded-xl p-4">
                     {/* Day header row */}
-                    <div className="flex items-center justify-between mb-3">
+                    <div className={`flex items-center justify-between ${ds.enabled ? 'mb-3' : ''}`}>
                       <div className="flex items-center gap-4">
                         {/* Toggle */}
                         <button
+                          type="button"
                           onClick={() => toggleDay(day)}
-                          className={`relative w-11 h-6 rounded-full transition-all flex-shrink-0 ${ds.enabled ? 'bg-[#0012FF]' : 'bg-gray-300'}`}
+                          className={`relative w-11 h-6 rounded-full transition-all flex-shrink-0 flex items-center p-1 ${ds.enabled ? 'bg-[#0012FF]' : 'bg-gray-300'}`}
                         >
-                          <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all duration-200 ${ds.enabled ? 'left-6' : 'left-1'}`} />
+                          <div className={`w-4 h-4 bg-white rounded-full shadow transition-all duration-200 transform ${ds.enabled ? 'translate-x-5' : 'translate-x-0'}`} />
                         </button>
-                        <span className={`font-sans text-sm font-semibold ${ds.enabled ? 'text-black' : 'text-gray-400'}`}>
+                        <span className={`font-sans text-sm font-semibold leading-none ${ds.enabled ? 'text-black' : 'text-gray-400'}`}>
                           {DAY_LABELS[day]}
                         </span>
                       </div>

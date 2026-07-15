@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import LoadingAnimation from '@/components/LoadingAnimation';
 
+import OnboardingNavbar from '@/components/OnboardingNavbar';
+
 export default function CreatorPendingApproval() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -41,24 +43,7 @@ export default function CreatorPendingApproval() {
 
   return (
     <div className="min-h-screen bg-[#F7F7FA] flex flex-col justify-between">
-      {/* Navigation Bar */}
-      <nav className="bg-white border-b border-gray-100 shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
-          <div className="flex items-center justify-between">
-            <img src="/assets/logo1.png" alt="Reachly Logo" className="h-10 w-auto" />
-            <div className="hidden md:flex items-center gap-10">
-              <button className="text-gray-400 font-sans text-xs font-bold">Explore Creators</button>
-              <button className="text-gray-400 font-sans text-xs font-bold">Events</button>
-              <button className="text-gray-400 font-sans text-xs font-bold">For Creators</button>
-              <button className="text-gray-400 font-sans text-xs font-bold">About</button>
-            </div>
-            <div className="flex items-center gap-4">
-              <button className="text-[#0012FF] font-sans font-bold text-xs">Login</button>
-              <button className="bg-[#0012FF] text-white px-5 py-2 rounded-full font-sans font-bold text-xs">Sign up</button>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <OnboardingNavbar />
 
       <div className="flex-grow flex items-center justify-center px-4 sm:px-6 py-12 sm:py-16">
         <div className="bg-white border border-gray-200/80 rounded-3xl p-8 sm:p-12 text-center max-w-2xl w-full shadow-sm">

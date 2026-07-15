@@ -483,11 +483,10 @@ export default function CreatorDashboardNav({
             <p className="text-xs sm:text-sm text-gray-500 text-center mb-6">
               We will clear your session storage and cookies to protect your account.
             </p>
-
-            <div className="flex gap-3 w-full">
+            <div className="flex justify-center gap-16 w-full">
               <button
                 onClick={() => setShowLogoutModal(false)}
-                className="flex-1 py-2 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-all bg-white cursor-pointer"
+                className="w-32 py-2 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-all bg-white cursor-pointer"
               >
                 Cancel
               </button>
@@ -498,14 +497,19 @@ export default function CreatorDashboardNav({
                   document.cookie.split(";").forEach((c) => {
                     document.cookie = c
                       .replace(/^ +/, "")
-                      .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+                      .replace(
+                        /=.*/,
+                        "=;expires=" + new Date().toUTCString() + ";path=/"
+                      );
                   });
+
                   // Clear localStorage & sessionStorage
                   localStorage.clear();
                   sessionStorage.clear();
-                  signOut({ callbackUrl: '/login' });
+
+                  signOut({ callbackUrl: "/login" });
                 }}
-                className="flex-1 py-2 bg-[#0012FF] text-white rounded-xl text-sm font-semibold hover:bg-[#0010d0] transition-all cursor-pointer"
+                className="w-32 py-2 bg-[#0012FF] text-white rounded-xl text-sm font-semibold hover:bg-[#0010d0] transition-all cursor-pointer"
               >
                 Sign Out
               </button>

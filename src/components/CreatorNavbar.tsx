@@ -19,7 +19,23 @@ export default function CreatorNavbar() {
     if (status === 'authenticated') {
       fetch('/api/user/me')
         .then(res => res.json())
-        .then(data => setUserData(data))
+        .then(async (data) => {
+          if (data?.user?.approvalStatus === 'pending') {
+            // Clear all cookies
+            document.cookie.split(";").forEach((c) => {
+              document.cookie = c
+                .replace(/^ +/, "")
+                .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+            });
+            localStorage.clear();
+            sessionStorage.clear();
+            const { signOut } = await import('next-auth/react');
+            await signOut({ redirect: false });
+            window.location.reload();
+          } else {
+            setUserData(data);
+          }
+        })
         .catch(err => console.error('Error fetching user data:', err));
     }
   }, [status]);

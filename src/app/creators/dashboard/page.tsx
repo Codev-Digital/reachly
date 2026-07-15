@@ -8,7 +8,7 @@ import { usePathname } from 'next/navigation';
 import CreatorDashboardNav from '@/components/CreatorDashboardNav';
 import LoadingAnimation from '@/components/LoadingAnimation';
 import { TrendingUp, BookOpen, Calendar, Eye, Users, Copy, Check } from 'lucide-react';
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer } from 'recharts';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Cell, Tooltip } from 'recharts';
 
 import {
   Card,
@@ -20,10 +20,7 @@ import {
 } from "@/components/ui/card";
 
 import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  type ChartConfig,
+  ChartConfig,
 } from "@/components/ui/chart";
 
 function getGreeting() {
@@ -39,10 +36,18 @@ const CreatorDashboard = () => {
   const [displayName, setDisplayName] = useState<string>('');
   const [username, setUsername] = useState<string>('');
   const [activePeriod, setActivePeriod] = useState<'daily' | 'weekly' | 'monthly'>('monthly');
-  const [currentDate, setCurrentDate] = useState<Date>(new Date(2026, 7, 2)); // Default to August 2, 2026
+  const [currentDate, setCurrentDate] = useState<Date>(new Date(2026, 6, 2));
   const [monthDropdownOpen, setMonthDropdownOpen] = useState(false);
   const [yearDropdownOpen, setYearDropdownOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  // Earnings chart state
+  const [chartData, setChartData] = useState<{ month: string; earnings: number; bookings: number }[]>([]);
+  const [activeBarIndex, setActiveBarIndex] = useState<number | null>(null);
+  const [chartYear, setChartYear] = useState<number>(new Date().getFullYear());
+  const [totalEarnings, setTotalEarnings] = useState<number>(0);
+  const [loadingChart, setLoadingChart] = useState(true);
+  const [chartYearDropdownOpen, setChartYearDropdownOpen] = useState(false);
 
   // Real stats & bookings state
   const [dashboardStats, setDashboardStats] = useState({
@@ -91,27 +96,41 @@ const CreatorDashboard = () => {
     setYearDropdownOpen(false);
   };
 
-  const monthlyChartData = [
-    { month: 'Jan', earnings: 15000 },
-    { month: 'Feb', earnings: 58000 },
-    { month: 'Mar', earnings: 35000 },
-    { month: 'Apr', earnings: 32000 },
-    { month: 'May', earnings: 35000 },
-    { month: 'Jun', earnings: 30000 },
-    { month: 'Jul', earnings: 28000 },
-    { month: 'Aug', earnings: 15000 },
-    { month: 'Sep', earnings: 28000 },
-    { month: 'Oct', earnings: 15000 },
-    { month: 'Nov', earnings: 35000 },
-    { month: 'Dec', earnings: 52000 },
-  ];
-
   const chartConfig = {
     earnings: {
       label: "Earnings (PKR)",
       color: "#0012FF",
     },
   } satisfies ChartConfig;
+
+  // Fetch real earnings chart data
+  const loadEarningsChart = async (year: number) => {
+    setLoadingChart(true);
+    try {
+      const res = await fetch(`/api/creators/earnings?year=${year}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          setChartData(data.chartData);
+          setTotalEarnings(data.totalEarnings);
+          // Default active bar to current month if same year, else last non-zero month
+          const now = new Date();
+          if (year === now.getFullYear()) {
+            setActiveBarIndex(now.getMonth());
+          } else {
+            const lastNonZero = [...data.chartData].reverse().findIndex((d: any) => d.earnings > 0);
+            setActiveBarIndex(lastNonZero === -1 ? 11 : 11 - lastNonZero);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load earnings chart:', err);
+    } finally {
+      setLoadingChart(false);
+    }
+  };
+
+  useEffect(() => { loadEarningsChart(chartYear); }, [chartYear]);
 
   // Helper to load fresh stats & bookings
   const loadDashboardData = async () => {
@@ -457,34 +476,77 @@ const CreatorDashboard = () => {
               transition={{ delay: 0.2 }}
             >
               <Card className="rounded-3xl border border-gray-200 bg-white p-2 sm:p-4 shadow-sm overflow-hidden">
-                <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 gap-4">
+                <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 gap-4">
                   <div>
-                    <CardTitle className="text-2xl font-bold font-sans text-black">Earnings Overview</CardTitle>
-                    <CardDescription className="text-gray-500 font-sans mt-1">Monthly breakdown of your income</CardDescription>
+                    <CardTitle className="text-2xl font-bold font-sans text-black">Earnings</CardTitle>
+                    <CardDescription className="text-gray-500 font-sans mt-1">
+                      {activeBarIndex !== null && chartData[activeBarIndex]
+                        ? `${chartData[activeBarIndex].month} ${chartYear} · ${chartData[activeBarIndex].bookings} booking${chartData[activeBarIndex].bookings !== 1 ? 's' : ''}`
+                        : `Full year ${chartYear}`}
+                    </CardDescription>
                   </div>
-                  
-                  {/* Period Filter */}
-                  <div className="flex bg-gray-100 p-1 rounded-2xl self-start sm:self-center">
-                    {['daily', 'weekly', 'monthly'].map((period) => (
+
+                  {/* Right: Total + Year Selector */}
+                  <div className="flex items-center gap-3 self-start sm:self-center">
+                    {/* Active Month Earnings Pill */}
+                    {activeBarIndex !== null && chartData[activeBarIndex] && (
+                      <div className="bg-[#EEF2FF] rounded-2xl px-4 py-2 flex items-center gap-2">
+                        <div className="w-6 h-6 bg-[#0012FF] rounded-lg flex items-center justify-center">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-[#0012FF]/70 font-semibold uppercase tracking-wider leading-none">Earnings</p>
+                          <p className="text-sm font-bold text-[#0012FF] font-sans leading-tight">{chartData[activeBarIndex].earnings.toLocaleString()} PKR</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Year Selector */}
+                    <div className="relative">
                       <button
-                        key={period}
-                        onClick={() => setActivePeriod(period as any)}
-                        className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
-                          activePeriod === period
-                            ? 'bg-[#0012FF] text-white shadow-sm'
-                            : 'text-gray-500 hover:text-gray-900'
-                        }`}
+                        onClick={() => setChartYearDropdownOpen(!chartYearDropdownOpen)}
+                        className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 shadow-sm cursor-pointer"
                       >
-                        {period.charAt(0).toUpperCase() + period.slice(1)}
+                        <span>{chartYear}</span>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9" /></svg>
                       </button>
-                    ))}
+                      {chartYearDropdownOpen && (
+                        <div className="absolute right-0 top-[calc(100%+6px)] w-24 bg-white rounded-2xl shadow-xl border border-gray-100 py-1.5 z-50">
+                          {[2024, 2025, 2026, 2027].map((y) => (
+                            <button
+                              key={y}
+                              onClick={() => { setChartYear(y); setChartYearDropdownOpen(false); }}
+                              className={`w-full text-left px-4 py-2 text-xs font-semibold hover:bg-[#0012FF]/5 transition-colors cursor-pointer ${chartYear === y ? 'text-[#0012FF] bg-[#0012FF]/5' : 'text-gray-600'}`}
+                            >
+                              {y}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </CardHeader>
 
-                <CardContent className="px-2 sm:px-6">
-                  <ChartContainer config={chartConfig} className="w-full h-80 min-h-[320px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={monthlyChartData} margin={{ top: 20, right: 10, left: 10, bottom: 0 }}>
+                <CardContent className="px-2 sm:px-4 pb-2">
+                  {loadingChart ? (
+                    <div className="w-full h-72 flex items-center justify-center">
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="w-8 h-8 border-2 border-[#0012FF] border-t-transparent rounded-full animate-spin" />
+                        <p className="text-xs text-gray-400 font-sans">Loading earnings…</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height={288}>
+                      <BarChart
+                        data={chartData}
+                        margin={{ top: 16, right: 8, left: 0, bottom: 0 }}
+                        barCategoryGap="18%"
+                        onClick={(data) => {
+                          if (data?.activeTooltipIndex !== undefined) {
+                            setActiveBarIndex(Number(data.activeTooltipIndex));
+                          }
+                        }}
+                      >
                         <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#F1F5F9" />
                         <XAxis
                           dataKey="month"
@@ -498,32 +560,70 @@ const CreatorDashboard = () => {
                           axisLine={false}
                           tickMargin={8}
                           tick={{ fill: '#94A3B8', fontSize: 11 }}
-                          tickFormatter={(value) => `${value / 1000}k`}
+                          tickFormatter={(v) => v === 0 ? '0' : `${(v / 1000).toFixed(0)}k`}
+                          width={36}
                         />
-                        <ChartTooltip
-                          cursor={{ fill: 'rgba(0, 18, 255, 0.04)', radius: 8 }}
-                          content={<ChartTooltipContent hideLabel />}
+                        <Tooltip
+                          cursor={false}
+                          content={({ active, payload, label }) => {
+                            if (!active || !payload?.length) return null;
+                            const d = payload[0].payload;
+                            return (
+                              <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-3 flex items-center gap-3 min-w-[180px]">
+                                <div className="w-8 h-8 bg-[#EEF2FF] rounded-xl flex items-center justify-center flex-shrink-0">
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
+                                </div>
+                                <div className="flex-1">
+                                  <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">{label} Earnings</p>
+                                  <p className="text-sm font-bold text-black font-sans">{d.earnings.toLocaleString()} PKR</p>
+                                  <p className="text-[10px] text-gray-400 mt-0.5">{d.bookings} booking{d.bookings !== 1 ? 's' : ''}</p>
+                                </div>
+                                {d.earnings > 0 && (
+                                  <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+                                    ✓
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          }}
                         />
-                        <Bar 
-                          dataKey="earnings" 
-                          name="Earnings"
-                          fill="#0012FF" 
-                          radius={[6, 6, 0, 0]} 
-                          maxBarSize={32}
-                        />
+                        <Bar
+                          dataKey="earnings"
+                          radius={[6, 6, 0, 0]}
+                          maxBarSize={52}
+                          cursor="pointer"
+                        >
+                          {chartData.map((entry, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={
+                                activeBarIndex === null
+                                  ? '#0012FF'
+                                  : index === activeBarIndex
+                                  ? '#0012FF'
+                                  : '#E5E7EB'
+                              }
+                              fillOpacity={
+                                activeBarIndex === null
+                                  ? 1
+                                  : index === activeBarIndex
+                                  ? 1
+                                  : 0.6
+                              }
+                            />
+                          ))}
+                        </Bar>
                       </BarChart>
                     </ResponsiveContainer>
-                  </ChartContainer>
+                  )}
                 </CardContent>
 
-                <CardFooter className="flex-row items-center justify-between border-t border-gray-100 pt-6 px-6 text-sm">
-                  <div className="flex items-center gap-2 font-semibold text-black leading-none font-sans">
-                    <span>Trending up by 15.2% this month</span>
+                <CardFooter className="flex-row items-center justify-between border-t border-gray-100 pt-4 px-6 text-sm">
+                  <div className="flex items-center gap-2 font-semibold text-black leading-none font-sans text-xs">
                     <TrendingUp className="h-4 w-4 text-emerald-500" />
+                    <span>Total {chartYear}: <span className="text-[#0012FF]">{totalEarnings.toLocaleString()} PKR</span></span>
                   </div>
-                  <div className="text-xs text-gray-400 font-sans">
-                    Showing data for year 2026
-                  </div>
+                  <p className="text-[11px] text-gray-400 font-sans">Click any bar to see details</p>
                 </CardFooter>
               </Card>
             </motion.div>
