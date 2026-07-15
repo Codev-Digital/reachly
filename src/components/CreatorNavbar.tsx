@@ -19,25 +19,8 @@ export default function CreatorNavbar() {
     if (status === 'authenticated') {
       fetch('/api/user/me')
         .then(res => res.json())
-        .then(async (data) => {
-          const isPending = data?.user?.approvalStatus === 'pending';
-          const hasNotSeenWelcome = data?.user && !data.user.hasSeenWelcome;
-
-          if (isPending || hasNotSeenWelcome) {
-            // Clear all cookies
-            document.cookie.split(";").forEach((c) => {
-              document.cookie = c
-                .replace(/^ +/, "")
-                .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
-            });
-            localStorage.clear();
-            sessionStorage.clear();
-            const { signOut } = await import('next-auth/react');
-            await signOut({ redirect: false });
-            window.location.reload();
-          } else {
-            setUserData(data);
-          }
+        .then((data) => {
+          setUserData(data);
         })
         .catch(err => console.error('Error fetching user data:', err));
     }

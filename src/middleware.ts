@@ -40,19 +40,32 @@ export async function middleware(request: NextRequest) {
 
   // Read JWT — try both possible secret env var names
   const secret = process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET;
-  const secureCookie =
-    process.env.NODE_ENV === 'production' ||
-    request.nextUrl.protocol === 'https:' ||
-    request.headers.get('x-forwarded-proto') === 'https';
 
-  const token = await getToken({ req: request, secret, secureCookie });
-
+  const token = await getToken({ req: request, secret });
   const isLoggedIn = !!token;
   const isComplete = !!(token as any)?.isRegistrationComplete;
 
-  // ── 1. Logged-in + complete user on an auth-only page → welcome ─────────
+  // ── 1. Logged-in + complete user on an auth-only page → redirect accordingly ─────────
   if (isLoggedIn && isComplete && exactMatch(pathname, AUTH_PAGES)) {
-    return NextResponse.redirect(new URL('/welcome', request.url));
+    const onboardingStep = (token as any)?.onboardingStep || 0;
+    const approvalStatus = (token as any)?.approvalStatus || 'none';
+    const hasSeenWelcome = !!(token as any)?.hasSeenWelcome;
+
+    const isFullyApproved = approvalStatus === 'approved' || approvalStatus === 'active';
+    const isInOnboarding = onboardingStep > 0 && !isFullyApproved && approvalStatus !== 'pending';
+
+    if (approvalStatus === 'pending') {
+      return NextResponse.redirect(new URL('/creators/pending-approval', request.url));
+    } else if (isFullyApproved) {
+      return NextResponse.redirect(new URL('/creators/dashboard', request.url));
+    } else if (isInOnboarding) {
+      const resumeStep = Math.max(1, Math.min(onboardingStep, 7));
+      return NextResponse.redirect(new URL(`/creator-onboarding/step-${resumeStep}`, request.url));
+    } else if (!hasSeenWelcome) {
+      return NextResponse.redirect(new URL('/welcome', request.url));
+    } else {
+      return NextResponse.redirect(new URL('/user/dashboard', request.url));
+    }
   }
 
   // ── 2. Logged-in but registration NOT complete ────────────────────────────

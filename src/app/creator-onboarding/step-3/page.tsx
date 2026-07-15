@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { updateSessionTypes } from '@/lib/auth-client';
 import LoadingAnimation from '@/components/LoadingAnimation';
+import { useOnboardingCleanup } from '@/hooks/useOnboardingCleanup';
 
 /* ─── types ─────────────────────────────────────────────────────────────── */
 interface SessionData {
@@ -49,6 +50,7 @@ function validateSession(s: SessionData): string | null {
 /* ─── component ─────────────────────────────────────────────────────────── */
 export default function CreatorOnboardingStep3() {
   const router = useRouter();
+  useOnboardingCleanup();
 
   const [fetchingData, setFetchingData] = useState(true);
   const [saving, setSaving]             = useState(false);

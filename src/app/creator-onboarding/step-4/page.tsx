@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import LoadingAnimation from '@/components/LoadingAnimation';
+import { useOnboardingCleanup } from '@/hooks/useOnboardingCleanup';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type DayKey = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
@@ -60,6 +61,7 @@ const BUFFER_OPTIONS = [5, 10, 15, 30, 45, 60];
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function CreatorOnboardingStep4() {
   const router = useRouter();
+  useOnboardingCleanup();
 
   const [fetchingData, setFetchingData] = useState(true);
   const [saving, setSaving] = useState(false);

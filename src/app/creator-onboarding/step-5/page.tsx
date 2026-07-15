@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import LoadingAnimation from '@/components/LoadingAnimation';
+import { useOnboardingCleanup } from '@/hooks/useOnboardingCleanup';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface CreatorProfile {
@@ -248,6 +249,7 @@ function PreviewModal({
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function CreatorOnboardingStep5() {
   const router = useRouter();
+  useOnboardingCleanup();
 
   const [fetchingData, setFetchingData] = useState(true);
   const [saving, setSaving] = useState(false);

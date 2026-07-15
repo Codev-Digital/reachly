@@ -50,6 +50,7 @@ export const authOptions: NextAuthOptions = {
           isRegistrationComplete: user.isRegistrationComplete,
           onboardingStep: user.onboardingStep,
           approvalStatus: user.approvalStatus,
+          hasSeenWelcome: user.hasSeenWelcome,
         } as any;
       },
     }),
@@ -82,6 +83,7 @@ export const authOptions: NextAuthOptions = {
             isVerified: true,
             isRegistrationComplete: true,
             onboardingStep: 0,
+            hasSeenWelcome: false,
           });
         } else {
           if (!existingUser.googleId) {
@@ -92,6 +94,7 @@ export const authOptions: NextAuthOptions = {
           (user as any).isRegistrationComplete = existingUser.isRegistrationComplete;
           (user as any).onboardingStep = existingUser.onboardingStep;
           (user as any).approvalStatus = existingUser.approvalStatus;
+          (user as any).hasSeenWelcome = existingUser.hasSeenWelcome;
         }
       }
 
@@ -111,10 +114,12 @@ export const authOptions: NextAuthOptions = {
           token.isRegistrationComplete = (user as any).isRegistrationComplete ?? true;
           token.onboardingStep = (user as any).onboardingStep ?? 0;
           token.approvalStatus = (user as any).approvalStatus ?? 'none';
+          token.hasSeenWelcome = (user as any).hasSeenWelcome ?? false;
         } else {
           token.isRegistrationComplete = (user as any).isRegistrationComplete;
           token.onboardingStep = (user as any).onboardingStep;
           token.approvalStatus = (user as any).approvalStatus;
+          token.hasSeenWelcome = (user as any).hasSeenWelcome;
         }
       }
 
@@ -130,6 +135,7 @@ export const authOptions: NextAuthOptions = {
           isRegistrationComplete: !!token.isRegistrationComplete,
           onboardingStep: token.onboardingStep || 0,
           approvalStatus: token.approvalStatus || 'none',
+          hasSeenWelcome: !!token.hasSeenWelcome,
         },
       };
     }

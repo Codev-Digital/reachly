@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { updateCreatorProfile, getCurrentUser } from '@/lib/auth-client';
 import LoadingAnimation from '@/components/LoadingAnimation';
+import { useOnboardingCleanup } from '@/hooks/useOnboardingCleanup';
 
 // ─── Required fields (must all be non-empty to continue) ───────────────────────
 const REQUIRED: Record<string, string> = {
@@ -20,6 +21,7 @@ const REQUIRED: Record<string, string> = {
 
 export default function CreatorOnboardingStep2() {
   const router = useRouter();
+  useOnboardingCleanup();
   const [loading, setLoading] = useState(false);
   const [fetchingData, setFetchingData] = useState(true);
   const [error, setError] = useState('');

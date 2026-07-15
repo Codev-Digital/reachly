@@ -33,6 +33,7 @@ export default function CreatorOnboardingLayout({
     checkApproval();
   }, [router]);
 
+
   if (loading) return <LoadingAnimation />;
 
   return (

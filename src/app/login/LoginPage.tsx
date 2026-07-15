@@ -35,44 +35,39 @@ export default function LoginPage() {
       if (result?.error) {
         setError(result.error);
       } else {
-        const res = await fetch('/api/user/me');
-        if (res.ok) {
-          const userData = await res.json();
-          const approvalStatus = userData.user.approvalStatus;
-          const onboardingStep = userData.user.onboardingStep || 0;
+        const redirectRes = await fetch('/api/user/login-redirect-info', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        });
+
+        if (redirectRes.ok) {
+          const redirectInfo = await redirectRes.json();
+          const { onboardingStep, approvalStatus, hasSeenWelcome } = redirectInfo;
+
           const isFullyApproved = approvalStatus === 'approved' || approvalStatus === 'active';
           const isInOnboarding = onboardingStep > 0 && !isFullyApproved && approvalStatus !== 'pending';
 
-          if (email.toLowerCase() === 'abdullahgotaccess@gmail.com') {
-            // Admin
-            router.push('/admin/dashboard');
-          } else if (isFullyApproved) {
-            // Fully approved creator → creator dashboard
-            router.push('/creators/dashboard');
+          if (email.toLowerCase().trim() === 'admin@reachly.com' || email.toLowerCase().trim() === 'abdullahgotaccess@gmail.com') {
+            router.push('/admin/requests');
           } else if (approvalStatus === 'pending') {
-            // Submitted but awaiting admin review
             router.push('/creators/pending-approval');
+          } else if (isFullyApproved) {
+            router.push('/creators/dashboard');
           } else if (isInOnboarding) {
-            // Creator who started/saved onboarding draft → resume at their last step
             const resumeStep = Math.max(1, Math.min(onboardingStep, 7));
             router.push(`/creator-onboarding/step-${resumeStep}`);
-          } else if (!userData.user.hasSeenWelcome) {
-            // Not chosen a path yet → welcome screen
+          } else if (!hasSeenWelcome) {
             router.push('/welcome');
           } else {
-            // Regular user / complete user → user dashboard
             router.push('/user/dashboard');
           }
         } else {
-          if (callbackUrl && callbackUrl !== '/welcome') {
-            router.push(callbackUrl);
-          } else {
-            router.push('/user/dashboard');
-          }
+          router.push('/welcome');
         }
-        router.refresh();
       }
-    } catch {
+    } catch (err) {
+      console.error(err);
       setError('Something went wrong. Please try again.');
     } finally {
       setLoading(false);

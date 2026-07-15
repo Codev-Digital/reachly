@@ -1,9 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, useInView } from 'framer-motion';
 import { useRef } from 'react';
+import { useSession, signOut } from 'next-auth/react';
 import CreatorNavbar from '@/components/CreatorNavbar';
 import Footer from '@/components/Footer';
 import Image from "next/image";
@@ -25,6 +26,7 @@ function FadeUp({ children, delay = 0, className = '' }: { children: React.React
 }
 
 export default function Home() {
+  const { data: session, status } = useSession();
   const [activeStep, setActiveStep] = useState(0);
   const [creatorPage, setCreatorPage] = useState(0);
   const [activeCategory, setActiveCategory] = useState('All Categories');
@@ -34,6 +36,37 @@ export default function Home() {
   const [savedEvents, setSavedEvents] = useState<string[]>([]);
   const [categoryIndex, setCategoryIndex] = useState(0);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+
+  // Clear cookies if user is unauthenticated OR if they land on homepage before completing welcome choice
+  useEffect(() => {
+    const clearStorageIfNeeded = async () => {
+      // Wait a bit for session to load
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const hasSeenWelcome = (session?.user as any)?.hasSeenWelcome;
+
+      const shouldClear = 
+        status === 'unauthenticated' || 
+        (!session && status !== 'loading') ||
+        (status === 'authenticated' && hasSeenWelcome === false);
+
+      if (shouldClear) {
+        document.cookie.split(";").forEach((c) => {
+          document.cookie = c
+            .replace(/^ +/, "")
+            .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+        });
+        localStorage.clear();
+        sessionStorage.clear();
+
+        if (status === 'authenticated') {
+          await signOut({ callbackUrl: '/' });
+        }
+      }
+    };
+    
+    clearStorageIfNeeded();
+  }, [status, session]);
 
   const toggleFavorite = (name: string) =>
     setFavorites(prev => prev.includes(name) ? prev.filter(i => i !== name) : [...prev, name]);

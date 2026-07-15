@@ -8,7 +8,17 @@ export default function CreatorOnboardingStep1() {
   const router = useRouter();
 
   useEffect(() => {
-    router.push('/creator-onboarding/step-2');
+    const incrementStep = async () => {
+      try {
+        await fetch('/api/creator-onboarding/step-1', { method: 'GET' });
+      } catch (err) {
+        console.error('Error incrementing step:', err);
+      } finally {
+        router.push('/creator-onboarding/step-2');
+      }
+    };
+    
+    incrementStep();
   }, [router]);
 
   return <LoadingAnimation />;

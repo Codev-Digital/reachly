@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import CreatorNavbar from '@/components/CreatorNavbar';
 import LoadingAnimation from '@/components/LoadingAnimation';
+import { useOnboardingCleanup } from '@/hooks/useOnboardingCleanup';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Checklist {
@@ -78,6 +79,7 @@ function getNext7Days(schedule: Record<string, AvailabilityDay> | undefined) {
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function CreatorOnboardingStep7() {
   const router = useRouter();
+  useOnboardingCleanup();
 
   const [fetchingData, setFetchingData] = useState(true);
   const [data, setData] = useState<PageData | null>(null);

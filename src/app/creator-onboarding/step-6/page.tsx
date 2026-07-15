@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import LoadingAnimation from '@/components/LoadingAnimation';
+import { useOnboardingCleanup } from '@/hooks/useOnboardingCleanup';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type PaymentMethod = 'jazzcash' | 'easypaisa' | 'bank';
@@ -40,6 +41,7 @@ function isValidPKMobile(n: string) {
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function CreatorOnboardingStep6() {
   const router = useRouter();
+  useOnboardingCleanup();
 
   const [fetchingData, setFetchingData]     = useState(true);
   const [saving, setSaving]                 = useState(false);

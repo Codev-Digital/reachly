@@ -29,7 +29,7 @@ export default function WelcomePage() {
         });
         localStorage.clear();
         sessionStorage.clear();
-        
+
         // Log out of NextAuth
         const { signOut } = await import('next-auth/react');
         await signOut({ redirect: false });
