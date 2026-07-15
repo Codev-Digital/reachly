@@ -61,40 +61,89 @@ export default function OnboardingNavbar() {
         <div className="px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between gap-4">
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2 flex-shrink-0">
+            <div
+              onClick={async () => {
+                // Clear cookies, localStorage, and sessionStorage
+                document.cookie.split(";").forEach((c) => {
+                  document.cookie = c
+                    .replace(/^ +/, "")
+                    .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+                });
+                localStorage.clear();
+                sessionStorage.clear();
+                await signOut({ callbackUrl: '/' });
+              }}
+              className="flex items-center gap-2 flex-shrink-0 cursor-pointer"
+            >
               <img
                 src="/assets/Blue logo svg 1.svg"
                 alt="Reachly"
-                className="object-contain w-auto h-8 sm:h-9 cursor-pointer"
+                className="object-contain w-auto h-8 sm:h-9"
               />
-            </Link>
+            </div>
 
             {/* Middle Nav Links */}
             <div className="hidden md:flex items-center gap-8 lg:gap-10">
-              <Link
-                href="/explore-creators"
-                className="font-sans text-sm font-semibold text-gray-500 hover:text-[#0012FF] transition-all whitespace-nowrap"
+              <span
+                onClick={async () => {
+                  document.cookie.split(";").forEach((c) => {
+                    document.cookie = c
+                      .replace(/^ +/, "")
+                      .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+                  });
+                  localStorage.clear();
+                  sessionStorage.clear();
+                  await signOut({ callbackUrl: '/explore-creators' });
+                }}
+                className="font-sans text-sm font-semibold text-gray-500 hover:text-[#0012FF] transition-all whitespace-nowrap cursor-pointer"
               >
                 Explore Creators
-              </Link>
-              <Link
-                href="/events"
-                className="font-sans text-sm font-semibold text-gray-500 hover:text-[#0012FF] transition-all whitespace-nowrap"
+              </span>
+              <span
+                onClick={async () => {
+                  document.cookie.split(";").forEach((c) => {
+                    document.cookie = c
+                      .replace(/^ +/, "")
+                      .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+                  });
+                  localStorage.clear();
+                  sessionStorage.clear();
+                  await signOut({ callbackUrl: '/events' });
+                }}
+                className="font-sans text-sm font-semibold text-gray-500 hover:text-[#0012FF] transition-all whitespace-nowrap cursor-pointer"
               >
                 Events
-              </Link>
-              <Link
-                href="/for-creators"
-                className="font-sans text-sm font-semibold text-gray-500 hover:text-[#0012FF] transition-all whitespace-nowrap"
+              </span>
+              <span
+                onClick={async () => {
+                  document.cookie.split(";").forEach((c) => {
+                    document.cookie = c
+                      .replace(/^ +/, "")
+                      .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+                  });
+                  localStorage.clear();
+                  sessionStorage.clear();
+                  await signOut({ callbackUrl: '/for-creators' });
+                }}
+                className="font-sans text-sm font-semibold text-gray-500 hover:text-[#0012FF] transition-all whitespace-nowrap cursor-pointer"
               >
                 For Creators
-              </Link>
-              <Link
-                href="/about"
-                className="font-sans text-sm font-semibold text-gray-500 hover:text-[#0012FF] transition-all whitespace-nowrap"
+              </span>
+              <span
+                onClick={async () => {
+                  document.cookie.split(";").forEach((c) => {
+                    document.cookie = c
+                      .replace(/^ +/, "")
+                      .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+                  });
+                  localStorage.clear();
+                  sessionStorage.clear();
+                  await signOut({ callbackUrl: '/about' });
+                }}
+                className="font-sans text-sm font-semibold text-gray-500 hover:text-[#0012FF] transition-all whitespace-nowrap cursor-pointer"
               >
                 About
-              </Link>
+              </span>
             </div>
 
             {/* Navigation items on the right */}

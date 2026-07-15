@@ -66,6 +66,7 @@ export default function WelcomePage() {
           // Case Admin: Admin user should go straight to admin pending requests page
           if (data.user.email === 'admin@reachly.com' || data.user.email === 'abdullahgotaccess@gmail.com') {
             setRedirected(true);
+            hasSelected.current = true;
             router.push('/admin/requests');
             return;
           }
@@ -73,6 +74,7 @@ export default function WelcomePage() {
           // Case 0: Pending approval should always take priority
           if (data.user.approvalStatus === 'pending') {
             setRedirected(true);
+            hasSelected.current = true;
             router.push('/creators/pending-approval');
             return;
           }
@@ -80,6 +82,7 @@ export default function WelcomePage() {
           // Case 1: Has Creator Profile
           if (data.creatorProfile) {
             setRedirected(true);
+            hasSelected.current = true;
             if (data.user.approvalStatus === 'approved' && data.creatorProfile.isProfileComplete) {
               router.push('/creators/dashboard');
             } else if (!data.creatorProfile.isProfileComplete) {
@@ -93,6 +96,7 @@ export default function WelcomePage() {
           // Case 2: Onboarding step >0 → creator (even without CreatorProfile yet)
           if (data.user.onboardingStep > 0) {
             setRedirected(true);
+            hasSelected.current = true;
             router.push(`/creator-onboarding/step-${data.user.onboardingStep}`);
             return;
           }
@@ -100,6 +104,7 @@ export default function WelcomePage() {
           // Case 3: Has seen welcome → user dashboard
           if (data.user.hasSeenWelcome) {
             setRedirected(true);
+            hasSelected.current = true;
             router.push('/user/dashboard');
             return;
           }

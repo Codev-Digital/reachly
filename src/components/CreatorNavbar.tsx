@@ -72,9 +72,10 @@ export default function CreatorNavbar() {
         return;
       }
       
-      // If user has a creator profile but it's not complete OR onboardingStep >0 → go to creator onboarding
+      // If user is in the middle of onboarding → go to their current onboarding step
       if ((currentUserData.creatorProfile || currentUserData.user.onboardingStep > 0) && isCreator) {
-        router.push('/creator-onboarding/step-1');
+        const resumeStep = Math.max(1, Math.min(currentUserData.user.onboardingStep || 1, 7));
+        router.push(`/creator-onboarding/step-${resumeStep}`);
         return;
       }
 
