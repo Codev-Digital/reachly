@@ -147,31 +147,34 @@ export default function WelcomePage() {
                 />
 
                 {/* Arrow up-right */}
-                <div
-                  className="
-                    absolute
-                    top-[10px] right-[12px]
-                    text-[#0012FF]
-                    group-hover:translate-x-0.5
-                    group-hover:-translate-y-0.5
-                    transition-transform
-                    z-10
-                  "
-                >
-                  <ArrowUpRight className="w-5 h-5" />
+                {/* Vector Icon */}
+                <div className="relative z-10 flex justify-end">
+                  <img
+                    src="/assets/vector.svg"
+                    alt=""
+                    className="
+      w-3 h-3 sm:w-3.5 sm:h-3.5
+      object-contain
+      -mt-4
+      -mr-5
+      transition-transform duration-200
+      group-hover:translate-x-0.5
+      group-hover:-translate-y-0.5
+      select-none pointer-events-none
+    "
+                  />
                 </div>
 
-                <div className="space-y-4 relative z-10">
+                <div className="relative z-10 flex flex-col gap-4 flex-1 pb-3">
                   <div className="w-12 h-12 rounded-[14px] bg-[#EEF2FF] flex items-center justify-center">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="w-5.5 h-5.5">
-                      <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                      <rect x="3" y="6" width="18" height="14" rx="2" />
-                      <line x1="3" y1="12" x2="21" y2="12" />
-                      <rect x="10.5" y="10" width="3" height="4" rx="0.5" fill="#EEF2FF" stroke="#0012FF" strokeWidth="2" />
-                    </svg>
+                    <img
+                      src="/assets/box.svg"
+                      alt=""
+                      className="w-5.5 h-5.5 object-contain select-none pointer-events-none"
+                    />
                   </div>
                   <div>
-                    <h3 className="font-sans font-bold text-[17px] text-black mb-1.5 tracking-tight">
+                    <h3 className="font-sans font-bold text-[17px] text-black mb-3 tracking-tight">
                       I Want to Book Sessions
                     </h3>
                     <p className="text-xs text-gray-400 font-sans leading-relaxed font-normal">
@@ -194,38 +197,35 @@ export default function WelcomePage() {
                 />
 
                 {/* Arrow up-right */}
-                <div
-                  className="
-                    absolute
-                   top-[10px] right-[12px]
-                    text-[#0012FF]
-                    group-hover:translate-x-0.5
-                    group-hover:-translate-y-0.5
-                    transition-transform
-                    z-10
-                  "
-                >
-                  <ArrowUpRight className="w-5 h-5" />
+                {/* Vector Icon */}
+                {/* Vector Icon */}
+                <div className="relative z-10 flex justify-end">
+                  <img
+                    src="/assets/vector.svg"
+                    alt=""
+                    className="
+      w-3 h-3 sm:w-3.5 sm:h-3.5
+      object-contain
+      -mt-4
+      -mr-5
+      transition-transform duration-200
+      group-hover:translate-x-0.5
+      group-hover:-translate-y-0.5
+      select-none pointer-events-none
+    "
+                  />
                 </div>
 
-                <div className="space-y-4 relative z-10">
+                <div className="relative z-10 flex flex-col gap-4 flex-1 pb-3">
                   <div className="w-12 h-12 rounded-[14px] bg-[#EEF2FF] flex items-center justify-center">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="w-5.5 h-5.5">
-                      <circle cx="10" cy="8" r="4" />
-                      <path d="M3 20a7 7 0 0 1 12-4" />
-                      <g transform="translate(13, 11) scale(0.48)">
-                        <polygon
-                          points="12,2 15,9 22,9 17,14 19,21 12,17 5,21 7,14 2,9 9,9"
-                          fill="#EEF2FF"
-                          stroke="#0012FF"
-                          strokeWidth="3.5"
-                          strokeLinejoin="round"
-                        />
-                      </g>
-                    </svg>
+                    <img
+                      src="/assets/star.svg"
+                      alt=""
+                      className="w-5.5 h-5.5 object-contain select-none pointer-events-none"
+                    />
                   </div>
                   <div>
-                    <h3 className="font-sans font-bold text-[17px] text-black mb-1.5 tracking-tight">
+                    <h3 className="font-sans font-bold text-[17px] text-black mb-3 tracking-tight">
                       I Want to be a Creator
                     </h3>
                     <p className="text-xs text-gray-400 font-sans leading-relaxed font-normal">
@@ -257,6 +257,6 @@ export default function WelcomePage() {
           </div>
         </div>
       </div>
-    </div>
+    </div >
   );
 }
