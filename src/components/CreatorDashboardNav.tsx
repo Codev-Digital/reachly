@@ -186,7 +186,7 @@ export default function CreatorDashboardNav({
             {/* Desktop nav links */}
             <div className="hidden lg:flex items-center gap-1 xl:gap-2">
               {NAV_ITEMS.map((item) => {
-                const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+                const isActive = pathname === item.href || pathname.startsWith(item.href + '/') || (item.name === 'Dashboard' && pathname.includes('/book-session'));
                 return (
                   <Link
                     key={item.name}

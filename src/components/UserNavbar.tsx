@@ -124,7 +124,7 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
         {/* Centered Navigation Items */}
         <div className="hidden md:flex items-center gap-2">
           {navItems.map((item) => {
-            const isActive = activeNavItem === item.name || (item.name === 'Dashboard' && (pathname === '/user/dashboard' || pathname === '/explore-creators')) || (item.name === 'Bookings' && pathname === '/user/bookings');
+            const isActive = activeNavItem === item.name || (item.name === 'Dashboard' && (pathname === '/user/dashboard' || pathname === '/explore-creators' || pathname.includes('/book-session'))) || (item.name === 'Bookings' && pathname === '/user/bookings');
             return (
               <Link
                 key={item.name}
