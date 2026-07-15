@@ -338,6 +338,13 @@ export default function WelcomePage() {
           </div>
         </div>
       </div>
-    </div >
+
+      {/* Loading Spinner */}
+      {isLoadingButton && (
+        <div className="fixed bottom-6 right-6 z-50 bg-white p-3 rounded-full shadow-lg border border-gray-100 flex items-center justify-center">
+          <div className="w-6 h-6 rounded-full border-3 border-gray-200 border-t-[#0012FF] animate-spin"></div>
+        </div>
+      )}
+    </div>
   );
 }

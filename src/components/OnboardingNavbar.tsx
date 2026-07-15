@@ -50,6 +50,21 @@ export default function OnboardingNavbar({ showAuthButtons = false }: { showAuth
     await signOut({ callbackUrl: '/login' });
   };
 
+  const handleNavClick = async (url: string) => {
+    if (pathname.includes('/creator-onboarding') || pathname === '/welcome') {
+      document.cookie.split(";").forEach((c) => {
+        document.cookie = c
+          .replace(/^ +/, "")
+          .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+      });
+      localStorage.clear();
+      sessionStorage.clear();
+      await signOut({ callbackUrl: url });
+    } else {
+      router.push(url);
+    }
+  };
+
   const handleDashboardRedirect = () => {
     router.push(`/creator-onboarding/step-${onboardingStep}`);
   };
@@ -62,17 +77,7 @@ export default function OnboardingNavbar({ showAuthButtons = false }: { showAuth
           <div className="flex items-center justify-between gap-4">
             {/* Logo */}
             <div
-              onClick={async () => {
-                // Clear cookies, localStorage, and sessionStorage
-                document.cookie.split(";").forEach((c) => {
-                  document.cookie = c
-                    .replace(/^ +/, "")
-                    .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
-                });
-                localStorage.clear();
-                sessionStorage.clear();
-                await signOut({ callbackUrl: '/' });
-              }}
+              onClick={() => handleNavClick('/')}
               className="flex items-center gap-2 flex-shrink-0 cursor-pointer"
             >
               <img
@@ -85,61 +90,25 @@ export default function OnboardingNavbar({ showAuthButtons = false }: { showAuth
             {/* Middle Nav Links */}
             <div className="hidden md:flex items-center gap-8 lg:gap-10">
               <span
-                onClick={async () => {
-                  document.cookie.split(";").forEach((c) => {
-                    document.cookie = c
-                      .replace(/^ +/, "")
-                      .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
-                  });
-                  localStorage.clear();
-                  sessionStorage.clear();
-                  await signOut({ callbackUrl: '/explore-creators' });
-                }}
+                onClick={() => handleNavClick('/explore-creators')}
                 className="font-sans text-sm font-semibold text-gray-500 hover:text-[#0012FF] transition-all whitespace-nowrap cursor-pointer"
               >
                 Explore Creators
               </span>
               <span
-                onClick={async () => {
-                  document.cookie.split(";").forEach((c) => {
-                    document.cookie = c
-                      .replace(/^ +/, "")
-                      .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
-                  });
-                  localStorage.clear();
-                  sessionStorage.clear();
-                  await signOut({ callbackUrl: '/events' });
-                }}
+                onClick={() => handleNavClick('/events')}
                 className="font-sans text-sm font-semibold text-gray-500 hover:text-[#0012FF] transition-all whitespace-nowrap cursor-pointer"
               >
                 Events
               </span>
               <span
-                onClick={async () => {
-                  document.cookie.split(";").forEach((c) => {
-                    document.cookie = c
-                      .replace(/^ +/, "")
-                      .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
-                  });
-                  localStorage.clear();
-                  sessionStorage.clear();
-                  await signOut({ callbackUrl: '/for-creators' });
-                }}
+                onClick={() => handleNavClick('/for-creators')}
                 className="font-sans text-sm font-semibold text-gray-500 hover:text-[#0012FF] transition-all whitespace-nowrap cursor-pointer"
               >
                 For Creators
               </span>
               <span
-                onClick={async () => {
-                  document.cookie.split(";").forEach((c) => {
-                    document.cookie = c
-                      .replace(/^ +/, "")
-                      .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
-                  });
-                  localStorage.clear();
-                  sessionStorage.clear();
-                  await signOut({ callbackUrl: '/about' });
-                }}
+                onClick={() => handleNavClick('/about')}
                 className="font-sans text-sm font-semibold text-gray-500 hover:text-[#0012FF] transition-all whitespace-nowrap cursor-pointer"
               >
                 About

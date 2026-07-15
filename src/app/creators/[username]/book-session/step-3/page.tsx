@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
@@ -12,6 +12,8 @@ export default function BookSessionStep3() {
   const { booking, setBooking, nextStep, saveToStorage } = useBooking();
   const [authError, setAuthError] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
+  const [isLoadingBack, setIsLoadingBack] = useState(false);
+  const [isLoadingDraft, setIsLoadingDraft] = useState(false);
   const [saved, setSaved] = useState(true);
   const updateUserDetails = (field: string, value: string) => {
     setBooking(b => ({
@@ -177,35 +179,54 @@ export default function BookSessionStep3() {
             )}
 
             {/* Navigation Buttons Row inside form panel */}
-            <div className="flex justify-between items-center mt-8 pt-6 border-t border-gray-100">
-              {/* Back */}
+            <div className="flex justify-between items-center mt-8 pt-6 border-t border-gray-100 px-1 w-full gap-4 lg:justify-end">
               <button
-                onClick={() => router.push(`/creators/${params.username}/book-session/step-2`)}
-                className="bg-white border border-gray-200 text-gray-600 font-bold py-2 px-5 rounded-full text-xs hover:bg-gray-50 hover:text-gray-900 transition-all flex items-center gap-1.5 shadow-sm"
+                onClick={() => {
+                  setIsLoadingDraft(true);
+                  setTimeout(() => {
+                    setIsLoadingDraft(false);
+                    alert("Progress saved successfully!");
+                  }, 800);
+                }}
+                disabled={isLoadingDraft}
+                className="bg-white border border-gray-200 text-gray-700 font-bold py-2.5 px-6 rounded-full text-xs hover:bg-gray-50 transition-colors shadow-sm lg:mr-auto flex items-center justify-center min-w-[120px]"
               >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M19 12H5M12 19l-7-7 7-7" />
-                </svg>
-                Back
+                {isLoadingDraft ? (
+                  <div className="w-4 h-4 rounded-full border-2 border-gray-300 border-t-gray-700 animate-spin"></div>
+                ) : (
+                  "Save as Draft"
+                )}
               </button>
 
-              {/* Actions */}
-              <div className="flex items-center gap-3">
+              <div className="flex gap-4">
                 <button
-                  onClick={() => alert("Progress saved successfully!")}
-                  className="bg-white border border-gray-200 text-gray-600 font-bold py-2 px-5 rounded-full text-xs hover:bg-gray-50 hover:text-gray-900 transition-all shadow-sm"
+                  onClick={() => {
+                    setIsLoadingBack(true);
+                    router.push(`/creators/${params.username}/book-session/step-2`);
+                  }}
+                  disabled={isLoadingBack}
+                  className="bg-white border border-gray-200 text-gray-700 font-bold py-2.5 px-6 rounded-full text-xs hover:bg-gray-50 transition-colors shadow-sm flex items-center justify-center min-w-[100px]"
                 >
-                  Save as Draft
+                  {isLoadingBack ? (
+                    <div className="w-4 h-4 rounded-full border-2 border-gray-300 border-t-gray-700 animate-spin"></div>
+                  ) : (
+                    "Back"
+                  )}
                 </button>
+
                 <button
                   onClick={handleContinue}
                   disabled={!canProceed || authLoading}
-                  className={`py-2 px-6 rounded-full text-xs font-bold transition-all shadow-sm ${canProceed && !authLoading
+                  className={`py-2.5 px-8 rounded-full text-xs font-bold transition-all shadow-sm flex items-center justify-center min-w-[120px] ${canProceed && !authLoading
                     ? 'bg-[#0012FF] text-white hover:bg-[#0010d0]'
                     : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                     }`}
                 >
-                  {authLoading ? 'Processing...' : 'Continue'}
+                  {authLoading ? (
+                    <div className="w-4 h-4 rounded-full border-2 border-[#808BFF] border-t-white animate-spin"></div>
+                  ) : (
+                    "Continue"
+                  )}
                 </button>
               </div>
             </div>

@@ -12,12 +12,14 @@ export default function BookSessionStep4() {
   const { booking, nextStep, setBooking } = useBooking();
   const creator = booking.creator;
   const [paymentMethod, setPaymentMethod] = useState<'jazzcash' | 'easypaisa'>('jazzcash');
-  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [showQr, setShowQr] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingBack, setIsLoadingBack] = useState(false);
+  const [isLoadingContinue, setIsLoadingContinue] = useState(false);
   const [saved, setSaved] = useState(true);
 
   const handleContinue = () => {
-    setShowConfirmation(true);
+    setShowQr(true);
   };
 
   const handleConfirmPayment = async () => {
@@ -77,7 +79,7 @@ export default function BookSessionStep4() {
 
                 {/* ============ RIGHT COLUMN: PAYMENT SELECTION / CONFIRMATION ============ */}
         <div className="w-full">
-          {showConfirmation ? (
+          {showQr ? (
             /* ============ VIEW: CONFIRMATION ============ */
             <div className="bg-white rounded-3xl border border-gray-200/80 p-6 sm:p-8 shadow-sm w-full max-w-[790px] mx-auto">
               <div className="flex items-center gap-3.5 border-b border-gray-100 pb-5 mb-6">
@@ -134,23 +136,35 @@ export default function BookSessionStep4() {
                 You will receive an automatic transaction prompt on your mobile number linked to your {paymentMethod === 'jazzcash' ? 'JazzCash' : 'EasyPaisa'} account. Please unlock your phone and input your M-PIN to approve.
               </p>
 
-              {/* Action Buttons */}
-              <div className="flex justify-between items-center pt-6 border-t border-gray-100">
+              {/* Navigation Buttons inside QR panel */}
+              <div className="flex justify-between items-center mt-8 pt-6 border-t border-gray-100 px-1 w-full gap-4 lg:justify-end">
                 <button
-                  onClick={() => setShowConfirmation(false)}
-                  className="bg-white border border-gray-200 text-gray-600 font-bold py-2 px-5 rounded-full text-xs hover:bg-gray-50 hover:text-gray-900 transition-all flex items-center gap-1.5 shadow-sm"
+                  onClick={() => {
+                    setIsLoadingBack(true);
+                    setShowQr(false);
+                  }}
+                  disabled={isLoadingBack || isSubmitting}
+                  className="bg-white border border-gray-200 text-gray-700 font-bold py-2.5 px-6 rounded-full text-xs hover:bg-gray-50 transition-colors shadow-sm flex items-center justify-center min-w-[100px]"
                 >
-                  Change Method
+                  {isLoadingBack ? (
+                    <div className="w-4 h-4 rounded-full border-2 border-gray-300 border-t-gray-700 animate-spin"></div>
+                  ) : (
+                    "Back"
+                  )}
                 </button>
                 <button
                   onClick={handleConfirmPayment}
                   disabled={isSubmitting}
-                  className={`py-2 px-6 rounded-full text-xs font-bold transition-all shadow-sm ${isSubmitting
-                    ? 'bg-gray-100 text-gray-400'
+                  className={`py-2.5 px-8 rounded-full text-xs font-bold transition-all shadow-sm flex items-center justify-center min-w-[150px] ${isSubmitting
+                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
                     : 'bg-[#0012FF] text-white hover:bg-[#0010d0]'
                     }`}
                 >
-                  {isSubmitting ? 'Processing...' : 'Confirm Payment'}
+                  {isSubmitting ? (
+                    <div className="w-4 h-4 rounded-full border-2 border-[#808BFF] border-t-white animate-spin"></div>
+                  ) : (
+                    "Confirm Payment"
+                  )}
                 </button>
               </div>
             </div>
@@ -230,24 +244,35 @@ export default function BookSessionStep4() {
               </div>
 
               {/* Navigation buttons inside selection panel */}
-              <div className="flex justify-between items-center mt-8 pt-6 border-t border-gray-100">
-                {/* Back */}
+              <div className="flex justify-between items-center mt-8 pt-6 border-t border-gray-100 px-1 w-full gap-4 lg:justify-end">
                 <button
-                  onClick={() => router.push(`/creators/${params.username}/book-session/step-3`)}
-                  className="bg-white border border-gray-200 text-gray-600 font-bold py-2 px-5 rounded-full text-xs hover:bg-gray-50 hover:text-gray-900 transition-all flex items-center gap-1.5 shadow-sm"
+                  onClick={() => {
+                    setIsLoadingBack(true);
+                    router.push(`/creators/${params.username}/book-session/step-3`);
+                  }}
+                  disabled={isLoadingBack}
+                  className="bg-white border border-gray-200 text-gray-700 font-bold py-2.5 px-6 rounded-full text-xs hover:bg-gray-50 transition-colors shadow-sm flex items-center justify-center min-w-[100px]"
                 >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M19 12H5M12 19l-7-7 7-7" />
-                  </svg>
-                  Back
+                  {isLoadingBack ? (
+                    <div className="w-4 h-4 rounded-full border-2 border-gray-300 border-t-gray-700 animate-spin"></div>
+                  ) : (
+                    "Back"
+                  )}
                 </button>
 
-                {/* Continue */}
                 <button
-                  onClick={handleContinue}
-                  className="bg-[#0012FF] text-white hover:bg-[#0010d0] font-bold py-2 px-6 rounded-full text-xs transition-colors shadow-sm"
+                  onClick={() => {
+                    setIsLoadingContinue(true);
+                    setTimeout(() => setShowQr(true), 100);
+                  }}
+                  disabled={isLoadingContinue}
+                  className="bg-[#0012FF] text-white hover:bg-[#0010d0] font-bold py-2.5 px-8 rounded-full text-xs transition-colors shadow-sm flex items-center justify-center min-w-[120px]"
                 >
-                  Continue
+                  {isLoadingContinue ? (
+                    <div className="w-4 h-4 rounded-full border-2 border-[#808BFF] border-t-white animate-spin"></div>
+                  ) : (
+                    "Continue"
+                  )}
                 </button>
               </div>
             </div>

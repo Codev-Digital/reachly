@@ -14,6 +14,8 @@ export default function BookSessionStep1() {
   const [saved, setSaved] = useState(true);
   const [sessions, setSessions] = useState<SessionType[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isLoadingContinue, setIsLoadingContinue] = useState(false);
+  const [isLoadingBack, setIsLoadingBack] = useState(false);
 
   useEffect(() => {
     async function fetchCreator() {
@@ -59,10 +61,17 @@ export default function BookSessionStep1() {
 
   const handleContinue = () => {
     if (booking.selectedSession) {
+      setIsLoadingContinue(true);
       nextStep();
       router.push(`/creators/${params.username}/book-session/step-2`);
     }
   };
+
+  const handleBack = () => {
+    setIsLoadingBack(true);
+    router.push(`/creators/${params.username}`);
+  };
+
 
   const creator = booking.creator;
 
@@ -184,21 +193,30 @@ export default function BookSessionStep1() {
               {/* Navigation Action Buttons */}
               <div className="flex gap-4 mt-12 justify-end w-full max-w-[790px] mx-auto px-4">
                 <button
-                  onClick={() => router.push(`/creators/${params.username}`)}
-                  className="bg-white border border-gray-200 text-gray-700 font-bold py-2.5 px-6 rounded-full text-xs hover:bg-gray-50 transition-colors shadow-sm"
+                  onClick={handleBack}
+                  disabled={isLoadingBack}
+                  className="bg-white border border-gray-200 text-gray-700 font-bold py-2.5 px-6 rounded-full text-xs hover:bg-gray-50 transition-colors shadow-sm flex items-center justify-center min-w-[100px]"
                 >
-                  Back
+                  {isLoadingBack ? (
+                    <div className="w-4 h-4 rounded-full border-2 border-gray-300 border-t-gray-700 animate-spin"></div>
+                  ) : (
+                    "Back"
+                  )}
                 </button>
 
                 <button
                   onClick={handleContinue}
-                  disabled={!booking.selectedSession}
-                  className={`py-2.5 px-8 rounded-full text-xs font-bold transition-all shadow-sm ${booking.selectedSession
+                  disabled={!booking.selectedSession || isLoadingContinue}
+                  className={`py-2.5 px-8 rounded-full text-xs font-bold transition-all shadow-sm flex items-center justify-center min-w-[120px] ${booking.selectedSession
                     ? 'bg-[#0012FF] text-white hover:bg-[#0010d0]'
                     : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                     }`}
                 >
-                  Continue
+                  {isLoadingContinue ? (
+                    <div className="w-4 h-4 rounded-full border-2 border-[#808BFF] border-t-white animate-spin"></div>
+                  ) : (
+                    "Continue"
+                  )}
                 </button>
               </div>
             </div>

@@ -16,12 +16,15 @@ const toISO = (date: Date) => {
 export default function BookSessionStep2() {
   const params = useParams();
   const router = useRouter();
-  const { booking, setBooking, nextStep } = useBooking();
+  const { booking, setBooking, nextStep, prevStep } = useBooking();
 
   const [slots, setSlots] = useState<string[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [fetchedDate, setFetchedDate] = useState<string | null>(null);
   const [schedule, setSchedule] = useState<Record<string, { enabled: boolean }> | null>(null);
+  const [isLoadingContinue, setIsLoadingContinue] = useState(false);
+  const [isLoadingBack, setIsLoadingBack] = useState(false);
+  const [isLoadingDraft, setIsLoadingDraft] = useState(false);
   const [saved, setSaved] = useState(true);
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -112,13 +115,24 @@ export default function BookSessionStep2() {
 
   const handleContinue = () => {
     if (booking.selectedDate && booking.selectedTime) {
+      setIsLoadingContinue(true);
       nextStep();
       router.push(`/creators/${params.username}/book-session/step-3`);
     }
   };
 
+  const handleBack = () => {
+    setIsLoadingBack(true);
+    prevStep();
+    router.push(`/creators/${params.username}/book-session/step-1`);
+  };
+
   const handleSaveDraft = () => {
-    alert("Progress saved successfully!");
+    setIsLoadingDraft(true);
+    setTimeout(() => {
+      setIsLoadingDraft(false);
+      alert("Progress saved successfully!");
+    }, 800);
   };
 
   const creator = booking.creator;
@@ -357,35 +371,45 @@ export default function BookSessionStep2() {
           </div>
 
           {/* ============ NAVIGATION & ACTIONS ROW ============ */}
-          <div className="flex justify-between items-center w-full max-w-[790px] mx-auto mt-10 px-1">
-            {/* Left side Back */}
+          <div className="flex gap-4 mt-8 justify-between lg:justify-end w-full px-1">
             <button
-              onClick={() => router.push(`/creators/${params.username}/book-session/step-1`)}
-              className="bg-white border border-gray-200 text-gray-600 font-bold py-2 px-5 rounded-full text-xs hover:bg-gray-50 hover:text-gray-900 transition-all flex items-center gap-1.5 shadow-sm"
+              onClick={handleSaveDraft}
+              disabled={isLoadingDraft}
+              className="bg-white border border-gray-200 text-gray-700 font-bold py-2.5 px-6 rounded-full text-xs hover:bg-gray-50 transition-colors shadow-sm lg:mr-auto flex items-center justify-center min-w-[120px]"
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <path d="M19 12H5M12 19l-7-7 7-7" />
-              </svg>
-              Back
+              {isLoadingDraft ? (
+                <div className="w-4 h-4 rounded-full border-2 border-gray-300 border-t-gray-700 animate-spin"></div>
+              ) : (
+                "Save as Draft"
+              )}
             </button>
 
-            {/* Right side Actions */}
-            <div className="flex items-center gap-3">
+            <div className="flex gap-4">
               <button
-                onClick={handleSaveDraft}
-                className="bg-white border border-gray-200 text-gray-600 font-bold py-2 px-5 rounded-full text-xs hover:bg-gray-50 hover:text-gray-900 transition-all shadow-sm"
+                onClick={handleBack}
+                disabled={isLoadingBack}
+                className="bg-white border border-gray-200 text-gray-700 font-bold py-2.5 px-6 rounded-full text-xs hover:bg-gray-50 transition-colors shadow-sm flex items-center justify-center min-w-[100px]"
               >
-                Save as Draft
+                {isLoadingBack ? (
+                  <div className="w-4 h-4 rounded-full border-2 border-gray-300 border-t-gray-700 animate-spin"></div>
+                ) : (
+                  "Back"
+                )}
               </button>
+
               <button
                 onClick={handleContinue}
-                disabled={!booking.selectedDate || !booking.selectedTime}
-                className={`py-2 px-6 rounded-full text-xs font-bold transition-all shadow-sm ${booking.selectedDate && booking.selectedTime
+                disabled={!booking.selectedDate || !booking.selectedTime || isLoadingContinue}
+                className={`py-2.5 px-8 rounded-full text-xs font-bold transition-all shadow-sm flex items-center justify-center min-w-[120px] ${booking.selectedDate && booking.selectedTime
                   ? 'bg-[#0012FF] text-white hover:bg-[#0010d0]'
                   : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                   }`}
               >
-                Continue
+                {isLoadingContinue ? (
+                  <div className="w-4 h-4 rounded-full border-2 border-[#808BFF] border-t-white animate-spin"></div>
+                ) : (
+                  "Continue"
+                )}
               </button>
             </div>
           </div>
