@@ -20,7 +20,10 @@ export default function CreatorNavbar() {
       fetch('/api/user/me')
         .then(res => res.json())
         .then(async (data) => {
-          if (data?.user?.approvalStatus === 'pending') {
+          const isPending = data?.user?.approvalStatus === 'pending';
+          const hasNotSeenWelcome = data?.user && !data.user.hasSeenWelcome;
+
+          if (isPending || hasNotSeenWelcome) {
             // Clear all cookies
             document.cookie.split(";").forEach((c) => {
               document.cookie = c

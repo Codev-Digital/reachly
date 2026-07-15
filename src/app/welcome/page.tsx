@@ -48,9 +48,23 @@ export default function WelcomePage() {
       }
     };
 
+    const handlePopState = () => {
+      if (!hasSelected.current) {
+        document.cookie.split(";").forEach((c) => {
+          document.cookie = c
+            .replace(/^ +/, "")
+            .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+        });
+        localStorage.clear();
+        sessionStorage.clear();
+      }
+    };
+
     window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('popstate', handlePopState);
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', handlePopState);
       handleLeave();
     };
   }, []);
@@ -162,7 +176,18 @@ export default function WelcomePage() {
         <div className="w-full lg:w-1/2 p-8 sm:p-12 lg:p-16 flex flex-col justify-between">
           {/* Logo */}
           <div
-            onClick={() => router.push('/')}
+            onClick={async () => {
+              hasSelected.current = true;
+              document.cookie.split(";").forEach((c) => {
+                document.cookie = c
+                  .replace(/^ +/, "")
+                  .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+              });
+              localStorage.clear();
+              sessionStorage.clear();
+              const { signOut } = await import('next-auth/react');
+              await signOut({ callbackUrl: '/' });
+            }}
             className="flex justify-start mb-12 lg:mb-0 cursor-pointer hover:opacity-90 transition-opacity"
           >
             <img src="/assets/Blue logo svg 1.svg" alt="Reachly Logo" className="h-8 w-auto object-contain" />
