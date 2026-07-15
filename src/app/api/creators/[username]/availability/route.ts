@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import CreatorProfile from '@/models/CreatorProfile';
 import CreatorAvailability from '@/models/CreatorAvailability';
+import Booking from '@/models/Booking';
 
 const DAY_NAMES: Record<number, keyof typeof defaultDays> = {
     0: 'sunday',
@@ -148,7 +149,49 @@ export async function GET(
                 }
             }
 
-            return NextResponse.json({ success: true, slots, date: dateStr });
+            // Build date range for the day (start of day to end of day in UTC)
+            const dayStart = new Date(`${dateStr}T00:00:00.000Z`);
+            const dayEnd = new Date(`${dateStr}T23:59:59.999Z`);
+
+            // Fetch already booked slots for this creator around this date (+/- 1 day to account for PKT timezone shift in DB)
+            const searchStart = new Date(dayStart.getTime() - 24 * 60 * 60 * 1000);
+            const searchEnd = new Date(dayEnd.getTime() + 24 * 60 * 60 * 1000);
+
+            const existingBookings = await Booking.find({
+                creatorId: profile.userId,
+                scheduledDate: { $gte: searchStart, $lte: searchEnd },
+                status: { $in: ['pending', 'confirmed'] },
+            }).select('scheduledDate scheduledTime');
+
+            // Filter manually: any booking whose intended date (when formatted to YYYY-MM-DD locally or adjusted) matches dateStr
+            const bookedTimes = new Set<string>();
+            existingBookings.forEach((b: any) => {
+                if (b.scheduledDate) {
+                    const d = new Date(b.scheduledDate);
+                    
+                    // If it was saved at exactly midnight UTC, it was intended for that exact UTC day
+                    // If it was saved at 19:00 UTC (PKT Midnight), it was intended for the NEXT UTC day
+                    const isPKTShifted = d.getUTCHours() === 19; 
+                    
+                    if (isPKTShifted) {
+                        d.setUTCHours(d.getUTCHours() + 5); // Shift back to UTC midnight of intended day
+                    }
+                    
+                    const bYear = d.getUTCFullYear();
+                    const bMonth = String(d.getUTCMonth() + 1).padStart(2, '0');
+                    const bDay = String(d.getUTCDate()).padStart(2, '0');
+                    const intendedDateStr = `${bYear}-${bMonth}-${bDay}`;
+
+                    if (intendedDateStr === dateStr && b.scheduledTime) {
+                        bookedTimes.add(b.scheduledTime);
+                    }
+                }
+            });
+
+            // Filter out booked slots
+            const availableSlots = slots.filter(slot => !bookedTimes.has(slot));
+
+            return NextResponse.json({ success: true, slots: availableSlots, date: dateStr });
         }
 
         // Return full schedule

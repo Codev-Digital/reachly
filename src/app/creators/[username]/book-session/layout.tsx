@@ -35,6 +35,21 @@ export interface CreatorInfo {
   coverPhoto?: string;
   shortBio: string;
   niches: string[];
+  city?: string;
+  country?: string;
+  languages?: string[];
+  socialLinks?: {
+    facebook?: string;
+    instagram?: string;
+    youtube?: string;
+    tiktok?: string;
+    twitter?: string;
+  };
+  stats?: {
+    sessionsCompleted?: number;
+    happyCustomers?: number;
+    totalCategories?: number;
+  };
 }
 
 interface BookingState {

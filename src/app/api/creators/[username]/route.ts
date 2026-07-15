@@ -3,6 +3,7 @@ import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
 import CreatorProfile from '@/models/CreatorProfile';
 import SessionType from '@/models/SessionType';
+import Booking from '@/models/Booking';
 
 export async function GET(
     request: NextRequest,
@@ -37,6 +38,12 @@ export async function GET(
 
         const sessions = await SessionType.find({ userId: user._id }).sort({ order: 1 });
 
+        // Calculate real stats from database
+        const sessionsCompleted = await Booking.countDocuments({ creatorId: user._id, status: 'completed' });
+        const distinctEmails = await Booking.distinct('guestDetails.email', { creatorId: user._id });
+        const happyCustomers = distinctEmails.length;
+        const totalCategories = profile.niches ? profile.niches.length : 0;
+
         return NextResponse.json({
             success: true,
             creator: {
@@ -54,6 +61,11 @@ export async function GET(
                 niches: profile.niches,
                 socialLinks: profile.socialLinks,
                 isVerified: user.isVerified,
+                stats: {
+                    sessionsCompleted: sessionsCompleted,
+                    happyCustomers: happyCustomers,
+                    totalCategories: totalCategories
+                }
             },
             sessions: sessions.map((s) => ({
                 id: s._id,
