@@ -44,7 +44,7 @@ export default function CreatorLayout({
 
   return (
     <>
-      {pathname !== '/creators/pending-approval' && <CreatorNavbar />}
+      {pathname !== '/creators/pending-approval' && !pathname.includes('/book-session') && <CreatorNavbar />}
       {children}
     </>
   );

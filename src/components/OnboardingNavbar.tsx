@@ -7,7 +7,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 
-export default function OnboardingNavbar() {
+export default function OnboardingNavbar({ showAuthButtons = false }: { showAuthButtons?: boolean }) {
   const router = useRouter();
   const pathname = usePathname() || '';
   const [onboardingStep, setOnboardingStep] = useState<number>(2);
@@ -19,7 +19,7 @@ export default function OnboardingNavbar() {
   else if (pathname.includes('/step-4')) activeStep = 3;
   else if (pathname.includes('/step-5')) activeStep = 4;
 
-  const showStepper = activeStep > 0;
+  const showStepper = activeStep > 0 && pathname.includes('/creator-onboarding');
 
   useEffect(() => {
     async function fetchUser() {
@@ -55,7 +55,7 @@ export default function OnboardingNavbar() {
   };
 
   return (
-    <div className="px-3 sm:px-4 lg:px-6 pt-3 sm:pt-4 bg-[#F7F7FA] w-full">
+    <div className="px-3 sm:px-4 lg:px-6 pt-3 sm:pt-4 w-full">
       {/* Top Navbar */}
       <nav className="bg-white shadow-sm border border-gray-100 rounded-2xl sm:rounded-3xl mb-4 max-w-7xl mx-auto">
         <div className="px-4 sm:px-6 py-3 sm:py-4">
@@ -148,18 +148,27 @@ export default function OnboardingNavbar() {
 
             {/* Navigation items on the right */}
             <div className="flex items-center gap-3">
-              <button
-                onClick={handleDashboardRedirect}
-                className="px-4 py-2 border border-[#0012FF] text-[#0012FF] rounded-xl text-xs sm:text-sm font-semibold hover:bg-[#0012FF]/5 transition-all cursor-pointer bg-white"
-              >
-                Dashboard
-              </button>
-              <button
-                onClick={handleLogout}
-                className="bg-[#0012FF] text-white px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold hover:bg-[#0012FF]/95 transition-all cursor-pointer"
-              >
-                Logout
-              </button>
+              {showAuthButtons ? (
+                <>
+                  <Link href="/login" className="text-sm font-bold text-gray-700 hover:text-[#0012FF] transition-colors px-3 py-2">Login</Link>
+                  <Link href="/signup" className="bg-[#0012FF] text-white px-5 py-2.5 rounded-full text-sm font-bold hover:bg-[#0010d0] transition-all shadow-sm">Sign up</Link>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={handleDashboardRedirect}
+                    className="px-4 py-2 border border-[#0012FF] text-[#0012FF] rounded-xl text-xs sm:text-sm font-semibold hover:bg-[#0012FF]/5 transition-all cursor-pointer bg-white"
+                  >
+                    Dashboard
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="bg-[#0012FF] text-white px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold hover:bg-[#0012FF]/95 transition-all cursor-pointer"
+                  >
+                    Logout
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
