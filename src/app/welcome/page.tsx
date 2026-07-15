@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Image from 'next/image';
 import HeroImage from '../components/HeroImage';
 import LoadingAnimation from '@/components/LoadingAnimation';
@@ -15,6 +15,45 @@ export default function WelcomePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingButton, setIsLoadingButton] = useState(false);
   const [userData, setUserData] = useState<any>(null);
+
+  const hasSelected = useRef(false);
+
+  useEffect(() => {
+    const handleLeave = async () => {
+      if (!hasSelected.current) {
+        // Clear all cookies
+        document.cookie.split(";").forEach((c) => {
+          document.cookie = c
+            .replace(/^ +/, "")
+            .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+        });
+        localStorage.clear();
+        sessionStorage.clear();
+        
+        // Log out of NextAuth
+        const { signOut } = await import('next-auth/react');
+        await signOut({ redirect: false });
+      }
+    };
+
+    const handleBeforeUnload = () => {
+      if (!hasSelected.current) {
+        document.cookie.split(";").forEach((c) => {
+          document.cookie = c
+            .replace(/^ +/, "")
+            .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+        });
+        localStorage.clear();
+        sessionStorage.clear();
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      handleLeave();
+    };
+  }, []);
 
   useEffect(() => {
     if (status === 'authenticated' && !redirected) {
@@ -76,6 +115,7 @@ export default function WelcomePage() {
   if (isLoading || status === 'loading') return <LoadingAnimation />;
 
   const handleBookSessions = async () => {
+    hasSelected.current = true;
     setIsLoadingButton(true);
     try {
       await fetch('/api/user/update-onboarding-step', {
@@ -93,6 +133,7 @@ export default function WelcomePage() {
   };
 
   const handleBecomeCreator = async () => {
+    hasSelected.current = true;
     setIsLoadingButton(true);
     try {
       await fetch('/api/user/update-onboarding-step', {
@@ -241,7 +282,17 @@ export default function WelcomePage() {
             <p className="text-sm text-gray-500 text-center font-sans">
               Already have an account?{' '}
               <span
-                onClick={() => signOut({ callbackUrl: '/login' })}
+                onClick={async () => {
+                  hasSelected.current = true;
+                  document.cookie.split(";").forEach((c) => {
+                    document.cookie = c
+                      .replace(/^ +/, "")
+                      .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+                  });
+                  localStorage.clear();
+                  sessionStorage.clear();
+                  await signOut({ callbackUrl: '/login' });
+                }}
                 className="font-bold text-[#0012FF] cursor-pointer hover:underline"
               >
                 Log in

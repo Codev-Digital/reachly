@@ -56,8 +56,11 @@ export default function LoginPage() {
             // Creator who started/saved onboarding draft → resume at their last step
             const resumeStep = Math.max(1, Math.min(onboardingStep, 7));
             router.push(`/creator-onboarding/step-${resumeStep}`);
+          } else if (!userData.user.hasSeenWelcome) {
+            // Not chosen a path yet → welcome screen
+            router.push('/welcome');
           } else {
-            // Regular user / fresh creator account → user dashboard
+            // Regular user / complete user → user dashboard
             router.push('/user/dashboard');
           }
         } else {
