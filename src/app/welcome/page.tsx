@@ -134,12 +134,10 @@ export default function WelcomePage() {
             </div>
 
             {/* Path Selection Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-8">
-
-              {/* I want to book sessions */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-8">              {/* I want to book sessions */}
               <div
                 onClick={handleBookSessions}
-                className="relative overflow-hidden group rounded-3xl p-6 sm:p-8 cursor-pointer transition-all hover:scale-[1.02] active:scale-98 min-h-[240px] flex flex-col justify-between"
+                className="relative overflow-hidden group rounded-2xl p-6 sm:p-7 cursor-pointer transition-all hover:scale-[1.02] active:scale-98 min-h-[240px] flex flex-col justify-between"
               >
                 {/* SVG Background */}
                 <img
@@ -151,30 +149,33 @@ export default function WelcomePage() {
                 {/* Arrow up-right */}
                 <div
                   className="
-    absolute
-    top-1 right-6
-    sm:top-7 sm:right-5
-    md:top-4 md:right-3
-    text-[#0012FF]
-    group-hover:translate-x-0.5
-    group-hover:-translate-y-0.5
-    transition-transform
-    z-10
-  "
+                    absolute
+                    top-[10px] right-[12px]
+                    text-[#0012FF]
+                    group-hover:translate-x-0.5
+                    group-hover:-translate-y-0.5
+                    transition-transform
+                    z-10
+                  "
                 >
-                  <ArrowUpRight className="w-5 h-5 sm:w-5 sm:h-6" />
+                  <ArrowUpRight className="w-5 h-5" />
                 </div>
 
-                <div className="space-y-6 relative z-10">
-                  <div className="w-12 h-12 rounded-2xl bg-[#EEF2FF] flex items-center justify-center">
-                    <Briefcase className="h-5 w-5 text-[#0012FF]" />
+                <div className="space-y-4 relative z-10">
+                  <div className="w-12 h-12 rounded-[14px] bg-[#EEF2FF] flex items-center justify-center">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="w-5.5 h-5.5">
+                      <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                      <rect x="3" y="6" width="18" height="14" rx="2" />
+                      <line x1="3" y1="12" x2="21" y2="12" />
+                      <rect x="10.5" y="10" width="3" height="4" rx="0.5" fill="#EEF2FF" stroke="#0012FF" strokeWidth="2" />
+                    </svg>
                   </div>
                   <div>
-                    <h3 className="font-extrabold text-[15px] sm:text-[17px] text-black mb-2 font-sans tracking-tight whitespace-nowrap">
+                    <h3 className="font-sans font-bold text-[17px] text-black mb-1.5 tracking-tight">
                       I Want to Book Sessions
                     </h3>
-                    <p className="text-xs text-gray-500 font-sans leading-relaxed">
-                      Find creators you admire and book personalized video calls to learn, grow and connect
+                    <p className="text-xs text-gray-400 font-sans leading-relaxed font-normal">
+                      Find creators you admire and book personalized video calls to learn , grow and connect
                     </p>
                   </div>
                 </div>
@@ -183,7 +184,7 @@ export default function WelcomePage() {
               {/* I want to be a creator */}
               <div
                 onClick={handleBecomeCreator}
-                className="relative overflow-hidden group rounded-3xl p-6 sm:p-8 cursor-pointer transition-all hover:scale-[1.02] active:scale-98 min-h-[240px] flex flex-col justify-between"
+                className="relative overflow-hidden group rounded-2xl p-6 sm:p-7 cursor-pointer transition-all hover:scale-[1.02] active:scale-98 min-h-[240px] flex flex-col justify-between"
               >
                 {/* SVG Background */}
                 <img
@@ -195,29 +196,39 @@ export default function WelcomePage() {
                 {/* Arrow up-right */}
                 <div
                   className="
-    absolute
-    top-1 right-6
-    sm:top-7 sm:right-5
-    md:top-4 md:right-3
-    text-[#0012FF]
-    group-hover:translate-x-0.5
-    group-hover:-translate-y-0.5
-    transition-transform
-    z-10
-  "
+                    absolute
+                   top-[10px] right-[12px]
+                    text-[#0012FF]
+                    group-hover:translate-x-0.5
+                    group-hover:-translate-y-0.5
+                    transition-transform
+                    z-10
+                  "
                 >
-                  <ArrowUpRight className="w-5 h-5 sm:w-5 sm:h-6" />
+                  <ArrowUpRight className="w-5 h-5" />
                 </div>
 
-                <div className="space-y-6 relative z-10">
-                  <div className="w-12 h-12 rounded-2xl bg-[#EEF2FF] flex items-center justify-center">
-                    <User className="h-5 w-5 text-[#0012FF]" />
+                <div className="space-y-4 relative z-10">
+                  <div className="w-12 h-12 rounded-[14px] bg-[#EEF2FF] flex items-center justify-center">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="w-5.5 h-5.5">
+                      <circle cx="10" cy="8" r="4" />
+                      <path d="M3 20a7 7 0 0 1 12-4" />
+                      <g transform="translate(13, 11) scale(0.48)">
+                        <polygon
+                          points="12,2 15,9 22,9 17,14 19,21 12,17 5,21 7,14 2,9 9,9"
+                          fill="#EEF2FF"
+                          stroke="#0012FF"
+                          strokeWidth="3.5"
+                          strokeLinejoin="round"
+                        />
+                      </g>
+                    </svg>
                   </div>
                   <div>
-                    <h3 className="font-extrabold text-[15px] sm:text-[17px] text-black mb-2 font-sans tracking-tight">
+                    <h3 className="font-sans font-bold text-[17px] text-black mb-1.5 tracking-tight">
                       I Want to be a Creator
                     </h3>
-                    <p className="text-xs text-gray-500 font-sans leading-relaxed">
+                    <p className="text-xs text-gray-400 font-sans leading-relaxed font-normal">
                       Share your knowledge, connect with your audience and monetize your expertise through 1-on-1 sessions.
                     </p>
                   </div>
