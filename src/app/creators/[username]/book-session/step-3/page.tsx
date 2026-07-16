@@ -9,12 +9,14 @@ import { useBooking } from '../layout';
 export default function BookSessionStep3() {
   const params = useParams();
   const router = useRouter();
-  const { booking, setBooking, nextStep, saveToStorage } = useBooking();
+  const { booking, setBooking, nextStep, saveToStorage, userData } = useBooking();
   const [authError, setAuthError] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
   const [isLoadingBack, setIsLoadingBack] = useState(false);
   const [isLoadingDraft, setIsLoadingDraft] = useState(false);
   const [saved, setSaved] = useState(true);
+  const [showWarningModal, setShowWarningModal] = useState(false);
+
   const updateUserDetails = (field: string, value: string) => {
     setBooking(b => ({
       ...b,
@@ -29,6 +31,17 @@ export default function BookSessionStep3() {
 
   const handleContinue = async () => {
     if (!canProceed) return;
+
+    // Prevent creator from booking themselves
+    const isOwnSession = 
+      (userData?.user?.id && booking.creator?.id && userData.user.id === booking.creator.id) ||
+      (userData?.creatorProfile?.username && params.username && userData.creatorProfile.username.toLowerCase() === decodeURIComponent(params.username as string).toLowerCase());
+
+    if (isOwnSession) {
+      setShowWarningModal(true);
+      return;
+    }
+
     const proceedAs = booking.userDetails.proceedAs || 'guest';
     const step4Url = `/creators/${params.username}/book-session/step-4`;
 
@@ -233,6 +246,67 @@ export default function BookSessionStep3() {
           </div>
         </div>
       </div>
+      {showWarningModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100] p-4">
+          <div className="relative overflow-visible w-full max-w-lg flex flex-col items-center px-5 sm:px-7 lg:px-8 pt-10 sm:pt-12 pb-6 sm:pb-8 z-10">
+            {/* SVG Background */}
+            <img
+              src="/assets/cancel-card.svg"
+              alt=""
+              className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10"
+            />
+
+            {/* Close Button */}
+            <button
+              onClick={() => setShowWarningModal(false)}
+              className="absolute -top-1 sm:-top-3 left-1/2 -translate-x-1/2 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white shadow-md flex items-center justify-center border border-gray-100/50 text-gray-500 hover:bg-gray-55 transition-all z-20 cursor-pointer"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+
+            {/* Illustration */}
+            <div className="w-24 sm:w-36 md:w-44 lg:w-56 mt-2 sm:mt-3 mb-3 sm:mb-4">
+              <img
+                src="/assets/cancel-appointment.png"
+                alt="Cancel Appointment"
+                width={240}
+                height={170}
+                className="w-full h-auto object-contain"
+              />
+            </div>
+
+            {/* Title */}
+            <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-black text-center mb-2">
+              Cannot Book Own Session
+            </h3>
+
+            {/* Description */}
+            <p className="text-xs sm:text-sm text-gray-500 text-center mb-5 sm:mb-6 leading-relaxed">
+              You cannot book a session with yourself. Please book a session with another creator.
+            </p>
+
+            {/* Actions */}
+            <div className="flex justify-center w-full">
+              <button
+                onClick={() => setShowWarningModal(false)}
+                className="px-6 sm:px-8 py-2 sm:py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-all bg-white cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

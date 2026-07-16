@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import BookingProgress from '@/components/booking/BookingProgress';
 import CreatorProfileCard from '@/components/booking/CreatorProfileCard';
 import { useBooking } from '../layout';
@@ -17,6 +17,14 @@ export default function BookSessionStep4() {
   const [isLoadingBack, setIsLoadingBack] = useState(false);
   const [isLoadingContinue, setIsLoadingContinue] = useState(false);
   const [saved, setSaved] = useState(true);
+  const [errorModalOpen, setErrorModalOpen] = useState(false);
+  const [errorModalMsg, setErrorModalMsg] = useState('');
+
+  // Reset loading states when switching between payment views
+  useEffect(() => {
+    setIsLoadingBack(false);
+    setIsLoadingContinue(false);
+  }, [showQr]);
 
   const handleContinue = () => {
     setShowQr(true);
@@ -58,11 +66,13 @@ export default function BookSessionStep4() {
         nextStep();
         router.push(`/creators/${params.username}/book-session/step-5`);
       } else {
-        alert(data.error || 'Failed to place booking');
+        setErrorModalMsg(data.error || 'Failed to place booking');
+        setErrorModalOpen(true);
       }
     } catch (err) {
       console.error(err);
-      alert('An error occurred during booking creation.');
+      setErrorModalMsg('An error occurred during booking creation.');
+      setErrorModalOpen(true);
     } finally {
       setIsSubmitting(false);
     }
@@ -279,6 +289,27 @@ export default function BookSessionStep4() {
           )}
         </div>
       </div>
+
+      {/* Warning/Error Modal styled exactly like CancelBookingModal */}
+      {errorModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-[#1a1a1a] border border-[rgba(200,169,126,0.3)] rounded-2xl p-6 w-full max-w-md shadow-2xl">
+            <h2 className="font-serif text-xl font-semibold text-[#F9F6F2] mb-2">Booking Warning</h2>
+            <p className="font-sans text-sm text-[#F9F6F2] opacity-70 mb-6">
+              {errorModalMsg}
+            </p>
+
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setErrorModalOpen(false)}
+                className="flex-1 bg-[#C8A97E] text-[#0C0C0C] px-4 py-2.5 rounded-full text-sm font-sans font-semibold hover:opacity-90 transition-all"
+              >
+                Okay
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

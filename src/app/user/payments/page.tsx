@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import UserNavbar from '@/components/UserNavbar';
+import { CreditCard, DollarSign, Clock, Calendar, TrendingUp } from 'lucide-react';
 
 export default function UserPayments() {
   const [displayName, setDisplayName] = useState('James Richard');
@@ -15,7 +16,42 @@ export default function UserPayments() {
   const [methodDropdownOpen, setMethodDropdownOpen] = useState(false);
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
 
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
+    async function loadData() {
+      try {
+        setLoading(true);
+        const res = await fetch('/api/user/bookings');
+        if (res.ok) {
+          const data = await res.json();
+          const formatted = (data.bookings || []).map((b: any) => ({
+            id: b.ref || `TXN-${b.id.slice(-5).toUpperCase()}`,
+            creator: {
+              name: b.creator,
+              username: b.username ? `@${b.username}` : '',
+              avatar: b.image || '/ahad raza mir.png'
+            },
+            session: b.session,
+            method: b.paymentMethod || 'Jazzcash',
+            date: b.shortDate || b.date,
+            time: b.time,
+            amount: b.price || '0 PKR',
+            status: b.originalStatus === 'refunded' ? 'Refunded' : b.status === 'Pending Approval' || b.originalStatus === 'pending' ? 'Pending' : 'Completed',
+            rawPrice: parseFloat((b.price || '').replace(/[^0-9.]/g, '')) || 0,
+            rawStatus: b.originalStatus,
+            scheduledDate: b.scheduledDate
+          }));
+          setTransactions(formatted);
+        }
+      } catch (err) {
+        console.error('Error loading bookings:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
     async function checkAuth() {
       try {
         const res = await fetch('/api/user/me');
@@ -30,26 +66,32 @@ export default function UserPayments() {
         console.error('Error fetching user:', err);
       }
     }
-    checkAuth();
-  }, []);
 
-  const transactions = [
-    { id: 'TXN-10245', creator: { name: 'Sophia Reed', username: '@sophiareed', avatar: '/Avatars/12.jpg' }, session: 'Styling Consultation', method: 'Jazzcash', date: '02 July 2026', time: '10:45 AM', amount: '25,000 PKR', status: 'Completed' },
-    { id: 'TXN-10245', creator: { name: 'Sophia Reed', username: '@sophiareed', avatar: '/Avatars/12.jpg' }, session: 'Styling Consultation', method: 'Easy Paisa', date: '02 July 2026', time: '10:45 AM', amount: '25,000 PKR', status: 'Pending' },
-    { id: 'TXN-10245', creator: { name: 'Sophia Reed', username: '@sophiareed', avatar: '/Avatars/12.jpg' }, session: 'Styling Consultation', method: 'Bank Card', date: '02 July 2026', time: '10:45 AM', amount: '25,000 PKR', status: 'Completed' },
-    { id: 'TXN-10245', creator: { name: 'Sophia Reed', username: '@sophiareed', avatar: '/Avatars/12.jpg' }, session: 'Styling Consultation', method: 'Jazzcash', date: '02 July 2026', time: '10:45 AM', amount: '25,000 PKR', status: 'Refunded' },
-    { id: 'TXN-10245', creator: { name: 'Sophia Reed', username: '@sophiareed', avatar: '/Avatars/12.jpg' }, session: 'Styling Consultation', method: 'Easy Paisa', date: '02 July 2026', time: '10:45 AM', amount: '25,000 PKR', status: 'Pending' },
-    { id: 'TXN-10245', creator: { name: 'Sophia Reed', username: '@sophiareed', avatar: '/Avatars/12.jpg' }, session: 'Styling Consultation', method: 'Bank Card', date: '02 July 2026', time: '10:45 AM', amount: '25,000 PKR', status: 'Refunded' },
-    { id: 'TXN-10245', creator: { name: 'Sophia Reed', username: '@sophiareed', avatar: '/Avatars/12.jpg' }, session: 'Styling Consultation', method: 'Jazzcash', date: '02 July 2026', time: '10:45 AM', amount: '25,000 PKR', status: 'Completed' },
-  ];
+    checkAuth();
+    loadData();
+  }, []);
 
   const filteredTransactions = transactions.filter(txn => {
     const matchesSearch = txn.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       txn.creator.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesMethod = methodFilter === 'All' || txn.method === methodFilter;
-    const matchesStatus = statusFilter === 'All' || txn.status === statusFilter;
+    const matchesMethod = methodFilter === 'All' || txn.method.toLowerCase().replace(/\s+/g, '') === methodFilter.toLowerCase().replace(/\s+/g, '');
+    const matchesStatus = statusFilter === 'All' || txn.status.toLowerCase() === statusFilter.toLowerCase();
     return matchesSearch && matchesMethod && matchesStatus;
   });
+
+  const totalSpent = transactions
+    .filter(t => t.rawStatus === 'completed' || t.rawStatus === 'confirmed')
+    .reduce((sum, t) => sum + t.rawPrice, 0);
+
+  const totalRefunded = transactions
+    .filter(t => t.rawStatus === 'refunded')
+    .reduce((sum, t) => sum + t.rawPrice, 0);
+
+  const activeBookingsValue = transactions
+    .filter(t => t.rawStatus === 'confirmed' && new Date(t.scheduledDate) > new Date())
+    .reduce((sum, t) => sum + t.rawPrice, 0);
+
+  const availableBalance = Math.max(0, 50000 + totalRefunded - totalSpent);
 
   return (
     <div className="min-h-screen bg-[#F7F7FA] pb-12">
@@ -70,123 +112,82 @@ export default function UserPayments() {
             </h1>
           </div>
 
-          {/* Wallet Cards - stacked on mobile, overlapping on desktop */}
-          <div className="flex flex-col sm:flex-row w-full gap-3 sm:gap-5 mb-8">
+          {/* Wallet Cards Grid - Shorter height and exact creator wallet cards styling */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
 
-            {/* Card 1 - Available Balance */}
-            <div className="relative sm:flex-[2] h-[180px] sm:h-[210px] overflow-visible rounded-2xl sm:rounded-none">
-              <Image src="/assets/wr-1.png" alt="" fill className="object-fill rounded-2xl sm:rounded-none" priority />
-              <div className="absolute inset-0 p-4 sm:p-5 flex flex-col justify-between">
-                <div className="flex items-start justify-between w-full">
-                  <div className="flex items-center gap-3 sm:gap-4">
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/60 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2">
-                        <rect x="2" y="5" width="20" height="14" rx="2" />
-                        <line x1="2" y1="10" x2="22" y2="10" />
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="text-xs font-sans mb-0.5 text-white/80">Available Balance</p>
-                      <p className="text-2xl sm:text-3xl font-bold text-white font-sans">63,458 PKR</p>
-                    </div>
-                  </div>
-                  <button className="flex items-center hover:opacity-90 transition-all">
-                    <Image
-                      src="/assets/payout.svg"
-                      alt="Payout"
-                      width={80}
-                      height={12}
-                      className="-translate-y-3 translate-x-5"
-                    />
-                  </button>
+            {/* Card 1 - Available Balance (Solid Royal Blue) */}
+            <div className="bg-[#0012FF] text-white rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 hover:scale-[1.02] transition-all duration-300 hover:shadow-md cursor-default">
+              <div className="flex justify-between items-start">
+                <div className="flex flex-col">
+                  <span className="text-[10px] sm:text-xs font-semibold text-white/80 uppercase tracking-wider mb-1 font-sans">Available Balance</span>
+                  <span className="text-3xl font-bold tracking-tight font-sans">{availableBalance.toLocaleString()} PKR</span>
                 </div>
-                <div className="flex items-center gap-1 text-white">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-                    <polyline points="17 6 23 6 23 12" />
-                  </svg>
-                  <span className="text-xs sm:text-sm font-semibold">+18.2% from last month</span>
+                <div className="w-12 h-12 bg-white/15 rounded-2xl flex items-center justify-center backdrop-blur-sm shadow-sm">
+                  <CreditCard className="w-6 h-6 text-white" />
+                </div>
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5 text-xs font-medium text-white/80">
+                  <TrendingUp className="h-3.5 w-3.5" />
+                  <span>+18.2% from last month</span>
                 </div>
               </div>
             </div>
 
-            {/* Card 2 - Total Spent */}
-            <div className="relative sm:flex-1 h-[160px] sm:h-[210px] overflow-visible rounded-2xl sm:rounded-none sm:-ml-0.5 sm:z-10">
-              <Image src="/assets/wr-2.png" alt="" fill className="object-fill rounded-2xl sm:rounded-none" />
-              <div className="absolute inset-0 p-4 sm:p-5 flex flex-col justify-between">
-                <div className="flex items-center gap-3 sm:gap-4">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/60 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2">
-                      <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-xs font-sans mb-0.5 text-gray-500 font-medium">Total spent</p>
-                    <p className="text-xl sm:text-2xl font-bold font-sans text-[#22C55E]">22,458 PKR</p>
-                  </div>
+            {/* Card 2 - Total Spent (Light Green) */}
+            <div className="bg-[#AFE8B9] text-[#0A4A1C] rounded-3xl p-6 shadow-sm border border-emerald-100/30 flex flex-col justify-between h-40 hover:scale-[1.02] transition-all duration-300 hover:shadow-md cursor-default">
+              <div className="flex justify-between items-start">
+                <div className="flex flex-col">
+                  <span className="text-[10px] sm:text-xs font-semibold opacity-75 uppercase tracking-wider mb-1 font-sans">Total Spent</span>
+                  <span className="text-3xl font-bold tracking-tight font-sans">{totalSpent.toLocaleString()} PKR</span>
                 </div>
-                <div className="flex items-center gap-1 text-[#22C55E]">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-                    <polyline points="17 6 23 6 23 12" />
-                  </svg>
-                  <span className="text-xs sm:text-sm font-semibold">+18.2% from last month</span>
+                <div className="w-12 h-12 bg-white/40 rounded-2xl flex items-center justify-center backdrop-blur-sm shadow-sm">
+                  <DollarSign className="w-6 h-6 text-[#0A4A1C]" />
                 </div>
+              </div>
+              <div className="flex items-center gap-1.5 text-xs font-medium opacity-85">
+                <TrendingUp className="h-3.5 w-3.5" />
+                <span>+18.2% from last month</span>
               </div>
             </div>
 
-            {/* Card 3 - Total Refunded */}
-            <div className="relative sm:flex-1 h-[160px] sm:h-[210px] overflow-visible rounded-2xl sm:rounded-none ml-0 sm:-ml-10 sm:z-20">
-              <Image src="/assets/wr-3.png" alt="" fill className="object-fill rounded-2xl sm:rounded-none" />
-              <div className="absolute inset-0 pt-4 pb-4 pr-4 pl-12 sm:pt-5 sm:pb-5 sm:pr-5 sm:pl-14 flex flex-col justify-between">
-                <div className="flex items-center gap-3 sm:gap-4">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/60 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2">
-                      <circle cx="12" cy="12" r="10" />
-                      <polyline points="12 6 12 12 16 14" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-xs font-sans mb-0.5 text-gray-500 font-medium">Total Refunded</p>
-                    <p className="text-xl sm:text-2xl font-bold font-sans text-[#F59E0B]">2,058 PKR</p>
-                  </div>
+            {/* Card 3 - Total Refunded (Light Gold) */}
+            <div className="bg-[#FFEDB5] text-[#6C4800] rounded-3xl p-6 shadow-sm border border-amber-100/30 flex flex-col justify-between h-40 hover:scale-[1.02] transition-all duration-300 hover:shadow-md cursor-default">
+              <div className="flex justify-between items-start">
+                <div className="flex flex-col">
+                  <span className="text-[10px] sm:text-xs font-semibold opacity-75 uppercase tracking-wider mb-1 font-sans">Total Refunded</span>
+                  <span className="text-3xl font-bold tracking-tight font-sans">{totalRefunded.toLocaleString()} PKR</span>
                 </div>
-                <div className="flex items-center gap-1 text-[#F59E0B]">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-                    <polyline points="17 6 23 6 23 12" />
-                  </svg>
-                  <span className="text-xs sm:text-sm font-semibold">+18.2% from last month</span>
+                <div className="w-12 h-12 bg-white/40 rounded-2xl flex items-center justify-center backdrop-blur-sm shadow-sm">
+                  <Clock className="w-6 h-6 text-[#6C4800]" />
                 </div>
+              </div>
+              <div className="flex items-center gap-1.5 text-xs font-medium opacity-85">
+                <TrendingUp className="h-3.5 w-3.5" />
+                <span>+18.2% from last month</span>
               </div>
             </div>
 
-            {/* Card 4 - Active Bookings Value */}
-            <div className="relative sm:flex-1 h-[160px] sm:h-[210px] overflow-visible rounded-2xl sm:rounded-none ml-0 sm:-ml-10 sm:z-30">
-              <Image src="/assets/wr-4.png" alt="" fill className="object-fill rounded-2xl sm:rounded-none" />
-              <div className="absolute inset-0 pt-4 pb-4 pr-4 pl-12 sm:pt-5 sm:pb-5 sm:pr-5 sm:pl-14 flex flex-col justify-between">
-                <div className="flex items-center gap-3 sm:gap-4">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/60 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F43F5E" strokeWidth="2">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                      <polyline points="14 2 14 8 20 8" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-xs font-sans mb-0.5 text-gray-500 font-medium">Active Bookings Value</p>
-                    <p className="text-xl sm:text-2xl font-bold font-sans text-[#F43F5E]">5,543 PKR</p>
-                  </div>
+            {/* Card 4 - Active Bookings Value (Light Red) */}
+            <div className="bg-[#FFB3B3] text-[#701C1C] rounded-3xl p-6 shadow-sm border border-red-100/30 flex flex-col justify-between h-40 hover:scale-[1.02] transition-all duration-300 hover:shadow-md cursor-default">
+              <div className="flex justify-between items-start">
+                <div className="flex flex-col">
+                  <span className="text-[10px] sm:text-xs font-semibold opacity-75 uppercase tracking-wider mb-1 font-sans">Active Bookings Value</span>
+                  <span className="text-3xl font-bold tracking-tight font-sans">{activeBookingsValue.toLocaleString()} PKR</span>
                 </div>
-                <div className="flex items-center gap-1 text-[#F43F5E]">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-                    <polyline points="17 6 23 6 23 12" />
-                  </svg>
-                  <span className="text-xs sm:text-sm font-semibold">+18.2% from last month</span>
+                <div className="w-12 h-12 bg-white/40 rounded-2xl flex items-center justify-center backdrop-blur-sm shadow-sm">
+                  <Calendar className="w-6 h-6 text-[#701C1C]" />
                 </div>
               </div>
+              <div className="flex items-center gap-1.5 text-xs font-medium opacity-85">
+                <TrendingUp className="h-3.5 w-3.5" />
+                <span>+18.2% from last month</span>
+              </div>
             </div>
+
           </div>
+
+
 
           {/* Filters and Table Section */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
@@ -292,42 +293,60 @@ export default function UserPayments() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 bg-white">
-                  {filteredTransactions.map((txn, idx) => (
-                    <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
-                      <td className="px-6 py-4.5 whitespace-nowrap text-sm text-gray-500 font-medium">{txn.id}</td>
-                      <td className="px-6 py-4.5 whitespace-nowrap">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-100">
-                            <img src={txn.creator.avatar} alt={txn.creator.name} className="w-full h-full object-cover" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-bold text-gray-900">{txn.creator.name}</p>
-                            <p className="text-xs text-gray-400">{txn.creator.username}</p>
-                          </div>
+                  {loading ? (
+                    <tr>
+                      <td colSpan={9} className="px-6 py-10 text-center text-sm text-gray-500 font-semibold">
+                        <div className="flex items-center justify-center gap-2">
+                          <div className="w-5 h-5 rounded-full border-2 border-gray-300 border-t-[#0012FF] animate-spin"></div>
+                          <span>Loading transaction history...</span>
                         </div>
                       </td>
-                      <td className="px-6 py-4.5 whitespace-nowrap text-sm text-gray-500">{txn.session}</td>
-                      <td className="px-6 py-4.5 whitespace-nowrap text-sm text-gray-900 font-bold">{txn.method}</td>
-                      <td className="px-6 py-4.5 whitespace-nowrap text-sm text-gray-500">{txn.date}</td>
-                      <td className="px-6 py-4.5 whitespace-nowrap text-sm text-gray-500">{txn.time}</td>
-                      <td className="px-6 py-4.5 whitespace-nowrap text-sm font-bold text-gray-900">{txn.amount}</td>
-                      <td className="px-6 py-4.5 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${txn.status === 'Completed'
-                          ? 'bg-green-50 text-green-600'
-                          : txn.status === 'Pending'
-                            ? 'bg-yellow-50 text-yellow-600'
-                            : 'bg-blue-50 text-blue-600'
-                          }`}>
-                          {txn.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4.5 whitespace-nowrap text-sm">
-                        <button className="border border-gray-200 rounded-full px-4 py-1 text-xs font-semibold text-[#0012FF] hover:bg-[#0012FF]/5 transition-all">
-                          Download
-                        </button>
+                    </tr>
+                  ) : filteredTransactions.length === 0 ? (
+                    <tr>
+                      <td colSpan={9} className="px-6 py-10 text-center text-sm text-gray-500 font-semibold">
+                        No transactions found.
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    filteredTransactions.map((txn, idx) => (
+                      <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
+                        <td className="px-6 py-4.5 whitespace-nowrap text-sm text-gray-500 font-medium">{txn.id}</td>
+                        <td className="px-6 py-4.5 whitespace-nowrap">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-100">
+                              <img src={txn.creator.avatar} alt={txn.creator.name} className="w-full h-full object-cover" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold text-gray-900">{txn.creator.name}</p>
+                              <p className="text-xs text-gray-400">{txn.creator.username}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4.5 whitespace-nowrap text-sm text-gray-500">{txn.session}</td>
+                        <td className="px-6 py-4.5 whitespace-nowrap text-sm text-gray-900 font-bold">{txn.method}</td>
+                        <td className="px-6 py-4.5 whitespace-nowrap text-sm text-gray-500">{txn.date}</td>
+                        <td className="px-6 py-4.5 whitespace-nowrap text-sm text-gray-500">{txn.time}</td>
+                        <td className="px-6 py-4.5 whitespace-nowrap text-sm font-bold text-gray-900">{txn.amount}</td>
+                        <td className="px-6 py-4.5 whitespace-nowrap">
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
+                            txn.status === 'Completed'
+                              ? 'bg-green-50 text-green-600'
+                              : txn.status === 'Pending'
+                              ? 'bg-yellow-50 text-yellow-600'
+                              : 'bg-red-50 text-red-600'
+                          }`}>
+                            {txn.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4.5 whitespace-nowrap text-sm">
+                          <button className="border border-gray-200 rounded-full px-4 py-1 text-xs font-semibold text-[#0012FF] hover:bg-[#0012FF]/5 transition-all">
+                            Download
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -335,7 +354,7 @@ export default function UserPayments() {
 
           {/* Pagination */}
           <div className="flex items-center justify-between mt-6 px-2">
-            <p className="text-sm text-gray-400 font-medium">Showing 7 of 20</p>
+            <p className="text-sm text-gray-400 font-medium">Showing {filteredTransactions.length} of {transactions.length}</p>
             <div className="flex items-center gap-2">
               <button className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-200 text-gray-400 hover:bg-gray-50 transition-all">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -343,7 +362,6 @@ export default function UserPayments() {
                 </svg>
               </button>
               <button className="w-8 h-8 flex items-center justify-center rounded-full bg-[#0012FF] text-white text-xs font-bold">1</button>
-              <button className="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-50 text-xs font-bold transition-all">2</button>
               <button className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-200 text-gray-400 hover:bg-gray-50 transition-all">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <polyline points="9 18 15 12 9 6" />

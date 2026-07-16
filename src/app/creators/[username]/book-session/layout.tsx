@@ -107,6 +107,7 @@ const BookingContext = createContext<{
   nextStep: () => void;
   prevStep: () => void;
   saveToStorage: () => void;
+  userData: any;
 } | null>(null);
 
 export function useBooking() {
@@ -178,7 +179,7 @@ export default function BookSessionLayout({ children }: { children: ReactNode })
   const prevStep = () => setBooking(b => ({ ...b, step: b.step - 1 }));
 
   return (
-    <BookingContext.Provider value={{ booking, setBooking, nextStep, prevStep, saveToStorage }}>
+    <BookingContext.Provider value={{ booking, setBooking, nextStep, prevStep, saveToStorage, userData }}>
       <div className="min-h-screen bg-[#F8F8FA] text-gray-900 flex flex-col overflow-x-hidden">
         {isLoggedIn ? (
           userRole === 'creator' ? (
