@@ -37,9 +37,9 @@ export default function CreatorOnboardingLayout({
   if (loading) return <LoadingAnimation />;
 
   return (
-    <>
+    <div className="min-h-screen bg-[#F7F7FA]">
       <OnboardingNavbar />
       {children}
-    </>
+    </div>
   );
 }
