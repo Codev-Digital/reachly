@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { motion, useInView } from 'framer-motion';
 import { useRef } from 'react';
-import { useSession, signOut } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import CreatorNavbar from '@/components/CreatorNavbar';
 import Footer from '@/components/Footer';
 import Image from "next/image";
@@ -37,18 +37,17 @@ export default function Home() {
   const [categoryIndex, setCategoryIndex] = useState(0);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
-  // Clear cookies if user is unauthenticated OR if they land on homepage before completing welcome choice
+  // Clear cookies only if user is fully unauthenticated (not logged in at all).
+  // Do NOT log out authenticated users here — even if they haven't seen the welcome screen yet.
+  // That flow is handled by the /welcome page itself.
   useEffect(() => {
     const clearStorageIfNeeded = async () => {
-      // Wait a bit for session to load
+      // Wait for session to finish loading
       await new Promise(resolve => setTimeout(resolve, 500));
-      
-      const hasSeenWelcome = (session?.user as any)?.hasSeenWelcome;
 
-      const shouldClear = 
-        status === 'unauthenticated' || 
-        (!session && status !== 'loading') ||
-        (status === 'authenticated' && hasSeenWelcome === false);
+      const shouldClear =
+        status === 'unauthenticated' ||
+        (!session && status !== 'loading');
 
       if (shouldClear) {
         document.cookie.split(";").forEach((c) => {
@@ -58,13 +57,9 @@ export default function Home() {
         });
         localStorage.clear();
         sessionStorage.clear();
-
-        if (status === 'authenticated') {
-          await signOut({ callbackUrl: '/' });
-        }
       }
     };
-    
+
     clearStorageIfNeeded();
   }, [status, session]);
 
@@ -306,7 +301,7 @@ export default function Home() {
           </div>
         </section> */}
 
-    
+
 
       {/* ════════════════════════════════════════
             FEATURED CREATORS
@@ -481,7 +476,7 @@ Z
         </div>
       </section>
 
-        {/* ════════════════════════════════════════
+      {/* ════════════════════════════════════════
             HOW IT WORKS
         ════════════════════════════════════════ */}
       <section className="py-24 bg-[#F7F7FA] text-[#0C0C0C] border-t border-gray-100">

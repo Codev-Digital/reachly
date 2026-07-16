@@ -41,7 +41,15 @@ export async function middleware(request: NextRequest) {
   // Read JWT — try both possible secret env var names
   const secret = process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET;
 
-  const token = await getToken({ req: request, secret });
+  // On production HTTPS, NextAuth uses __Secure-next-auth.session-token.
+  // We must tell getToken() to look for the secure cookie, otherwise it
+  // returns null on Vercel and treats every user as unauthenticated.
+  const secureCookie =
+    process.env.NEXTAUTH_URL?.startsWith('https://') ||
+    process.env.VERCEL_URL != null ||
+    request.url.startsWith('https://');
+
+  const token = await getToken({ req: request, secret, secureCookie });
   const isLoggedIn = !!token;
   const isComplete = !!(token as any)?.isRegistrationComplete;
 
