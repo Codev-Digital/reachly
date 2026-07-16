@@ -179,46 +179,42 @@ export default function UserSettings() {
             </h1>
           </div>
 
-          {/* Settings Tabs */}
-          <div className="flex gap-4 mb-8">
-            <button
-              onClick={() => setActiveTab('Profile')}
-              className="flex flex-col items-center gap-1.5"
-            >
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${activeTab === 'Profile'
-                ? 'bg-[#EEF2FF]'
-                : 'bg-white border border-gray-150'
-                }`}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={activeTab === 'Profile' ? '#0012FF' : '#9CA3AF'} strokeWidth="2">
-                  <circle cx="12" cy="12" r="10" />
-                  <circle cx="12" cy="8" r="3" />
-                  <path d="M4 20c1-4 5-6 8-6s7 2 8 6" />
-                </svg>
-              </div>
-              <span className={`text-xs font-bold font-sans transition-all ${activeTab === 'Profile' ? 'text-[#0012FF]' : 'text-gray-400'
-                }`}>
-                Profile
-              </span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('Security')}
-              className="flex flex-col items-center gap-1.5"
-            >
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${activeTab === 'Security'
-                ? 'bg-[#EEF2FF]'
-                : 'bg-white border border-gray-150'
-                }`}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={activeTab === 'Security' ? '#0012FF' : '#9CA3AF'} strokeWidth="2">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                </svg>
-              </div>
-              <span className={`text-xs font-bold font-sans transition-all ${activeTab === 'Security' ? 'text-[#0012FF]' : 'text-gray-400'
-                }`}>
-                Security
-              </span>
-            </button>
+          {/* Refined Top Navigation Segment Bar - Centered with Icons and Headings */}
+          <div className="bg-white rounded-3xl p-1.5 border border-gray-200 shadow-sm flex flex-wrap items-center justify-center gap-1.5 mb-8 max-w-sm mx-auto">
+            {[
+              {
+                name: 'Profile' as 'Profile' | 'Security',
+                icon: (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="flex-shrink-0">
+                    <circle cx="12" cy="12" r="10" />
+                    <circle cx="12" cy="8" r="3" />
+                    <path d="M4 20c1-4 5-6 8-6s7 2 8 6" />
+                  </svg>
+                )
+              },
+              {
+                name: 'Security' as 'Profile' | 'Security',
+                icon: (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="flex-shrink-0">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                  </svg>
+                )
+              }
+            ].map((tab) => (
+              <button
+                key={tab.name}
+                onClick={() => setActiveTab(tab.name)}
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all cursor-pointer border ${
+                  activeTab === tab.name
+                    ? 'bg-[#0012FF] border-[#0012FF] text-white shadow-md shadow-blue-100 scale-102'
+                    : 'bg-white border-transparent text-gray-500 hover:text-black hover:bg-gray-50'
+                }`}
+              >
+                {tab.icon}
+                <span>{tab.name}</span>
+              </button>
+            ))}
           </div>
 
           {/* Profile Tab */}
@@ -243,7 +239,7 @@ export default function UserSettings() {
                   {profilePhoto ? (
                     <img src={profilePhoto} alt={displayName} className="w-full h-full object-cover" />
                   ) : (
-                    <img src="/Avatars/1.jpg" alt="Avatar" className="w-full h-full object-cover" />
+                    <img src="/avatar.png" alt="Avatar" className="w-full h-full object-cover" />
                   )}
                 </div>
                 <div>

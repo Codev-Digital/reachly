@@ -346,7 +346,7 @@ export default function CreatorDashboardNav({
                   ) : displayName ? (
                     <span className="text-gray-700 font-bold text-sm">{displayName.charAt(0).toUpperCase()}</span>
                   ) : (
-                    <Image src="/Avatars/1.jpg" alt="User" className="w-full h-full object-cover" width={40} height={40} />
+                    <Image src="/avatar.png" alt="User" className="w-full h-full object-cover" width={40} height={40} />
                   )}
                 </button>
 

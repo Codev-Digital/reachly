@@ -412,7 +412,7 @@ export default function ExploreCreatorsPage() {
                     </svg>
 
                     <img
-                      src={creator.profilePhoto || '/Avatars/1.jpg'}
+                      src={creator.profilePhoto || '/avatar.png'}
                       alt={creator.name}
                       className="w-full h-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.02]"
                       style={{ clipPath: `url(#${clipId})` }}

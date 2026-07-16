@@ -398,7 +398,7 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
                 {profilePhoto ? (
                   <img src={profilePhoto} alt={displayName} className="w-full h-full object-cover" />
                 ) : (
-                  <img src="/Avatars/1.jpg" alt="User Avatar" className="w-full h-full object-cover" />
+                  <img src="/avatar.png" alt="User Avatar" className="w-full h-full object-cover" />
                 )}
               </button>
 
