@@ -255,6 +255,7 @@ export default function CreatorSettings() {
           languages: selectedLanguages,
           niches: selectedNiches,
           socialLinks: { instagram, tiktok, youtube, linkedin },
+          profilePhoto,
         })
       });
       const data = await res.json();

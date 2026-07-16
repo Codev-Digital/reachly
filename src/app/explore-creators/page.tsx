@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import UserNavbar from '@/components/UserNavbar';
+import CreatorDashboardNav from '@/components/CreatorDashboardNav';
 
 const ITEMS_PER_PAGE = 8;
 
@@ -141,10 +142,11 @@ export default function ExploreCreatorsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [showFilterPanel, setShowFilterPanel] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isCreator, setIsCreator] = useState(false);
   const [displayName, setDisplayName] = useState<string>('James Richard');
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
 
-  // Fetch real data from API
+  // Fetch real data from API and check auth
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -155,18 +157,26 @@ export default function ExploreCreatorsPage() {
           setCreators(data.creators || []);
         }
 
-        // Check if authenticated
+        // Check if authenticated and user role
         const authRes = await fetch('/api/user/me');
         if (authRes.ok) {
           const userData = await authRes.json();
           setIsAuthenticated(true);
-          if (userData.user) {
+          if (userData.creatorProfile) {
+            setIsCreator(true);
+            setDisplayName(userData.creatorProfile.displayName || userData.user?.name || 'Creator');
+            setProfilePhoto(userData.creatorProfile.profilePhoto || null);
+          } else if (userData.user) {
+            setIsCreator(false);
             setDisplayName(userData.user.name || 'James Richard');
             setProfilePhoto(userData.user.image || null);
           }
+        } else {
+          setIsAuthenticated(false);
         }
       } catch (error) {
         console.error('Error fetching data:', error);
+        setIsAuthenticated(false);
       } finally {
         setLoading(false);
       }
@@ -175,28 +185,8 @@ export default function ExploreCreatorsPage() {
     fetchData();
   }, []);
 
-  // Filter state
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [minRating, setMinRating] = useState<number | null>(null);
-
-  useEffect(() => {
-    async function checkAuth() {
-      try {
-        const res = await fetch('/api/user/me');
-        if (res.ok) {
-          const data = await res.json();
-          setIsAuthenticated(true);
-          if (data.user) {
-            setDisplayName(data.user.name || 'James Richard');
-            setProfilePhoto(data.user.image || null);
-          }
-        }
-      } catch {
-        setIsAuthenticated(false);
-      }
-    }
-    checkAuth();
-  }, []);
 
   const toggleFavorite = (id: string) =>
     setFavorites(prev =>
@@ -238,7 +228,11 @@ export default function ExploreCreatorsPage() {
     <div className="min-h-screen bg-[#F7F7FA] text-[#1a1a1a]">
       {/* Navbar */}
       {isAuthenticated ? (
-        <UserNavbar displayName={displayName} profilePhoto={profilePhoto} />
+        isCreator ? (
+          <CreatorDashboardNav displayName={displayName} profilePhoto={profilePhoto} />
+        ) : (
+          <UserNavbar displayName={displayName} profilePhoto={profilePhoto} />
+        )
       ) : (
         <div className="px-4 sm:px-6 pt-4">
           <nav className="bg-white shadow-sm border border-gray-100 max-w-7xl mx-auto rounded-3xl px-6 py-4 flex items-center justify-between">

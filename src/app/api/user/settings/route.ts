@@ -92,9 +92,10 @@ export async function PUT(req: NextRequest) {
     const { displayName, shortBio, longBio, city, country, languages, niches, socialLinks, profilePhoto } = body;
 
     // Update User Name
+    let userModified = false;
     if (displayName) {
       user.name = displayName;
-      await user.save();
+      userModified = true;
     }
 
     // Update or Create Creator Profile
@@ -129,14 +130,21 @@ export async function PUT(req: NextRequest) {
             `profiles/${user._id}/profile_${Date.now()}.${ext}`
           );
           creatorProfile.profilePhoto = url;
+          user.profilePhoto = url;
+          userModified = true;
         }
       } catch (uploadErr) {
         console.error('Error uploading profile photo to supabase:', uploadErr);
       }
     } else if (profilePhoto !== undefined) {
       creatorProfile.profilePhoto = profilePhoto;
+      user.profilePhoto = profilePhoto;
+      userModified = true;
     }
 
+    if (userModified) {
+      await user.save();
+    }
     await creatorProfile.save();
 
     return NextResponse.json({
