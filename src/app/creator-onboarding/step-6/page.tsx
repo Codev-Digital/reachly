@@ -28,9 +28,9 @@ const BANKS = [
 ];
 
 const PAYOUT_OPTIONS: { value: PayoutFrequency; label: string; sub: string }[] = [
-  { value: 'weekly',   label: 'Weekly (every Monday)',   sub: 'Fastest access to your earnings' },
+  { value: 'weekly', label: 'Weekly (every Monday)', sub: 'Fastest access to your earnings' },
   { value: 'biweekly', label: 'Bi-weekly (every 2 weeks)', sub: 'Good balance of frequency and admin' },
-  { value: 'monthly',  label: 'Monthly (last day)',      sub: 'Best for bulk accounting' },
+  { value: 'monthly', label: 'Monthly (last day)', sub: 'Best for bulk accounting' },
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -43,41 +43,41 @@ export default function CreatorOnboardingStep6() {
   const router = useRouter();
   useOnboardingCleanup();
 
-  const [fetchingData, setFetchingData]     = useState(true);
-  const [saving, setSaving]                 = useState(false);
-  const [error, setError]                   = useState('');
-  const [fieldErrors, setFieldErrors]       = useState<Record<string, string>>({});
-  const [cnicExpanded, setCnicExpanded]     = useState(false);
+  const [fetchingData, setFetchingData] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [cnicExpanded, setCnicExpanded] = useState(false);
 
   // Payment method
-  const [paymentMethod, setPaymentMethod]   = useState<PaymentMethod | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
 
   // Wallet fields (jazzcash / easypaisa)
-  const [mobileNumber, setMobile]           = useState('');
-  const [accountTitle, setAccountTitle]     = useState('');
+  const [mobileNumber, setMobile] = useState('');
+  const [accountTitle, setAccountTitle] = useState('');
 
   // Bank fields
-  const [bankName, setBankName]             = useState('');
-  const [accountNumber, setAccountNumber]   = useState('');
-  const [iban, setIban]                     = useState('');
+  const [bankName, setBankName] = useState('');
+  const [accountNumber, setAccountNumber] = useState('');
+  const [iban, setIban] = useState('');
   const [bankAccountTitle, setBankAccTitle] = useState('');
 
   // Tax
-  const [ntnNumber, setNtn]                 = useState('');
+  const [ntnNumber, setNtn] = useState('');
 
   // Payout
-  const [payoutFrequency, setPayoutFreq]    = useState<PayoutFrequency>('weekly');
+  const [payoutFrequency, setPayoutFreq] = useState<PayoutFrequency>('weekly');
 
   // CNIC
-  const [cnicFrontFile, setCnicFrontFile]   = useState<File | null>(null);
-  const [cnicBackFile, setCnicBackFile]     = useState<File | null>(null);
+  const [cnicFrontFile, setCnicFrontFile] = useState<File | null>(null);
+  const [cnicBackFile, setCnicBackFile] = useState<File | null>(null);
   const [cnicFrontPreview, setCnicFrontPrev] = useState<string | null>(null);
-  const [cnicBackPreview, setCnicBackPrev]  = useState<string | null>(null);
-  const [cnicFrontUrl, setCnicFrontUrl]     = useState<string | null>(null); // saved Supabase URL
-  const [cnicBackUrl, setCnicBackUrl]       = useState<string | null>(null);
+  const [cnicBackPreview, setCnicBackPrev] = useState<string | null>(null);
+  const [cnicFrontUrl, setCnicFrontUrl] = useState<string | null>(null); // saved Supabase URL
+  const [cnicBackUrl, setCnicBackUrl] = useState<string | null>(null);
 
   const frontRef = useRef<HTMLInputElement>(null);
-  const backRef  = useRef<HTMLInputElement>(null);
+  const backRef = useRef<HTMLInputElement>(null);
 
   // ── Load saved data on mount ────────────────────────────────────────────
   useEffect(() => {
@@ -88,18 +88,18 @@ export default function CreatorOnboardingStep6() {
           const { payment } = await res.json();
           if (payment) {
             if (payment.paymentMethod) setPaymentMethod(payment.paymentMethod);
-            if (payment.mobileNumber)  setMobile(payment.mobileNumber);
-            if (payment.accountTitle)  {
+            if (payment.mobileNumber) setMobile(payment.mobileNumber);
+            if (payment.accountTitle) {
               setAccountTitle(payment.accountTitle);
               setBankAccTitle(payment.accountTitle);
             }
-            if (payment.bankName)      setBankName(payment.bankName);
+            if (payment.bankName) setBankName(payment.bankName);
             if (payment.accountNumber) setAccountNumber(payment.accountNumber);
-            if (payment.iban)          setIban(payment.iban);
-            if (payment.ntnNumber)     setNtn(payment.ntnNumber);
+            if (payment.iban) setIban(payment.iban);
+            if (payment.ntnNumber) setNtn(payment.ntnNumber);
             if (payment.payoutFrequency) setPayoutFreq(payment.payoutFrequency);
             if (payment.cnicFront) { setCnicFrontUrl(payment.cnicFront); setCnicFrontPrev(payment.cnicFront); }
-            if (payment.cnicBack)  { setCnicBackUrl(payment.cnicBack);  setCnicBackPrev(payment.cnicBack); }
+            if (payment.cnicBack) { setCnicBackUrl(payment.cnicBack); setCnicBackPrev(payment.cnicBack); }
           }
         }
       } finally { setFetchingData(false); }
@@ -122,7 +122,7 @@ export default function CreatorOnboardingStep6() {
     reader.onload = ev => {
       const url = ev.target?.result as string;
       if (side === 'front') { setCnicFrontFile(file); setCnicFrontPrev(url); }
-      else                  { setCnicBackFile(file);  setCnicBackPrev(url); }
+      else { setCnicBackFile(file); setCnicBackPrev(url); }
     };
     reader.readAsDataURL(file);
   };
@@ -134,13 +134,13 @@ export default function CreatorOnboardingStep6() {
     if (!paymentMethod) {
       fe.paymentMethod = 'Please select a payment method.';
     } else if (paymentMethod === 'jazzcash' || paymentMethod === 'easypaisa') {
-      if (!mobileNumber.trim())            fe.mobileNumber  = 'Mobile number is required.';
+      if (!mobileNumber.trim()) fe.mobileNumber = 'Mobile number is required.';
       else if (!isValidPKMobile(mobileNumber)) fe.mobileNumber = 'Enter a valid 10-digit mobile number starting with 3.';
-      if (!accountTitle.trim())            fe.accountTitle  = 'Account title is required.';
+      if (!accountTitle.trim()) fe.accountTitle = 'Account title is required.';
     } else if (paymentMethod === 'bank') {
-      if (!bankAccountTitle.trim())        fe.bankAccountTitle = 'Account title is required.';
-      if (!bankName || bankName === '')    fe.bankName      = 'Please select your bank.';
-      if (!accountNumber.trim())           fe.accountNumber = 'Account number is required.';
+      if (!bankAccountTitle.trim()) fe.bankAccountTitle = 'Account title is required.';
+      if (!bankName || bankName === '') fe.bankName = 'Please select your bank.';
+      if (!accountNumber.trim()) fe.accountNumber = 'Account number is required.';
     }
 
     setFieldErrors(fe);
@@ -157,22 +157,22 @@ export default function CreatorOnboardingStep6() {
 
     try {
       const fd = new FormData();
-      fd.append('paymentMethod',   paymentMethod!);
+      fd.append('paymentMethod', paymentMethod!);
       fd.append('payoutFrequency', payoutFrequency);
-      fd.append('ntnNumber',       ntnNumber);
+      fd.append('ntnNumber', ntnNumber);
 
       if (paymentMethod === 'jazzcash' || paymentMethod === 'easypaisa') {
         fd.append('mobileNumber', mobileNumber.trim());
         fd.append('accountTitle', accountTitle.trim());
       }
       if (paymentMethod === 'bank') {
-        fd.append('bankName',      bankName);
+        fd.append('bankName', bankName);
         fd.append('accountNumber', accountNumber.trim());
-        fd.append('iban',          iban.trim());
-        fd.append('accountTitle',  bankAccountTitle.trim());
+        fd.append('iban', iban.trim());
+        fd.append('accountTitle', bankAccountTitle.trim());
       }
       if (cnicFrontFile) fd.append('cnicFront', cnicFrontFile);
-      if (cnicBackFile)  fd.append('cnicBack',  cnicBackFile);
+      if (cnicBackFile) fd.append('cnicBack', cnicBackFile);
 
       const res = await fetch('/api/creator-onboarding/step-6', { method: 'PUT', body: fd });
       const data = await res.json();
@@ -233,25 +233,24 @@ export default function CreatorOnboardingStep6() {
           )}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
             {([
-              { id: 'jazzcash',  label: 'JazzCash',      sub: 'Direct to JazzCash wallet',  num: '01' },
-              { id: 'easypaisa', label: 'EasyPaisa',     sub: 'Direct to EasyPaisa wallet', num: '02' },
-              { id: 'bank',      label: 'Bank Transfer', sub: 'Direct bank deposit',        num: '03' },
+              { id: 'jazzcash', label: 'JazzCash', sub: 'Direct to JazzCash wallet', num: '01' },
+              { id: 'easypaisa', label: 'EasyPaisa', sub: 'Direct to EasyPaisa wallet', num: '02' },
+              { id: 'bank', label: 'Bank Transfer', sub: 'Direct bank deposit', num: '03' },
             ] as { id: PaymentMethod; label: string; sub: string; num: string }[]).map(m => (
               <button
                 key={m.id}
                 type="button"
-                onClick={() => { setPaymentMethod(m.id); setFieldErrors(fe => { const n={...fe}; delete n.paymentMethod; return n; }); }}
-                className={`bg-[#141414] border rounded-xl p-4 sm:p-5 text-left transition-all ${
-                  paymentMethod === m.id
+                onClick={() => { setPaymentMethod(m.id); setFieldErrors(fe => { const n = { ...fe }; delete n.paymentMethod; return n; }); }}
+                className={`bg-[#141414] border rounded-xl p-4 sm:p-5 text-left transition-all ${paymentMethod === m.id
                     ? 'border-[#C8A97E] ring-1 ring-[rgba(200,169,126,0.3)]'
                     : 'border-[rgba(200,169,126,0.15)] hover:border-[rgba(200,169,126,0.4)]'
-                }`}
+                  }`}
               >
                 <div className="flex justify-between items-start mb-3 sm:mb-4">
                   <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full border flex items-center justify-center transition-all ${paymentMethod === m.id ? 'border-[#C8A97E] bg-[rgba(200,169,126,0.1)]' : 'border-[rgba(200,169,126,0.3)]'}`}>
                     {paymentMethod === m.id
                       ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="2.5"><polyline points="20 6 9 17 4 12" /></svg>
-                      : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="1.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                      : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" strokeWidth="1.5"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
                     }
                   </div>
                   <span className="font-serif text-xs text-[#C8A97E] opacity-60">{m.num}</span>
@@ -284,7 +283,7 @@ export default function CreatorOnboardingStep6() {
                   <input
                     type="tel"
                     value={mobileNumber}
-                    onChange={e => { setMobile(e.target.value); setFieldErrors(fe => { const n={...fe}; delete n.mobileNumber; return n; }); }}
+                    onChange={e => { setMobile(e.target.value); setFieldErrors(fe => { const n = { ...fe }; delete n.mobileNumber; return n; }); }}
                     className={`w-full bg-[#0C0C0C] border rounded-lg pl-12 pr-4 py-2.5 sm:py-3 font-sans text-white text-xs sm:text-sm focus:outline-none ${fb('mobileNumber')}`}
                     placeholder="3XX XXXXXXX"
                     maxLength={10}
@@ -303,7 +302,7 @@ export default function CreatorOnboardingStep6() {
                 <input
                   type="text"
                   value={accountTitle}
-                  onChange={e => { setAccountTitle(e.target.value); setFieldErrors(fe => { const n={...fe}; delete n.accountTitle; return n; }); }}
+                  onChange={e => { setAccountTitle(e.target.value); setFieldErrors(fe => { const n = { ...fe }; delete n.accountTitle; return n; }); }}
                   className={`w-full bg-[#0C0C0C] border rounded-lg px-4 py-2.5 sm:py-3 font-sans text-white text-xs sm:text-sm focus:outline-none ${fb('accountTitle')}`}
                   placeholder="Full name as on CNIC"
                 />
@@ -325,7 +324,7 @@ export default function CreatorOnboardingStep6() {
                 <input
                   type="text"
                   value={bankAccountTitle}
-                  onChange={e => { setBankAccTitle(e.target.value); setFieldErrors(fe => { const n={...fe}; delete n.bankAccountTitle; return n; }); }}
+                  onChange={e => { setBankAccTitle(e.target.value); setFieldErrors(fe => { const n = { ...fe }; delete n.bankAccountTitle; return n; }); }}
                   className={`w-full bg-[#0C0C0C] border rounded-lg px-4 py-2.5 sm:py-3 font-sans text-white text-xs sm:text-sm focus:outline-none ${fb('bankAccountTitle')}`}
                   placeholder="Full name as on bank records"
                 />
@@ -338,7 +337,7 @@ export default function CreatorOnboardingStep6() {
                 </label>
                 <select
                   value={bankName}
-                  onChange={e => { setBankName(e.target.value); setFieldErrors(fe => { const n={...fe}; delete n.bankName; return n; }); }}
+                  onChange={e => { setBankName(e.target.value); setFieldErrors(fe => { const n = { ...fe }; delete n.bankName; return n; }); }}
                   className={`w-full bg-[#0C0C0C] border rounded-lg px-4 py-2.5 sm:py-3 font-sans text-white text-xs sm:text-sm focus:outline-none ${fb('bankName')}`}
                 >
                   <option value="">Select your bank</option>
@@ -355,7 +354,7 @@ export default function CreatorOnboardingStep6() {
                   <input
                     type="text"
                     value={accountNumber}
-                    onChange={e => { setAccountNumber(e.target.value); setFieldErrors(fe => { const n={...fe}; delete n.accountNumber; return n; }); }}
+                    onChange={e => { setAccountNumber(e.target.value); setFieldErrors(fe => { const n = { ...fe }; delete n.accountNumber; return n; }); }}
                     className={`w-full bg-[#0C0C0C] border rounded-lg px-4 py-2.5 sm:py-3 font-sans text-white text-xs sm:text-sm focus:outline-none ${fb('accountNumber')}`}
                     placeholder="Your account number"
                   />
@@ -502,11 +501,10 @@ export default function CreatorOnboardingStep6() {
                 key={opt.value}
                 type="button"
                 onClick={() => setPayoutFreq(opt.value)}
-                className={`w-full rounded-xl p-3 sm:p-4 flex items-center gap-3 text-left transition-all ${
-                  payoutFrequency === opt.value
+                className={`w-full rounded-xl p-3 sm:p-4 flex items-center gap-3 text-left transition-all ${payoutFrequency === opt.value
                     ? 'bg-[rgba(200,169,126,0.08)] border border-[#C8A97E]'
                     : 'bg-[#0C0C0C] border border-[rgba(200,169,126,0.12)] hover:border-[rgba(200,169,126,0.3)]'
-                }`}
+                  }`}
               >
                 <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${payoutFrequency === opt.value ? 'border-[#C8A97E]' : 'border-[rgba(200,169,126,0.3)]'}`}>
                   {payoutFrequency === opt.value && <div className="w-2.5 h-2.5 rounded-full bg-[#C8A97E]" />}
@@ -571,7 +569,7 @@ export default function CreatorOnboardingStep6() {
             className="flex-1 bg-[#C8A97E] text-[#0C0C0C] font-serif font-semibold py-3 sm:py-4 px-6 sm:px-8 rounded-full text-sm hover:opacity-90 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {saving ? (
-              <><svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>Saving…</>
+              <><svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" /></svg>Saving…</>
             ) : 'Continue'}
           </button>
         </div>
