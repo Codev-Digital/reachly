@@ -280,7 +280,7 @@ export default function UserDashboard() {
     },
   ];
 
-  const currentBookings = useFallback ? fallbackBookingsList : realBookingsList;
+  const currentBookings = realBookingsList;
 
   if (loading) return <LoadingAnimation />;
 
@@ -344,7 +344,7 @@ export default function UserDashboard() {
                   </div>
                   <p className="text-xs text-gray-500 font-bold tracking-wide uppercase">Total Bookings</p>
                   <p className="text-3xl font-black text-[#1B6330] mt-1">
-                    {useFallback ? 18 : (currentBookings.Upcoming.length + currentBookings.Past.length + currentBookings.Cancelled.length)}
+                    {currentBookings.Upcoming.length + currentBookings.Past.length + currentBookings.Cancelled.length}
                   </p>
                 </div>
                 <div className="text-[11px] font-bold text-gray-600 flex items-center gap-1">
@@ -565,8 +565,8 @@ export default function UserDashboard() {
                     key={tab}
                     onClick={() => setActiveBookingTab(tab)}
                     className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${isActive
-                        ? 'bg-[#0012FF] text-white shadow-md'
-                        : 'text-gray-500 hover:text-gray-900'
+                      ? 'bg-[#0012FF] text-white shadow-md'
+                      : 'text-gray-500 hover:text-gray-900'
                       }`}
                   >
                     {tab} ({count})
@@ -577,87 +577,100 @@ export default function UserDashboard() {
 
             {/* List of bookings */}
             <div className="space-y-4">
-              {currentBookings[activeBookingTab].map((booking) => (
-                <div
-                  key={booking.id}
-                  className="relative w-full min-h-[200px] flex flex-col"
-                  style={{ backgroundImage: 'url(/assets/rec-card.png)', backgroundSize: '100% 100%', backgroundRepeat: 'no-repeat' }}
-                >
-                  {/* Content */}
-                  <div className="relative w-full pl-5 pr-10 pt-5 pb-5 flex flex-col justify-between flex-grow">
-                    <div>
-                      {/* Header */}
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-3">
-                          <div className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0">
-                            <img
-                              src={booking.avatar}
-                              alt={booking.name}
-                              className="w-full h-full object-cover"
-                            />
+              {currentBookings[activeBookingTab].length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-10 w-full h-full min-h-[200px]">
+                  <Image
+                    src="/assets/cancel-appointment.png"
+                    alt="No bookings yet"
+                    width={200}
+                    height={200}
+                    className="w-48 h-48 object-contain mb-4"
+                  />
+                  <p className="text-gray-500 font-semibold">No {activeBookingTab.toLowerCase()} bookings</p>
+                </div>
+              ) : (
+                currentBookings[activeBookingTab].map((booking) => (
+                  <div
+                    key={booking.id}
+                    className="relative w-full min-h-[200px] flex flex-col"
+                    style={{ backgroundImage: 'url(/assets/rec-card.png)', backgroundSize: '100% 100%', backgroundRepeat: 'no-repeat' }}
+                  >
+                    {/* Content */}
+                    <div className="relative w-full pl-5 pr-10 pt-5 pb-5 flex flex-col justify-between flex-grow">
+                      <div>
+                        {/* Header */}
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center gap-3">
+                            <div className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0">
+                              <img
+                                src={booking.avatar}
+                                alt={booking.name}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <div>
+                              <h4 className="font-bold text-base text-black leading-tight">{booking.name}</h4>
+                              <p className="text-xs text-gray-500">{booking.handle}</p>
+                            </div>
                           </div>
-                          <div>
-                            <h4 className="font-bold text-base text-black leading-tight">{booking.name}</h4>
-                            <p className="text-xs text-gray-500">{booking.handle}</p>
+                          <p className="font-bold text-base text-[#0012FF] whitespace-nowrap">{booking.amount}</p>
+                        </div>
+
+                        {/* Time and Type */}
+                        <div className="flex items-center gap-4 text-xs text-gray-600 mb-2">
+                          <div className="flex items-center gap-1.5">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2">
+                              <circle cx="12" cy="12" r="10" />
+                              <polyline points="12 6 12 12 16 14" />
+                            </svg>
+                            <span>{booking.time}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2">
+                              <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+                              <polyline points="3.5 20 8 17 16 17 20.5 20" />
+                            </svg>
+                            <span>{booking.type}</span>
                           </div>
                         </div>
-                        <p className="font-bold text-base text-[#0012FF] whitespace-nowrap">{booking.amount}</p>
+
+                        {/* Description */}
+                        <p className="text-xs text-gray-500 mb-3 line-clamp-2 pr-4">
+                          {booking.note}
+                        </p>
                       </div>
 
-                      {/* Time and Type */}
-                      <div className="flex items-center gap-4 text-xs text-gray-600 mb-2">
-                        <div className="flex items-center gap-1.5">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2">
-                            <circle cx="12" cy="12" r="10" />
-                            <polyline points="12 6 12 12 16 14" />
-                          </svg>
-                          <span>{booking.time}</span>
+                      {/* Buttons */}
+                      {activeBookingTab === 'Upcoming' && (
+                        <div>
+                          <div className="w-full h-px bg-gray-200 mb-3" />
+                          <div className="flex items-center justify-start gap-2 pr-6">
+                            <button
+                              onClick={() => router.push('/user/bookings')}
+                              className="px-4 py-1.5 border-2 border-gray-200 rounded-[14px] text-xs font-semibold text-gray-500 hover:bg-gray-50 transition-all bg-white whitespace-nowrap"
+                            >
+                              Reschedule
+                            </button>
+                            <button
+                              onClick={() => handleCancelClick(booking.id)}
+                              className="px-4 py-1.5 border-2 border-red-200 rounded-[14px] text-xs font-semibold text-red-500 bg-red-50 hover:bg-red-100 transition-all whitespace-nowrap"
+                            >
+                              Cancel Appointment
+                            </button>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1.5">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2">
-                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
-                            <polyline points="3.5 20 8 17 16 17 20.5 20" />
-                          </svg>
-                          <span>{booking.type}</span>
-                        </div>
-                      </div>
-
-                      {/* Description */}
-                      <p className="text-xs text-gray-500 mb-3 line-clamp-2 pr-4">
-                        {booking.note}
-                      </p>
+                      )}
                     </div>
 
-                    {/* Buttons */}
-                    {activeBookingTab === 'Upcoming' && (
-                      <div>
-                        <div className="w-full h-px bg-gray-200 mb-3" />
-                        <div className="flex items-center gap-2 px-1">
-                          <button
-                            onClick={() => router.push('/user/bookings')}
-                            className="flex-1 py-1.5 border-2 border-gray-200 rounded-2xl text-xs font-semibold text-gray-500 hover:bg-gray-50 transition-all bg-white"
-                          >
-                            Reschedule
-                          </button>
-                          <button
-                            onClick={() => handleCancelClick(booking.id)}
-                            className="flex-1 py-1.5 border-2 border-red-200 rounded-2xl text-xs font-semibold text-red-500 bg-red-50 hover:bg-red-100 transition-all"
-                          >
-                            Cancel Appointment
-                          </button>
-                        </div>
-                      </div>
-                    )}
+                    {/* Arrow indicator */}
+                    <div className="absolute right-1 bottom-1">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M7 17L17 7M17 7H10M17 7V14" stroke="#0012FF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </div>
                   </div>
-
-                  {/* Arrow indicator */}
-                  <div className="absolute right-1 bottom-1">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M7 17L17 7M17 7H10M17 7V14" stroke="#0012FF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
 
