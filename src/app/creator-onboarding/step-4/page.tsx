@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import LoadingAnimation from '@/components/LoadingAnimation';
 import { useOnboardingCleanup } from '@/hooks/useOnboardingCleanup';
@@ -67,6 +67,10 @@ export default function CreatorOnboardingStep4() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
+  const [isDraftSaved, setIsDraftSaved] = useState(true);
+  const [savingDraft, setSavingDraft] = useState(false);
+  const isLoadedRef = useRef(false);
+
   // Schedule state
   const [schedule, setSchedule] = useState<Schedule>(defaultSchedule());
   const [bufferMinutes, setBuffer] = useState(15);
@@ -114,9 +118,22 @@ export default function CreatorOnboardingStep4() {
             setMeetingLimits(availability.meetingLimits ?? { count: 4, period: 'day' });
           }
         }
-      } finally { setFetchingData(false); }
+      } finally {
+        setFetchingData(false);
+        setTimeout(() => {
+          isLoadedRef.current = true;
+          setIsDraftSaved(true);
+        }, 100);
+      }
     })();
   }, []);
+
+  // Watch for changes to reset draft saved status
+  useEffect(() => {
+    if (isLoadedRef.current) {
+      setIsDraftSaved(false);
+    }
+  }, [schedule, bufferMinutes, bookingWindowDays, minNoticeHours, duration, location, meetingLimits]);
 
   // ─── Schedule helpers ─────────────────────────────────────────────────────
   const toggleDay = (day: DayKey) =>
@@ -149,7 +166,6 @@ export default function CreatorOnboardingStep4() {
     setOpenDuration(false);
   };
 
-  // ─── Continue ────────────────────────────────────────────────────────────
   const handleContinue = async () => {
     if (enabledDays === 0) {
       setError('Enable at least one day in your weekly schedule before continuing.');
@@ -178,6 +194,35 @@ export default function CreatorOnboardingStep4() {
       else { setError(data.error || 'Failed to save. Try again.'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
     } catch { setError('Network error. Please try again.'); }
     finally { setSaving(false); }
+  };
+
+  const handleSaveDraft = async () => {
+    setSavingDraft(true); setError('');
+    try {
+      const res = await fetch('/api/creator-onboarding/step-5', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          schedule, 
+          bufferMinutes, 
+          timezone: 'Asia/Karachi', 
+          bookingWindowDays, 
+          minNoticeHours, 
+          blockedDates: [],
+          duration,
+          location,
+          meetingLimits
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setIsDraftSaved(true);
+      } else {
+        setError(data.error || 'Failed to save draft.');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    } catch { setError('Network error saving draft.'); }
+    finally { setSavingDraft(false); }
   };
 
   if (fetchingData) return <LoadingAnimation />;
@@ -666,10 +711,15 @@ export default function CreatorOnboardingStep4() {
           <div className="flex gap-3">
             <button
               type="button"
-              onClick={() => router.push('/')}
-              className="border border-[#0012FF] text-[#0012FF] px-6 py-2.5 rounded-full font-sans font-semibold text-sm hover:bg-[#0012FF]/5 transition-all"
+              onClick={handleSaveDraft}
+              disabled={savingDraft || isDraftSaved}
+              className={`px-6 py-2.5 rounded-full font-sans font-semibold text-sm transition-all border ${
+                isDraftSaved
+                  ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                  : 'border-[#0012FF] text-[#0012FF] hover:bg-[#0012FF]/5 cursor-pointer'
+              }`}
             >
-              Save as Draft
+              {savingDraft ? 'Saving...' : isDraftSaved ? 'Saved' : 'Save as Draft'}
             </button>
             <button
               type="button"

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { updateSessionTypes } from '@/lib/auth-client';
 import LoadingAnimation from '@/components/LoadingAnimation';
@@ -57,6 +57,10 @@ export default function CreatorOnboardingStep3() {
   const [pageError, setPageError]       = useState('');
   const [formError, setFormError]       = useState('');
 
+  const [isDraftSaved, setIsDraftSaved] = useState(true);
+  const [savingDraft, setSavingDraft] = useState(false);
+  const isLoadedRef = useRef(false);
+
   // List of persisted sessions shown on screen
   const [sessions, setSessions]         = useState<SessionData[]>([]);
 
@@ -89,9 +93,20 @@ export default function CreatorOnboardingStep3() {
         /* network error — silently proceed with empty list */
       } finally {
         setFetchingData(false);
+        setTimeout(() => {
+          isLoadedRef.current = true;
+          setIsDraftSaved(true);
+        }, 100);
       }
     })();
   }, []);
+
+  // Watch sessions change to reset saved status
+  useEffect(() => {
+    if (isLoadedRef.current) {
+      setIsDraftSaved(false);
+    }
+  }, [sessions]);
 
   /* ── Form helpers ────────────────────────────────────────────────────── */
   const openNewForm = (prefill?: Partial<SessionData>) => {
@@ -178,6 +193,24 @@ export default function CreatorOnboardingStep3() {
       setPageError('Network error. Please try again.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSaveDraft = async () => {
+    setSavingDraft(true);
+    setPageError('');
+    try {
+      const result = await updateSessionTypes(sessions);
+      if (result.success) {
+        setIsDraftSaved(true);
+      } else {
+        setPageError(result.error || 'Failed to save draft.');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    } catch {
+      setPageError('Network error saving draft.');
+    } finally {
+      setSavingDraft(false);
     }
   };
 
@@ -434,10 +467,15 @@ export default function CreatorOnboardingStep3() {
           <div className="flex gap-3">
             <button
               type="button"
-              onClick={() => router.push('/')}
-              className="border border-[#0012FF] text-[#0012FF] px-6 py-2.5 rounded-full font-sans font-semibold text-sm hover:bg-[#0012FF]/5 transition-all"
+              onClick={handleSaveDraft}
+              disabled={savingDraft || isDraftSaved}
+              className={`px-6 py-2.5 rounded-full font-sans font-semibold text-sm transition-all border ${
+                isDraftSaved
+                  ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                  : 'border-[#0012FF] text-[#0012FF] hover:bg-[#0012FF]/5 cursor-pointer'
+              }`}
             >
-              Save as Draft
+              {savingDraft ? 'Saving...' : isDraftSaved ? 'Saved' : 'Save as Draft'}
             </button>
             <button
               type="button"

@@ -54,7 +54,7 @@ function PreviewModal({
       style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(6px)' }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-[#F7F7FA] rounded-3xl w-full max-w-lg max-h-[92vh] overflow-y-auto shadow-2xl flex flex-col">
+      <div className="bg-[#F7F7FA] rounded-3xl w-full max-w-lg max-h-[92vh] overflow-y-auto no-scrollbar shadow-2xl flex flex-col">
 
         {/* ── Header: Cover + Avatar + Close ── */}
         <div className="relative flex-shrink-0">
@@ -293,7 +293,6 @@ export default function CreatorOnboardingStep5() {
       const data = await res.json();
       if (data.success) {
         setDraftSaved(true);
-        setTimeout(() => setDraftSaved(false), 3000);
       } else {
         setError(data.error || 'Failed to save draft. Try again.');
       }
@@ -553,8 +552,12 @@ export default function CreatorOnboardingStep5() {
             <button
               type="button"
               onClick={handleSaveAsDraft}
-              disabled={savingDraft}
-              className="border border-[#0012FF] text-[#0012FF] px-5 py-2.5 rounded-full font-sans font-semibold text-sm hover:bg-[#0012FF]/5 transition-all flex items-center gap-2 disabled:opacity-50"
+              disabled={savingDraft || draftSaved}
+              className={`px-5 py-2.5 rounded-full font-sans font-semibold text-sm transition-all flex items-center gap-2 border ${
+                draftSaved
+                  ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                  : 'border-[#0012FF] text-[#0012FF] hover:bg-[#0012FF]/5 cursor-pointer'
+              }`}
             >
               {savingDraft ? (
                 <>
@@ -564,6 +567,8 @@ export default function CreatorOnboardingStep5() {
                   </svg>
                   Saving…
                 </>
+              ) : draftSaved ? (
+                'Saved'
               ) : (
                 <>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

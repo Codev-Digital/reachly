@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { updateCreatorProfile, getCurrentUser } from '@/lib/auth-client';
 import LoadingAnimation from '@/components/LoadingAnimation';
@@ -34,6 +34,10 @@ export default function CreatorOnboardingStep2() {
   const [coverPhotoFile, setCoverPhotoFile] = useState<File | null>(null);
   const [profilePhotoPreview, setProfilePhotoPreview] = useState<string | null>(null);
   const [coverPhotoPreview, setCoverPhotoPreview] = useState<string | null>(null);
+
+  const [isDraftSaved, setIsDraftSaved] = useState(true);
+  const [savingDraft, setSavingDraft] = useState(false);
+  const isLoadedRef = useRef(false);
 
   // Username validation state
   const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
@@ -83,10 +87,21 @@ export default function CreatorOnboardingStep2() {
         }
       } finally {
         setFetchingData(false);
+        setTimeout(() => {
+          isLoadedRef.current = true;
+          setIsDraftSaved(true);
+        }, 100);
       }
     };
     fetchProfile();
   }, []);
+
+  // Watch for changes after mount loads to reset draft saved status
+  useEffect(() => {
+    if (isLoadedRef.current) {
+      setIsDraftSaved(false);
+    }
+  }, [formData, selectedLanguages, selectedNiches, profilePhotoPreview, coverPhotoPreview]);
 
   // ─── Debounced Username Check ───────────────────────────────────────────────────
   useEffect(() => {
@@ -132,6 +147,7 @@ export default function CreatorOnboardingStep2() {
   const niches = ['Lifestyle', 'Tech', 'Fitness', 'Fashion', 'Business', 'Education', 'Beauty', 'Food'];
 
   const toggleLanguage = (lang: string) => {
+    setIsDraftSaved(false);
     setTouched(t => ({ ...t, languages: true }));
     setSelectedLanguages(prev =>
       prev.includes(lang) ? prev.filter(l => l !== lang) : [...prev, lang]
@@ -139,6 +155,7 @@ export default function CreatorOnboardingStep2() {
   };
 
   const toggleNiche = (niche: string) => {
+    setIsDraftSaved(false);
     setTouched(t => ({ ...t, niches: true }));
     setSelectedNiches(prev => {
       if (prev.includes(niche)) return prev.filter(n => n !== niche);
@@ -150,6 +167,7 @@ export default function CreatorOnboardingStep2() {
   const handleProfilePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setIsDraftSaved(false);
     setProfilePhotoFile(file);
     setTouched(t => ({ ...t, profilePhoto: true }));
     const reader = new FileReader();
@@ -160,6 +178,7 @@ export default function CreatorOnboardingStep2() {
   const handleCoverPhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setIsDraftSaved(false);
     setCoverPhotoFile(file);
     setTouched(t => ({ ...t, coverPhoto: true }));
     const reader = new FileReader();
@@ -254,6 +273,40 @@ export default function CreatorOnboardingStep2() {
     }
   };
 
+  const handleSaveDraft = async () => {
+    setSavingDraft(true);
+    setError('');
+    try {
+      const fd = new FormData();
+      fd.append('displayName', formData.displayName);
+      fd.append('username', formData.username);
+      fd.append('shortBio', formData.shortBio);
+      fd.append('longBio', formData.longBio);
+      fd.append('city', formData.city);
+      fd.append('country', formData.country);
+      fd.append('languages', JSON.stringify(selectedLanguages));
+      fd.append('niches', JSON.stringify(selectedNiches));
+      fd.append('instagram', formData.instagram);
+      fd.append('tiktok', formData.tiktok);
+      fd.append('youtube', formData.youtube);
+      fd.append('linkedin', formData.linkedin);
+      if (profilePhotoFile) fd.append('profilePhoto', profilePhotoFile);
+      if (coverPhotoFile) fd.append('coverPhoto', coverPhotoFile);
+
+      const result = await updateCreatorProfile(fd);
+      if (result.success) {
+        setIsDraftSaved(true);
+      } else {
+        setError(result.error || 'Failed to save draft.');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    } catch {
+      setError('Network error saving draft.');
+    } finally {
+      setSavingDraft(false);
+    }
+  };
+
   if (fetchingData) return <LoadingAnimation />;
 
   const missingFields = getMissingFields();
@@ -293,7 +346,7 @@ export default function CreatorOnboardingStep2() {
                 ) : (
                   <div className="flex flex-col items-center gap-2">
                     <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"  stroke="#0012FF" strokeWidth="2">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2">
                         <rect x="3" y="7" width="18" height="14" rx="3" />
                         <circle cx="12" cy="14" r="3.5" />
                         <path d="M8 7l1.5-2h5L16 7" />
@@ -308,30 +361,31 @@ export default function CreatorOnboardingStep2() {
             </label>
 
             {/* Profile Photo - Overlapping the cover photo */}
-            <div className="absolute -bottom-14 left-8">
+            <div className="absolute -bottom-16 left-8 flex flex-row items-end gap-6">
               <div className="relative">
                 <label className="block">
-                  <div className={`w-36 h-36 rounded-full bg-gray-100 border-4 border-white shadow-lg flex items-center justify-center cursor-pointer overflow-hidden ${isFieldInvalid('profilePhoto') ? 'border-red-500' : 'border-white'}`}>
+                  <div className={`w-36 h-36 rounded-full bg-[#FAFAFA] border-[5px] border-white shadow-md flex items-center justify-center cursor-pointer overflow-hidden ${isFieldInvalid('profilePhoto') ? 'border-red-500' : 'border-white'}`}>
                     {profilePhotoPreview ? (
                       <img src={profilePhotoPreview} alt="Profile" className="w-full h-full object-cover" />
                     ) : (
-                      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="1.5">
-                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4z" />
-                        <path d="M12 14c-3.31 0-10 1.66-10 5v2h20v-2c0-3.34-6.69-5-10-5z" />
+                      <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#9E9E9E" strokeWidth="1.5">
+                        <circle cx="12" cy="9" r="4" />
+                        <path d="M4 20c0-4 4-7 8-7s8 3 8 7" />
                       </svg>
                     )}
                   </div>
                   <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleProfilePhotoChange} className="hidden" />
                 </label>
-                {/* Upload button for profile photo */}
-                <label className="absolute -bottom-2 -right-2 w-10 h-10 bg-[#0012FF] rounded-full flex items-center justify-center cursor-pointer shadow-lg">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                    <path d="M12 4v16m8-8H4" />
-                  </svg>
+              </div>
+              <div className="flex flex-col gap-1 pb-3">
+                <label className="bg-[#0012FF] text-white px-5 py-2 rounded-full text-xs sm:text-sm font-bold hover:bg-[#0010d0] transition-all shadow-md active:scale-95 w-fit flex items-center gap-2 cursor-pointer">
+                  Upload Profile Photo
                   <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleProfilePhotoChange} className="hidden" />
                 </label>
+                <p className="pl-2 text-gray-400 text-xs font-semibold">
+                  JPG or PNG, max 5MB
+                </p>
               </div>
-              <p className="mt-3 text-xs text-gray-400 ml-2">JPG or PNG, max 5MB</p>
             </div>
           </div>
         </div>
@@ -493,33 +547,41 @@ export default function CreatorOnboardingStep2() {
           <label className="block text-xs font-semibold text-gray-700 mb-1">Social Links</label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {([
-              { key: 'instagram', placeholder: 'instagram.com/yourhandle', icon: (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"     stroke="#0012FF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="3" width="18" height="18" rx="5" />
-                  <circle cx="12" cy="12" r="4" />
-                  <circle cx="17.5" cy="6.5" r="1" />
-                </svg>
-              )},
-              { key: 'tiktok', placeholder: 'tiktok.com/yourhandle', icon: (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"     stroke="#0012FF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M16 3v10.5a3.5 3.5 0 1 1-3.5-3.5" />
-                  <path d="M16 3c.5 2.5 2.5 4.5 5 5" />
-                </svg>
-              )},
-              { key: 'youtube', placeholder: 'youtube.com/yourprofile', icon: (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"     stroke="#0012FF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="5" width="18" height="14" rx="4" />
-                  <path d="M10 9l6 3-6 3V9z" fill="#666" />
-                </svg>
-              )},
-              { key: 'linkedin', placeholder: 'linkedin.com/yourprofile', icon: (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"    stroke="#0012FF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="3" width="18" height="18" rx="4" />
-                  <path d="M7 10v7" />
-                  <circle cx="7" cy="7" r="1" />
-                  <path d="M11 17v-4a2 2 0 0 1 4 0v4" />
-                </svg>
-              )},
+              {
+                key: 'instagram', placeholder: 'instagram.com/yourhandle', icon: (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="5" />
+                    <circle cx="12" cy="12" r="4" />
+                    <circle cx="17.5" cy="6.5" r="1" />
+                  </svg>
+                )
+              },
+              {
+                key: 'tiktok', placeholder: 'tiktok.com/yourhandle', icon: (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M16 3v10.5a3.5 3.5 0 1 1-3.5-3.5" />
+                    <path d="M16 3c.5 2.5 2.5 4.5 5 5" />
+                  </svg>
+                )
+              },
+              {
+                key: 'youtube', placeholder: 'youtube.com/yourprofile', icon: (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="5" width="18" height="14" rx="4" />
+                    <path d="M10 9l6 3-6 3V9z" fill="#666" />
+                  </svg>
+                )
+              },
+              {
+                key: 'linkedin', placeholder: 'linkedin.com/yourprofile', icon: (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="4" />
+                    <path d="M7 10v7" />
+                    <circle cx="7" cy="7" r="1" />
+                    <path d="M11 17v-4a2 2 0 0 1 4 0v4" />
+                  </svg>
+                )
+              },
             ] as const).map(({ key, placeholder, icon }) => (
               <div key={key} className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2">
@@ -537,10 +599,17 @@ export default function CreatorOnboardingStep2() {
 
         {/* ─── Navigation ───────────────────────────────────────────────────────────── */}
         <div className="flex justify-end gap-3">
-          <button type="button" onClick={() => router.push('/')}
-            className="border border-gray-200 text-gray-700 px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-gray-50 transition-all"
+          <button
+            type="button"
+            onClick={handleSaveDraft}
+            disabled={savingDraft || isDraftSaved}
+            className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all border ${
+              isDraftSaved
+                ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                : 'border-[#0012FF] text-[#0012FF] hover:bg-[#0012FF]/5 cursor-pointer'
+            }`}
           >
-            Save as Draft
+            {savingDraft ? 'Saving...' : isDraftSaved ? 'Saved' : 'Save as Draft'}
           </button>
           <button type="submit" disabled={loading}
             className="bg-[#0012FF] text-white px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-[#0012FF]/90 transition-all disabled:opacity-50"
