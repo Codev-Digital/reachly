@@ -17,57 +17,7 @@ export default function WelcomePage() {
   const [userData, setUserData] = useState<any>(null);
 
   const hasSelected = useRef(false);
-
-  useEffect(() => {
-    const handleLeave = async () => {
-      if (!hasSelected.current) {
-        // Clear all cookies
-        document.cookie.split(";").forEach((c) => {
-          document.cookie = c
-            .replace(/^ +/, "")
-            .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
-        });
-        localStorage.clear();
-        sessionStorage.clear();
-
-        // Log out of NextAuth
-        const { signOut } = await import('next-auth/react');
-        await signOut({ redirect: false });
-      }
-    };
-
-    const handleBeforeUnload = () => {
-      if (!hasSelected.current) {
-        document.cookie.split(";").forEach((c) => {
-          document.cookie = c
-            .replace(/^ +/, "")
-            .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
-        });
-        localStorage.clear();
-        sessionStorage.clear();
-      }
-    };
-
-    const handlePopState = () => {
-      if (!hasSelected.current) {
-        document.cookie.split(";").forEach((c) => {
-          document.cookie = c
-            .replace(/^ +/, "")
-            .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
-        });
-        localStorage.clear();
-        sessionStorage.clear();
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    window.addEventListener('popstate', handlePopState);
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      window.removeEventListener('popstate', handlePopState);
-      handleLeave();
-    };
-  }, []);
+  // Removed aggressive cookie clearing on unmount which was causing users to be logged out unexpectedly when navigating away.
 
   useEffect(() => {
     if (status === 'authenticated' && !redirected) {
