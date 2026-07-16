@@ -11,6 +11,15 @@ export default function CreatorWallet() {
   const [displayName, setDisplayName] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const [availableBalance, setAvailableBalance] = useState(0);
+  const [lifetimeEarning, setLifetimeEarning] = useState(0);
+  const [pendingEarning, setPendingEarning] = useState(0);
+  const [totalPaidOut, setTotalPaidOut] = useState(0);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
   const statusOptions = [
     { value: '', label: 'All Statuses' },
     { value: 'completed', label: 'Completed' },
@@ -33,18 +42,36 @@ export default function CreatorWallet() {
         console.error('Failed to load profile:', err);
       }
     }
+
+    async function loadWalletData() {
+      try {
+        setLoading(true);
+        const res = await fetch('/api/creators/wallet');
+        if (res.ok) {
+          const data = await res.json();
+          setAvailableBalance(data.availableBalance || 0);
+          setLifetimeEarning(data.lifetimeEarning || 0);
+          setPendingEarning(data.pendingEarning || 0);
+          setTotalPaidOut(data.totalPaidOut || 0);
+          setTransactions(data.transactions || []);
+        }
+      } catch (err) {
+        console.error('Failed to load wallet data:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
     loadProfile();
+    loadWalletData();
   }, []);
 
-  const transactions = [
-    { id: 'TXN-10245', type: 'Payout', date: '02 July 2026', time: '10:45 AM', amount: '25,000 PKR', status: 'Completed' },
-    { id: 'TXN-10245', type: 'Refund', date: '02 July 2026', time: '10:45 AM', amount: '25,000 PKR', status: 'Pending' },
-    { id: 'TXN-10245', type: 'Payout', date: '02 July 2026', time: '10:45 AM', amount: '25,000 PKR', status: 'Failed' },
-    { id: 'TXN-10245', type: 'Refund', date: '02 July 2026', time: '10:45 AM', amount: '25,000 PKR', status: 'Completed' },
-    { id: 'TXN-10245', type: 'Payout', date: '02 July 2026', time: '10:45 AM', amount: '25,000 PKR', status: 'Pending' },
-    { id: 'TXN-10245', type: 'Refund', date: '02 July 2026', time: '10:45 AM', amount: '25,000 PKR', status: 'Failed' },
-    { id: 'TXN-10245', type: 'Payout', date: '02 July 2026', time: '10:45 AM', amount: '25,000 PKR', status: 'Completed' },
-  ];
+  const filteredTransactions = transactions.filter(txn => {
+    const matchesSearch = txn.id.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      txn.type.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === '' || txn.status.toLowerCase() === statusFilter.toLowerCase();
+    return matchesSearch && matchesStatus;
+  });
 
   return (
     <div className="min-h-screen bg-[#F8F8FA]">
@@ -72,7 +99,7 @@ export default function CreatorWallet() {
             <div className="flex justify-between items-start">
               <div className="flex flex-col">
                 <span className="text-[10px] sm:text-xs font-semibold text-white/80 uppercase tracking-wider mb-1 font-sans">Available Balance</span>
-                <span className="text-3xl font-bold tracking-tight font-sans">64,458 PKR</span>
+                <span className="text-3xl font-bold tracking-tight font-sans">{availableBalance.toLocaleString()} PKR</span>
               </div>
               <div className="w-12 h-12 bg-white/15 rounded-2xl flex items-center justify-center backdrop-blur-sm shadow-sm">
                 <CreditCard className="w-6 h-6 text-white" />
@@ -94,7 +121,7 @@ export default function CreatorWallet() {
             <div className="flex justify-between items-start">
               <div className="flex flex-col">
                 <span className="text-[10px] sm:text-xs font-semibold opacity-75 uppercase tracking-wider mb-1 font-sans">Lifetime Earning</span>
-                <span className="text-3xl font-bold tracking-tight font-sans">2,22,458 PKR</span>
+                <span className="text-3xl font-bold tracking-tight font-sans">{lifetimeEarning.toLocaleString()} PKR</span>
               </div>
               <div className="w-12 h-12 bg-white/40 rounded-2xl flex items-center justify-center backdrop-blur-sm shadow-sm">
                 <DollarSign className="w-6 h-6 text-[#0A4A1C]" />
@@ -111,7 +138,7 @@ export default function CreatorWallet() {
             <div className="flex justify-between items-start">
               <div className="flex flex-col">
                 <span className="text-[10px] sm:text-xs font-semibold opacity-75 uppercase tracking-wider mb-1 font-sans">Pending Earning</span>
-                <span className="text-3xl font-bold tracking-tight font-sans">22,580 PKR</span>
+                <span className="text-3xl font-bold tracking-tight font-sans">{pendingEarning.toLocaleString()} PKR</span>
               </div>
               <div className="w-12 h-12 bg-white/40 rounded-2xl flex items-center justify-center backdrop-blur-sm shadow-sm">
                 <Clock className="w-6 h-6 text-[#6C4800]" />
@@ -128,7 +155,7 @@ export default function CreatorWallet() {
             <div className="flex justify-between items-start">
               <div className="flex flex-col">
                 <span className="text-[10px] sm:text-xs font-semibold opacity-75 uppercase tracking-wider mb-1 font-sans">Total Paid Out</span>
-                <span className="text-3xl font-bold tracking-tight font-sans">1,55,670 PKR</span>
+                <span className="text-3xl font-bold tracking-tight font-sans">{totalPaidOut.toLocaleString()} PKR</span>
               </div>
               <div className="w-12 h-12 bg-white/40 rounded-2xl flex items-center justify-center backdrop-blur-sm shadow-sm">
                 <Calendar className="w-6 h-6 text-[#701C1C]" />
@@ -151,6 +178,8 @@ export default function CreatorWallet() {
               <input
                 type="text"
                 placeholder="Search by name or ID"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
                 className="w-full sm:w-64 lg:w-80 bg-white border border-gray-200 rounded-2xl pl-11 pr-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] transition-all"
               />
             </div>
@@ -209,36 +238,53 @@ export default function CreatorWallet() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {transactions.map((txn, idx) => (
-                  <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap text-xs font-bold text-gray-900">{txn.id}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-600 font-semibold">{txn.type}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-600">{txn.date}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-600">{txn.time}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-xs font-extrabold text-gray-900">{txn.amount}</td>   
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-1 rounded-xl text-xs font-bold ${
-                        txn.status === 'Completed'
-                          ? 'bg-green-50 text-green-700 border border-green-100'
-                          : txn.status === 'Pending'
-                          ? 'bg-yellow-50 text-yellow-700 border border-yellow-100'
-                          : 'bg-red-50 text-red-700 border border-red-100'
-                      }`}>
-                        {txn.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <div className="flex items-center gap-2">
-                        <button className="border border-gray-200 rounded-full px-3 py-1.5 text-xs font-bold text-gray-700 hover:bg-gray-50 transition-all cursor-pointer">
-                          View
-                        </button>
-                        <button className="border border-gray-200 rounded-full px-3 py-1.5 text-xs font-bold text-[#0012FF] hover:bg-[#0012FF]/5 transition-all cursor-pointer">
-                          Download
-                        </button>
+                {loading ? (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-10 text-center text-sm text-gray-500 font-semibold">
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="w-5 h-5 rounded-full border-2 border-gray-300 border-t-[#0012FF] animate-spin"></div>
+                        <span>Loading transactions...</span>
                       </div>
                     </td>
                   </tr>
-                ))}
+                ) : filteredTransactions.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-10 text-center text-sm text-gray-500 font-semibold">
+                      No transactions found.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredTransactions.map((txn, idx) => (
+                    <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap text-xs font-bold text-gray-900">{txn.id}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-600 font-semibold">{txn.type}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-600">{txn.date}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-600">{txn.time}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-xs font-extrabold text-gray-900">{txn.amount}</td>   
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-xl text-xs font-bold ${
+                          txn.status === 'Completed'
+                            ? 'bg-green-50 text-green-700 border border-green-100'
+                            : txn.status === 'Pending'
+                            ? 'bg-yellow-50 text-yellow-700 border border-yellow-100'
+                            : 'bg-red-50 text-red-700 border border-red-100'
+                        }`}>
+                          {txn.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <div className="flex items-center gap-2">
+                          <button className="border border-gray-200 rounded-full px-3 py-1.5 text-xs font-bold text-gray-700 hover:bg-gray-50 transition-all cursor-pointer">
+                            View
+                          </button>
+                          <button className="border border-gray-200 rounded-full px-3 py-1.5 text-xs font-bold text-[#0012FF] hover:bg-[#0012FF]/5 transition-all cursor-pointer">
+                            Download
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -246,7 +292,7 @@ export default function CreatorWallet() {
 
         {/* Pagination */}
         <div className="flex items-center justify-between mt-6">
-          <p className="text-sm text-gray-500 font-medium">Showing 7 of 12</p>
+          <p className="text-sm text-gray-500 font-medium">Showing {filteredTransactions.length} of {transactions.length}</p>
           <div className="flex items-center gap-2">
             <button className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all cursor-pointer">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -254,7 +300,6 @@ export default function CreatorWallet() {
               </svg>
             </button>
             <button className="w-8 h-8 flex items-center justify-center rounded-full bg-[#0012FF] text-white font-bold">1</button>
-            <button className="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 font-bold hover:text-black cursor-pointer">2</button>
             <button className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all cursor-pointer">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <polyline points="9 18 15 12 9 6" />

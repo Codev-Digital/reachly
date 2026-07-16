@@ -10,6 +10,8 @@ export default function UserSettings() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'Profile' | 'Security'>('Profile');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successModalMessage, setSuccessModalMessage] = useState('');
   
   const [displayName, setDisplayName] = useState('James Richard');
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
@@ -88,7 +90,8 @@ export default function UserSettings() {
       });
 
       if (res.ok) {
-        alert('Profile updated successfully!');
+        setSuccessModalMessage('Your profile changes have been saved successfully.');
+        setShowSuccessModal(true);
       } else {
         const err = await res.json();
         alert(err.error || 'Failed to save changes');
@@ -120,7 +123,8 @@ export default function UserSettings() {
       });
 
       if (res.ok) {
-        alert('Password updated successfully!');
+        setSuccessModalMessage('Your password has been changed successfully.');
+        setShowSuccessModal(true);
         setOldPassword('');
         setNewPassword('');
         setConfirmPassword('');
@@ -580,6 +584,36 @@ export default function UserSettings() {
                 Delete Account
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[150] p-4">
+          <div className="relative overflow-visible w-full max-w-md flex flex-col items-center p-6 sm:p-8 pt-10 sm:pt-12 pb-6 sm:pb-8 bg-white rounded-3xl shadow-2xl border border-gray-100 z-10 text-center">
+            {/* Success Icon */}
+            <div className="w-16 h-16 rounded-full bg-[#EBFDF2] flex items-center justify-center mb-4 text-[#00B050] border-4 border-[#F3FEF7]">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </div>
+
+            {/* Title */}
+            <h3 className="text-xl sm:text-2xl font-bold text-black mb-2">
+              Settings Updated
+            </h3>
+
+            {/* Description */}
+            <p className="text-xs sm:text-sm text-gray-500 mb-6 font-medium">
+              {successModalMessage || 'Your settings have been saved successfully.'}
+            </p>
+
+            {/* Close button */}
+            <button
+              onClick={() => setShowSuccessModal(false)}
+              className="w-full py-2.5 bg-[#0012FF] text-white rounded-xl text-sm font-semibold hover:bg-[#0010d0] transition-all cursor-pointer shadow-sm"
+            >
+              Continue
+            </button>
           </div>
         </div>
       )}

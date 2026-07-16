@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, type ReactNode } from 'react';
+import { useState, useEffect, useRef, type ReactNode } from 'react';
 import Image from 'next/image';
 import Link from 'next/navigation';
 import { useRouter } from 'next/navigation';
@@ -75,6 +75,7 @@ interface DBTypeSession {
 
 export default function CreatorSettings() {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string>('');
   const [email, setEmail] = useState<string>('');
@@ -140,6 +141,23 @@ export default function CreatorSettings() {
   const [loading, setLoading] = useState(true);
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successModalMessage, setSuccessModalMessage] = useState('');
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert('File size exceeds 5MB limit.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfilePhoto(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   // Load Profile, Sessions, & Availability on mount
   useEffect(() => {
@@ -241,7 +259,8 @@ export default function CreatorSettings() {
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        alert('Profile saved successfully!');
+        setSuccessModalMessage('Your profile changes have been saved successfully.');
+        setShowSuccessModal(true);
       } else {
         alert(data.error || 'Failed to save profile');
       }
@@ -313,7 +332,8 @@ export default function CreatorSettings() {
       if (res.ok && data.success) {
         setSessions(updatedList);
         setShowEditModal(false);
-        alert('Session updated successfully!');
+        setSuccessModalMessage('Your session details have been updated successfully.');
+        setShowSuccessModal(true);
       } else {
         alert(data.error || 'Failed to update session');
       }
@@ -357,7 +377,8 @@ export default function CreatorSettings() {
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        alert('Availability saved successfully!');
+        setSuccessModalMessage('Your availability settings have been saved successfully.');
+        setShowSuccessModal(true);
       } else {
         alert(data.error || 'Failed to save availability');
       }
@@ -390,7 +411,8 @@ export default function CreatorSettings() {
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        alert('Password updated successfully!');
+        setSuccessModalMessage('Your password has been updated successfully.');
+        setShowSuccessModal(true);
         setOldPassword('');
         setNewPassword('');
         setConfirmPassword('');
@@ -538,19 +560,28 @@ export default function CreatorSettings() {
                 </div>
               </div>
 
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handlePhotoChange}
+                accept="image/*"
+                className="hidden"
+              />
+
               {/* Profile photo + change button */}
               <div className="flex flex-col sm:flex-row sm:items-end gap-5 -mt-20 sm:-mt-28 px-3 mb-8 relative z-10">
                 <div className="w-28 h-28 sm:w-40 sm:h-40 rounded-full overflow-hidden border-4 border-white bg-gray-200 shadow-xl flex-shrink-0">
-                  <Image
+                  <img
                     src={profilePhoto || '/merium.png'}
                     alt="Profile"
-                    width={160}
-                    height={160}
                     className="w-full h-full object-cover"
                   />
                 </div>
                 <div className="flex flex-col gap-2 pb-2">
-                  <button className="bg-[#0012FF] text-white px-6 py-3 rounded-2xl text-xs sm:text-sm font-bold hover:bg-[#0010d0] transition-all shadow-md active:scale-95 w-fit flex items-center gap-2">
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="bg-[#0012FF] text-white px-6 py-3 rounded-2xl text-xs sm:text-sm font-bold hover:bg-[#0010d0] transition-all shadow-md active:scale-95 w-fit flex items-center gap-2 cursor-pointer"
+                  >
                     <Camera className="h-4 w-4" />
                     Change Photo
                   </button>
@@ -1269,6 +1300,37 @@ export default function CreatorSettings() {
                 Delete Account
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[150] p-4">
+          <div className="relative overflow-visible w-full max-w-md flex flex-col items-center p-6 sm:p-8 pt-10 sm:pt-12 pb-6 sm:pb-8 bg-white rounded-3xl shadow-2xl border border-gray-100 z-10 text-center">
+            {/* Success Icon */}
+            <div className="w-16 h-16 rounded-full bg-[#EBFDF2] flex items-center justify-center mb-4 text-[#00B050] border-4 border-[#F3FEF7]">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </div>
+
+            {/* Title */}
+            <h3 className="text-xl sm:text-2xl font-bold text-black mb-2">
+              Settings Updated
+            </h3>
+
+            {/* Description */}
+            <p className="text-xs sm:text-sm text-gray-500 mb-6 font-medium">
+              {successModalMessage || 'Your settings have been saved successfully.'}
+            </p>
+
+            {/* Close button */}
+            <button
+              onClick={() => setShowSuccessModal(false)}
+              className="w-full py-2.5 bg-[#0012FF] text-white rounded-xl text-sm font-semibold hover:bg-[#0010d0] transition-all cursor-pointer shadow-sm"
+            >
+              Continue
+            </button>
           </div>
         </div>
       )}
