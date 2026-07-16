@@ -1,11 +1,12 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 
 interface User {
   id: string;
+  dbId?: string;
   name: string;
   username: string;
   email: string;
@@ -30,108 +31,48 @@ export default function UsersPage() {
   // Track selected user for full detail view
   const [activeDetailUser, setActiveDetailUser] = useState<User | null>(null);
 
-  const initialUsers: User[] = [
-    { 
-      id: 'USR-10245', 
-      name: 'James Richard', 
-      username: '@jamesrichard', 
-      email: 'jamesrichard@gmail.com', 
-      joinedDate: '02 July 2026', 
-      time: '10:45 AM', 
-      status: 'Active', 
-      avatar: '/ahad raza mir.png',
-      city: 'Los Angeles',
-      country: 'United States',
-      languages: 'English',
-      bio: 'I want to start a YouTube channel about Pakistani street food. How do I structure my videos and what content should I focus on?'
-    },
-    { 
-      id: 'USR-10246', 
-      name: 'James Richard', 
-      username: '@jamesrichard', 
-      email: 'jamesrichard@gmail.com', 
-      joinedDate: '02 July 2026', 
-      time: '10:45 AM', 
-      status: 'Pending', 
-      avatar: '/ahad raza mir.png',
-      city: 'New York',
-      country: 'United States',
-      languages: 'English, Spanish',
-      bio: 'Enthusiastic food traveler looking to connect with top creators in Pakistan.'
-    },
-    { 
-      id: 'USR-10247', 
-      name: 'James Richard', 
-      username: '@jamesrichard', 
-      email: 'jamesrichard@gmail.com', 
-      joinedDate: '02 July 2026', 
-      time: '10:45 AM', 
-      status: 'Active', 
-      avatar: '/ahad raza mir.png',
-      city: 'London',
-      country: 'United Kingdom',
-      languages: 'English',
-      bio: 'Tech enthusiast and digital media manager.'
-    },
-    { 
-      id: 'USR-10248', 
-      name: 'James Richard', 
-      username: '@jamesrichard', 
-      email: 'jamesrichard@gmail.com', 
-      joinedDate: '02 July 2026', 
-      time: '10:45 AM', 
-      status: 'Inactive', 
-      avatar: '/ahad raza mir.png',
-      city: 'Lahore',
-      country: 'Pakistan',
-      languages: 'English, Urdu',
-      bio: 'Aspiring chef hoping to learn video editing and content creation strategies.'
-    },
-    { 
-      id: 'USR-10249', 
-      name: 'James Richard', 
-      username: '@jamesrichard', 
-      email: 'jamesrichard@gmail.com', 
-      joinedDate: '02 July 2026', 
-      time: '10:45 AM', 
-      status: 'Pending', 
-      avatar: '/ahad raza mir.png',
-      city: 'Karachi',
-      country: 'Pakistan',
-      languages: 'Urdu, English',
-      bio: 'Digital nomad exploring consulting opportunities.'
-    },
-    { 
-      id: 'USR-10250', 
-      name: 'James Richard', 
-      username: '@jamesrichard', 
-      email: 'jamesrichard@gmail.com', 
-      joinedDate: '02 July 2026', 
-      time: '10:45 AM', 
-      status: 'Suspended', 
-      avatar: '/ahad raza mir.png',
-      city: 'Toronto',
-      country: 'Canada',
-      languages: 'English, French',
-      bio: 'Videographer looking to collaborate with food vloggers.'
-    },
-    { 
-      id: 'USR-10251', 
-      name: 'James Richard', 
-      username: '@jamesrichard', 
-      email: 'jamesrichard@gmail.com', 
-      joinedDate: '02 July 2026', 
-      time: '10:45 AM', 
-      status: 'Active', 
-      avatar: '/ahad raza mir.png',
-      city: 'Sydney',
-      country: 'Australia',
-      languages: 'English',
-      bio: 'Vlogger documenting traditional street foods around the globe.'
-    }
-  ];
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const [users, setUsers] = useState<User[]>(initialUsers);
+  const loadUsers = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch('/api/admin/users');
+      if (res.ok) {
+        const data = await res.json();
+        setUsers(data.users || []);
+      }
+    } catch (err) {
+      console.error('Failed to load users:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
+  const handleUpdateStatus = async (userId: string, action: 'approve' | 'reject' | 'suspend' | 'activate') => {
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, action })
+      });
+      if (res.ok) {
+        alert(`User status updated to ${action}d successfully.`);
+        loadUsers();
+        setActiveDetailUser(null);
+      } else {
+        const err = await res.json();
+        alert(err.error || 'Failed to update status.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error updating status.');
+    }
+  };
 
   // Filter logic
   const filteredUsers = users.filter(user => {
@@ -149,13 +90,27 @@ export default function UsersPage() {
     setShowDeleteModal(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (userToDelete) {
-      setUsers(prev => prev.filter(u => u.id !== userToDelete.id));
-      setShowDeleteModal(false);
-      setUserToDelete(null);
-      if (activeDetailUser?.id === userToDelete.id) {
-        setActiveDetailUser(null);
+      try {
+        const res = await fetch(`/api/admin/users?userId=${userToDelete.dbId || userToDelete.id}`, {
+          method: 'DELETE'
+        });
+        if (res.ok) {
+          setUsers(prev => prev.filter(u => u.id !== userToDelete.id));
+          if (activeDetailUser?.id === userToDelete.id) {
+            setActiveDetailUser(null);
+          }
+        } else {
+          const err = await res.json();
+          alert(err.error || 'Failed to delete user.');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Error deleting user.');
+      } finally {
+        setShowDeleteModal(false);
+        setUserToDelete(null);
       }
     }
   };
@@ -201,72 +156,116 @@ export default function UsersPage() {
 
           {/* Right Column: Grid Details & Bio */}
           <div className="flex-1 flex flex-col justify-between pt-2">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-6">
-              {/* Display Name */}
-              <div>
-                <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Display Name</p>
-                <p className="text-sm font-bold text-black mt-1">{activeDetailUser.name}</p>
+            <div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-6">
+                {/* Display Name */}
+                <div>
+                  <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Display Name</p>
+                  <p className="text-sm font-bold text-black mt-1">{activeDetailUser.name}</p>
+                </div>
+
+                {/* City */}
+                <div>
+                  <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">City</p>
+                  <p className="text-sm font-bold text-black mt-1">{activeDetailUser.city || 'N/A'}</p>
+                </div>
+
+                {/* Languages Spoken */}
+                <div>
+                  <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Languages Spoken</p>
+                  <p className="text-sm font-bold text-black mt-1">{activeDetailUser.languages || 'N/A'}</p>
+                </div>
+
+                {/* Joined Date */}
+                <div>
+                  <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Joined Date</p>
+                  <p className="text-sm font-bold text-black mt-1">{activeDetailUser.joinedDate}</p>
+                </div>
+
+                {/* Email */}
+                <div className="col-span-1">
+                  <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Email</p>
+                  <p className="text-sm font-bold text-black mt-1 break-all">{activeDetailUser.email}</p>
+                </div>
+
+                {/* Country */}
+                <div>
+                  <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Country</p>
+                  <p className="text-sm font-bold text-black mt-1">{activeDetailUser.country || 'N/A'}</p>
+                </div>
+
+                {/* Status */}
+                <div>
+                  <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Status</p>
+                  <p className={`text-sm font-black mt-1 ${
+                    activeDetailUser.status === 'Active'
+                      ? 'text-emerald-500'
+                      : activeDetailUser.status === 'Pending'
+                      ? 'text-amber-500'
+                      : activeDetailUser.status === 'Inactive'
+                      ? 'text-rose-500'
+                      : 'text-gray-500'
+                  }`}>
+                    {activeDetailUser.status}
+                  </p>
+                </div>
+
+                {/* Joined Timing */}
+                <div>
+                  <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Joined Timing</p>
+                  <p className="text-sm font-bold text-black mt-1">{activeDetailUser.time}</p>
+                </div>
               </div>
 
-              {/* City */}
-              <div>
-                <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">City</p>
-                <p className="text-sm font-bold text-black mt-1">{activeDetailUser.city || 'N/A'}</p>
-              </div>
-
-              {/* Languages Spoken */}
-              <div>
-                <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Languages Spoken</p>
-                <p className="text-sm font-bold text-black mt-1">{activeDetailUser.languages || 'N/A'}</p>
-              </div>
-
-              {/* Joined Date */}
-              <div>
-                <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Joined Date</p>
-                <p className="text-sm font-bold text-black mt-1">{activeDetailUser.joinedDate}</p>
-              </div>
-
-              {/* Email */}
-              <div className="col-span-1">
-                <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Email</p>
-                <p className="text-sm font-bold text-black mt-1 break-all">{activeDetailUser.email}</p>
-              </div>
-
-              {/* Country */}
-              <div>
-                <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Country</p>
-                <p className="text-sm font-bold text-black mt-1">{activeDetailUser.country || 'N/A'}</p>
-              </div>
-
-              {/* Status */}
-              <div>
-                <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Status</p>
-                <p className={`text-sm font-black mt-1 ${
-                  activeDetailUser.status === 'Active'
-                    ? 'text-emerald-500'
-                    : activeDetailUser.status === 'Pending'
-                    ? 'text-amber-500'
-                    : activeDetailUser.status === 'Inactive'
-                    ? 'text-rose-500'
-                    : 'text-gray-500'
-                }`}>
-                  {activeDetailUser.status}
+              {/* Short Bio */}
+              <div className="mt-8 pt-6 border-t border-gray-50">
+                <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Short Bio</p>
+                <p className="text-sm text-gray-600 font-medium leading-relaxed mt-2 max-w-3xl">
+                  {activeDetailUser.bio || 'This user has not set a bio yet.'}
                 </p>
-              </div>
-
-              {/* Joined Timing */}
-              <div>
-                <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Joined Timing</p>
-                <p className="text-sm font-bold text-black mt-1">{activeDetailUser.time}</p>
               </div>
             </div>
 
-            {/* Short Bio */}
-            <div className="mt-8 pt-6 border-t border-gray-50">
-              <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Short Bio</p>
-              <p className="text-sm text-gray-600 font-medium leading-relaxed mt-2 max-w-3xl">
-                {activeDetailUser.bio || 'This user has not set a bio yet.'}
-              </p>
+            {/* Actions Bar inside details view */}
+            <div className="flex flex-wrap gap-3 mt-8 pt-6 border-t border-gray-150">
+              {activeDetailUser.status === 'Pending' && (
+                <>
+                  <button
+                    onClick={() => handleUpdateStatus(activeDetailUser.dbId || activeDetailUser.id, 'approve')}
+                    className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer shadow-sm active:scale-95"
+                  >
+                    Approve Creator
+                  </button>
+                  <button
+                    onClick={() => handleUpdateStatus(activeDetailUser.dbId || activeDetailUser.id, 'reject')}
+                    className="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer shadow-sm active:scale-95"
+                  >
+                    Reject Creator
+                  </button>
+                </>
+              )}
+              {activeDetailUser.status === 'Active' && (
+                <button
+                  onClick={() => handleUpdateStatus(activeDetailUser.dbId || activeDetailUser.id, 'suspend')}
+                  className="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer shadow-sm active:scale-95"
+                >
+                  Suspend User
+                </button>
+              )}
+              {activeDetailUser.status === 'Suspended' && (
+                <button
+                  onClick={() => handleUpdateStatus(activeDetailUser.dbId || activeDetailUser.id, 'activate')}
+                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer shadow-sm active:scale-95"
+                >
+                  Re-activate User
+                </button>
+              )}
+              <button
+                onClick={() => handleDeleteClick(activeDetailUser)}
+                className="px-5 py-2 border border-rose-200 text-rose-600 rounded-xl text-xs sm:text-sm font-semibold hover:bg-rose-50 transition-all cursor-pointer ml-auto shadow-sm active:scale-95 bg-white"
+              >
+                Delete Account
+              </button>
             </div>
           </div>
         </div>
@@ -307,8 +306,8 @@ export default function UsersPage() {
           </div>
           <div className="mt-auto">
             <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Total Users</p>
-            <p className="text-2xl font-black text-[#0012FF]">1,410</p>
-            <p className="text-[10px] text-gray-400">↑ +18.2% from last month</p>
+            <p className="text-2xl font-black text-[#0012FF]">{users.length}</p>
+            <p className="text-[10px] text-gray-400">All registered users</p>
           </div>
         </div>
 
@@ -326,8 +325,8 @@ export default function UsersPage() {
           </div>
           <div className="mt-auto">
             <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Active Users</p>
-            <p className="text-2xl font-black text-[#10B981]">1,376</p>
-            <p className="text-[10px] text-gray-400">↑ +18.2% from last month</p>
+            <p className="text-2xl font-black text-[#10B981]">{users.filter(u => u.status === 'Active').length}</p>
+            <p className="text-[10px] text-gray-400">Approved & active profiles</p>
           </div>
         </div>
 
@@ -345,9 +344,9 @@ export default function UsersPage() {
             </svg>
           </div>
           <div className="mt-auto">
-            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Inactive Users</p>
-            <p className="text-2xl font-black text-[#EF4444]">34</p>
-            <p className="text-[10px] text-gray-400">↑ +18.2% from last month</p>
+            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Suspended & Inactive</p>
+            <p className="text-2xl font-black text-[#EF4444]">{users.filter(u => u.status === 'Inactive' || u.status === 'Suspended').length}</p>
+            <p className="text-[10px] text-gray-400">Inactive or blocked users</p>
           </div>
         </div>
 
@@ -366,8 +365,8 @@ export default function UsersPage() {
           </div>
           <div className="mt-auto">
             <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Pending Approval</p>
-            <p className="text-2xl font-black text-[#F59E0B]">234</p>
-            <p className="text-[10px] text-gray-400">↑ +18.2% from last month</p>
+            <p className="text-2xl font-black text-[#F59E0B]">{users.filter(u => u.status === 'Pending').length}</p>
+            <p className="text-[10px] text-gray-400">Awaiting creator approval</p>
           </div>
         </div>
       </div>
@@ -473,7 +472,13 @@ export default function UsersPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {filteredUsers.length > 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="py-8 text-center text-sm font-semibold text-gray-400">
+                    Loading users list...
+                  </td>
+                </tr>
+              ) : filteredUsers.length > 0 ? (
                 filteredUsers.map((user) => (
                   <tr 
                     key={user.id} 

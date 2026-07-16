@@ -49,7 +49,7 @@ export default function LoginPage() {
           const isInOnboarding = onboardingStep > 0 && !isFullyApproved && approvalStatus !== 'pending';
 
           if (email.toLowerCase().trim() === 'admin@reachly.com' || email.toLowerCase().trim() === 'abdullahgotaccess@gmail.com') {
-            router.push('/admin/requests');
+            router.push('/admin/dashboard');
           } else if (approvalStatus === 'pending') {
             router.push('/creators/pending-approval');
           } else if (isFullyApproved) {
