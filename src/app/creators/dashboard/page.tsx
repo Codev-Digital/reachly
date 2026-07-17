@@ -76,7 +76,7 @@ const CreatorDashboard = () => {
   const [successModalType, setSuccessModalType] = useState<'cancelled' | 'rescheduled'>('cancelled');
 
   const handleCopyLink = () => {
-    const linkStr = window.location.origin + `/creators/${displayName.toLowerCase().replace(/\s+/g, '-')}`;
+    const linkStr = window.location.origin + `/creators/${username || displayName.toLowerCase().replace(/\s+/g, '-')}`;
     navigator.clipboard.writeText(linkStr);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);

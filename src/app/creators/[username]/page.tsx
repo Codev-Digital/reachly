@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import CreatorNavbar from '@/components/CreatorNavbar';
 import Footer from '@/components/Footer';
 import LoadingAnimation from '@/components/LoadingAnimation';
@@ -10,6 +10,13 @@ import LoadingAnimation from '@/components/LoadingAnimation';
 export default function CreatorProfilePage() {
   const params = useParams();
   const username = params.username as string;
+  const router = useRouter();
+
+  useEffect(() => {
+    if (username) {
+      router.replace(`/creators/${username}/book-session`);
+    }
+  }, [username, router]);
 
   const [creator, setCreator] = useState<any>(null);
   const [services, setServices] = useState<any[]>([]);
@@ -90,9 +97,12 @@ export default function CreatorProfilePage() {
               </div>
             </div>
             <div className="ml-auto">
-              <button className="bg-[#C8A97E] text-[#0C0C0C] font-semibold font-sans px-6 py-2 rounded-full text-sm hover:opacity-90 transition-all">
+              <Link 
+                href={`/creators/${username}/book-session`}
+                className="bg-[#C8A97E] text-[#0C0C0C] font-semibold font-sans px-6 py-2 rounded-full text-sm hover:opacity-90 transition-all inline-block"
+              >
                 Book a Session
-              </button>
+              </Link>
             </div>
           </div>
         </section>
