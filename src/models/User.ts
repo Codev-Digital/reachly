@@ -13,15 +13,12 @@ export interface IUser extends Document {
   emailChangeOTP?: string;
   emailChangeOTPExpires?: Date;
   newEmail?: string;
-  /**
-   * Tracks which onboarding step the user last completed.
-   * 0 = account created, 1 = welcome, 2 = profile, 3 = sessions, etc.
-   */
   onboardingStep: number;
-  hasSeenWelcome: boolean; // Track if user has seen the welcome page
-  approvalStatus: 'none' | 'pending' | 'approved' | 'rejected'; // Creator approval status
+  hasSeenWelcome: boolean;
+  approvalStatus: 'none' | 'pending' | 'approved' | 'rejected';
   createdAt: Date;
   profilePhoto?: string;
+  savedCreators: string[]; // array of creator usernames
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
@@ -57,6 +54,7 @@ const UserSchema = new Schema<IUser>(
       default: 'none' 
     },
     profilePhoto: { type: String },
+    savedCreators: { type: [String], default: [] },
   },
   { timestamps: true }
 );
