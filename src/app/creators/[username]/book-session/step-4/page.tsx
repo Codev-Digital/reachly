@@ -9,14 +9,13 @@ import { useBooking } from '../layout';
 export default function BookSessionStep4() {
   const params = useParams();
   const router = useRouter();
-  const { booking, nextStep, setBooking } = useBooking();
+  const { booking, nextStep, setBooking, saveDraft, isDraftSaved } = useBooking();
   const creator = booking.creator;
   const [paymentMethod, setPaymentMethod] = useState<'jazzcash' | 'easypaisa'>('jazzcash');
   const [showQr, setShowQr] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingBack, setIsLoadingBack] = useState(false);
   const [isLoadingContinue, setIsLoadingContinue] = useState(false);
-  const [saved, setSaved] = useState(true);
   const [errorModalOpen, setErrorModalOpen] = useState(false);
   const [errorModalMsg, setErrorModalMsg] = useState('');
 
@@ -63,6 +62,8 @@ export default function BookSessionStep4() {
       const data = await res.json();
       if (data.success) {
         setBooking(b => ({ ...b, bookingRef: data.bookingRef }));
+        // Clear draft — booking is confirmed, no longer needed
+        try { localStorage.removeItem('reachly_booking_draft'); } catch { }
         nextStep();
         router.push(`/creators/${params.username}/book-session/step-5`);
       } else {
@@ -147,14 +148,14 @@ export default function BookSessionStep4() {
               </p>
 
               {/* Navigation Buttons inside QR panel */}
-              <div className="flex justify-between items-center mt-8 pt-6 border-t border-gray-100 px-1 w-full gap-4 lg:justify-end">
+              <div className="flex flex-wrap gap-2 justify-end mt-8 pt-6 border-t border-gray-100">
                 <button
                   onClick={() => {
                     setIsLoadingBack(true);
                     setShowQr(false);
                   }}
                   disabled={isLoadingBack || isSubmitting}
-                  className="bg-white border border-gray-200 text-gray-700 font-bold py-2.5 px-6 rounded-full text-xs hover:bg-gray-50 transition-colors shadow-sm flex items-center justify-center min-w-[100px]"
+                  className="bg-white border border-gray-200 text-gray-700 font-bold py-2.5 px-4 sm:px-6 rounded-full text-xs hover:bg-gray-50 transition-colors shadow-sm flex items-center justify-center"
                 >
                   {isLoadingBack ? (
                     <div className="w-4 h-4 rounded-full border-2 border-gray-300 border-t-gray-700 animate-spin"></div>
@@ -165,7 +166,7 @@ export default function BookSessionStep4() {
                 <button
                   onClick={handleConfirmPayment}
                   disabled={isSubmitting}
-                  className={`py-2.5 px-8 rounded-full text-xs font-bold transition-all shadow-sm flex items-center justify-center min-w-[150px] ${isSubmitting
+                  className={`py-2.5 px-5 sm:px-8 rounded-full text-xs font-bold transition-all shadow-sm flex items-center justify-center ${isSubmitting
                     ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
                     : 'bg-[#0012FF] text-white hover:bg-[#0010d0]'
                     }`}
@@ -254,36 +255,60 @@ export default function BookSessionStep4() {
               </div>
 
               {/* Navigation buttons inside selection panel */}
-              <div className="flex justify-between items-center mt-8 pt-6 border-t border-gray-100 px-1 w-full gap-4 lg:justify-end">
+              <div className="flex flex-wrap justify-between items-center mt-8 pt-6 border-t border-gray-100 gap-2">
+                {/* Save as Draft */}
                 <button
-                  onClick={() => {
-                    setIsLoadingBack(true);
-                    router.push(`/creators/${params.username}/book-session/step-3`);
-                  }}
-                  disabled={isLoadingBack}
-                  className="bg-white border border-gray-200 text-gray-700 font-bold py-2.5 px-6 rounded-full text-xs hover:bg-gray-50 transition-colors shadow-sm flex items-center justify-center min-w-[100px]"
+                  onClick={() => saveDraft()}
+                  disabled={isDraftSaved}
+                  className={`font-bold py-2.5 px-5 rounded-full text-xs transition-colors shadow-sm flex items-center justify-center gap-1.5 border ${
+                    isDraftSaved
+                      ? 'bg-green-50 border-green-200 text-green-600 cursor-default'
+                      : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                  }`}
                 >
-                  {isLoadingBack ? (
-                    <div className="w-4 h-4 rounded-full border-2 border-gray-300 border-t-gray-700 animate-spin"></div>
+                  {isDraftSaved ? (
+                    <>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                      Saved
+                    </>
                   ) : (
-                    "Back"
+                    'Save as Draft'
                   )}
                 </button>
 
-                <button
-                  onClick={() => {
-                    setIsLoadingContinue(true);
-                    setTimeout(() => setShowQr(true), 100);
-                  }}
-                  disabled={isLoadingContinue}
-                  className="bg-[#0012FF] text-white hover:bg-[#0010d0] font-bold py-2.5 px-8 rounded-full text-xs transition-colors shadow-sm flex items-center justify-center min-w-[120px]"
-                >
-                  {isLoadingContinue ? (
-                    <div className="w-4 h-4 rounded-full border-2 border-[#808BFF] border-t-white animate-spin"></div>
-                  ) : (
-                    "Continue"
-                  )}
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      setIsLoadingBack(true);
+                      router.push(`/creators/${params.username}/book-session/step-3`);
+                    }}
+                    disabled={isLoadingBack}
+                    className="bg-white border border-gray-200 text-gray-700 font-bold py-2.5 px-4 sm:px-6 rounded-full text-xs hover:bg-gray-50 transition-colors shadow-sm flex items-center justify-center"
+                  >
+                    {isLoadingBack ? (
+                      <div className="w-4 h-4 rounded-full border-2 border-gray-300 border-t-gray-700 animate-spin"></div>
+                    ) : (
+                      'Back'
+                    )}
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setIsLoadingContinue(true);
+                      setTimeout(() => setShowQr(true), 100);
+                    }}
+                    disabled={isLoadingContinue}
+                    className="bg-[#0012FF] text-white hover:bg-[#0010d0] font-bold py-2.5 px-5 sm:px-8 rounded-full text-xs transition-colors shadow-sm flex items-center justify-center"
+                  >
+                    {isLoadingContinue ? (
+                      <div className="w-4 h-4 rounded-full border-2 border-[#808BFF] border-t-white animate-spin"></div>
+                    ) : (
+                      'Continue'
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           )}

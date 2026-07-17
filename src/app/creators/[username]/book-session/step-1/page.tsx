@@ -191,11 +191,11 @@ export default function BookSessionStep1() {
               </div>
 
               {/* Navigation Action Buttons */}
-              <div className="flex gap-4 mt-12 justify-end w-full max-w-[790px] mx-auto px-4">
+              <div className="flex flex-wrap gap-2 mt-12 justify-end w-full max-w-[790px] mx-auto px-4">
                 <button
                   onClick={handleBack}
                   disabled={isLoadingBack}
-                  className="bg-white border border-gray-200 text-gray-700 font-bold py-2.5 px-6 rounded-full text-xs hover:bg-gray-50 transition-colors shadow-sm flex items-center justify-center min-w-[100px]"
+                  className="bg-white border border-gray-200 text-gray-700 font-bold py-2.5 px-4 sm:px-6 rounded-full text-xs hover:bg-gray-50 transition-colors shadow-sm flex items-center justify-center"
                 >
                   {isLoadingBack ? (
                     <div className="w-4 h-4 rounded-full border-2 border-gray-300 border-t-gray-700 animate-spin"></div>
@@ -207,7 +207,7 @@ export default function BookSessionStep1() {
                 <button
                   onClick={handleContinue}
                   disabled={!booking.selectedSession || isLoadingContinue}
-                  className={`py-2.5 px-8 rounded-full text-xs font-bold transition-all shadow-sm flex items-center justify-center min-w-[120px] ${booking.selectedSession
+                  className={`py-2.5 px-5 sm:px-8 rounded-full text-xs font-bold transition-all shadow-sm flex items-center justify-center ${booking.selectedSession
                     ? 'bg-[#0012FF] text-white hover:bg-[#0010d0]'
                     : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                     }`}

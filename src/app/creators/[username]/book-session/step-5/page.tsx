@@ -1,5 +1,5 @@
 ﻿'use client';
-import { useState } from 'react';
+import { useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import BookingProgress from '@/components/booking/BookingProgress';
 import CreatorProfileCard from '@/components/booking/CreatorProfileCard';
@@ -14,7 +14,11 @@ export default function BookSessionStep5() {
   const router = useRouter();
   const { booking } = useBooking();
   const creator = booking.creator;
-  const [saved, setSaved] = useState(true);
+
+  // Booking confirmed — clear any saved draft so next visit starts fresh
+  useEffect(() => {
+    try { localStorage.removeItem('reachly_booking_draft'); } catch { }
+  }, []);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-20 pt-2">

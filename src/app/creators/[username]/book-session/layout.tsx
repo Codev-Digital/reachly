@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, createContext, useContext, ReactNode, useEffect } from 'react';
+import { useState, createContext, useContext, ReactNode, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -64,6 +64,7 @@ interface BookingState {
 }
 
 const STORAGE_KEY = 'reachly_booking_state';
+const DRAFT_KEY = 'reachly_booking_draft';
 
 function serializeBooking(b: BookingState) {
   return JSON.stringify({
@@ -107,6 +108,8 @@ const BookingContext = createContext<{
   nextStep: () => void;
   prevStep: () => void;
   saveToStorage: () => void;
+  saveDraft: () => void;
+  isDraftSaved: boolean;
   userData: any;
 } | null>(null);
 
@@ -122,25 +125,41 @@ export default function BookSessionLayout({ children }: { children: ReactNode })
   const [userRole, setUserRole] = useState<'user' | 'creator' | null>(null);
   const [userData, setUserData] = useState<any>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isDraftSaved, setIsDraftSaved] = useState(false);
+  const lastDraftRef = useRef('');
 
-  // On mount, try to restore from sessionStorage (for auth redirect return)
+  // On mount: restore from localStorage draft first, then sessionStorage
   useEffect(() => {
     try {
-      const saved = sessionStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const restored = deserializeBooking(saved);
+      const draft = localStorage.getItem(DRAFT_KEY);
+      if (draft) {
+        const restored = deserializeBooking(draft);
         if (restored) {
           setBookingRaw(restored);
+          lastDraftRef.current = draft;
+          setIsDraftSaved(true);
+          return;
         }
       }
+      const session = sessionStorage.getItem(STORAGE_KEY);
+      if (session) {
+        const restored = deserializeBooking(session);
+        if (restored) setBookingRaw(restored);
+      }
     } catch { }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Keep sessionStorage in sync whenever booking changes
+  // Keep sessionStorage in sync + mark draft dirty when booking changes
   useEffect(() => {
     try {
-      sessionStorage.setItem(STORAGE_KEY, serializeBooking(booking));
+      const serialized = serializeBooking(booking);
+      sessionStorage.setItem(STORAGE_KEY, serialized);
+      if (isDraftSaved && lastDraftRef.current && serialized !== lastDraftRef.current) {
+        setIsDraftSaved(false);
+      }
     } catch { }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [booking]);
 
   // Check authentication status
@@ -166,7 +185,15 @@ export default function BookSessionLayout({ children }: { children: ReactNode })
   }, []);
 
   const setBooking: React.Dispatch<React.SetStateAction<BookingState>> = (action) => {
-    setBookingRaw(action);
+    setBookingRaw(prev => {
+      const next = typeof action === 'function' ? action(prev) : action;
+      // If booking data changed after a draft was saved, mark draft as unsaved
+      const nextSerialized = serializeBooking(next);
+      if (lastDraftRef.current && nextSerialized !== lastDraftRef.current) {
+        setIsDraftSaved(false);
+      }
+      return next;
+    });
   };
 
   const saveToStorage = () => {
@@ -175,11 +202,18 @@ export default function BookSessionLayout({ children }: { children: ReactNode })
     } catch { }
   };
 
-  const nextStep = () => setBooking(b => ({ ...b, step: b.step + 1 }));
+  const saveDraft = () => {
+    try {
+      const serialized = serializeBooking(booking);
+      localStorage.setItem(DRAFT_KEY, serialized);
+      lastDraftRef.current = serialized;
+      setIsDraftSaved(true);
+    } catch { }
+  };  const nextStep = () => setBooking(b => ({ ...b, step: b.step + 1 }));
   const prevStep = () => setBooking(b => ({ ...b, step: b.step - 1 }));
 
   return (
-    <BookingContext.Provider value={{ booking, setBooking, nextStep, prevStep, saveToStorage, userData }}>
+    <BookingContext.Provider value={{ booking, setBooking, nextStep, prevStep, saveToStorage, saveDraft, isDraftSaved, userData }}>
       <div className="min-h-screen bg-[#F8F8FA] text-gray-900 flex flex-col overflow-x-hidden">
         {isLoggedIn ? (
           userRole === 'creator' ? (

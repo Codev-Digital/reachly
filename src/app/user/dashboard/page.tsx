@@ -247,38 +247,28 @@ export default function UserDashboard() {
     );
   };
 
-  const creators = [
-    {
-      name: 'Sarah Khan',
-      handle: '@sarahkhan',
-      tag: 'Sponsored',
-      img: '/Avatars/12.jpg',
-      rating: '4.9',
-      description: "Ayesha Khan is one of Pakistan's leading fashion and lifestyle content creators....",
-      price: '1200 PKR',
-      isVerified: false
-    },
-    {
-      name: 'Dananeer Mobeen',
-      handle: '@dananeermobeen',
-      tag: 'Verified',
-      img: '/Avatars/5.jpg',
-      rating: '4.9',
-      description: "Ayesha Khan is one of Pakistan's leading fashion and lifestyle content creators....",
-      price: '1200 PKR',
-      isVerified: true
-    },
-    {
-      name: 'Bilal Abbas',
-      handle: '@bilalabbas',
-      tag: 'Sponsored',
-      img: '/Avatars/10.jpg',
-      rating: '4.9',
-      description: "Ayesha Khan is one of Pakistan's leading fashion and lifestyle content creators....",
-      price: '1200 PKR',
-      isVerified: false
-    },
-  ];
+  // Real-time creators state
+  const [creatorsList, setCreatorsList] = useState<any[]>([]);
+  const [creatorsPage, setCreatorsPage] = useState(0);
+  const CREATORS_PER_PAGE = 3;
+
+  const fetchCreators = useCallback(async () => {
+    try {
+      const res = await fetch('/api/creators');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.creators?.length) {
+          setCreatorsList(data.creators);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch creators:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchCreators();
+  }, [fetchCreators]);
 
   const currentBookings = realBookingsList;
 
@@ -408,141 +398,135 @@ export default function UserDashboard() {
                 </button>
               </div>
 
-              {/* Updated Cards to match new design */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {creators.map((creator, index) => {
-                  const clipId = `cardClip-dashboard-${index}`;
-                  return (
-                    <motion.div
-                      key={index}
-                      initial={{ opacity: 0, y: 30 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ duration: 0.5, delay: index * 0.1 }}
-                      className="flex flex-col w-full shrink-0 transition-all duration-300 hover:-translate-y-3 hover:scale-[1.04] p-3 rounded-[24px] border border-gray-100/80 group"
-                    >
-                      {/* Image with SVG clip notch */}
-                      <div className="relative w-full h-[280px]">
-                        <svg width="0" height="0" className="absolute">
-                          <defs>
-                            <clipPath id={clipId} clipPathUnits="objectBoundingBox">
-                              <path
-                                d="
- M0 .06
- C0 .025 .025 0 .06 0
- H0.80
- C0.855 0 .865 .01 .865 .03
- V.10
- C.865 .12 .885 .14 .91 .14
- H.95
- C.985 .14 1 .15 1 .175
- V.91
- C1 .975 .975 1 .94 1
- H.06
- C.025 1 0 .975 0 .94
- V.06
- C0 .025 0 .025 0 .06
- Z
- "
-                              />
-                            </clipPath>
-                          </defs>
-                        </svg>
-
-                        <img
-                          src={creator.img}
-                          alt={creator.name}
-                          className="w-full h-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.02]"
-                          style={{ clipPath: `url(#${clipId})` }}
-                        />
-
-                        {/* Tag */}
-                        <span className={`absolute top-3 left-4 px-3 py-1 rounded-full text-xs font-semibold ${creator.tag === 'Sponsored'
-                          ? 'bg-white text-blue-600'
-                          : 'bg-white text-emerald-600'
-                          }`}>
-                          {creator.tag}
-                        </span>
-
-                        {/* Heart — sits in the notch area */}
-                        <button
-                          onClick={() => toggleFavorite(creator.name)}
-                          className="absolute top-2 right-0 z-20 flex items-center justify-center hover:scale-110 transition-transform"
-                        >
-                          <svg
-                            className={`w-6 h-6 transition-colors duration-200 ${favorites.includes(creator.name)
-                              ? "text-red-500"
-                              : "text-gray-300"
-                              }`}
-                            viewBox="0 0 24 24"
+              {/* Creators Grid */}
+              {creatorsList.length === 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="h-[380px] bg-gray-100 rounded-3xl animate-pulse" />
+                  ))}
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    {creatorsList
+                      .slice(creatorsPage * CREATORS_PER_PAGE, (creatorsPage + 1) * CREATORS_PER_PAGE)
+                      .map((creator, index) => {
+                        const globalIndex = creatorsPage * CREATORS_PER_PAGE + index;
+                        const clipId = `cardClip-dashboard-${globalIndex}`;
+                        const isFav = favorites.includes(creator.displayName);
+                        return (
+                          <motion.div
+                            key={creator.id}
+                            initial={{ opacity: 0, y: 30 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.4, delay: index * 0.08 }}
+                            className="flex flex-col w-full shrink-0 transition-all duration-300 hover:-translate-y-3 hover:scale-[1.04] p-3 rounded-[24px] border border-gray-100/80 group"
                           >
-                            <defs>
-                              <filter id="heartGlow" x="-50%" y="-50%" width="200%" height="200%">
-                                <feGaussianBlur stdDeviation="0.6" result="blur" />
-                                <feMerge>
-                                  <feMergeNode in="blur" />
-                                  <feMergeNode in="SourceGraphic" />
-                                </feMerge>
-                              </filter>
-                            </defs>
-
-                            <path
-                              fill="currentColor"
-                              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                            />
-
-                            <path
-                              d="M15.2 6.2c1.5 0 2.7 1.2 2.7 2.7 0 1-.4 1.9-1 2.8"
-                              stroke="white"
-                              strokeWidth="2.4"
-                              strokeOpacity="0.35"
-                              strokeLinecap="round"
-                              fill="none"
-                              filter="url(#heartGlow)"
-                            />
-
-                            <path
-                              d="M15.2 6.2c1.5 0 2.7 1.2 2.7 2.7 0 1-.4 1.9-1 2.8"
-                              stroke="white"
-                              strokeWidth="1.3"
-                              strokeOpacity="0.95"
-                              strokeLinecap="round"
-                              fill="none"
-                            />
-                          </svg>
-                        </button>
-                      </div>
-
-                      {/* Info */}
-                      <div className="pt-4 pb-2 px-1">
-                        <div className="flex items-center justify-between">
-                          <h3 className="font-sans font-bold text-lg text-black flex items-center gap-1.5">
-                            {creator.name}
-                            {creator.isVerified && (
-                              <svg className="w-5 h-5" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-                                <g transform="translate(4 4) scale(0.83)">
-                                  <path fill="#34C759" d="M24 2.5c2.8 0 5 2.4 7.5 3.2 2.6.8 5.8.1 8 1.8 2.2 1.7 2.9 4.9 4.6 7.1 1.7 2.2 4.8 3.8 5.6 6.4.8 2.6-.8 5.6-.8 8.3s1.6 5.7.8 8.3c-.8 2.6-3.9 4.2-5.6 6.4-1.7 2.2-2.4 5.4-4.6 7.1-2.2 1.7-5.4 1-8 1.8-2.5.8-4.7 3.2-7.5 3.2s-5-2.4-7.5-3.2c-2.6-.8-5.8-.1-8-1.8-2.2-1.7-2.9-4.9-4.6-7.1-1.7-2.2-4.8-3.8-5.6-6.4-.8-2.6.8-5.6.8-8.3s-1.6-5.7-.8-8.3c.8-2.6 3.9-4.2 5.6-6.4 1.7-2.2 2.4-5.4 4.6-7.1 2.2-1.7 5.4-1 8-1.8C19 4.9 21.2 2.5 24 2.5z" />
-                                </g>
-                                <path d="M17 24L22.5 29.5L32 19" fill="none" stroke="white" strokeWidth="4.8" strokeLinecap="round" strokeLinejoin="round" />
+                            {/* Image with SVG clip notch */}
+                            <div className="relative w-full h-[280px]">
+                              <svg width="0" height="0" className="absolute">
+                                <defs>
+                                  <clipPath id={clipId} clipPathUnits="objectBoundingBox">
+                                    <path d="M0 .06 C0 .025 .025 0 .06 0 H0.80 C0.855 0 .865 .01 .865 .03 V.10 C.865 .12 .885 .14 .91 .14 H.95 C.985 .14 1 .15 1 .175 V.91 C1 .975 .975 1 .94 1 H.06 C.025 1 0 .975 0 .94 V.06 Z" />
+                                  </clipPath>
+                                </defs>
                               </svg>
-                            )}
-                          </h3>
-                          <span className="flex items-center gap-1 text-sm font-bold text-black">
-                            <svg className="w-4 h-4 text-amber-500 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
-                            {creator.rating}
-                          </span>
-                        </div>
-                        <p className="text-xs text-gray-400 font-sans mt-0.5">{creator.handle}</p>
-                        <p className="text-xs text-gray-500 font-sans mt-2.5 line-clamp-2">{creator.description}</p>
-                        <div className="flex items-center justify-between mt-4">
-                          <span className="text-xs font-sans text-gray-500">Starting from <strong className="text-black font-black">{creator.price}</strong></span>
-                          <Link href="/explore-creators" className="text-xs font-sans font-bold text-blue-600 underline hover:text-blue-800 transition-colors">Book Now</Link>
-                        </div>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
+                              <img
+                                src={creator.profilePhoto || '/Avatars/1.jpg'}
+                                alt={creator.displayName}
+                                className="w-full h-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.02]"
+                                style={{ clipPath: `url(#${clipId})` }}
+                              />
+                              {/* Tag */}
+                              <span className={`absolute top-3 left-4 px-3 py-1 rounded-full text-xs font-semibold ${creator.isVerified ? 'bg-white text-emerald-600' : 'bg-white text-blue-600'}`}>
+                                {creator.isVerified ? 'Verified' : 'Creator'}
+                              </span>
+                              {/* Heart */}
+                              <button
+                                onClick={() => toggleFavorite(creator.displayName)}
+                                className="absolute top-2 right-0 z-20 flex items-center justify-center hover:scale-110 transition-transform"
+                              >
+                                <svg className={`w-6 h-6 transition-colors duration-200 ${isFav ? 'text-red-500' : 'text-gray-300'}`} viewBox="0 0 24 24">
+                                  <path fill="currentColor" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                </svg>
+                              </button>
+                            </div>
+
+                            {/* Info */}
+                            <div className="pt-4 pb-2 px-1">
+                              <div className="flex items-center justify-between">
+                                <h3 className="font-sans font-bold text-lg text-black flex items-center gap-1.5 truncate">
+                                  {creator.displayName}
+                                  {creator.isVerified && (
+                                    <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                                      <g transform="translate(4 4) scale(0.83)">
+                                        <path fill="#34C759" d="M24 2.5c2.8 0 5 2.4 7.5 3.2 2.6.8 5.8.1 8 1.8 2.2 1.7 2.9 4.9 4.6 7.1 1.7 2.2 4.8 3.8 5.6 6.4.8 2.6-.8 5.6-.8 8.3s1.6 5.7.8 8.3c-.8 2.6-3.9 4.2-5.6 6.4-1.7 2.2-2.4 5.4-4.6 7.1-2.2 1.7-5.4 1-8 1.8-2.5.8-4.7 3.2-7.5 3.2s-5-2.4-7.5-3.2c-2.6-.8-5.8-.1-8-1.8-2.2-1.7-2.9-4.9-4.6-7.1-1.7-2.2-4.8-3.8-5.6-6.4-.8-2.6.8-5.6.8-8.3s-1.6-5.7-.8-8.3c.8-2.6 3.9-4.2 5.6-6.4 1.7-2.2 2.4-5.4 4.6-7.1 2.2-1.7 5.4-1 8-1.8C19 4.9 21.2 2.5 24 2.5z" />
+                                      </g>
+                                      <path d="M17 24L22.5 29.5L32 19" fill="none" stroke="white" strokeWidth="4.8" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                  )}
+                                </h3>
+                                <span className="flex items-center gap-1 text-sm font-bold text-black flex-shrink-0">
+                                  <svg className="w-4 h-4 text-amber-500 fill-current" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                  </svg>
+                                  {creator.rating}
+                                </span>
+                              </div>
+                              <p className="text-xs text-gray-400 font-sans mt-0.5">@{creator.username}</p>
+                              <p className="text-xs text-gray-500 font-sans mt-2.5 line-clamp-2">{creator.shortBio || 'Content creator'}</p>
+                              <div className="flex items-center justify-between mt-4">
+                                <span className="text-xs font-sans text-gray-500">
+                                  Starting from <strong className="text-black font-black">{creator.startingPrice ? `${creator.startingPrice.toLocaleString()} PKR` : 'Free'}</strong>
+                                </span>
+                                <Link href={`/creators/${creator.username}`} className="text-xs font-sans font-bold text-blue-600 underline hover:text-blue-800 transition-colors">
+                                  Book Now
+                                </Link>
+                              </div>
+                            </div>
+                          </motion.div>
+                        );
+                      })}
+                  </div>
+
+                  {/* Pagination arrows */}
+                  {creatorsList.length > CREATORS_PER_PAGE && (
+                    <div className="flex items-center justify-center gap-3 mt-6">
+                      <button
+                        onClick={() => setCreatorsPage(p => Math.max(0, p - 1))}
+                        disabled={creatorsPage === 0}
+                        className={`w-10 h-10 rounded-full flex items-center justify-center border transition-all ${
+                          creatorsPage === 0
+                            ? 'border-gray-200 text-gray-300 cursor-not-allowed'
+                            : 'border-gray-300 text-gray-700 hover:border-[#0012FF] hover:text-[#0012FF] hover:bg-[#EEF2FF]'
+                        }`}
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <path d="M15 18l-6-6 6-6" />
+                        </svg>
+                      </button>
+
+                      <span className="text-xs font-bold text-gray-500">
+                        {creatorsPage + 1} / {Math.ceil(creatorsList.length / CREATORS_PER_PAGE)}
+                      </span>
+
+                      <button
+                        onClick={() => setCreatorsPage(p => Math.min(Math.ceil(creatorsList.length / CREATORS_PER_PAGE) - 1, p + 1))}
+                        disabled={creatorsPage >= Math.ceil(creatorsList.length / CREATORS_PER_PAGE) - 1}
+                        className={`w-10 h-10 rounded-full flex items-center justify-center border transition-all ${
+                          creatorsPage >= Math.ceil(creatorsList.length / CREATORS_PER_PAGE) - 1
+                            ? 'border-gray-200 text-gray-300 cursor-not-allowed'
+                            : 'border-gray-300 text-gray-700 hover:border-[#0012FF] hover:text-[#0012FF] hover:bg-[#EEF2FF]'
+                        }`}
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <path d="M9 18l6-6-6-6" />
+                        </svg>
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
 
           </div>

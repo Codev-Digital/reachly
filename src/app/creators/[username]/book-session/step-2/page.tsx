@@ -16,7 +16,7 @@ const toISO = (date: Date) => {
 export default function BookSessionStep2() {
   const params = useParams();
   const router = useRouter();
-  const { booking, setBooking, nextStep, prevStep } = useBooking();
+  const { booking, setBooking, nextStep, prevStep, saveDraft, isDraftSaved } = useBooking();
 
   const [slots, setSlots] = useState<string[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
@@ -24,7 +24,6 @@ export default function BookSessionStep2() {
   const [schedule, setSchedule] = useState<Record<string, { enabled: boolean }> | null>(null);
   const [isLoadingContinue, setIsLoadingContinue] = useState(false);
   const [isLoadingBack, setIsLoadingBack] = useState(false);
-  const [isLoadingDraft, setIsLoadingDraft] = useState(false);
   const [saved, setSaved] = useState(true);
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -128,11 +127,7 @@ export default function BookSessionStep2() {
   };
 
   const handleSaveDraft = () => {
-    setIsLoadingDraft(true);
-    setTimeout(() => {
-      setIsLoadingDraft(false);
-      alert("Progress saved successfully!");
-    }, 800);
+    saveDraft();
   };
 
   const creator = booking.creator;
@@ -371,47 +366,54 @@ export default function BookSessionStep2() {
           </div>
 
           {/* ============ NAVIGATION & ACTIONS ROW ============ */}
-          <div className="flex gap-4 mt-8 justify-between lg:justify-end w-full px-1">
+          <div className="flex flex-wrap gap-2 mt-8 justify-end w-full px-1">
             <button
               onClick={handleSaveDraft}
-              disabled={isLoadingDraft}
-              className="bg-white border border-gray-200 text-gray-700 font-bold py-2.5 px-6 rounded-full text-xs hover:bg-gray-50 transition-colors shadow-sm lg:mr-auto flex items-center justify-center min-w-[120px]"
+              disabled={isDraftSaved}
+              className={`font-bold py-2.5 px-4 sm:px-6 rounded-full text-xs transition-colors shadow-sm mr-auto flex items-center justify-center gap-1.5 border ${
+                isDraftSaved
+                  ? 'bg-green-50 border-green-200 text-green-600 cursor-default'
+                  : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+              }`}
             >
-              {isLoadingDraft ? (
-                <div className="w-4 h-4 rounded-full border-2 border-gray-300 border-t-gray-700 animate-spin"></div>
+              {isDraftSaved ? (
+                <>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  Saved
+                </>
               ) : (
                 "Save as Draft"
               )}
             </button>
 
-            <div className="flex gap-4">
-              <button
-                onClick={handleBack}
-                disabled={isLoadingBack}
-                className="bg-white border border-gray-200 text-gray-700 font-bold py-2.5 px-6 rounded-full text-xs hover:bg-gray-50 transition-colors shadow-sm flex items-center justify-center min-w-[100px]"
-              >
-                {isLoadingBack ? (
-                  <div className="w-4 h-4 rounded-full border-2 border-gray-300 border-t-gray-700 animate-spin"></div>
-                ) : (
-                  "Back"
-                )}
-              </button>
+            <button
+              onClick={handleBack}
+              disabled={isLoadingBack}
+              className="bg-white border border-gray-200 text-gray-700 font-bold py-2.5 px-4 sm:px-6 rounded-full text-xs hover:bg-gray-50 transition-colors shadow-sm flex items-center justify-center"
+            >
+              {isLoadingBack ? (
+                <div className="w-4 h-4 rounded-full border-2 border-gray-300 border-t-gray-700 animate-spin"></div>
+              ) : (
+                "Back"
+              )}
+            </button>
 
-              <button
-                onClick={handleContinue}
-                disabled={!booking.selectedDate || !booking.selectedTime || isLoadingContinue}
-                className={`py-2.5 px-8 rounded-full text-xs font-bold transition-all shadow-sm flex items-center justify-center min-w-[120px] ${booking.selectedDate && booking.selectedTime
-                  ? 'bg-[#0012FF] text-white hover:bg-[#0010d0]'
-                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                  }`}
-              >
-                {isLoadingContinue ? (
-                  <div className="w-4 h-4 rounded-full border-2 border-[#808BFF] border-t-white animate-spin"></div>
-                ) : (
-                  "Continue"
-                )}
-              </button>
-            </div>
+            <button
+              onClick={handleContinue}
+              disabled={!booking.selectedDate || !booking.selectedTime || isLoadingContinue}
+              className={`py-2.5 px-5 sm:px-8 rounded-full text-xs font-bold transition-all shadow-sm flex items-center justify-center ${booking.selectedDate && booking.selectedTime
+                ? 'bg-[#0012FF] text-white hover:bg-[#0010d0]'
+                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                }`}
+            >
+              {isLoadingContinue ? (
+                <div className="w-4 h-4 rounded-full border-2 border-[#808BFF] border-t-white animate-spin"></div>
+              ) : (
+                "Continue"
+              )}
+            </button>
           </div>
 
         </div>

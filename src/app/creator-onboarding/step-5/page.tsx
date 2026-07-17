@@ -257,6 +257,7 @@ export default function CreatorOnboardingStep5() {
   const [error, setError] = useState('');
   const [draftSaved, setDraftSaved] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [profile, setProfile] = useState<CreatorProfile | null>(null);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [availability, setAvailability] = useState<any>(null);
@@ -293,6 +294,7 @@ export default function CreatorOnboardingStep5() {
       const data = await res.json();
       if (data.success) {
         setDraftSaved(true);
+        setShowSuccessModal(true);
       } else {
         setError(data.error || 'Failed to save draft. Try again.');
       }
@@ -337,6 +339,41 @@ export default function CreatorOnboardingStep5() {
         />
       )}
 
+      {/* Draft Saved Success Modal */}
+      {showSuccessModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
+        >
+          <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden">
+            {/* Blue header strip */}
+            <div className="bg-[#0012FF] px-6 pt-8 pb-10 flex flex-col items-center text-center">
+              <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center mb-4">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
+                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                  <polyline points="17 21 17 13 7 13 7 21" />
+                  <polyline points="7 3 7 8 15 8" />
+                </svg>
+              </div>
+              <h3 className="text-white text-xl font-bold font-sans mb-1">Draft Saved</h3>
+              <p className="text-white/70 text-xs font-sans">Your progress has been saved successfully</p>
+            </div>
+            {/* Body */}
+            <div className="px-6 py-6 text-center">
+              <p className="text-gray-500 text-sm font-sans leading-relaxed mb-6">
+                Come back anytime to continue and submit your profile when you&apos;re ready to go live.
+              </p>
+              <button
+                onClick={() => setShowSuccessModal(false)}
+                className="w-full bg-[#0012FF] text-white py-3 rounded-2xl text-sm font-semibold font-sans hover:bg-[#0012FF]/90 transition-all"
+              >
+                Got it
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
         {/* Heading + Preview Button */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
@@ -364,16 +401,6 @@ export default function CreatorOnboardingStep5() {
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
             <p className="text-sm text-red-600">{error}</p>
-          </div>
-        )}
-
-        {/* Draft Saved Toast */}
-        {draftSaved && (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-2">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5">
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-            <p className="text-sm text-green-700 font-semibold">Draft saved! Come back anytime to continue.</p>
           </div>
         )}
 

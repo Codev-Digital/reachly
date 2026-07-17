@@ -9,11 +9,10 @@ import { useBooking } from '../layout';
 export default function BookSessionStep3() {
   const params = useParams();
   const router = useRouter();
-  const { booking, setBooking, nextStep, saveToStorage, userData } = useBooking();
+  const { booking, setBooking, nextStep, saveToStorage, userData, saveDraft, isDraftSaved } = useBooking();
   const [authError, setAuthError] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
   const [isLoadingBack, setIsLoadingBack] = useState(false);
-  const [isLoadingDraft, setIsLoadingDraft] = useState(false);
   const [saved, setSaved] = useState(true);
   const [showWarningModal, setShowWarningModal] = useState(false);
 
@@ -192,33 +191,36 @@ export default function BookSessionStep3() {
             )}
 
             {/* Navigation Buttons Row inside form panel */}
-            <div className="flex justify-between items-center mt-8 pt-6 border-t border-gray-100 px-1 w-full gap-4 lg:justify-end">
+            <div className="flex flex-wrap justify-between items-center mt-8 pt-6 border-t border-gray-100 gap-2">
               <button
-                onClick={() => {
-                  setIsLoadingDraft(true);
-                  setTimeout(() => {
-                    setIsLoadingDraft(false);
-                    alert("Progress saved successfully!");
-                  }, 800);
-                }}
-                disabled={isLoadingDraft}
-                className="bg-white border border-gray-200 text-gray-700 font-bold py-2.5 px-6 rounded-full text-xs hover:bg-gray-50 transition-colors shadow-sm lg:mr-auto flex items-center justify-center min-w-[120px]"
+                onClick={() => saveDraft()}
+                disabled={isDraftSaved}
+                className={`font-bold py-2.5 px-4 sm:px-5 rounded-full text-xs transition-colors shadow-sm flex items-center justify-center gap-1.5 border ${
+                  isDraftSaved
+                    ? 'bg-green-50 border-green-200 text-green-600 cursor-default'
+                    : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                }`}
               >
-                {isLoadingDraft ? (
-                  <div className="w-4 h-4 rounded-full border-2 border-gray-300 border-t-gray-700 animate-spin"></div>
+                {isDraftSaved ? (
+                  <>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    Saved
+                  </>
                 ) : (
                   "Save as Draft"
                 )}
               </button>
 
-              <div className="flex gap-4">
+              <div className="flex gap-2">
                 <button
                   onClick={() => {
                     setIsLoadingBack(true);
                     router.push(`/creators/${params.username}/book-session/step-2`);
                   }}
                   disabled={isLoadingBack}
-                  className="bg-white border border-gray-200 text-gray-700 font-bold py-2.5 px-6 rounded-full text-xs hover:bg-gray-50 transition-colors shadow-sm flex items-center justify-center min-w-[100px]"
+                  className="bg-white border border-gray-200 text-gray-700 font-bold py-2.5 px-4 sm:px-5 rounded-full text-xs hover:bg-gray-50 transition-colors shadow-sm flex items-center justify-center"
                 >
                   {isLoadingBack ? (
                     <div className="w-4 h-4 rounded-full border-2 border-gray-300 border-t-gray-700 animate-spin"></div>
@@ -230,7 +232,7 @@ export default function BookSessionStep3() {
                 <button
                   onClick={handleContinue}
                   disabled={!canProceed || authLoading}
-                  className={`py-2.5 px-8 rounded-full text-xs font-bold transition-all shadow-sm flex items-center justify-center min-w-[120px] ${canProceed && !authLoading
+                  className={`py-2.5 px-5 sm:px-6 rounded-full text-xs font-bold transition-all shadow-sm flex items-center justify-center ${canProceed && !authLoading
                     ? 'bg-[#0012FF] text-white hover:bg-[#0010d0]'
                     : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                     }`}
