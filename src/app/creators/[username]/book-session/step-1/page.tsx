@@ -2,7 +2,6 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
 import BookingProgress from '@/components/booking/BookingProgress';
 import CreatorProfileCard from '@/components/booking/CreatorProfileCard';
 import { useBooking, SessionType } from '../layout';
@@ -11,7 +10,6 @@ export default function BookSessionStep1() {
   const params = useParams();
   const router = useRouter();
   const { booking, setBooking, nextStep } = useBooking();
-  const [saved, setSaved] = useState(true);
   const [sessions, setSessions] = useState<SessionType[]>([]);
   const [loading, setLoading] = useState(true);
   const [isLoadingContinue, setIsLoadingContinue] = useState(false);

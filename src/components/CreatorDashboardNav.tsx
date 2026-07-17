@@ -248,10 +248,10 @@ export default function CreatorDashboardNav({
                           <p className="text-gray-400 text-xs mt-1">Never miss an update from your account</p>
                         </div>
 
-                        {/* Clear All Button */}
+                        {/* Clear All Button — in header on mobile, in notch on desktop */}
                         <button
                           onClick={handleClearAll}
-                          className="border border-gray-200 bg-white hover:bg-gray-55 transition-colors text-gray-500 rounded-full px-3.5 py-1.5 text-xs font-bold flex items-center gap-1.5 shadow-sm cursor-pointer shrink-0"
+                          className="sm:absolute sm:-top-[23px] sm:-right-5 border border-gray-200 bg-white hover:bg-gray-50 transition-colors text-gray-500 rounded-full px-3.5 py-1.5 text-xs font-bold flex items-center gap-1.5 shadow-sm cursor-pointer shrink-0"
                         >
                           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                             <line x1="18" y1="6" x2="6" y2="18" />

@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import BookingProgress from '@/components/booking/BookingProgress';
 import CreatorProfileCard from '@/components/booking/CreatorProfileCard';
 import { useBooking } from '../layout';
@@ -13,7 +13,6 @@ export default function BookSessionStep3() {
   const [authError, setAuthError] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
   const [isLoadingBack, setIsLoadingBack] = useState(false);
-  const [saved, setSaved] = useState(true);
   const [showWarningModal, setShowWarningModal] = useState(false);
 
   const updateUserDetails = (field: string, value: string) => {

@@ -185,7 +185,7 @@ export default function WelcomePage() {
           md:w-3.5 md:h-3.5
           object-contain
           -mt-3 -mr-2
-          md:-mt-4 md:-mr-5
+          md:-mt-6 md:-mr-5
           transition-transform duration-200
           group-hover:translate-x-0.5
           group-hover:-translate-y-0.5
@@ -246,7 +246,7 @@ export default function WelcomePage() {
           md:w-3.5 md:h-3.5
           object-contain
           -mt-3 -mr-2
-          md:-mt-4 md:-mr-5
+          md:-mt-6 md:-mr-5
           transition-transform duration-200
           group-hover:translate-x-0.5
           group-hover:-translate-y-0.5

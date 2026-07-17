@@ -263,14 +263,14 @@ export default function UserBookingsPage() {
 
         {/* Bookings Grid */}
         {filteredBookings.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+          <div className="flex flex-wrap gap-6 justify-start">
             {filteredBookings.map((booking, index) => (
               <motion.div
                 key={booking.id}
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.1 + index * 0.05 }}
-                className="relative w-full h-auto min-h-[220px] sm:min-h-[212px] z-10 flex flex-col"
+                className="relative w-full max-w-[420px] min-h-[220px] sm:min-h-[212px] z-10 flex flex-col"
               >
                 {/* Background Card Image */}
                 <Image

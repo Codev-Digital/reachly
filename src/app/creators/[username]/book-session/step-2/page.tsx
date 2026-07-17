@@ -24,7 +24,6 @@ export default function BookSessionStep2() {
   const [schedule, setSchedule] = useState<Record<string, { enabled: boolean }> | null>(null);
   const [isLoadingContinue, setIsLoadingContinue] = useState(false);
   const [isLoadingBack, setIsLoadingBack] = useState(false);
-  const [saved, setSaved] = useState(true);
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
