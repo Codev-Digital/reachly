@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import UserNavbar from '@/components/UserNavbar';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { signOut } from 'next-auth/react';
 
 export default function UserSettings() {
   const router = useRouter();
@@ -144,8 +145,22 @@ export default function UserSettings() {
         method: 'DELETE'
       });
       if (res.ok) {
+        // Clear all cookies
+        document.cookie.split(";").forEach((c) => {
+          document.cookie = c
+            .replace(/^ +/, "")
+            .replace(
+              /=.*/,
+              "=;expires=" + new Date().toUTCString() + ";path=/"
+            );
+        });
+
+        // Clear localStorage & sessionStorage
+        localStorage.clear();
+        sessionStorage.clear();
+
         alert('Account deleted successfully.');
-        router.push('/signup');
+        signOut({ callbackUrl: '/signup' });
       } else {
         const err = await res.json();
         alert(err.error || 'Failed to delete account');

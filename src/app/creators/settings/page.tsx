@@ -6,6 +6,7 @@ import Link from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import CreatorDashboardNav from '@/components/CreatorDashboardNav';
 import LoadingAnimation from '@/components/LoadingAnimation';
+import { signOut } from 'next-auth/react';
 import { User, Briefcase, Clock, Shield, Star, Camera, Plus, Trash2, MapPin, ChevronRight, X, AlertTriangle } from 'lucide-react';
 
 function ModalShell({
@@ -434,8 +435,22 @@ export default function CreatorSettings() {
       });
       const data = await res.json();
       if (res.ok && data.success) {
+        // Clear all cookies
+        document.cookie.split(";").forEach((c) => {
+          document.cookie = c
+            .replace(/^ +/, "")
+            .replace(
+              /=.*/,
+              "=;expires=" + new Date().toUTCString() + ";path=/"
+            );
+        });
+
+        // Clear localStorage & sessionStorage
+        localStorage.clear();
+        sessionStorage.clear();
+
         alert('Account deleted successfully');
-        router.push('/');
+        signOut({ callbackUrl: '/signup' });
       } else {
         alert(data.error || 'Failed to delete account');
       }

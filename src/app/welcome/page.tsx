@@ -155,51 +155,63 @@ export default function WelcomePage() {
             </div>
 
             {/* Path Selection Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-8">              {/* I want to book sessions */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-8">
+              {/* I want to book sessions */}
               <div
                 onClick={handleBookSessions}
-                className="relative overflow-hidden group rounded-2xl p-6 sm:p-7 cursor-pointer transition-all hover:scale-[1.02] active:scale-98 min-h-[240px] flex flex-col justify-between"
+                className="relative  group rounded-2xl
+    p-5 md:p-7
+    cursor-pointer
+    transition-all duration-300
+    hover:scale-[1.02]
+    active:scale-[0.98]
+    min-h-[220px] md:min-h-[240px]
+    flex flex-col justify-between"
               >
                 {/* SVG Background */}
                 <img
                   src="/assets/welcome-card-1.svg"
                   alt=""
-                  className="absolute inset-0 w-full h-full object-fill pointer-events-none"
+                  className="absolute inset-0 w-full h-full object-fill pointer-events-none select-none"
                 />
 
-                {/* Arrow up-right */}
-                {/* Vector Icon */}
+                {/* Arrow */}
                 <div className="relative z-10 flex justify-end">
                   <img
                     src="/assets/vector.svg"
                     alt=""
                     className="
-      w-3 h-3 sm:w-3.5 sm:h-3.5
-      object-contain
-      -mt-4
-      -mr-5
-      transition-transform duration-200
-      group-hover:translate-x-0.5
-      group-hover:-translate-y-0.5
-      select-none pointer-events-none
-    "
+          w-3 h-3
+          md:w-3.5 md:h-3.5
+          object-contain
+          -mt-3 -mr-2
+          md:-mt-4 md:-mr-5
+          transition-transform duration-200
+          group-hover:translate-x-0.5
+          group-hover:-translate-y-0.5
+          pointer-events-none
+          select-none
+        "
                   />
                 </div>
 
-                <div className="relative z-10 flex flex-col gap-4 flex-1 pb-3">
-                  <div className="w-12 h-12 rounded-[14px] bg-[#EEF2FF] flex items-center justify-center">
+                <div className="relative z-10 flex flex-col gap-4 flex-1 pb-2">
+                  <div className="w-11 h-11 md:w-12 md:h-12 rounded-[14px] bg-[#EEF2FF] flex items-center justify-center">
                     <img
                       src="/assets/box.svg"
                       alt=""
-                      className="w-5.5 h-5.5 object-contain select-none pointer-events-none"
+                      className="w-5 h-5 md:w-5.5 md:h-5.5 object-contain pointer-events-none select-none"
                     />
                   </div>
+
                   <div>
-                    <h3 className="font-sans font-bold text-[17px] text-black mb-3 tracking-tight">
+                    <h3 className="font-sans font-bold text-[16px] md:text-[17px] text-black mb-2 md:mb-3 tracking-tight leading-snug">
                       I Want to Book Sessions
                     </h3>
-                    <p className="text-xs text-gray-400 font-sans leading-relaxed font-normal">
-                      Find creators you admire and book personalized video calls to learn , grow and connect
+
+                    <p className="text-[12px] md:text-xs text-gray-400 font-sans leading-relaxed font-normal">
+                      Find creators you admire and book personalized video calls to
+                      learn, grow and connect.
                     </p>
                   </div>
                 </div>
@@ -208,54 +220,63 @@ export default function WelcomePage() {
               {/* I want to be a creator */}
               <div
                 onClick={handleBecomeCreator}
-                className="relative overflow-hidden group rounded-2xl p-6 sm:p-7 cursor-pointer transition-all hover:scale-[1.02] active:scale-98 min-h-[240px] flex flex-col justify-between"
+                className="relative  group rounded-2xl
+    p-5 md:p-7
+    cursor-pointer
+    transition-all duration-300
+    hover:scale-[1.02]
+    active:scale-[0.98]
+    min-h-[220px] md:min-h-[240px]
+    flex flex-col justify-between"
               >
                 {/* SVG Background */}
                 <img
                   src="/assets/welcome-card-2.svg"
                   alt=""
-                  className="absolute inset-0 w-full h-full object-fill pointer-events-none"
+                  className="absolute inset-0 w-full h-full object-fill pointer-events-none select-none"
                 />
 
-                {/* Arrow up-right */}
-                {/* Vector Icon */}
-                {/* Vector Icon */}
+                {/* Arrow */}
                 <div className="relative z-10 flex justify-end">
                   <img
                     src="/assets/vector.svg"
                     alt=""
                     className="
-      w-3 h-3 sm:w-3.5 sm:h-3.5
-      object-contain
-      -mt-4
-      -mr-5
-      transition-transform duration-200
-      group-hover:translate-x-0.5
-      group-hover:-translate-y-0.5
-      select-none pointer-events-none
-    "
+          w-3 h-3
+          md:w-3.5 md:h-3.5
+          object-contain
+          -mt-3 -mr-2
+          md:-mt-4 md:-mr-5
+          transition-transform duration-200
+          group-hover:translate-x-0.5
+          group-hover:-translate-y-0.5
+          pointer-events-none
+          select-none
+        "
                   />
                 </div>
 
-                <div className="relative z-10 flex flex-col gap-4 flex-1 pb-3">
-                  <div className="w-12 h-12 rounded-[14px] bg-[#EEF2FF] flex items-center justify-center">
+                <div className="relative z-10 flex flex-col gap-4 flex-1 pb-2">
+                  <div className="w-11 h-11 md:w-12 md:h-12 rounded-[14px] bg-[#EEF2FF] flex items-center justify-center">
                     <img
                       src="/assets/star.svg"
                       alt=""
-                      className="w-5.5 h-5.5 object-contain select-none pointer-events-none"
+                      className="w-5 h-5 md:w-5.5 md:h-5.5 object-contain pointer-events-none select-none"
                     />
                   </div>
+
                   <div>
-                    <h3 className="font-sans font-bold text-[17px] text-black mb-3 tracking-tight">
+                    <h3 className="font-sans font-bold text-[16px] md:text-[17px] text-black mb-2 md:mb-3 tracking-tight leading-snug">
                       I Want to be a Creator
                     </h3>
-                    <p className="text-xs text-gray-400 font-sans leading-relaxed font-normal">
-                      Share your knowledge, connect with your audience and monetize your expertise through 1-on-1 sessions.
+
+                    <p className="text-[12px] md:text-xs text-gray-400 font-sans leading-relaxed font-normal">
+                      Share your knowledge, connect with your audience and monetize your
+                      expertise through 1-on-1 sessions.
                     </p>
                   </div>
                 </div>
               </div>
-
             </div>
 
             {/* Login Link */}
