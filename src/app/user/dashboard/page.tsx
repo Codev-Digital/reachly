@@ -44,7 +44,7 @@ export default function UserDashboard() {
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeBookingTab, setActiveBookingTab] = useState<'Upcoming' | 'Past' | 'Cancelled'>('Upcoming');
-  const [favorites, setFavorites] = useState<string[]>(['Sarah Khan']);
+  const [favorites, setFavorites] = useState<string[]>([]); // creator usernames
 
   // User details
   const [displayName, setDisplayName] = useState<string>('James Richard');
@@ -147,8 +147,16 @@ export default function UserDashboard() {
         setIsAuthenticated(false);
       }
 
-      // Fetch bookings
-      const bookingsRes = await fetch('/api/user/bookings');
+      // Fetch bookings + favourites in parallel
+      const [bookingsRes, favRes] = await Promise.all([
+        fetch('/api/user/bookings'),
+        fetch('/api/user/favourite-creators'),
+      ]);
+
+      if (favRes.ok) {
+        const favData = await favRes.json();
+        setFavorites(favData.favouriteCreators || []);
+      }
       if (bookingsRes.ok) {
         const bData = await bookingsRes.json();
         if (bData.bookings && bData.bookings.length > 0) {
@@ -241,10 +249,25 @@ export default function UserDashboard() {
     }
   };
 
-  const toggleFavorite = (name: string) => {
-    setFavorites(prev =>
-      prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]
-    );
+  const toggleFavorite = async (username: string) => {
+    const isFav = favorites.includes(username);
+    setFavorites(prev => isFav ? prev.filter(u => u !== username) : [...prev, username]);
+    try {
+      const res = await fetch('/api/user/favourite-creators', {
+        method: isFav ? 'DELETE' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setFavorites(data.favouriteCreators || []);
+      } else {
+        // revert on error
+        setFavorites(prev => isFav ? [...prev, username] : prev.filter(u => u !== username));
+      }
+    } catch {
+      setFavorites(prev => isFav ? [...prev, username] : prev.filter(u => u !== username));
+    }
   };
 
   // Real-time creators state
@@ -413,7 +436,7 @@ export default function UserDashboard() {
                       .map((creator, index) => {
                         const globalIndex = creatorsPage * CREATORS_PER_PAGE + index;
                         const clipId = `cardClip-dashboard-${globalIndex}`;
-                        const isFav = favorites.includes(creator.displayName);
+                        const isFav = favorites.includes(creator.username);
                         return (
                           <motion.div
                             key={creator.id}
@@ -443,7 +466,7 @@ export default function UserDashboard() {
                               </span>
                               {/* Heart */}
                               <button
-                                onClick={() => toggleFavorite(creator.displayName)}
+                                onClick={() => toggleFavorite(creator.username)}
                                 className="absolute top-2 right-0 z-20 flex items-center justify-center hover:scale-110 transition-transform"
                               >
                                 <svg className={`w-6 h-6 transition-colors duration-200 ${isFav ? 'text-red-500' : 'text-gray-300'}`} viewBox="0 0 24 24">
