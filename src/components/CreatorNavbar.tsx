@@ -42,8 +42,8 @@ export default function CreatorNavbar() {
     }
 
     if (currentUserData) {
-      const isCreator = 
-        (currentUserData.user.approvalStatus && currentUserData.user.approvalStatus !== 'none') || 
+      const isCreator =
+        (currentUserData.user.approvalStatus && currentUserData.user.approvalStatus !== 'none') ||
         (currentUserData.user.onboardingStep && currentUserData.user.onboardingStep > 0);
 
       // Check if user is pending approval first
@@ -51,13 +51,13 @@ export default function CreatorNavbar() {
         router.push('/creators/pending-approval');
         return;
       }
-      
+
       // If user has a creator profile and it's complete and approved → go to creator dashboard
       if (currentUserData.creatorProfile && currentUserData.creatorProfile.isProfileComplete && currentUserData.user.approvalStatus === 'approved' && isCreator) {
         router.push('/creators/dashboard');
         return;
       }
-      
+
       // If user is in the middle of onboarding → go to their current onboarding step
       if ((currentUserData.creatorProfile || currentUserData.user.onboardingStep > 0) && isCreator) {
         const resumeStep = Math.max(1, Math.min(currentUserData.user.onboardingStep || 1, 7));
@@ -98,44 +98,40 @@ export default function CreatorNavbar() {
           <div className="hidden lg:flex gap-8 xl:gap-10 items-center">
             <Link
               href="/explore-creators"
-              className={`font-sans text-sm font-medium transition-colors ${
-                pathname === '/explore-creators'
-                  ? 'text-white'
-                  : 'text-white/80 hover:text-white'
-              }`}
+              className={`font-sans text-sm font-medium transition-colors ${pathname === '/explore-creators'
+                ? 'text-white'
+                : 'text-white/80 hover:text-white'
+                }`}
             >
               Explore Creators
             </Link>
 
             <Link
               href="/events"
-              className={`font-sans text-sm font-medium transition-colors ${
-                pathname === '/events'
-                  ? 'text-white'
-                  : 'text-white/80 hover:text-white'
-              }`}
+              className={`font-sans text-sm font-medium transition-colors ${pathname === '/events'
+                ? 'text-white'
+                : 'text-white/80 hover:text-white'
+                }`}
             >
               Events
             </Link>
 
             <Link
               href="/for-creators"
-              className={`font-sans text-sm font-medium transition-colors ${
-                pathname === '/for-creators'
-                  ? 'text-white'
-                  : 'text-white/80 hover:text-white'
-              }`}
+              className={`font-sans text-sm font-medium transition-colors ${pathname === '/for-creators'
+                ? 'text-white'
+                : 'text-white/80 hover:text-white'
+                }`}
             >
               For Creators
             </Link>
 
             <Link
               href="/about"
-              className={`font-sans text-sm font-medium transition-colors ${
-                pathname === '/about'
-                  ? 'text-white'
-                  : 'text-white/80 hover:text-white'
-              }`}
+              className={`font-sans text-sm font-medium transition-colors ${pathname === '/about'
+                ? 'text-white'
+                : 'text-white/80 hover:text-white'
+                }`}
             >
               About
             </Link>
@@ -217,7 +213,7 @@ export default function CreatorNavbar() {
                 duration: 0.3,
                 ease: [0.22, 1, 0.36, 1],
               }}
-              className="lg:hidden overflow-hidden mt-4 bg-[#01092F]/95 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl relative z-[100]"
+              className="lg:hidden overflow-hidden mt-4 bg-[#ffffff] backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl relative z-[100]"
             >
               <motion.div
                 variants={menuVariants}
@@ -229,11 +225,10 @@ export default function CreatorNavbar() {
                   <Link
                     href="/explore-creators"
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className={`block font-inter text-base font-medium ${
-                      pathname === '/explore-creators'
-                        ? 'text-[#C8A97E]'
-                        : 'text-[#F9F6F2]'
-                    }`}
+                    className={`block font-inter text-base font-medium ${pathname === '/explore-creators'
+                      ? 'text-[#C8A97E]'
+                      : 'text-[#0C0C0C]'
+                      }`}
                   >
                     Explore Creators
                   </Link>
@@ -243,11 +238,10 @@ export default function CreatorNavbar() {
                   <Link
                     href="/how-it-works"
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className={`block font-inter text-base font-medium ${
-                      pathname === '/how-it-works'
-                        ? 'text-[#C8A97E]'
-                        : 'text-[#F9F6F2]'
-                    }`}
+                    className={`block font-inter text-base font-medium ${pathname === '/how-it-works'
+                      ? 'text-[#C8A97E]'
+                      : 'text-[#0C0C0C]'
+                      }`}
                   >
                     How it Works
                   </Link>
@@ -257,11 +251,10 @@ export default function CreatorNavbar() {
                   <Link
                     href="/for-creators"
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className={`block font-inter text-base font-medium ${
-                      pathname === '/for-creators'
-                        ? 'text-[#C8A97E]'
-                        : 'text-[#F9F6F2]'
-                    }`}
+                    className={`block font-inter text-base font-medium ${pathname === '/for-creators'
+                      ? 'text-[#C8A97E]'
+                      : 'text-[#0C0C0C]'
+                      }`}
                   >
                     For Creators
                   </Link>
@@ -271,11 +264,10 @@ export default function CreatorNavbar() {
                   <Link
                     href="/about"
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className={`block font-inter text-base font-medium ${
-                      pathname === '/about'
-                        ? 'text-[#C8A97E]'
-                        : 'text-[#F9F6F2]'
-                    }`}
+                    className={`block font-inter text-base font-medium ${pathname === '/about'
+                      ? 'text-[#C8A97E]'
+                      : 'text-[#0C0C0C]'
+                      }`}
                   >
                     About
                   </Link>
@@ -291,7 +283,7 @@ export default function CreatorNavbar() {
                         handleDashboardClick();
                         setIsMobileMenuOpen(false);
                       }}
-                      className="flex-1 bg-[#FFFFFF] text-[#0C0C0C] px-5 py-2 rounded-full font-semibold text-sm"
+                      className="flex-1 bg-[#2666FF] text-[#FFFFFF] px-5 py-2 rounded-full font-semibold text-sm"
                     >
                       Dashboard
                     </button>
@@ -302,7 +294,7 @@ export default function CreatorNavbar() {
                           navigateWithLoading('/login');
                           setIsMobileMenuOpen(false);
                         }}
-                        className="flex-1 border border-[rgba(200,169,126,0.5)] text-[#C8A97E] px-5 py-2 rounded-full font-semibold text-sm"
+                        className="flex-1 border border-[#0C0C0C] text-[#0C0C0C] px-5 py-2 rounded-full font-semibold text-sm"
                       >
                         Login
                       </button>
@@ -312,7 +304,7 @@ export default function CreatorNavbar() {
                           router.push('/signup');
                           setIsMobileMenuOpen(false);
                         }}
-                        className="flex-1 bg-[#C8A97E] text-[#0C0C0C] px-5 py-2 rounded-full font-semibold text-sm"
+                        className="flex-1 bg-[#2666FF] text-[#FFFFFF] px-5 py-2 rounded-full font-semibold text-sm"
                       >
                         Sign up
                       </button>
