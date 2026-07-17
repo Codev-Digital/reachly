@@ -12,7 +12,7 @@ function isAdmin(email?: string | null) {
   return adminEmails.includes(email.toLowerCase());
 }
 
-// GET all users
+// GET all users (who are not creators)
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
@@ -22,16 +22,15 @@ export async function GET() {
 
     await connectDB();
 
-    // Fetch all users
-    const allUsers = await User.find({}).sort({ createdAt: -1 }).lean();
-
-    // Fetch all profiles
+    // Fetch all creator profiles to identify creator IDs
     const profiles = await CreatorProfile.find({}).lean();
+    const creatorUserIds = profiles.map((p: any) => p.userId.toString());
+
+    // Fetch all users who are NOT creators
+    const normalUsers = await User.find({ _id: { $nin: creatorUserIds } }).sort({ createdAt: -1 }).lean();
 
     // Map database user data to table shape
-    const formattedUsers = allUsers.map((user: any) => {
-      const profile = profiles.find((p: any) => p.userId.toString() === user._id.toString());
-      
+    const formattedUsers = normalUsers.map((user: any) => {
       const d = new Date(user.createdAt);
       const joinedDate = d.toLocaleDateString('en-GB', {
         day: 'numeric',
@@ -58,16 +57,16 @@ export async function GET() {
         id: `USR-${user._id.toString().slice(-5).toUpperCase()}`,
         dbId: user._id.toString(),
         name: user.name || 'User',
-        username: profile?.username ? `@${profile.username}` : `@${user.name.toLowerCase().replace(/\s+/g, '')}`,
+        username: `@${user.name.toLowerCase().replace(/\s+/g, '')}`,
         email: user.email,
         joinedDate,
         time,
         status,
-        avatar: profile?.profilePhoto || user.profilePhoto || '/avatar.png',
-        city: profile?.city || '',
-        country: profile?.country || '',
-        languages: profile?.languages?.join(', ') || 'English',
-        bio: profile?.shortBio || profile?.longBio || ''
+        avatar: user.profilePhoto || '/avatar.png',
+        city: '',
+        country: '',
+        languages: 'English',
+        bio: ''
       };
     });
 

@@ -1,67 +1,184 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
 import CreatorProfile from '@/models/CreatorProfile';
-import SessionType from '@/models/SessionType';
+import CreatorPayment from '@/models/CreatorPayment';
+import Booking from '@/models/Booking';
 
+// Helper to verify admin session
+function isAdmin(email?: string | null) {
+  if (!email) return false;
+  const adminEmails = ['abdullahgotaccess@gmail.com', 'admin@reachly.com'];
+  return adminEmails.includes(email.toLowerCase());
+}
+
+// GET all creators
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.email || session.user.email.toLowerCase() !== 'abdullahgotaccess@gmail.com') {
+    if (!session?.user?.email || !isAdmin(session.user.email)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     await connectDB();
 
-    // Find all users who are creators (onboardingStep >= 6 or approvalStatus set)
-    const creatorUsers = await User.find({
-      $or: [
-        { onboardingStep: { $gte: 6 } },
-        { approvalStatus: { $in: ['pending', 'approved', 'rejected'] } }
-      ]
-    }).select('_id name email onboardingStep approvalStatus createdAt').lean();
-
-    const userIds = creatorUsers.map(u => u._id);
-
-    const [profiles, sessions] = await Promise.all([
-      CreatorProfile.find({ userId: { $in: userIds } }).lean(),
-      SessionType.find({ userId: { $in: userIds } }).lean(),
+    // Fetch all creator profiles, payments, and bookings
+    const [profiles, payments, allBookings] = await Promise.all([
+      CreatorProfile.find({}).lean(),
+      CreatorPayment.find({}).lean(),
+      Booking.find({}).lean(),
     ]);
 
-    const creators = creatorUsers.map(user => {
-      const profile = profiles.find(p => p.userId.toString() === user._id.toString());
-      const userSessions = sessions.filter(s => s.userId.toString() === user._id.toString());
-      const minPrice = userSessions.length
-        ? Math.min(...userSessions.map(s => s.price))
-        : 0;
+    const creatorUserIds = profiles.map((p: any) => p.userId.toString());
+
+    // Fetch all users who are creators
+    const creatorUsers = await User.find({ _id: { $in: creatorUserIds } }).sort({ createdAt: -1 }).lean();
+
+    // Map database creator data to table shape
+    const formattedCreators = creatorUsers.map((user: any) => {
+      const profile = profiles.find((p: any) => p.userId.toString() === user._id.toString());
+      const payment = payments.find((pay: any) => pay.userId.toString() === user._id.toString());
+      
+      const creatorBookings = allBookings.filter((b: any) => b.creatorId.toString() === user._id.toString());
+      const completedSessions = creatorBookings.filter((b: any) => b.status === 'completed').length;
+      
+      const uniqueBookers = new Set<string>();
+      creatorBookings.forEach((b: any) => {
+        if (b.userId) uniqueBookers.add(b.userId.toString());
+        if (b.guestDetails?.email) uniqueBookers.add(b.guestDetails.email);
+      });
+      const happyUsers = uniqueBookers.size;
+      const totalCategories = profile?.niches?.length || 0;
+
+      const d = new Date(user.createdAt);
+      const joinedDate = d.toLocaleDateString('en-GB', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      });
+      const time = d.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+
+      // Map status
+      let status: 'Active' | 'Pending' | 'Inactive' | 'Suspended' = 'Active';
+      if (user.approvalStatus === 'pending') {
+        status = 'Pending';
+      } else if (user.approvalStatus === 'rejected') {
+        status = 'Suspended';
+      } else if (!user.isRegistrationComplete && user.onboardingStep === 0) {
+        status = 'Inactive';
+      }
+
+      // Build contact details
+      const contactInfo = [
+        payment?.mobileNumber ? `+92 ${payment.mobileNumber.replace(/^(\+?92|0)/, '')}` : null,
+        user.email?.toUpperCase()
+      ].filter(Boolean).join('   |   ');
 
       return {
-        _id: user._id,
-        name: user.name,
+        id: `CRT-${user._id.toString().slice(-5).toUpperCase()}`,
+        dbId: user._id.toString(),
+        name: user.name || 'Creator',
+        username: profile?.username ? `@${profile.username}` : `@${user.name.toLowerCase().replace(/\s+/g, '')}`,
         email: user.email,
-        approvalStatus: user.approvalStatus || 'none',
-        onboardingStep: user.onboardingStep,
-        createdAt: user.createdAt,
-        profile: profile ? {
-          displayName: profile.displayName,
-          username: profile.username,
-          profilePhoto: profile.profilePhoto,
-          niches: profile.niches,
-          city: profile.city,
-          country: profile.country,
-          shortBio: profile.shortBio,
-          isProfileComplete: profile.isProfileComplete,
-        } : null,
-        sessionCount: userSessions.length,
-        startingPrice: minPrice,
+        joinedDate,
+        time,
+        status,
+        avatar: profile?.profilePhoto || user.profilePhoto || '/avatar.png',
+        coverPhoto: profile?.coverPhoto || '',
+        city: profile?.city || '',
+        country: profile?.country || '',
+        languages: profile?.languages?.join(', ') || 'English',
+        bio: profile?.shortBio || '',
+        longBio: profile?.longBio || '',
+        niches: profile?.niches || [],
+        bannerName: profile?.displayName || user.name || 'Creator Name',
+        bannerNiche: profile?.niches?.[0] || 'Content Creator',
+        bannerContact: contactInfo,
+        sessionsCompleted: completedSessions,
+        happyUsers: happyUsers,
+        totalCategories: totalCategories
       };
     });
 
-    return NextResponse.json({ success: true, creators });
+    return NextResponse.json({ success: true, creators: formattedCreators });
   } catch (error: any) {
-    console.error('Admin creators fetch error:', error);
+    console.error('Admin creators GET error:', error);
+    return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });
+  }
+}
+
+// PUT to approve, reject, or suspend a creator
+export async function PUT(req: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email || !isAdmin(session.user.email)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    await connectDB();
+    const { userId, action } = await req.json();
+
+    if (!userId || !['approve', 'reject', 'suspend', 'activate'].includes(action)) {
+      return NextResponse.json({ error: 'Invalid data parameters' }, { status: 400 });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    if (action === 'approve') {
+      user.approvalStatus = 'approved';
+    } else if (action === 'reject') {
+      user.approvalStatus = 'rejected';
+    } else if (action === 'suspend') {
+      user.approvalStatus = 'rejected';
+    } else if (action === 'activate') {
+      user.approvalStatus = 'approved';
+    }
+
+    await user.save();
+
+    return NextResponse.json({ success: true, message: `Creator status changed to ${action}d successfully` });
+  } catch (error: any) {
+    console.error('Admin creators PUT error:', error);
+    return NextResponse.json({ error: error.message || 'Something went wrong' }, { status: 500 });
+  }
+}
+
+// DELETE a creator
+export async function DELETE(req: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email || !isAdmin(session.user.email)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    await connectDB();
+    const { searchParams } = new URL(req.url);
+    const userId = searchParams.get('userId');
+
+    if (!userId) {
+      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+    }
+
+    const user = await User.findByIdAndDelete(userId);
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    // Delete creator profile as well if it exists
+    await CreatorProfile.findOneAndDelete({ userId });
+
+    return NextResponse.json({ success: true, message: 'Creator deleted successfully' });
+  } catch (error: any) {
+    console.error('Admin creators DELETE error:', error);
     return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });
   }
 }

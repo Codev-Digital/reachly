@@ -1,11 +1,12 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 
 interface Creator {
   id: string;
+  dbId?: string;
   name: string;
   username: string;
   email: string;
@@ -21,29 +22,36 @@ interface Creator {
   onboardingStep?: string;
   niches?: string[];
   bio?: string;
+  longBio?: string;
+  coverPhoto?: string;
   bannerName?: string;
   bannerNiche?: string;
   bannerContact?: string;
+  sessionsCompleted?: number;
+  happyUsers?: number;
+  totalCategories?: number;
 }
 
 export default function AdminCreatorsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<'All Statuses' | 'Active' | 'Pending' | 'Inactive' | 'Suspended'>('All Statuses');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  
+
   // Modal states
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [creatorToReject, setCreatorToReject] = useState<Creator | null>(null);
-  
+  const [rejectSuccess, setRejectSuccess] = useState(false);
+
   const [showAcceptModal, setShowAcceptModal] = useState(false);
   const [creatorToAccept, setCreatorToAccept] = useState<Creator | null>(null);
-  
+  const [acceptSuccess, setAcceptSuccess] = useState(false);
+
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
-  
+
   const [currentPage, setCurrentPage] = useState(1);
-  
+
   // Track selected creator for full detail view
   const [activeDetailCreator, setActiveDetailCreator] = useState<Creator | null>(null);
 
@@ -58,15 +66,15 @@ export default function AdminCreatorsPage() {
   ];
 
   const initialCreators: Creator[] = [
-    { 
-      id: 'CRT-10245', 
-      name: 'Sophia Reed', 
-      username: '@sophiareed', 
-      email: 'sophiareed@gmail.com', 
-      joinedDate: '02 July 2026', 
-      time: '10:45 AM', 
+    {
+      id: 'CRT-10245',
+      name: 'Sophia Reed',
+      username: '@sophiareed',
+      email: 'sophiareed@gmail.com',
+      joinedDate: '02 July 2026',
+      time: '10:45 AM',
       eventsCreated: 'Creator Growth',
-      status: 'Active', 
+      status: 'Active',
       avatar: '/ahad raza mir.png',
       city: 'Los Angeles',
       country: 'United States',
@@ -79,15 +87,15 @@ export default function AdminCreatorsPage() {
       bannerNiche: 'Software Engineering',
       bannerContact: '+ 123-456-7890   |   hello@reallygreatsite.com'
     },
-    { 
-      id: 'CRT-10246', 
-      name: 'Sophia Reed', 
-      username: '@sophiareed', 
-      email: 'sophiareed@gmail.com', 
-      joinedDate: '02 July 2026', 
-      time: '10:45 AM', 
+    {
+      id: 'CRT-10246',
+      name: 'Sophia Reed',
+      username: '@sophiareed',
+      email: 'sophiareed@gmail.com',
+      joinedDate: '02 July 2026',
+      time: '10:45 AM',
       eventsCreated: 'Creator Growth +2',
-      status: 'Pending', 
+      status: 'Pending',
       avatar: '/ahad raza mir.png',
       city: 'London',
       country: 'United Kingdom',
@@ -100,15 +108,15 @@ export default function AdminCreatorsPage() {
       bannerNiche: 'Travel Vlogging',
       bannerContact: '+ 123-456-7890   |   hello@reallygreatsite.com'
     },
-    { 
-      id: 'CRT-10247', 
-      name: 'Sophia Reed', 
-      username: '@sophiareed', 
-      email: 'sophiareed@gmail.com', 
-      joinedDate: '02 July 2026', 
-      time: '10:45 AM', 
+    {
+      id: 'CRT-10247',
+      name: 'Sophia Reed',
+      username: '@sophiareed',
+      email: 'sophiareed@gmail.com',
+      joinedDate: '02 July 2026',
+      time: '10:45 AM',
       eventsCreated: 'None',
-      status: 'Active', 
+      status: 'Active',
       avatar: '/ahad raza mir.png',
       city: 'Lahore',
       country: 'Pakistan',
@@ -121,15 +129,15 @@ export default function AdminCreatorsPage() {
       bannerNiche: 'Tech Reviewing',
       bannerContact: '+ 123-456-7890   |   hello@reallygreatsite.com'
     },
-    { 
-      id: 'CRT-10248', 
-      name: 'Sophia Reed', 
-      username: '@sophiareed', 
-      email: 'sophiareed@gmail.com', 
-      joinedDate: '02 July 2026', 
-      time: '10:45 AM', 
+    {
+      id: 'CRT-10248',
+      name: 'Sophia Reed',
+      username: '@sophiareed',
+      email: 'sophiareed@gmail.com',
+      joinedDate: '02 July 2026',
+      time: '10:45 AM',
       eventsCreated: 'Creator Growth +1',
-      status: 'Inactive', 
+      status: 'Inactive',
       avatar: '/ahad raza mir.png',
       city: 'Dubai',
       country: 'UAE',
@@ -142,15 +150,15 @@ export default function AdminCreatorsPage() {
       bannerNiche: 'Business Growth',
       bannerContact: '+ 123-456-7890   |   hello@reallygreatsite.com'
     },
-    { 
-      id: 'CRT-10249', 
-      name: 'Sophia Reed', 
-      username: '@sophiareed', 
-      email: 'sophiareed@gmail.com', 
-      joinedDate: '02 July 2026', 
-      time: '10:45 AM', 
+    {
+      id: 'CRT-10249',
+      name: 'Sophia Reed',
+      username: '@sophiareed',
+      email: 'sophiareed@gmail.com',
+      joinedDate: '02 July 2026',
+      time: '10:45 AM',
       eventsCreated: 'Creator Growth',
-      status: 'Pending', 
+      status: 'Pending',
       avatar: '/ahad raza mir.png',
       city: 'Karachi',
       country: 'Pakistan',
@@ -163,15 +171,15 @@ export default function AdminCreatorsPage() {
       bannerNiche: 'UI/UX Design',
       bannerContact: '+ 123-456-7890   |   hello@reallygreatsite.com'
     },
-    { 
-      id: 'CRT-10250', 
-      name: 'Sophia Reed', 
-      username: '@sophiareed', 
-      email: 'sophiareed@gmail.com', 
-      joinedDate: '02 July 2026', 
-      time: '10:45 AM', 
+    {
+      id: 'CRT-10250',
+      name: 'Sophia Reed',
+      username: '@sophiareed',
+      email: 'sophiareed@gmail.com',
+      joinedDate: '02 July 2026',
+      time: '10:45 AM',
       eventsCreated: 'Creator Growth',
-      status: 'Suspended', 
+      status: 'Suspended',
       avatar: '/ahad raza mir.png',
       city: 'New York',
       country: 'United States',
@@ -184,15 +192,15 @@ export default function AdminCreatorsPage() {
       bannerNiche: 'Fitness Training',
       bannerContact: '+ 123-456-7890   |   hello@reallygreatsite.com'
     },
-    { 
-      id: 'CRT-10251', 
-      name: 'Sophia Reed', 
-      username: '@sophiareed', 
-      email: 'sophiareed@gmail.com', 
-      joinedDate: '02 July 2026', 
-      time: '10:45 AM', 
+    {
+      id: 'CRT-10251',
+      name: 'Sophia Reed',
+      username: '@sophiareed',
+      email: 'sophiareed@gmail.com',
+      joinedDate: '02 July 2026',
+      time: '10:45 AM',
       eventsCreated: 'None',
-      status: 'Active', 
+      status: 'Active',
       avatar: '/ahad raza mir.png',
       city: 'Sydney',
       country: 'Australia',
@@ -207,16 +215,36 @@ export default function AdminCreatorsPage() {
     }
   ];
 
-  const [creators, setCreators] = useState<Creator[]>(initialCreators);
+  const [creators, setCreators] = useState<Creator[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadCreators = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch('/api/admin/creators');
+      if (res.ok) {
+        const data = await res.json();
+        setCreators(data.creators || []);
+      }
+    } catch (err) {
+      console.error('Failed to load creators:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadCreators();
+  }, []);
 
   // Filter logic
   const filteredCreators = creators.filter(creator => {
-    const matchesSearch = creator.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          creator.id.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          creator.email.toLowerCase().includes(searchQuery.toLowerCase());
-    
+    const matchesSearch = creator.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      creator.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      creator.email.toLowerCase().includes(searchQuery.toLowerCase());
+
     const matchesStatus = selectedStatusFilter === 'All Statuses' || creator.status === selectedStatusFilter;
-    
+
     return matchesSearch && matchesStatus;
   });
 
@@ -225,29 +253,62 @@ export default function AdminCreatorsPage() {
     setShowRejectModal(true);
   };
 
-  const handleConfirmReject = () => {
+  const handleConfirmReject = async () => {
     if (creatorToReject) {
-      setCreators(prev => prev.map(c => c.id === creatorToReject.id ? { ...c, status: 'Inactive' } : c));
-      setShowRejectModal(false);
-      setCreatorToReject(null);
-      if (activeDetailCreator?.id === creatorToReject.id) {
-        setActiveDetailCreator(prev => prev ? { ...prev, status: 'Inactive' } : null);
+      try {
+        const res = await fetch('/api/admin/creators', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: creatorToReject.dbId || creatorToReject.id, action: 'reject' })
+        });
+        if (res.ok) {
+          setRejectSuccess(true);
+          loadCreators();
+          setActiveDetailCreator(null);
+        } else {
+          const err = await res.json();
+          alert(err.error || 'Failed to reject creator.');
+          setShowRejectModal(false);
+          setCreatorToReject(null);
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Error rejecting creator.');
+        setShowRejectModal(false);
+        setCreatorToReject(null);
       }
     }
   };
 
   const handleAcceptClick = (creator: Creator) => {
     setCreatorToAccept(creator);
+    setAcceptSuccess(false);
     setShowAcceptModal(true);
   };
 
-  const handleConfirmAccept = () => {
+  const handleConfirmAccept = async () => {
     if (creatorToAccept) {
-      setCreators(prev => prev.map(c => c.id === creatorToAccept.id ? { ...c, status: 'Active' } : c));
-      setShowAcceptModal(false);
-      setCreatorToAccept(null);
-      if (activeDetailCreator?.id === creatorToAccept.id) {
-        setActiveDetailCreator(prev => prev ? { ...prev, status: 'Active' } : null);
+      try {
+        const res = await fetch('/api/admin/creators', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: creatorToAccept.dbId || creatorToAccept.id, action: 'approve' })
+        });
+        if (res.ok) {
+          setAcceptSuccess(true);
+          loadCreators();
+          setActiveDetailCreator(null);
+        } else {
+          const err = await res.json();
+          alert(err.error || 'Failed to approve creator.');
+          setShowAcceptModal(false);
+          setCreatorToAccept(null);
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Error approving creator.');
+        setShowAcceptModal(false);
+        setCreatorToAccept(null);
       }
     }
   };
@@ -293,38 +354,38 @@ export default function AdminCreatorsPage() {
           />
 
           {/* Banner Graphic Header */}
-          <div className="relative w-full aspect-[1140/320] rounded-2xl overflow-hidden mb-6 flex items-center justify-end p-8 sm:p-12 text-white">
+          <div className="relative w-full aspect-[1140/320] rounded-2xl overflow-visible mb-12 flex items-center justify-end p-8 sm:p-12 text-white">
             {/* Background Graphic Mockup */}
-            <div className="absolute inset-0 bg-[#0012FF]/85 z-0" />
+            <div className="absolute inset-0 bg-black/45 z-0" />
             <img
-              src="/welcome-creator.png"
+              src={activeDetailCreator.coverPhoto || "/welcome-creator.png"}
               alt=""
-              className="absolute inset-0 w-full h-full object-cover opacity-35 mix-blend-overlay"
+              className="absolute inset-0 w-full h-full object-cover"
               onError={(e) => {
-                // Fallback blue gradient if image doesn't load
-                (e.target as HTMLImageElement).className = "absolute inset-0 w-full h-full bg-gradient-to-r from-blue-700 to-indigo-900 z-[-1]";
+                // Fallback neutral dark gradient if image doesn't load
+                (e.target as HTMLImageElement).className = "absolute inset-0 w-full h-full bg-gradient-to-r from-neutral-800 to-neutral-950 z-[-1]";
               }}
             />
 
             {/* Profile circular overlay positioned inside the banner layout */}
-            <div className="absolute left-8 sm:left-12 -bottom-16 w-32 h-32 sm:w-40 sm:h-40 rounded-full overflow-hidden border-[6px] border-white shadow-lg bg-white z-20 flex-shrink-0">
+            <div className="absolute left-8 sm:left-1 -bottom-16 w-32 h-32 sm:w-40 sm:h-40 rounded-full border-[6px] border-white shadow-lg bg-white z-20 flex-shrink-0">
               <img
                 src={activeDetailCreator.avatar}
                 alt={activeDetailCreator.name}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover rounded-full"
               />
             </div>
 
             {/* Text Overlay Details */}
             <div className="relative z-10 text-right max-w-xl">
               <h2 className="text-3xl sm:text-4xl md:text-5xl font-black font-sans leading-tight">
-                {activeDetailCreator.bannerName || 'Nageen Shah'}
+                {activeDetailCreator.bannerName || activeDetailCreator.name}
               </h2>
               <div className="mt-2.5 inline-block px-5 py-1.5 border border-white/40 rounded-full text-xs sm:text-sm font-semibold bg-white/10 backdrop-blur-sm">
-                {activeDetailCreator.bannerNiche || 'Software Engineering'}
+                {activeDetailCreator.bannerNiche || 'Content Creator'}
               </div>
               <p className="mt-4 text-[10px] sm:text-xs text-white/80 font-bold uppercase tracking-wider">
-                {activeDetailCreator.bannerContact || '+ 123-456-7890   |   hello@reallygreatsite.com'}
+                {activeDetailCreator.bannerContact || activeDetailCreator.email}
               </p>
             </div>
           </div>
@@ -351,8 +412,8 @@ export default function AdminCreatorsPage() {
                     'bg-amber-50 text-amber-500 border border-amber-100'
                   ];
                   return (
-                    <span 
-                      key={i} 
+                    <span
+                      key={i}
                       className={`px-3 py-1 rounded-full text-[10px] font-bold capitalize ${colors[i % colors.length]}`}
                     >
                       {n}
@@ -407,13 +468,12 @@ export default function AdminCreatorsPage() {
                 {/* Status */}
                 <div>
                   <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Status</p>
-                  <p className={`text-sm font-black mt-1 ${
-                    activeDetailCreator.status === 'Active'
-                      ? 'text-[#10B981]'
-                      : activeDetailCreator.status === 'Pending'
+                  <p className={`text-sm font-black mt-1 ${activeDetailCreator.status === 'Active'
+                    ? 'text-[#10B981]'
+                    : activeDetailCreator.status === 'Pending'
                       ? 'text-[#F59E0B]'
                       : 'text-rose-500'
-                  }`}>
+                    }`}>
                     {activeDetailCreator.status}
                   </p>
                 </div>
@@ -429,14 +489,14 @@ export default function AdminCreatorsPage() {
               <div className="mt-4 pt-4 border-t border-gray-50">
                 <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Short Bio</p>
                 <p className="text-sm text-gray-500 font-bold mt-2">
-                  Fashion creator sharing timeless style, seasonal trends, and everyday outfit inspiration for every occasion.
+                  {activeDetailCreator.bio || 'No bio provided.'}
                 </p>
               </div>
 
               {/* Bio Field 2 */}
               <div className="pt-2">
                 <p className="text-xs text-gray-500 font-medium leading-relaxed max-w-4xl">
-                  Fashion and lifestyle creator passionate about inspiring confidence through style, creativity, and authenticity. I share outfit inspiration, seasonal fashion trends, styling advice, beauty favorites, and everyday lifestyle content designed to help people express their unique personalities. My goal is to make fashion accessible, effortless, and empowering while collaborating with brands that value quality, innovation, and self-expression. Every piece of content I create reflects my love for elegant fashion, modern aesthetics, and meaningful storytelling.
+                  {activeDetailCreator.longBio || 'No detailed bio provided.'}
                 </p>
               </div>
             </div>
@@ -445,7 +505,7 @@ export default function AdminCreatorsPage() {
             <div className="lg:col-span-1 border-t lg:border-t-0 lg:border-l border-gray-100 pt-6 lg:pt-0 lg:pl-8 flex flex-col justify-between items-center gap-6">
               {/* Stat 1 */}
               <div className="text-center w-full">
-                <p className="text-4xl font-black text-[#0012FF] leading-none mb-1">12K+</p>
+                <p className="text-4xl font-black text-[#0012FF] leading-none mb-1">{activeDetailCreator.sessionsCompleted ?? 0}</p>
                 <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Sessions completed</p>
               </div>
 
@@ -454,7 +514,7 @@ export default function AdminCreatorsPage() {
 
               {/* Stat 2 */}
               <div className="text-center w-full">
-                <p className="text-4xl font-black text-[#10B981] leading-none mb-1">50K+</p>
+                <p className="text-4xl font-black text-[#10B981] leading-none mb-1">{activeDetailCreator.happyUsers ?? 0}</p>
                 <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Happy Users</p>
               </div>
 
@@ -463,7 +523,7 @@ export default function AdminCreatorsPage() {
 
               {/* Stat 3 */}
               <div className="text-center w-full">
-                <p className="text-4xl font-black text-[#F59E0B] leading-none mb-1">8</p>
+                <p className="text-4xl font-black text-[#F59E0B] leading-none mb-1">{activeDetailCreator.totalCategories ?? 0}</p>
                 <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Total Categories</p>
               </div>
             </div>
@@ -477,20 +537,20 @@ export default function AdminCreatorsPage() {
                 <path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.8c4.56-.93 8-4.96 8-9.8z" />
               </svg>
             </a>
-            
+
             {/* Instagram */}
             <a href="#" className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#FFB13B] via-[#DD2A7B] to-[#8134AF] flex items-center justify-center text-white shadow-sm hover:opacity-90 transition-opacity">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
-                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
-                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
               </svg>
             </a>
 
             {/* YouTube */}
             <a href="#" className="w-10 h-10 rounded-full bg-[#FF0000] flex items-center justify-center text-white shadow-sm hover:opacity-90 transition-opacity">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M23.498 6.163a3.003 3.003 0 0 0-2.11-2.107C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.388.511a3.002 3.002 0 0 0-2.11 2.107C0 8.053 0 12 0 12s0 3.947.502 5.837a3.003 3.003 0 0 0 2.11 2.107C4.495 20.455 12 20.455 12 20.455s7.505 0 9.388-.511a3.002 3.002 0 0 0 2.11-2.107C24 15.947 24 12 24 12s0-3.947-.502-5.837zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                <path d="M23.498 6.163a3.003 3.003 0 0 0-2.11-2.107C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.388.511a3.002 3.002 0 0 0-2.11 2.107C0 8.053 0 12 0 12s0 3.947.502 5.837a3.003 3.003 0 0 0 2.11 2.107C4.495 20.455 12 20.455 12 20.455s7.505 0 9.388-.511a3.002 3.002 0 0 0 2.11-2.107C24 15.947 24 12 24 12s0-3.947-.502-5.837zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
               </svg>
             </a>
 
@@ -522,9 +582,9 @@ export default function AdminCreatorsPage() {
             <span className="text-gray-400 font-normal text-sm sm:text-base">Overview & Control</span>
           </h1>
         </div>
-        
+
         {/* Add Creator Category Button */}
-        <button 
+        <button
           onClick={() => setShowAddCategoryModal(true)}
           className="sm:self-end px-6 py-3 bg-[#0012FF] text-white rounded-2xl text-sm font-bold shadow-md shadow-[#0012FF]/20 hover:bg-[#0012FF]/95 transition-all"
         >
@@ -718,8 +778,8 @@ export default function AdminCreatorsPage() {
             <tbody className="divide-y divide-gray-50">
               {filteredCreators.length > 0 ? (
                 filteredCreators.map((creator) => (
-                  <tr 
-                    key={creator.id} 
+                  <tr
+                    key={creator.id}
                     onClick={() => setActiveDetailCreator(creator)}
                     className="hover:bg-gray-50/50 transition-colors cursor-pointer"
                   >
@@ -782,7 +842,7 @@ export default function AdminCreatorsPage() {
                         >
                           Reject
                         </button>
-                        <button 
+                        <button
                           onClick={() => setActiveDetailCreator(creator)}
                           className="px-4 py-1.5 bg-gray-100 rounded-full text-xs font-bold text-gray-400 hover:bg-gray-200 hover:text-gray-500 transition-colors"
                         >
@@ -898,33 +958,52 @@ export default function AdminCreatorsPage() {
                 />
               </div>
 
-              <h3 className="text-xl sm:text-2xl font-bold text-black mb-2 text-center">
-                Reject Creator
-              </h3>
-
-              <p className="text-xs sm:text-sm text-gray-500 text-center">
-                Are you sure you want to reject this creator?
-              </p>
-
-              <p className="text-xs sm:text-sm text-gray-500 text-center mb-6">
-                This action cannot be undone.
-              </p>
-
-              <div className="flex gap-3 w-full">
-                <button
-                  onClick={() => setShowRejectModal(false)}
-                  className="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-all bg-white"
-                >
-                  Cancel
-                </button>
-
-                <button
-                  onClick={handleConfirmReject}
-                  className="flex-1 py-2.5 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700 transition-all"
-                >
-                  Reject Creator
-                </button>
-              </div>
+              {rejectSuccess ? (
+                <>
+                  <h3 className="text-xl sm:text-2xl font-bold text-black mb-2 text-center">
+                    Success!
+                  </h3>
+                  <p className="text-xs sm:text-sm text-gray-500 text-center mb-6">
+                    Creator rejected successfully.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setShowRejectModal(false);
+                      setCreatorToReject(null);
+                      setRejectSuccess(false);
+                    }}
+                    className="w-full py-2.5 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700 transition-all"
+                  >
+                    OK
+                  </button>
+                </>
+              ) : (
+                <>
+                  <h3 className="text-xl sm:text-2xl font-bold text-black mb-2 text-center">
+                    Reject Creator
+                  </h3>
+                  <p className="text-xs sm:text-sm text-gray-500 text-center">
+                    Are you sure you want to reject this creator?
+                  </p>
+                  <p className="text-xs sm:text-sm text-gray-500 text-center mb-6">
+                    This action cannot be undone.
+                  </p>
+                  <div className="flex gap-3 w-full">
+                    <button
+                      onClick={() => setShowRejectModal(false)}
+                      className="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-all bg-white"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleConfirmReject}
+                      className="flex-1 py-2.5 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700 transition-all"
+                    >
+                      Reject Creator
+                    </button>
+                  </div>
+                </>
+              )}
             </motion.div>
           </div>
         )}
@@ -983,33 +1062,52 @@ export default function AdminCreatorsPage() {
                 />
               </div>
 
-              <h3 className="text-xl sm:text-2xl font-bold text-black mb-2 text-center">
-                Accept Creator
-              </h3>
-
-              <p className="text-xs sm:text-sm text-gray-500 text-center">
-                Are you sure you want to accept this creator?
-              </p>
-
-              <p className="text-xs sm:text-sm text-gray-500 text-center mb-6">
-                This action cannot be undone.
-              </p>
-
-              <div className="flex gap-3 w-full">
-                <button
-                  onClick={() => setShowAcceptModal(false)}
-                  className="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-all bg-white"
-                >
-                  Cancel
-                </button>
-
-                <button
-                  onClick={handleConfirmAccept}
-                  className="flex-1 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 transition-all"
-                >
-                  Accept Creator
-                </button>
-              </div>
+              {acceptSuccess ? (
+                <>
+                  <h3 className="text-xl sm:text-2xl font-bold text-black mb-2 text-center">
+                    Success!
+                  </h3>
+                  <p className="text-xs sm:text-sm text-gray-500 text-center mb-6">
+                    Creator approved successfully.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setShowAcceptModal(false);
+                      setCreatorToAccept(null);
+                      setAcceptSuccess(false);
+                    }}
+                    className="w-full py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 transition-all"
+                  >
+                    OK
+                  </button>
+                </>
+              ) : (
+                <>
+                  <h3 className="text-xl sm:text-2xl font-bold text-black mb-2 text-center">
+                    Accept Creator
+                  </h3>
+                  <p className="text-xs sm:text-sm text-gray-500 text-center">
+                    Are you sure you want to accept this creator?
+                  </p>
+                  <p className="text-xs sm:text-sm text-gray-500 text-center mb-6">
+                    This action cannot be undone.
+                  </p>
+                  <div className="flex gap-3 w-full">
+                    <button
+                      onClick={() => setShowAcceptModal(false)}
+                      className="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-all bg-white"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleConfirmAccept}
+                      className="flex-1 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 transition-all"
+                    >
+                      Accept Creator
+                    </button>
+                  </div>
+                </>
+              )}
             </motion.div>
           </div>
         )}
@@ -1114,11 +1212,10 @@ export default function AdminCreatorsPage() {
                               setSelectedCategory(cat);
                               setIsCategoryDropdownOpen(false);
                             }}
-                            className={`w-full text-left px-4 py-2.5 text-sm font-semibold transition-all ${
-                              selectedCategory === cat
-                                ? 'bg-[#0012FF] text-white'
-                                : 'text-gray-600 hover:bg-gray-50'
-                            }`}
+                            className={`w-full text-left px-4 py-2.5 text-sm font-semibold transition-all ${selectedCategory === cat
+                              ? 'bg-[#0012FF] text-white'
+                              : 'text-gray-600 hover:bg-gray-50'
+                              }`}
                           >
                             {cat}
                           </button>
