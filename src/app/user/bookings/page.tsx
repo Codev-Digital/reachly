@@ -305,14 +305,14 @@ export default function UserBookingsPage() {
 
         {/* Bookings Grid */}
         {filteredBookings.length > 0 ? (
-          <div className="flex flex-wrap gap-6 justify-start">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap gap-6 justify-start">
             {filteredBookings.map((booking, index) => (
               <motion.div
                 key={booking.id}
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.1 + index * 0.05 }}
-                className="relative w-full max-w-[420px] min-h-[220px] sm:min-h-[212px] z-10 flex flex-col"
+                className="relative w-full sm:w-[420px] min-h-[220px] sm:min-h-[212px] z-10 flex flex-col flex-shrink-0"
               >
                 {/* Background Card Image */}
                 <Image
@@ -322,53 +322,55 @@ export default function UserBookingsPage() {
                   className="object-fill pointer-events-none -z-10"
                 />
                 {/* Content */}
-                <div className="relative w-full pl-6 pr-14 pt-6 pb-6 flex flex-col justify-between flex-grow">
+                <div className="relative w-full pl-5 pr-12 pt-5 pb-5 flex flex-col justify-between flex-grow">
                   <div>
+                    {/* Header: avatar + name + price */}
                     <div className="flex items-start justify-between mb-2">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-full overflow-hidden">
-                          <Image src={booking.avatar} alt={booking.creator} className="w-full h-full object-cover" width={48} height={48} />
+                      <div className="flex items-center gap-3">
+                        <div className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0">
+                          <Image src={booking.avatar} alt={booking.creator} className="w-full h-full object-cover" width={44} height={44} />
                         </div>
                         <div>
-                          <h3 className="font-bold text-xl text-black leading-tight">{booking.creator}</h3>
-                          <p className="text-sm text-gray-500">{booking.username}</p>
+                          <h3 className="font-bold text-base text-black leading-tight">{booking.creator}</h3>
+                          <p className="text-xs text-gray-500">{booking.username}</p>
                         </div>
                       </div>
-                      <p className="font-bold text-lg text-[#0012FF]">{booking.price}</p>
+                      <p className="font-bold text-sm text-[#0012FF] whitespace-nowrap ml-2 flex-shrink-0">{booking.price}</p>
                     </div>
-                    <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
-                      <div className="flex items-center gap-2">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2">
+                    {/* Date + Location */}
+                    <div className="flex items-center gap-3 text-gray-600 mb-2 flex-wrap">
+                      <div className="flex items-center gap-1.5">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2" className="flex-shrink-0">
                           <circle cx="12" cy="12" r="10" />
                           <polyline points="12 6 12 12 16 14" />
                         </svg>
-                        <span>{booking.date} at {booking.time}</span>
+                        <span className="text-xs">{booking.date} at {booking.time}</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2">
+                      <div className="flex items-center gap-1.5">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2" className="flex-shrink-0">
                           <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
                           <polyline points="3.5 20 8 17 16 17 20.5 20" />
                         </svg>
-                        <span>{booking.location}</span>
+                        <span className="text-xs">{booking.location}</span>
                       </div>
                     </div>
-                    <p className="text-sm text-gray-500 mb-4 line-clamp-2 pr-4">
+                    <p className="text-xs text-gray-500 mb-3 line-clamp-2">
                       {booking.bio}
                     </p>
                   </div>
                   {activeTab === 'Upcoming' && (
                     <div>
-                      <div className="w-full h-px bg-gray-200 mb-4"></div>
-                      <div className="flex items-center gap-3 px-4">
+                      <div className="w-full h-px bg-gray-200 mb-3"></div>
+                      <div className="flex items-center gap-2">
                         <button
                           onClick={() => handleRescheduleClick(booking)}
-                          className="flex-1 py-2 border-2 border-gray-200 rounded-2xl text-sm font-semibold text-gray-500 hover:bg-gray-50 transition-all bg-white"
+                          className="flex-1 py-2 border-2 border-gray-200 rounded-2xl text-xs font-semibold text-gray-500 hover:bg-gray-50 transition-all bg-white whitespace-nowrap"
                         >
                           Reschedule
                         </button>
                         <button
                           onClick={() => handleCancelClick(booking.id)}
-                          className="flex-1 py-2 border-2 border-red-200 rounded-2xl text-sm font-semibold text-red-500 bg-red-50 hover:bg-red-100 transition-all"
+                          className="flex-1 py-2 border-2 border-red-200 rounded-2xl text-xs font-semibold text-red-500 bg-red-50 hover:bg-red-100 transition-all whitespace-nowrap"
                         >
                           Cancel Appointment
                         </button>
@@ -376,21 +378,9 @@ export default function UserBookingsPage() {
                     </div>
                   )}
                   {/* Arrow indicator */}
-                  <div className="absolute right-0.5 bottom-0.5">
-                    <svg
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M7 17L17 7M17 7H10M17 7V14"
-                        stroke="#0012FF"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
+                  <div className="absolute right-1 bottom-1">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M7 17L17 7M17 7H10M17 7V14" stroke="#0012FF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </div>
                 </div>
