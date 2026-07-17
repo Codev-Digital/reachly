@@ -222,21 +222,23 @@ export default function CreatorDashboardNav({
 
                 {/* Notification Panel Overlay */}
                 {notificationsOpen && (
-                  <div className="notification-panel-container absolute right-0 top-[48px] sm:top-[52px] w-[90vw] max-w-[620px] sm:w-[620px] h-[632px] bg-transparent overflow-visible z-[100] isolate select-none">
+                  <div className="notification-panel-container fixed sm:absolute left-4 right-4 sm:left-auto sm:right-0 top-[76px] sm:top-[52px] w-auto sm:w-[620px] h-[540px] sm:h-[632px] bg-transparent overflow-visible z-[100] isolate select-none">
                     {/* SVG Background notched card */}
                     <img
                       src="/assets/notification-panel.svg"
                       alt=""
-                      className="absolute inset-0 w-full h-full object-fill pointer-events-none z-0"
+                      className="hidden sm:block absolute inset-0 w-full h-full object-fill pointer-events-none z-0"
                     />
+                    {/* Mobile Card Background */}
+                    <div className="sm:hidden absolute inset-0 bg-white rounded-[24px] border border-gray-100 shadow-2xl z-0" />
 
                     {/* Content */}
-                    <div className="relative z-10 pl-[38px] pr-[38px] pt-[36px] pb-[36px] flex flex-col h-full text-left">
+                    <div className="relative z-10 pl-6 pr-6 pt-6 pb-6 sm:pl-[38px] sm:pr-[38px] sm:pt-[36px] sm:pb-[36px] flex flex-col h-full text-left">
                       {/* Header */}
-                      <div className="flex items-start justify-between relative mb-2">
+                      <div className="flex items-center justify-between relative mb-2">
                         <div>
                           <div className="flex items-center gap-2">
-                            <h3 className="text-2xl font-bold text-black font-sans tracking-tight">Notifications</h3>
+                            <h3 className="text-xl sm:text-2xl font-bold text-black font-sans tracking-tight">Notifications</h3>
                             {notifications.filter(n => !n.read).length > 0 && (
                               <span className="bg-[#EBFDF2] text-[#00B050] text-xs font-bold px-2.5 py-0.5 rounded-full">
                                 {notifications.filter(n => !n.read).length} New
@@ -249,7 +251,7 @@ export default function CreatorDashboardNav({
                         {/* Clear All Button */}
                         <button
                           onClick={handleClearAll}
-                          className="absolute top-[-22px] right-[-22px] border border-gray-200 bg-white hover:bg-gray-55 transition-colors text-gray-500 rounded-full px-3.5 py-1.5 text-xs font-bold flex items-center gap-1.5 shadow-sm"
+                          className="border border-gray-200 bg-white hover:bg-gray-55 transition-colors text-gray-500 rounded-full px-3.5 py-1.5 text-xs font-bold flex items-center gap-1.5 shadow-sm cursor-pointer shrink-0"
                         >
                           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                             <line x1="18" y1="6" x2="6" y2="18" />
