@@ -171,7 +171,7 @@ export default function CreatorNavbar() {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.9 }}
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="lg:hidden w-10 h-10 flex items-center justify-center"
+            className="lg:hidden w-10 h-10 flex items-center justify-center focus:outline-none"
           >
             <div className="relative w-6 h-6">
               <motion.span

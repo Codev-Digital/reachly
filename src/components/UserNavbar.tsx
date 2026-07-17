@@ -123,7 +123,7 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
 
   return (
     <div className="px-4 sm:px-6 pt-4">
-      <nav className={`bg-white shadow-sm border border-gray-100 sticky top-0 z-50 max-w-7xl mx-auto px-8 py-3 flex flex-col transition-all duration-300 ${mobileOpen ? 'rounded-3xl' : 'rounded-full'}`}>
+      <nav className="bg-white shadow-sm border border-gray-100 sticky top-0 z-50 max-w-7xl mx-auto px-8 py-3 flex flex-col rounded-3xl">
         <div className="flex w-full items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
@@ -433,7 +433,7 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
             {/* Mobile Hamburger Button */}
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
-              className="md:hidden w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition-all flex-shrink-0 cursor-pointer"
+              className="md:hidden w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 focus:outline-none transition-all flex-shrink-0 cursor-pointer"
               aria-label="Toggle menu"
             >
               {mobileOpen ? (

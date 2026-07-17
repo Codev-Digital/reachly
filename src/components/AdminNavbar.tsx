@@ -128,7 +128,7 @@ export default function AdminNavbar() {
 
   return (
     <div className="px-4 sm:px-6 pt-4">
-      <nav className={`bg-white shadow-sm border border-gray-100 sticky top-0 z-50 max-w-7xl mx-auto px-8 py-3 flex flex-col transition-all duration-300 ${isMobileMenuOpen ? 'rounded-3xl' : 'rounded-full'}`}>
+      <nav className="bg-white shadow-sm border border-gray-100 sticky top-0 z-50 max-w-7xl mx-auto px-8 py-3 flex flex-col rounded-3xl">
         <div className="flex w-full items-center justify-between">
           {/* Left: Brand Logo */}
           <Link href="/" className="flex items-center gap-2">
@@ -199,7 +199,7 @@ export default function AdminNavbar() {
             {/* Mobile Menu Button */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden p-2 text-gray-500 hover:text-gray-900 focus:outline-none cursor-pointer"
+              className="md:hidden w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 focus:outline-none transition-all cursor-pointer"
             >
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <line x1="3" y1="12" x2="21" y2="12" />
