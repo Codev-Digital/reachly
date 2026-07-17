@@ -815,7 +815,7 @@ const CreatorDashboard = () => {
       {/* Reschedule Appointment Modal */}
       {showRescheduleModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100] p-4">
-          <div className="relative w-full max-w-lg flex flex-col items-center justify-between p-4 xs:p-6 sm:p-8 pt-10 sm:pt-12 pb-6 sm:pb-8 min-h-[460px] sm:min-h-[520px] z-10">
+          <div className="relative w-full max-w-lg flex flex-col items-center justify-between p-4 sm:p-8 pt-14 sm:pt-16 pb-8 sm:pb-10 min-h-[450px] sm:min-h-[520px] z-10">
             {/* SVG Background notched card */}
             <img
               src="/assets/cancel-card.svg"
@@ -825,7 +825,7 @@ const CreatorDashboard = () => {
             {/* Close Button */}
             <button
               onClick={() => setShowRescheduleModal(false)}
-              className="absolute -top-0 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center hover:bg-gray-55 transition-all z-20 border border-gray-100/50 cursor-pointer text-gray-500"
+              className="absolute -top-6 sm:-top-6 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center hover:bg-gray-55 transition-all z-20 border border-gray-100/50 cursor-pointer text-gray-500"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <line x1="18" y1="6" x2="6" y2="18" />
@@ -875,14 +875,14 @@ const CreatorDashboard = () => {
                 ) : rescheduleSlots.length === 0 ? (
                   <p className="text-gray-400 text-center text-xs sm:text-sm">No slots available on this date.</p>
                 ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-40 sm:max-h-48 overflow-y-auto pr-1">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-28 sm:max-h-48 overflow-y-auto pr-1 no-scrollbar">
                     {rescheduleSlots.map((slot) => (
                       <button
                         key={slot}
                         onClick={() => setSelectedRescheduleTime(slot)}
-                        className={`py-1 px-1 border rounded-xl text-[11px] sm:text-xs font-semibold text-center transition-all cursor-pointer ${selectedRescheduleTime === slot
+                        className={`py-1.5 px-1 border rounded-xl text-[11px] sm:text-xs font-semibold text-center transition-all cursor-pointer ${selectedRescheduleTime === slot
                           ? 'bg-[#EEF2FF] border-[#0012FF] text-[#0012FF]'
-                          : 'border-gray-200 text-gray-700 hover:bg-gray-50 bg-white'
+                          : 'border-gray-200 text-gray-700 hover:bg-gray-55 bg-white'
                           }`}
                       >
                         {slot}
@@ -909,7 +909,6 @@ const CreatorDashboard = () => {
                   Confirm Reschedule
                 </button>
               </div>
-
             </div>
           </div>
         </div>
