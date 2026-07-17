@@ -163,20 +163,11 @@ export async function GET(
                 status: { $in: ['pending', 'confirmed'] },
             }).select('scheduledDate scheduledTime');
 
-            // Filter manually: any booking whose intended date (when formatted to YYYY-MM-DD locally or adjusted) matches dateStr
+            // Filter manually: match by extracting the UTC date from the stored noon-UTC timestamp
             const bookedTimes = new Set<string>();
             existingBookings.forEach((b: any) => {
                 if (b.scheduledDate) {
                     const d = new Date(b.scheduledDate);
-                    
-                    // If it was saved at exactly midnight UTC, it was intended for that exact UTC day
-                    // If it was saved at 19:00 UTC (PKT Midnight), it was intended for the NEXT UTC day
-                    const isPKTShifted = d.getUTCHours() === 19; 
-                    
-                    if (isPKTShifted) {
-                        d.setUTCHours(d.getUTCHours() + 5); // Shift back to UTC midnight of intended day
-                    }
-                    
                     const bYear = d.getUTCFullYear();
                     const bMonth = String(d.getUTCMonth() + 1).padStart(2, '0');
                     const bDay = String(d.getUTCDate()).padStart(2, '0');

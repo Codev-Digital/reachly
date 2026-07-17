@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
                     year: 'numeric'
                 });
 
-                const bookingDateTime = new Date(`${booking.scheduledDate.toISOString().split('T')[0]}T${convertTo24Hour(booking.scheduledTime)}`);
+                const bookingDateTime = new Date(`${booking.scheduledDate.toISOString().split('T')[0]}T${convertTo24Hour(booking.scheduledTime)}+05:00`);
                 const now = new Date();
 
                 let displayStatus: string;

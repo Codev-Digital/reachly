@@ -116,6 +116,9 @@ export async function middleware(request: NextRequest) {
       // Admins should not access creator dashboard
       return NextResponse.redirect(new URL('/admin/dashboard', request.url));
     }
+    if (pathname === '/creators/pending-approval') {
+      return NextResponse.next();
+    }
     if (isPendingCreator && pathname !== '/creators/pending-approval') {
       return NextResponse.redirect(new URL('/creators/pending-approval', request.url));
     }

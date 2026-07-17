@@ -84,6 +84,10 @@ export async function POST(request: NextRequest) {
         const bookingRef = generateBookingRef();
 
         // 4. Create the booking
+        // Parse date parts manually and store at noon UTC to avoid timezone boundary issues
+        const [dateYear, dateMonth, dateDay] = date.split('-').map(Number);
+        const scheduledDateUTC = new Date(Date.UTC(dateYear, dateMonth - 1, dateDay, 12, 0, 0));
+
         const booking = new Booking({
             bookingRef,
             creatorId: creatorProfile.userId,
@@ -97,7 +101,7 @@ export async function POST(request: NextRequest) {
                 heardFrom: userDetails.heardFrom || '',
                 whatToDiscuss: userDetails.whatToDiscuss || '',
             },
-            scheduledDate: new Date(date),
+            scheduledDate: scheduledDateUTC,
             scheduledTime: time,
             status: 'confirmed', // Auto-approved
             paymentStatus: 'paid', // Mark as paid since payment is simulated

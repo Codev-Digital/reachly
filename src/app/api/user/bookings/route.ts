@@ -77,13 +77,17 @@ export async function GET(request: NextRequest) {
 
                 // Determine relative status:
                 let displayStatus = booking.status;
-                const bookingDateTime = new Date(`${booking.scheduledDate.toISOString().split('T')[0]}T${convertTo24Hour(booking.scheduledTime)}`);
+                // Build the booking's datetime in PKT (UTC+5) for accurate comparison
+                const [bYear, bMonth, bDay] = booking.scheduledDate.toISOString().split('T')[0].split('-');
+                const time24 = convertTo24Hour(booking.scheduledTime);
+                // Combine date + time as PKT, then convert to UTC for comparison
+                const bookingDateTimePKT = new Date(`${bYear}-${bMonth}-${bDay}T${time24}+05:00`);
                 const now = new Date();
 
                 if (booking.status === 'pending') {
                     displayStatus = 'Pending Approval';
                 } else if (booking.status === 'confirmed') {
-                    if (bookingDateTime > now) {
+                    if (bookingDateTimePKT > now) {
                         displayStatus = 'Upcoming';
                     } else {
                         displayStatus = 'Past';
