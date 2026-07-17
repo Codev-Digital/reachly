@@ -90,7 +90,7 @@ export default function BookSessionStep1() {
         <CreatorProfileCard creator={creator} />
 
         {/* ============ RIGHT COLUMN: SESSIONS LIST ============ */}
-        <div className="flex flex-col w-full">
+        <div className="flex flex-col w-full ">
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 justify-items-center">
               {[1, 2, 3].map(i => (

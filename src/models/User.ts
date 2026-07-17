@@ -18,7 +18,8 @@ export interface IUser extends Document {
   approvalStatus: 'none' | 'pending' | 'approved' | 'rejected';
   createdAt: Date;
   profilePhoto?: string;
-  savedCreators: string[]; // array of creator usernames
+  savedCreators: string[];     // bookmark — "save for later"
+  favouriteCreators: string[]; // heart — "favourites"
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
@@ -55,6 +56,7 @@ const UserSchema = new Schema<IUser>(
     },
     profilePhoto: { type: String },
     savedCreators: { type: [String], default: [] },
+    favouriteCreators: { type: [String], default: [] },
   },
   { timestamps: true }
 );

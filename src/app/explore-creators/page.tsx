@@ -14,6 +14,8 @@ export default function ExploreCreatorsPage() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [showFavouritesOnly, setShowFavouritesOnly] = useState(false);
   const [favourites, setFavourites] = useState<string[]>([]); // creator usernames
+  const [showSavedOnly, setShowSavedOnly] = useState(false);
+  const [saved, setSaved] = useState<string[]>([]); // bookmarked creator usernames
   const [creators, setCreators] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -53,11 +55,18 @@ export default function ExploreCreatorsPage() {
             setDisplayName(userData.user.name || '');
             setProfilePhoto(userData.user.image || null);
           }
-          // Fetch saved creators
-          const savedRes = await fetch('/api/user/saved-creators');
+          // Fetch both saved and favourite creators in parallel
+          const [savedRes, favRes] = await Promise.all([
+            fetch('/api/user/saved-creators'),
+            fetch('/api/user/favourite-creators'),
+          ]);
           if (savedRes.ok) {
-            const savedData = await savedRes.json();
-            setFavourites(savedData.savedCreators || []);
+            const d = await savedRes.json();
+            setSaved(d.savedCreators || []);
+          }
+          if (favRes.ok) {
+            const d = await favRes.json();
+            setFavourites(d.favouriteCreators || []);
           }
         } else {
           setIsAuthenticated(false);
@@ -73,47 +82,59 @@ export default function ExploreCreatorsPage() {
   }, []);
 
   const toggleFavourite = useCallback(async (creatorUsername: string) => {
-    if (!isAuthenticated) {
-      setShowLoginModal(true);
-      return;
-    }
+    if (!isAuthenticated) { setShowLoginModal(true); return; }
     if (favLoading === creatorUsername) return;
     setFavLoading(creatorUsername);
-
-    const isSaved = favourites.includes(creatorUsername);
-    // Optimistic update
-    setFavourites(prev =>
-      isSaved ? prev.filter(u => u !== creatorUsername) : [...prev, creatorUsername]
-    );
-
+    const isFav = favourites.includes(creatorUsername);
+    setFavourites(prev => isFav ? prev.filter(u => u !== creatorUsername) : [...prev, creatorUsername]);
     try {
-      const res = await fetch('/api/user/saved-creators', {
-        method: isSaved ? 'DELETE' : 'POST',
+      const res = await fetch('/api/user/favourite-creators', {
+        method: isFav ? 'DELETE' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: creatorUsername }),
       });
       if (res.ok) {
         const data = await res.json();
-        setFavourites(data.savedCreators || []);
+        setFavourites(data.favouriteCreators || []);
       } else {
-        // Revert on failure
-        setFavourites(prev =>
-          isSaved ? [...prev, creatorUsername] : prev.filter(u => u !== creatorUsername)
-        );
+        setFavourites(prev => isFav ? [...prev, creatorUsername] : prev.filter(u => u !== creatorUsername));
       }
     } catch {
-      // Revert on error
-      setFavourites(prev =>
-        isSaved ? [...prev, creatorUsername] : prev.filter(u => u !== creatorUsername)
-      );
+      setFavourites(prev => isFav ? [...prev, creatorUsername] : prev.filter(u => u !== creatorUsername));
     } finally {
       setFavLoading(null);
     }
   }, [isAuthenticated, favourites, favLoading]);
 
+  const toggleSaved = useCallback(async (creatorUsername: string) => {
+    if (!isAuthenticated) { setShowLoginModal(true); return; }
+    if (favLoading === creatorUsername) return;
+    setFavLoading(creatorUsername);
+    const wasSaved = saved.includes(creatorUsername);
+    setSaved(prev => wasSaved ? prev.filter(u => u !== creatorUsername) : [...prev, creatorUsername]);
+    try {
+      const res = await fetch('/api/user/saved-creators', {
+        method: wasSaved ? 'DELETE' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: creatorUsername }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSaved(data.savedCreators || []);
+      } else {
+        setSaved(prev => wasSaved ? [...prev, creatorUsername] : prev.filter(u => u !== creatorUsername));
+      }
+    } catch {
+      setSaved(prev => wasSaved ? [...prev, creatorUsername] : prev.filter(u => u !== creatorUsername));
+    } finally {
+      setFavLoading(null);
+    }
+  }, [isAuthenticated, saved, favLoading]);
+
   // Filter creators
   const filteredCreators = creators.filter(c => {
     if (showFavouritesOnly && !favourites.includes(c.username)) return false;
+    if (showSavedOnly && !saved.includes(c.username)) return false;
     if (selectedCategory !== 'all') {
       const niches: string[] = c.niches || [];
       if (!niches.some((n: string) => n.toLowerCase() === selectedCategory)) return false;
@@ -164,7 +185,7 @@ export default function ExploreCreatorsPage() {
             </div>
           </nav>
         </div>
-        
+
       )}
 
       {/* Guest Login Modal */}
@@ -241,38 +262,60 @@ export default function ExploreCreatorsPage() {
           {categories.map(cat => (
             <button
               key={cat.id}
-              onClick={() => { setSelectedCategory(cat.id); setShowFavouritesOnly(false); setCurrentPage(1); }}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all border ${
-                selectedCategory === cat.id && !showFavouritesOnly
-                  ? 'bg-[#0012FF] text-white border-[#0012FF]'
-                  : 'bg-white text-[#444] border-[#ddd] hover:border-[#0012FF]/40 hover:text-[#0012FF]'
-              }`}
+              onClick={() => { setSelectedCategory(cat.id); setShowFavouritesOnly(false); setShowSavedOnly(false); setCurrentPage(1); }}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all border ${selectedCategory === cat.id && !showFavouritesOnly && !showSavedOnly
+                ? 'bg-[#0012FF] text-white border-[#0012FF]'
+                : 'bg-white text-[#444] border-[#ddd] hover:border-[#0012FF]/40 hover:text-[#0012FF]'
+                }`}
             >
               {cat.label}
             </button>
           ))}
 
-          {/* Favourites tab */}
+          {/* Favourites tab — heart */}
           <button
             onClick={() => {
               if (!isAuthenticated) { setShowLoginModal(true); return; }
-              setShowFavouritesOnly(v => !v);
+              const next = !showFavouritesOnly;
+              setShowFavouritesOnly(next);
+              if (next) setShowSavedOnly(false);
               setSelectedCategory('all');
               setCurrentPage(1);
             }}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-all border ${
-              showFavouritesOnly
-                ? 'bg-red-500 text-white border-red-500'
-                : 'bg-white text-[#444] border-[#ddd] hover:border-red-400 hover:text-red-500'
-            }`}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-all border ${showFavouritesOnly
+              ? 'bg-red-500 text-white border-red-500'
+              : 'bg-white text-[#444] border-[#ddd] hover:border-red-400 hover:text-red-500'
+              }`}
           >
-            {/* <svg width="13" height="13" viewBox="0 0 24 24" fill={showFavouritesOnly ? 'white' : 'none'} stroke={showFavouritesOnly ? 'white' : 'currentColor'} strokeWidth="2">
-              <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-            </svg> */}
+
             Favourites
             {isAuthenticated && favourites.length > 0 && (
               <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none ${showFavouritesOnly ? 'bg-white/25 text-white' : 'bg-red-100 text-red-500'}`}>
                 {favourites.length}
+              </span>
+            )}
+          </button>
+
+          {/* Saved tab — bookmark */}
+          <button
+            onClick={() => {
+              if (!isAuthenticated) { setShowLoginModal(true); return; }
+              const next = !showSavedOnly;
+              setShowSavedOnly(next);
+              if (next) setShowFavouritesOnly(false);
+              setSelectedCategory('all');
+              setCurrentPage(1);
+            }}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-all border ${showSavedOnly
+              ? 'bg-[#0012FF] text-white border-[#0012FF]'
+              : 'bg-white text-[#444] border-[#ddd] hover:border-[#0012FF]/40 hover:text-[#0012FF]'
+              }`}
+          >
+
+            Saved
+            {isAuthenticated && saved.length > 0 && (
+              <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none ${showSavedOnly ? 'bg-white/25 text-white' : 'bg-[#EEF2FF] text-[#0012FF]'}`}>
+                {saved.length}
               </span>
             )}
           </button>
@@ -282,9 +325,8 @@ export default function ExploreCreatorsPage() {
           {/* Filter */}
           <button
             onClick={() => setShowFilterPanel(!showFilterPanel)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border transition-all ${
-              showFilterPanel ? 'bg-[#0012FF] text-white border-[#0012FF]' : 'bg-white text-[#444] border-[#ddd] hover:border-[#0012FF]/40 hover:text-[#0012FF]'
-            }`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border transition-all ${showFilterPanel ? 'bg-[#0012FF] text-white border-[#0012FF]' : 'bg-white text-[#444] border-[#ddd] hover:border-[#0012FF]/40 hover:text-[#0012FF]'
+              }`}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="4" y1="6" x2="20" y2="6" /><line x1="8" y1="12" x2="16" y2="12" /><line x1="11" y1="18" x2="13" y2="18" />
@@ -329,12 +371,25 @@ export default function ExploreCreatorsPage() {
         {showFavouritesOnly && !loading && filteredCreators.length === 0 && (
           <div className="text-center py-20">
             <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-red-50 flex items-center justify-center">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="1.5">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="1.5">
                 <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
               </svg>
             </div>
-            <p className="text-lg font-semibold text-gray-500">No favourites yet</p>
-            <p className="text-sm text-gray-400 mt-1">Tap the heart on any creator card to save them here</p>
+            <p className="text-lg font-semibold text-gray-500">No favourite creators yet</p>
+            <p className="text-sm text-gray-400 mt-1">Tap the heart on any creator card to add them to favourites</p>
+          </div>
+        )}
+
+        {/* Empty state for saved */}
+        {showSavedOnly && !loading && filteredCreators.length === 0 && (
+          <div className="text-center py-20">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[#EEF2FF] flex items-center justify-center">
+              <svg width="28" height="34" viewBox="0 0 24 28" fill="none" stroke="#0012FF" strokeWidth="1.5">
+                <path d="M19 25L12 19L5 25V4C5 2.9 5.9 2 7 2H17C18.1 2 19 2.9 19 4V25Z" />
+              </svg>
+            </div>
+            <p className="text-lg font-semibold text-gray-500">No saved creators yet</p>
+            <p className="text-sm text-gray-400 mt-1">Tap the bookmark on any creator card to save them here</p>
           </div>
         )}
 
@@ -352,7 +407,7 @@ export default function ExploreCreatorsPage() {
               </div>
             ))}
           </div>
-        ) : !showFavouritesOnly && paginated.length === 0 ? (
+        ) : (!showFavouritesOnly && !showSavedOnly) && paginated.length === 0 ? (
           <div className="text-center py-20">
             <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" strokeWidth="1" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -365,6 +420,7 @@ export default function ExploreCreatorsPage() {
             {paginated.map((creator, index) => {
               const clipId = `creatorClip-${index}`;
               const isFav = favourites.includes(creator.username);
+              const isSaved = saved.includes(creator.username);
               return (
                 <motion.div
                   key={creator.id}
@@ -388,10 +444,10 @@ export default function ExploreCreatorsPage() {
                       className="w-full h-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.02]"
                       style={{ clipPath: `url(#${clipId})` }}
                     />
-                    <span className={`absolute top-3 left-4 px-3 py-1 rounded-full text-xs font-semibold ${creator.isVerified ? 'bg-white text-emerald-600' : 'bg-white text-blue-600'}`}>
+                    <span className={`absolute top-3 left-12 px-3 py-1 rounded-full text-xs font-semibold ${creator.isVerified ? 'bg-white text-emerald-600' : 'bg-white text-blue-600'}`}>
                       {creator.isVerified ? 'Verified' : 'Sponsored'}
                     </span>
-                    {/* Heart button */}
+                    {/* Heart button — top-right notch */}
                     <button
                       onClick={() => toggleFavourite(creator.username)}
                       disabled={favLoading === creator.username}
