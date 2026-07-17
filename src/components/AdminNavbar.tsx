@@ -1,13 +1,35 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { signOut } from 'next-auth/react';
 
 export default function AdminNavbar() {
+  const router = useRouter();
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (profileDropdownOpen && !target.closest('.profile-dropdown-container')) {
+        setProfileDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [profileDropdownOpen]);
+
+  // Close dropdown on route change
+  useEffect(() => {
+    setProfileDropdownOpen(false);
+    setIsMobileMenuOpen(false);
+  }, [pathname]);
 
   const navItems = [
     {
@@ -52,7 +74,7 @@ export default function AdminNavbar() {
       iconActive: (
         <img
           src="/assets/creator.svg"
-          alt="Users Active"
+          alt="Creators Active"
           className="w-[36px] h-[36px] object-contain flex-shrink-0"
         />
       ),
@@ -91,7 +113,7 @@ export default function AdminNavbar() {
       iconActive: (
         <img
           src="/assets/wallet.svg"
-          alt="Users Active"
+          alt="Payments Active"
           className="w-[36px] h-[36px] object-contain flex-shrink-0"
         />
       ),
@@ -105,79 +127,97 @@ export default function AdminNavbar() {
   ];
 
   return (
-    <header className="bg-white border-b border-gray-100 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
-        {/* Left: Brand Logo */}
-        <Link href="/" className="flex items-center gap-2">
-          <img src="/assets/logo1.png" alt="Reachly Logo" className="h-9 w-auto" />
-        </Link>
+    <div className="px-4 sm:px-6 pt-4">
+      <nav className={`bg-white shadow-sm border border-gray-100 sticky top-0 z-50 max-w-7xl mx-auto px-8 py-3 flex flex-col transition-all duration-300 ${isMobileMenuOpen ? 'rounded-3xl' : 'rounded-full'}`}>
+        <div className="flex w-full items-center justify-between">
+          {/* Left: Brand Logo */}
+          <Link href="/" className="flex items-center gap-2">
+            <img src="/assets/logo1.png" alt="Reachly Logo" className="h-8 w-auto object-contain" />
+          </Link>
 
-        {/* Center: Navigation Links */}
-        <nav className="hidden md:flex items-center gap-2 lg:gap-4">
-          {navItems.map((item) => {
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`flex items-center gap-2.5 px-4 py-2 rounded-full text-sm font-semibold transition-all ${isActive
-                  ? ' text-black'
-                  : 'text-gray-500 hover:text-gray-900'
-                  }`}
-              >
-                {isActive ? item.iconActive : item.iconInactive}
-                <span>{item.name}</span>
-              </Link>
-            );
-          })}
-        </nav>
-
-        {/* Right: Actions */}
-        <div className="flex items-center gap-4">
-          {/* Notification Bell */}
-          <button className="relative w-10 h-10 rounded-full border border-gray-100 flex items-center justify-center hover:bg-gray-50 transition-all text-gray-500">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2" className="text-[#0012FF]">
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-            </svg>
-            <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-[#0012FF]" />
-          </button>
-
-          {/* User Profile Avatar */}
-          <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-200">
-            <img src="/ahad raza mir.png" alt="Admin Avatar" className="w-full h-full object-cover" />
+          {/* Center: Navigation Links */}
+          <div className="hidden md:flex items-center gap-2 lg:gap-4">
+            {navItems.map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`flex items-center gap-2.5 px-4 py-2 rounded-full text-sm font-semibold transition-all ${isActive
+                    ? ' text-[#0012FF] bg-[#0012FF]/5'
+                    : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
+                    }`}
+                >
+                  {isActive ? item.iconActive : item.iconInactive}
+                  <span>{item.name}</span>
+                </Link>
+              );
+            })}
           </div>
 
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="md:hidden p-2 text-gray-500 hover:text-gray-900 focus:outline-none"
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="3" y1="12" x2="21" y2="12" />
-              <line x1="3" y1="6" x2="21" y2="6" />
-              <line x1="3" y1="18" x2="21" y2="18" />
-            </svg>
-          </button>
-        </div>
-      </div>
+          {/* Right: Actions */}
+          <div className="flex items-center gap-4">
+            {/* Notification Bell */}
+            <button className="relative w-10 h-10 rounded-full border border-gray-100 flex items-center justify-center hover:bg-gray-50 transition-all text-gray-500">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2" className="text-[#0012FF]">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              </svg>
+              <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-[#0012FF]" />
+            </button>
 
-      {/* Mobile navigation drawer */}
-      <AnimatePresence>
-        {isMobileMenuOpen && (
-          <>
+            {/* User Profile Avatar with dropdown toggle */}
+            <div className="relative profile-dropdown-container">
+              <button
+                onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                className="w-10 h-10 rounded-full overflow-hidden border border-gray-205 cursor-pointer flex-shrink-0 flex items-center justify-center"
+              >
+                <img src="/ahad raza mir.png" alt="Admin Avatar" className="w-full h-full object-cover" />
+              </button>
+
+              {/* Profile Dropdown */}
+              {profileDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-2xl shadow-lg py-2 z-50">
+                  <button
+                    onClick={() => {
+                      setProfileDropdownOpen(false);
+                      setShowLogoutModal(true);
+                    }}
+                    className="w-full text-left px-4 py-2.5 text-sm font-semibold text-rose-600 hover:bg-rose-50/55 transition-colors flex items-center gap-2 cursor-pointer"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                      <polyline points="16 17 21 12 16 7" />
+                      <line x1="21" y1="12" x2="9" y2="12" />
+                    </svg>
+                    Sign Out
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="md:hidden p-2 text-gray-500 hover:text-gray-900 focus:outline-none cursor-pointer"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile navigation drawer */}
+        <AnimatePresence>
+          {isMobileMenuOpen && (
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="fixed inset-0 bg-black/40 z-40 md:hidden"
-            />
-            <motion.div
-              initial={{ y: -50, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: -50, opacity: 0 }}
-              className="absolute top-20 left-0 right-0 bg-white border-b border-gray-100 z-40 p-4 shadow-xl flex flex-col gap-2 md:hidden"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="w-full overflow-hidden flex flex-col gap-2 mt-4 pt-4 border-t border-gray-100 md:hidden"
             >
               {navItems.map((item) => {
                 const isActive = pathname === item.href;
@@ -197,9 +237,95 @@ export default function AdminNavbar() {
                 );
               })}
             </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-    </header>
+          )}
+        </AnimatePresence>
+      </nav>
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100] p-4">
+          <div className="relative overflow-visible w-full max-w-lg flex flex-col items-center p-8 pt-12 pb-8 z-10 bg-transparent">
+            {/* SVG Background */}
+            <img
+              src="/assets/cancel-card.svg"
+              alt=""
+              className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10"
+            />
+
+            {/* Close Button */}
+            <button
+              onClick={() => setShowLogoutModal(false)}
+              className="absolute -mt-20 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center border border-gray-100/50 text-gray-500 hover:bg-gray-55 transition-all z-20 cursor-pointer"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+
+            {/* Responsive Image */}
+            <div className="w-28 sm:w-36 md:w-44 lg:w-56 mt-3 mb-4">
+              <img
+                src="/assets/logout.png"
+                alt="Confirm Logout"
+                width={240}
+                height={170}
+                className="w-full h-auto object-contain"
+              />
+            </div>
+
+            <h3 className="text-xl sm:text-2xl font-bold text-black mb-2 text-center">
+              Confirm Logout
+            </h3>
+
+            <p className="text-xs sm:text-sm text-gray-500 text-center">
+              Are you sure you want to sign out of Reachly?
+            </p>
+
+            <p className="text-xs sm:text-sm text-gray-500 text-center mb-6">
+              We will clear your session storage and cookies to protect your account.
+            </p>
+            <div className="flex justify-center gap-16 w-full">
+              <button
+                onClick={() => setShowLogoutModal(false)}
+                className="w-32 py-2 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-all bg-white cursor-pointer"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={() => {
+                  // Clear all cookies
+                  document.cookie.split(";").forEach((c) => {
+                    document.cookie = c
+                      .replace(/^ +/, "")
+                      .replace(
+                        /=.*/,
+                        "=;expires=" + new Date().toUTCString() + ";path=/"
+                      );
+                  });
+
+                  // Clear localStorage & sessionStorage
+                  localStorage.clear();
+                  sessionStorage.clear();
+
+                  signOut({ callbackUrl: "/login" });
+                }}
+                className="w-32 py-2 bg-[#0012FF] text-white rounded-xl text-sm font-semibold hover:bg-[#0010d0] transition-all cursor-pointer"
+              >
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
