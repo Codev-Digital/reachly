@@ -306,7 +306,7 @@ export default function UserDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8F8FA] pb-12 text-black">
+    <div className="min-h-screen bg-[#F8F8FA] pb-12 text-black overflow-x-hidden">
       <UserNavbar displayName={displayName} profilePhoto={profilePhoto} />
 
       {/* Main Grid Content */}
@@ -326,75 +326,69 @@ export default function UserDashboard() {
           <div className="lg:col-span-8 space-y-10">
 
             {/* Stats Cards Grid (using uc-1, uc-2, uc-3) */}
-            <div className="flex items-stretch -ml-10 gap-2">
+            <div className="flex flex-col sm:flex-row items-center sm:items-stretch gap-3 sm:gap-0 overflow-hidden">
 
               {/* Card 1: Total Bookings */}
-              <div className="relative w-full h-[160px] z-30 pl-6 pt-4">
+              <div className="relative w-full max-w-[340px] sm:max-w-none h-[156px] sm:flex-1 z-30 flex flex-col justify-between p-5 sm:pl-6">
                 <img
                   src="/assets/uc-1.svg"
                   alt=""
-                  className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10 rounded-2xl"
+                  className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10"
                 />
                 <div>
-                  <div className="w-12 h-12 bg-white/70 rounded-xl flex items-center justify-center mb-1 shadow-sm">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2.5">
+                  <div className="w-11 h-11 bg-white/70 rounded-xl flex items-center justify-center mb-2 shadow-sm">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2.5">
                       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                       <polyline points="14 2 14 8 20 8" />
                     </svg>
                   </div>
-                  <p className="text-xs text-gray-500 font-bold tracking-wide uppercase">Total Bookings</p>
+                  <p className="text-[10px] text-gray-500 font-bold tracking-wide uppercase">Total Bookings</p>
                   <p className="text-3xl font-black text-[#1B6330] mt-1">
                     {currentBookings.Upcoming.length + currentBookings.Past.length + currentBookings.Cancelled.length}
                   </p>
                 </div>
-                <div className="text-[11px] font-bold text-gray-600 flex items-center gap-1">
-                  <span>↑ +18.2% from last month</span>
-                </div>
+                <p className="text-[10px] font-bold text-gray-600">↑ +18.2% from last month</p>
               </div>
 
               {/* Card 2: Total Referrals */}
-              <div className="relative w-full h-[160px] -ml-8 z-20 pl-13 pt-4">
+              <div className="relative w-full max-w-[340px] sm:max-w-none h-[156px] sm:flex-1 sm:-ml-6 z-20 flex flex-col justify-between p-5 pl-16 sm:pl-10 overflow-hidden">
                 <img
                   src="/assets/uc-2.svg"
                   alt=""
                   className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10"
                 />
                 <div>
-                  <div className="w-12 h-12 bg-white/70 rounded-xl flex items-center justify-center mb-1 shadow-sm">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2.5">
+                  <div className="w-11 h-11 bg-white/70 rounded-xl flex items-center justify-center mb-2 shadow-sm">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2.5">
                       <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
                       <polyline points="16 6 12 2 8 6" />
                       <line x1="12" y1="2" x2="12" y2="15" />
                     </svg>
                   </div>
-                  <p className="text-xs text-gray-500 font-bold tracking-wide uppercase">Total Referrals</p>
+                  <p className="text-[10px] text-gray-500 font-bold tracking-wide uppercase">Total Referrals</p>
                   <p className="text-3xl font-black text-[#854D0E] mt-1">223</p>
                 </div>
-                <div className="text-[11px] font-bold text-gray-600 flex items-center gap-1">
-                  <span>↑ +18.2% from last month</span>
-                </div>
+                <p className="text-[10px] font-bold text-gray-600">↑ +18.2% from last month</p>
               </div>
 
-              {/* Card 3: Total Spent */}
-              <div className="relative w-full h-[160px] -ml-8 z-10 pl-13 pt-4">
+              {/* Card 3: Total Paid Out */}
+              <div className="relative w-full max-w-[340px] sm:max-w-none h-[156px] sm:flex-1 sm:-ml-6 z-10 flex flex-col justify-between p-5 pl-20 sm:pl-10 overflow-hidden">
                 <img
                   src="/assets/uc-3.svg"
                   alt=""
-                  className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10 rounded-2xl"
+                  className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10"
                 />
                 <div>
-                  <div className="w-12 h-12 bg-white/70 rounded-xl flex items-center justify-center mb-1 shadow-sm">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="2.5">
+                  <div className="w-11 h-11 bg-white/70 rounded-xl flex items-center justify-center mb-2 shadow-sm">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="2.5">
                       <rect x="2" y="5" width="20" height="14" rx="2" />
                       <line x1="2" y1="10" x2="22" y2="10" />
                     </svg>
                   </div>
-                  <p className="text-xs text-gray-500 font-bold tracking-wide uppercase">Total Paid Out</p>
+                  <p className="text-[10px] text-gray-500 font-bold tracking-wide uppercase">Total Paid Out</p>
                   <p className="text-2xl font-black text-[#1E1B4B] mt-1">63,458 PKR</p>
                 </div>
-                <div className="text-[11px] font-bold text-gray-600 flex items-center gap-1">
-                  <span>↑ +18.2% from last month</span>
-                </div>
+                <p className="text-[10px] font-bold text-gray-600">↑ +18.2% from last month</p>
               </div>
 
             </div>
