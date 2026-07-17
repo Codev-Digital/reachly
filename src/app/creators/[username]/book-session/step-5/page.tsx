@@ -12,13 +12,28 @@ const formatDateLong = (date: Date) => {
 export default function BookSessionStep5() {
   const params = useParams();
   const router = useRouter();
-  const { booking } = useBooking();
+  const { booking, userData } = useBooking();
   const creator = booking.creator;
 
   // Booking confirmed — clear any saved draft so next visit starts fresh
   useEffect(() => {
     try { localStorage.removeItem('reachly_booking_draft'); } catch { }
   }, []);
+
+  const handleGoToBookings = () => {
+    const isLoggedIn = !!userData?.user?.id;
+    if (isLoggedIn) {
+      router.push('/user/bookings');
+    } else {
+      // Guest — pass their email so the bookings page can fetch without login
+      const guestEmail = booking.userDetails.email;
+      if (guestEmail) {
+        router.push(`/user/bookings?guestEmail=${encodeURIComponent(guestEmail)}`);
+      } else {
+        router.push('/user/bookings');
+      }
+    }
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-20 pt-2">
@@ -86,7 +101,7 @@ export default function BookSessionStep5() {
 
             {/* Dashboard Redirect Action Button */}
             <button
-              onClick={() => router.push('/user/bookings')}
+              onClick={handleGoToBookings}
               className="bg-[#0012FF] text-white hover:bg-[#0010d0] font-bold py-2.5 px-8 rounded-full text-xs transition-colors shadow-sm mt-8"
             >
               Go to Dashboard Bookings

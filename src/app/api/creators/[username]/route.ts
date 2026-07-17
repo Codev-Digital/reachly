@@ -31,7 +31,7 @@ export async function GET(
             return NextResponse.json({ error: 'Creator not found' }, { status: 404 });
         }
 
-        const user = await User.findById(profile.userId).select('name isVerified');
+        const user = await User.findById(profile.userId).select('name isVerified email');
         if (!user) {
             return NextResponse.json({ error: 'User data not found' }, { status: 404 });
         }
@@ -49,6 +49,7 @@ export async function GET(
             creator: {
                 id: user._id,
                 name: user.name,
+                email: user.email,
                 username: profile.username,
                 displayName: profile.displayName,
                 shortBio: profile.shortBio,

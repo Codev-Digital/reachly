@@ -14,6 +14,7 @@ export default function BookSessionStep3() {
   const [authLoading, setAuthLoading] = useState(false);
   const [isLoadingBack, setIsLoadingBack] = useState(false);
   const [showWarningModal, setShowWarningModal] = useState(false);
+  const [guestCheckLoading, setGuestCheckLoading] = useState(false);
 
   const updateUserDetails = (field: string, value: string) => {
     setBooking(b => ({
@@ -30,12 +31,12 @@ export default function BookSessionStep3() {
   const handleContinue = async () => {
     if (!canProceed) return;
 
-    // Prevent creator from booking themselves
-    const isOwnSession = 
+    // Prevent logged-in creator from booking themselves
+    const isOwnSessionLoggedIn = 
       (userData?.user?.id && booking.creator?.id && userData.user.id === booking.creator.id) ||
       (userData?.creatorProfile?.username && params.username && userData.creatorProfile.username.toLowerCase() === decodeURIComponent(params.username as string).toLowerCase());
 
-    if (isOwnSession) {
+    if (isOwnSessionLoggedIn) {
       setShowWarningModal(true);
       return;
     }
@@ -44,6 +45,20 @@ export default function BookSessionStep3() {
     const step4Url = `/creators/${params.username}/book-session/step-4`;
 
     if (proceedAs === 'guest') {
+      // Check if guest email matches the creator's own email (self-booking as guest)
+      setGuestCheckLoading(true);
+      try {
+        const res = await fetch(`/api/creators/${params.username}`);
+        const data = await res.json();
+        if (data.success && data.creator?.email &&
+          data.creator.email.toLowerCase() === booking.userDetails.email.toLowerCase()) {
+          setShowWarningModal(true);
+          setGuestCheckLoading(false);
+          return;
+        }
+      } catch { /* silent — allow booking to proceed if check fails */ }
+      setGuestCheckLoading(false);
+
       nextStep();
       router.push(step4Url);
       return;
@@ -230,13 +245,13 @@ export default function BookSessionStep3() {
 
                 <button
                   onClick={handleContinue}
-                  disabled={!canProceed || authLoading}
-                  className={`py-2.5 px-5 sm:px-6 rounded-full text-xs font-bold transition-all shadow-sm flex items-center justify-center ${canProceed && !authLoading
+                  disabled={!canProceed || authLoading || guestCheckLoading}
+                  className={`py-2.5 px-5 sm:px-6 rounded-full text-xs font-bold transition-all shadow-sm flex items-center justify-center ${canProceed && !authLoading && !guestCheckLoading
                     ? 'bg-[#0012FF] text-white hover:bg-[#0010d0]'
                     : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                     }`}
                 >
-                  {authLoading ? (
+                  {(authLoading || guestCheckLoading) ? (
                     <div className="w-4 h-4 rounded-full border-2 border-[#808BFF] border-t-white animate-spin"></div>
                   ) : (
                     "Continue"
@@ -260,7 +275,7 @@ export default function BookSessionStep3() {
             {/* Close Button */}
             <button
               onClick={() => setShowWarningModal(false)}
-              className="absolute -top-1 sm:-top-3 left-1/2 -translate-x-1/2 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white shadow-md flex items-center justify-center border border-gray-100/50 text-gray-500 hover:bg-gray-55 transition-all z-20 cursor-pointer"
+              className="absolute -top-6 sm:-top-4 left-1/2 -translate-x-1/2 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white shadow-md flex items-center justify-center border border-gray-100/50 text-gray-500 hover:bg-gray-55 transition-all z-20 cursor-pointer"
             >
               <svg
                 width="14"

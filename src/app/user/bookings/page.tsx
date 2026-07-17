@@ -40,8 +40,10 @@ interface Booking {
 
 export default function UserBookingsPage() {
   const [activeTab, setActiveTab] = useState<'Upcoming' | 'Past' | 'Cancelled'>('Upcoming');
-  const [displayName, setDisplayName] = useState('James Richard');
+  const [displayName, setDisplayName] = useState('Guest');
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
+  const [isGuest, setIsGuest] = useState(false);
+  const [guestEmail, setGuestEmail] = useState<string | null>(null);
 
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,18 +62,34 @@ export default function UserBookingsPage() {
   const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false);
   const [successModalType, setSuccessModalType] = useState<'cancelled' | 'rescheduled'>('cancelled');
 
+  // Read guestEmail from URL on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ge = params.get('guestEmail');
+    if (ge) {
+      setGuestEmail(ge);
+      setIsGuest(true);
+      setDisplayName(ge.split('@')[0]);
+    }
+  }, []);
+
   const loadData = useCallback(async () => {
     try {
       const authRes = await fetch('/api/user/me');
       if (authRes.ok) {
         const userData = await authRes.json();
         if (userData.user) {
-          setDisplayName(userData.user.name || 'James Richard');
+          setDisplayName(userData.user.name || 'Guest');
           setProfilePhoto(userData.creatorProfile?.profilePhoto || userData.user.image || null);
+          setIsGuest(false);
         }
       }
 
-      const bookingsRes = await fetch('/api/user/bookings');
+      // Fetch bookings — use guestEmail param if not logged in
+      const params = new URLSearchParams(window.location.search);
+      const ge = params.get('guestEmail');
+      const bookingsUrl = ge ? `/api/user/bookings?guestEmail=${encodeURIComponent(ge)}` : '/api/user/bookings';
+      const bookingsRes = await fetch(bookingsUrl);
       if (bookingsRes.ok) {
         const data = await bookingsRes.json();
         if (data.bookings) {
@@ -83,7 +101,7 @@ export default function UserBookingsPage() {
             price: b.price || '2500 PKR',
             date: b.shortDate,
             time: b.time,
-            location: b.paymentMethod === 'Guest' ? 'Online' : 'In-person', // display helper or location
+            location: b.paymentMethod === 'Guest' ? 'Online' : 'In-person',
             bio: b.bio || 'No description provided.',
             originalStatus: b.originalStatus,
             status: b.status,
@@ -242,6 +260,30 @@ export default function UserBookingsPage() {
             Manage Your <span className="text-[#0012FF] font-black italic">Bookings</span> <span className="text-gray-400 font-normal text-base sm:text-lg">with ease</span>
           </h1>
         </FadeUp>
+
+        {/* Guest banner — shown when viewing without login */}
+        {isGuest && (
+          <div className="mb-6 flex items-center justify-between gap-4 bg-[#EEF2FF] border border-[#0012FF]/20 rounded-2xl px-5 py-3.5">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-[#0012FF]/10 flex items-center justify-center shrink-0">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+              </div>
+              <p className="text-xs font-semibold text-[#0012FF]">
+                You&apos;re viewing as a guest. <span className="text-gray-600 font-normal">Log in to manage all your bookings and access your dashboard.</span>
+              </p>
+            </div>
+            <a
+              href="/login"
+              className="shrink-0 bg-[#0012FF] text-white text-xs font-bold px-4 py-2 rounded-full hover:bg-[#0010d0] transition-colors"
+            >
+              Log In
+            </a>
+          </div>
+        )}
 
         {/* Tabs and Search */}
         <div className="flex flex-wrap items-center justify-between mb-6 sm:mb-8 gap-3">
