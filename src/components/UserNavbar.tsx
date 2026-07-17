@@ -572,7 +572,7 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
             {/* Responsive Image */}
             <div className="w-28 sm:w-36 md:w-44 lg:w-56 mt-3 mb-4">
               <img
-                src="/assets/cancel-appointment.png"
+                src="/assets/logout.png"
                 alt="Confirm Logout"
                 width={240}
                 height={170}

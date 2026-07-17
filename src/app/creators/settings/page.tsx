@@ -503,7 +503,7 @@ export default function CreatorSettings() {
 
       {/* Main Content Area - Constrained Max Width */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
+
         {/* Header */}
         <div className="mb-6">
           <p className="text-gray-500 font-sans mb-1 text-sm sm:text-base">Hello {displayName ? displayName.split(' ')[0] : 'Creator'}!</p>
@@ -521,11 +521,10 @@ export default function CreatorSettings() {
             <button
               key={tab.name}
               onClick={() => setActiveTab(tab.name)}
-              className={`flex items-center gap-2 px-4.5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all cursor-pointer border ${
-                activeTab === tab.name
+              className={`flex items-center gap-2 px-4.5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all cursor-pointer border ${activeTab === tab.name
                   ? 'bg-[#0012FF] border-[#0012FF] text-white shadow-md shadow-blue-100 scale-102'
                   : 'bg-white border-transparent text-gray-500 hover:text-black hover:bg-gray-50'
-              }`}
+                }`}
             >
               {tab.icon}
               <span>{tab.name}</span>
@@ -535,11 +534,11 @@ export default function CreatorSettings() {
 
         {/* Form Content Area */}
         <div className="w-full">
-          
+
           {/* ============ PROFILE TAB ============ */}
           {activeTab === 'Profile' && (
             <div className="bg-white rounded-3xl border border-gray-200 p-6 sm:p-8 shadow-sm">
-              
+
               {/* Cover Picture Box - Clean with NO overlay text/gradients */}
               <div className="relative rounded-3xl overflow-hidden mb-6 bg-gray-100 border border-gray-200 shadow-inner">
                 <div className="relative h-56 sm:h-64 w-full">
@@ -862,24 +861,21 @@ export default function CreatorSettings() {
                       return (
                         <div
                           key={day}
-                          className={`rounded-2xl px-4 py-3.5 border transition-colors ${
-                            isEnabled 
-                              ? 'bg-gray-50 border-gray-200' 
+                          className={`rounded-2xl px-4 py-3.5 border transition-colors ${isEnabled
+                              ? 'bg-gray-50 border-gray-200'
                               : 'bg-[#F8F8FA]/60 border-transparent opacity-75'
-                          }`}
+                            }`}
                         >
                           <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
                             {/* Toggle */}
                             <button
                               onClick={() => toggleDayState(dayKey)}
-                              className={`w-10 h-5.5 rounded-full relative transition-all flex-shrink-0 cursor-pointer ${
-                                isEnabled ? 'bg-[#0012FF]' : 'bg-gray-200'
-                              }`}
+                              className={`w-10 h-5.5 rounded-full relative transition-all flex-shrink-0 cursor-pointer ${isEnabled ? 'bg-[#0012FF]' : 'bg-gray-200'
+                                }`}
                             >
                               <span
-                                className={`absolute top-0.5 w-4.5 h-4.5 bg-white rounded-full shadow transition-all ${
-                                  isEnabled ? 'right-0.5' : 'left-0.5'
-                                }`}
+                                className={`absolute top-0.5 w-4.5 h-4.5 bg-white rounded-full shadow transition-all ${isEnabled ? 'right-0.5' : 'left-0.5'
+                                  }`}
                               />
                             </button>
 
