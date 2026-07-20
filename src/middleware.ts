@@ -58,8 +58,8 @@ const startsWith = (pathname: string, prefixes: string[]) =>
 const isAdminEmail = (email?: string | null) =>
   !!email && ADMIN_EMAILS.includes(email.toLowerCase());
 
-const isApprovedCreator = (approvalStatus?: string, hasCreatorProfile?: boolean) =>
-  hasCreatorProfile && (approvalStatus === 'approved' || approvalStatus === 'active');
+const isApprovedCreator = (approvalStatus?: string, hasCreatorProfile?: boolean): boolean =>
+  !!hasCreatorProfile && (approvalStatus === 'approved' || approvalStatus === 'active');
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
 export async function middleware(request: NextRequest) {
