@@ -46,6 +46,7 @@ export async function GET() {
         onboardingStep: user.onboardingStep,
         hasSeenWelcome: user.hasSeenWelcome,
         approvalStatus: user.approvalStatus,
+        hasCreatorProfile: !!creatorProfile,
       },
       creatorProfile: creatorProfile
         ? {

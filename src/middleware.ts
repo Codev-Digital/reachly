@@ -49,6 +49,7 @@ const ONBOARDING_PREFIX = '/creator-onboarding';
 
 /** User-only prefix — requires login */
 const USER_PREFIX = '/user';
+const USER_PENDING_PAGE = '/user/pending-approval';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const startsWith = (pathname: string, prefixes: string[]) =>
@@ -57,8 +58,8 @@ const startsWith = (pathname: string, prefixes: string[]) =>
 const isAdminEmail = (email?: string | null) =>
   !!email && ADMIN_EMAILS.includes(email.toLowerCase());
 
-const isApprovedCreator = (approvalStatus?: string) =>
-  approvalStatus === 'approved' || approvalStatus === 'active';
+const isApprovedCreator = (approvalStatus?: string, hasCreatorProfile?: boolean) =>
+  hasCreatorProfile && (approvalStatus === 'approved' || approvalStatus === 'active');
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
 export async function middleware(request: NextRequest) {
@@ -86,13 +87,15 @@ export async function middleware(request: NextRequest) {
   const isLoggedIn = !!token;
   const isComplete = !!(token as any)?.isRegistrationComplete;
   const approvalStatus = (token as any)?.approvalStatus || 'none';
+  const hasCreatorProfile = !!(token as any)?.hasCreatorProfile;
   const onboardingStep = (token as any)?.onboardingStep || 0;
   const hasSeenWelcome = !!(token as any)?.hasSeenWelcome;
   const email = (token as any)?.email as string | undefined;
 
   const isAdmin = isAdminEmail(email);
-  const isCreator = isApprovedCreator(approvalStatus);
+  const isCreator = isApprovedCreator(approvalStatus, hasCreatorProfile);
   const isPendingCreator = approvalStatus === 'pending';
+  const isPendingUser = approvalStatus === 'pending' && !hasCreatorProfile;
   const isInOnboarding = onboardingStep > 0 && !isCreator && approvalStatus !== 'pending' && approvalStatus !== 'rejected';
 
   // ── 1. ADMIN ROUTES — only admin emails allowed ───────────────────────────
@@ -102,7 +105,7 @@ export async function middleware(request: NextRequest) {
     }
     if (!isAdmin) {
       // Logged in but not admin → send to their correct home
-      return NextResponse.redirect(new URL(getHomeForRole({ isAdmin, isCreator, isPendingCreator, isInOnboarding, hasSeenWelcome }), request.url));
+      return NextResponse.redirect(new URL(getHomeForRole({ isAdmin, isCreator, isPendingCreator, isPendingUser, isInOnboarding, hasSeenWelcome }), request.url));
     }
     return NextResponse.next();
   }
@@ -121,6 +124,9 @@ export async function middleware(request: NextRequest) {
     }
     if (isPendingCreator && pathname !== '/creators/pending-approval') {
       return NextResponse.redirect(new URL('/creators/pending-approval', request.url));
+    }
+    if (isPendingUser) {
+      return NextResponse.redirect(new URL(USER_PENDING_PAGE, request.url));
     }
     if (!isCreator && !isPendingCreator) {
       // Regular user or unapproved trying to access creator dashboard
@@ -160,13 +166,16 @@ export async function middleware(request: NextRequest) {
       // Approved creators shouldn't be on user pages
       return NextResponse.redirect(new URL('/creators/dashboard', request.url));
     }
+    if (isPendingUser && pathname !== USER_PENDING_PAGE) {
+      return NextResponse.redirect(new URL(USER_PENDING_PAGE, request.url));
+    }
     return NextResponse.next();
   }
 
   // ── 5. AUTH-ONLY PAGES (login, signup) — redirect logged-in users ─────────
   if (AUTH_ONLY_PAGES.includes(pathname)) {
     if (isLoggedIn && isComplete) {
-      return NextResponse.redirect(new URL(getHomeForRole({ isAdmin, isCreator, isPendingCreator, isInOnboarding, hasSeenWelcome }), request.url));
+      return NextResponse.redirect(new URL(getHomeForRole({ isAdmin, isCreator, isPendingCreator, isPendingUser, isInOnboarding, hasSeenWelcome }), request.url));
     }
     return NextResponse.next();
   }
@@ -194,18 +203,21 @@ function getHomeForRole({
   isAdmin,
   isCreator,
   isPendingCreator,
+  isPendingUser,
   isInOnboarding,
   hasSeenWelcome,
 }: {
   isAdmin: boolean;
   isCreator: boolean;
   isPendingCreator: boolean;
+  isPendingUser: boolean;
   isInOnboarding: boolean;
   hasSeenWelcome: boolean;
 }) {
   if (isAdmin) return '/admin/dashboard';
   if (isCreator) return '/creators/dashboard';
   if (isPendingCreator) return '/creators/pending-approval';
+  if (isPendingUser) return '/user/pending-approval';
   if (isInOnboarding) return '/creator-onboarding/step-1';
   if (!hasSeenWelcome) return '/welcome';
   return '/user/dashboard';

@@ -24,6 +24,8 @@ const AdminSidebar = ({
       setActiveItem(propActive);
     } else if (pathname?.includes('/admin/requests')) {
       setActiveItem('Requests');
+    } else if (pathname?.includes('/admin/user-requests')) {
+      setActiveItem('User Requests');
     } else if (pathname?.includes('/admin/users')) {
       setActiveItem('Users');
     } else if (pathname?.includes('/admin/creators')) {
@@ -50,6 +52,7 @@ const AdminSidebar = ({
   const menuItems = [
     { name: 'Dashboard', icon: 'dashboard', href: '/admin/dashboard' },
     { name: 'Requests', icon: 'requests', href: '/admin/requests' },
+    { name: 'User Requests', icon: 'requests', href: '/admin/user-requests' },
     { name: 'Users', icon: 'users', href: '/admin/users' },
     { name: 'Creators', icon: 'creators', href: '/admin/creators' },
     { name: 'Bookings', icon: 'bookings', href: '/admin/bookings' },

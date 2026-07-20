@@ -3,6 +3,7 @@ import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import connectDB from "@/lib/mongodb";
 import User from "@/models/User";
+import CreatorProfile from "@/models/CreatorProfile";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -123,6 +124,19 @@ export const authOptions: NextAuthOptions = {
         }
       }
 
+      if (token?.email) {
+        await connectDB();
+        const dbUser = await User.findOne({ email: String(token.email).toLowerCase().trim() }).lean();
+        if (dbUser) {
+          const creatorProfile = await CreatorProfile.findOne({ userId: dbUser._id }).lean();
+          token.isRegistrationComplete = !!dbUser.isRegistrationComplete;
+          token.onboardingStep = dbUser.onboardingStep || 0;
+          token.approvalStatus = dbUser.approvalStatus || 'none';
+          token.hasSeenWelcome = !!dbUser.hasSeenWelcome;
+          (token as any).hasCreatorProfile = !!creatorProfile;
+        }
+      }
+
       return token;
     },
 
@@ -136,6 +150,7 @@ export const authOptions: NextAuthOptions = {
           onboardingStep: token.onboardingStep || 0,
           approvalStatus: token.approvalStatus || 'none',
           hasSeenWelcome: !!token.hasSeenWelcome,
+          hasCreatorProfile: !!(token as any).hasCreatorProfile,
         },
       };
     }

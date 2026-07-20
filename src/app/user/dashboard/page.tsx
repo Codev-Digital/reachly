@@ -140,8 +140,12 @@ export default function UserDashboard() {
         const data = await res.json();
         setIsAuthenticated(true);
         if (data.user) {
-          if (data.user.approvalStatus === 'pending') {
+          if (data.user.approvalStatus === 'pending' && data.user.hasCreatorProfile) {
             router.push('/creators/pending-approval');
+            return;
+          }
+          if (data.user.approvalStatus === 'pending') {
+            router.push('/user/pending-approval');
             return;
           }
           setDisplayName(data.user.name || 'James Richard');

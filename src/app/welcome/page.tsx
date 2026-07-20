@@ -36,10 +36,17 @@ export default function WelcomePage() {
           }
 
           // Case 0: Pending approval should always take priority
-          if (data.user.approvalStatus === 'pending') {
+          if (data.user.approvalStatus === 'pending' && data.user.hasCreatorProfile) {
             setRedirected(true);
             hasSelected.current = true;
             router.push('/creators/pending-approval');
+            return;
+          }
+
+          if (data.user.approvalStatus === 'pending') {
+            setRedirected(true);
+            hasSelected.current = true;
+            router.push('/user/pending-approval');
             return;
           }
 
@@ -92,10 +99,10 @@ export default function WelcomePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ step: 0 }), // We can use 0 to indicate user
       });
-      router.push('/user/dashboard');
+      router.push('/user/pending-approval');
     } catch (error) {
       console.error('Error updating onboarding step:', error);
-      router.push('/user/dashboard');
+      router.push('/user/pending-approval');
     } finally {
       setIsLoadingButton(false);
     }
@@ -206,12 +213,11 @@ export default function WelcomePage() {
 
                   <div>
                     <h3 className="font-sans font-bold text-[16px] md:text-[17px] text-black mb-2 md:mb-3 tracking-tight leading-snug">
-                      I Want to Book Sessions
+                      I Want to Be a User
                     </h3>
 
                     <p className="text-[12px] md:text-xs text-gray-400 font-sans leading-relaxed font-normal">
-                      Find creators you admire and book personalized video calls to
-                      learn, grow and connect.
+                      Apply as a normal user and complete your quick approval form before accessing the dashboard.
                     </p>
                   </div>
                 </div>
