@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import CreatorNavbar from '@/components/CreatorNavbar';
 
+
 export default function AboutPage() {
   return (
     <div className="min-h-screen">
