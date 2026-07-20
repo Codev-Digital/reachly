@@ -43,15 +43,18 @@ export default function LoginPage() {
 
         if (redirectRes.ok) {
           const redirectInfo = await redirectRes.json();
-          const { onboardingStep, approvalStatus, hasSeenWelcome } = redirectInfo;
+          const { onboardingStep, approvalStatus, hasSeenWelcome, hasCreatorProfile } = redirectInfo;
 
-          const isFullyApproved = approvalStatus === 'approved' || approvalStatus === 'active';
+          const isFullyApproved = (approvalStatus === 'approved' || approvalStatus === 'active') && !!hasCreatorProfile;
           const isInOnboarding = onboardingStep > 0 && !isFullyApproved && approvalStatus !== 'pending';
+          const isBookingPath = callbackUrl.startsWith('/creators/') && callbackUrl.includes('/book-session');
 
           if (email.toLowerCase().trim() === 'admin@reachly.com' || email.toLowerCase().trim() === 'abdullahgotaccess@gmail.com') {
             router.push('/admin/dashboard');
           } else if (approvalStatus === 'pending') {
-            router.push('/creators/pending-approval');
+            router.push(hasCreatorProfile ? '/creators/pending-approval' : '/user/pending-approval');
+          } else if (isBookingPath) {
+            router.push(callbackUrl);
           } else if (isFullyApproved) {
             router.push('/creators/dashboard');
           } else if (isInOnboarding) {

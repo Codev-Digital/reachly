@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
+import CreatorProfile from '@/models/CreatorProfile';
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,11 +18,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
+    const creatorProfile = await CreatorProfile.findOne({ userId: user._id }).lean();
+
     return NextResponse.json({
       onboardingStep: user.onboardingStep || 0,
       approvalStatus: user.approvalStatus || 'none',
       hasSeenWelcome: !!user.hasSeenWelcome,
       isRegistrationComplete: !!user.isRegistrationComplete,
+      hasCreatorProfile: !!creatorProfile,
     });
   } catch (error) {
     console.error('Error fetching login redirect info:', error);

@@ -2,6 +2,7 @@
 
 import { useState, createContext, useContext, ReactNode, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
 import Footer from '@/components/Footer';
 import { AnimatePresence, motion } from 'framer-motion';
 import CreatorDashboardNav from '@/components/CreatorDashboardNav';
@@ -120,12 +121,15 @@ export function useBooking() {
 }
 
 export default function BookSessionLayout({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  const router = useRouter();
   const [booking, setBookingRaw] = useState<BookingState>(emptyBooking);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState<'user' | 'creator' | null>(null);
   const [userData, setUserData] = useState<any>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isDraftSaved, setIsDraftSaved] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
   const lastDraftRef = useRef('');
 
   // On mount: restore from localStorage draft first, then sessionStorage
@@ -176,9 +180,12 @@ export default function BookSessionLayout({ children }: { children: ReactNode })
             (data.user?.approvalStatus && data.user?.approvalStatus !== 'none') || 
             (data.user?.onboardingStep && data.user?.onboardingStep > 0);
           setUserRole(isCreator ? 'creator' : 'user');
+        } else {
+          setShowLoginModal(true);
         }
       } catch (err) {
         console.error('Error checking auth state:', err);
+        setShowLoginModal(true);
       }
     }
     checkAuth();
@@ -235,6 +242,41 @@ export default function BookSessionLayout({ children }: { children: ReactNode })
 
         <main className="flex-1">{children}</main>
         <Footer />
+
+        {showLoginModal && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <div className="w-full max-w-md rounded-3xl bg-white shadow-2xl border border-gray-100 overflow-hidden text-center">
+              <div className="bg-[#0012FF] px-6 py-8">
+                <div className="mx-auto w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center mb-4">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                    <path d="M19 25L12 19L5 25V4C5 2.9 5.9 2 7 2H17C18.1 2 19 2.9 19 4V25Z" />
+                  </svg>
+                </div>
+                <h3 className="text-white text-xl font-bold">Login Required</h3>
+                <p className="text-white/70 text-sm mt-1">Please log in or sign up to continue booking this session.</p>
+              </div>
+              <div className="p-6">
+                <p className="text-sm text-gray-500 leading-relaxed mb-6">
+                  Guest booking is disabled for this flow. Your booking progress will be kept, and you can continue from the same step after login.
+                </p>
+                <div className="flex flex-col gap-3">
+                  <button
+                    onClick={() => router.push(`/login?callbackUrl=${encodeURIComponent(pathname)}`)}
+                    className="w-full rounded-2xl bg-[#0012FF] text-white py-3 font-semibold"
+                  >
+                    Log In
+                  </button>
+                  <button
+                    onClick={() => router.push(`/signup?callbackUrl=${encodeURIComponent(pathname)}`)}
+                    className="w-full rounded-2xl border border-gray-200 text-gray-700 py-3 font-semibold"
+                  >
+                    Sign Up
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </BookingContext.Provider>
   );
