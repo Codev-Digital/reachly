@@ -124,12 +124,7 @@ export default function OnboardingNavbar({ showAuthButtons = false }: { showAuth
                 </>
               ) : (
                 <>
-                  <button
-                    onClick={handleDashboardRedirect}
-                    className="px-4 py-2 border border-[#0012FF] text-[#0012FF] rounded-xl text-xs sm:text-sm font-semibold hover:bg-[#0012FF]/5 transition-all cursor-pointer bg-white"
-                  >
-                    Dashboard
-                  </button>
+
                   <button
                     onClick={handleLogout}
                     className="bg-[#0012FF] text-white px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold hover:bg-[#0012FF]/95 transition-all cursor-pointer"
@@ -155,13 +150,12 @@ export default function OnboardingNavbar({ showAuthButtons = false }: { showAuth
                 <div key={num} className="flex items-center flex-1 last:flex-none">
                   {/* Step Circle */}
                   <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold transition-all shadow-sm flex-shrink-0 ${
-                      isCompleted
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold transition-all shadow-sm flex-shrink-0 ${isCompleted
                         ? 'bg-[#0012FF] text-white border border-[#0012FF]'
                         : isActive
-                        ? 'bg-[#EEF2FF] text-[#0012FF] border border-[#0012FF] ring-4 ring-blue-50'
-                        : 'bg-white text-gray-400 border border-gray-200'
-                    }`}
+                          ? 'bg-[#EEF2FF] text-[#0012FF] border border-[#0012FF] ring-4 ring-blue-50'
+                          : 'bg-white text-gray-400 border border-gray-200'
+                      }`}
                   >
                     {isCompleted ? (
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" className="w-3.5 h-3.5">
