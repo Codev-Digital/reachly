@@ -16,6 +16,7 @@ function SignupForm() {
     (callbackUrl.startsWith('/creator-onboarding') ? 'creator' : 'user');
 
   const [loading, setLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [error, setError] = useState('');
 
   const [formData, setFormData] = useState({
@@ -44,6 +45,7 @@ function SignupForm() {
   };
 
   const handleGoogleSignIn = () => {
+    setIsGoogleLoading(true);
     signIn('google', { callbackUrl });
   };
 
@@ -156,15 +158,20 @@ function SignupForm() {
         {/* Google Sign Up */}
         <button
           onClick={handleGoogleSignIn}
-          className="w-full bg-white border border-gray-200 rounded-full py-3 px-4 font-sans text-gray-700 text-xs font-bold flex items-center justify-center gap-2.5 hover:bg-gray-50 transition-all cursor-pointer active:scale-[0.98]"
+          disabled={isGoogleLoading}
+          className="w-full bg-white border border-gray-200 rounded-full py-3 px-4 font-sans text-gray-700 text-xs font-bold flex items-center justify-center gap-2.5 hover:bg-gray-50 transition-all cursor-pointer active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <Image
-            src="/google.svg"
-            alt="Google"
-            width={16}
-            height={16}
-          />
-          Sign up with Google
+          {isGoogleLoading ? (
+            <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+          ) : (
+            <Image
+              src="/google.svg"
+              alt="Google"
+              width={16}
+              height={16}
+            />
+          )}
+          {isGoogleLoading ? 'Redirecting...' : 'Sign up with Google'}
         </button>
       </div>
 

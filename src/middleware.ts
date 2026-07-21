@@ -2,6 +2,30 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 
+// ─── Simple In-Memory Rate Limiter ──────────────────────────────────────────
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
+const MAX_REQUESTS = 100; // 100 requests per minute per IP
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const limitInfo = rateLimitMap.get(ip);
+  if (!limitInfo) {
+    rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+    return false;
+  }
+  if (now > limitInfo.resetTime) {
+    rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+    return false;
+  }
+  limitInfo.count++;
+  if (limitInfo.count > MAX_REQUESTS) {
+    return true;
+  }
+  return false;
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 // ─── Admin whitelist (must match what admin API routes check) ─────────────────
 const ADMIN_EMAILS = ['abdullahgotaccess@gmail.com', 'admin@reachly.com'];
 
@@ -65,13 +89,23 @@ const isApprovedCreator = (approvalStatus?: string, hasCreatorProfile?: boolean)
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Always pass through Next.js internals, static files, and API routes
+  // Pass through Next.js internals and static files without rate limiting
   if (
     pathname.startsWith('/_next') ||
-    pathname.startsWith('/api/') ||
     pathname.startsWith('/favicon') ||
     pathname.match(/\.(svg|png|jpg|jpeg|gif|ico|webp|css|js|woff|woff2|map|txt)$/)
   ) {
+    return NextResponse.next();
+  }
+
+  // Apply Rate Limiting to API and page routes
+  const ip = request.headers.get('x-forwarded-for') || (request as any).ip || 'unknown';
+  if (ip !== 'unknown' && isRateLimited(ip)) {
+    return new NextResponse('Too Many Requests. Please try again later.', { status: 429 });
+  }
+
+  // Allow API routes to pass through auth checks
+  if (pathname.startsWith('/api/')) {
     return NextResponse.next();
   }
 

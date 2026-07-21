@@ -172,7 +172,7 @@ export default function AdminNavbar() {
                 onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
                 className="w-10 h-10 rounded-full overflow-hidden border border-gray-205 cursor-pointer flex-shrink-0 flex items-center justify-center"
               >
-                <img src="/ahad raza mir.png" alt="Admin Avatar" className="w-full h-full object-cover" />
+                <img src="/profile.jpeg" alt="Admin Avatar" className="w-full h-full object-cover" />
               </button>
 
               {/* Profile Dropdown */}
