@@ -27,12 +27,17 @@ export default function UsersPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  
+
   // Track selected user for full detail view
   const [activeDetailUser, setActiveDetailUser] = useState<User | null>(null);
 
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Status Action Modal Feedback States
+  const [showStatusFeedbackModal, setShowStatusFeedbackModal] = useState(false);
+  const [statusFeedbackMessage, setStatusFeedbackMessage] = useState('');
+  const [statusFeedbackType, setStatusFeedbackType] = useState<'success' | 'error'>('success');
 
   const loadUsers = async () => {
     try {
@@ -61,27 +66,33 @@ export default function UsersPage() {
         body: JSON.stringify({ userId, action })
       });
       if (res.ok) {
-        alert(`User status updated to ${action}d successfully.`);
+        setStatusFeedbackType('success');
+        setStatusFeedbackMessage(`User status updated to ${action}d successfully.`);
+        setShowStatusFeedbackModal(true);
         loadUsers();
         setActiveDetailUser(null);
       } else {
         const err = await res.json();
-        alert(err.error || 'Failed to update status.');
+        setStatusFeedbackType('error');
+        setStatusFeedbackMessage(err.error || 'Failed to update status.');
+        setShowStatusFeedbackModal(true);
       }
     } catch (err) {
       console.error(err);
-      alert('Error updating status.');
+      setStatusFeedbackType('error');
+      setStatusFeedbackMessage('Error updating status.');
+      setShowStatusFeedbackModal(true);
     }
   };
 
   // Filter logic
   const filteredUsers = users.filter(user => {
-    const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          user.id.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          user.email.toLowerCase().includes(searchQuery.toLowerCase());
-    
+    const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchQuery.toLowerCase());
+
     const matchesStatus = selectedStatusFilter === 'All Statuses' || user.status === selectedStatusFilter;
-    
+
     return matchesSearch && matchesStatus;
   });
 
@@ -208,15 +219,14 @@ export default function UsersPage() {
                 {/* Status */}
                 <div>
                   <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Status</p>
-                  <p className={`text-sm font-black mt-1 ${
-                    activeDetailUser.status === 'Active'
-                      ? 'text-emerald-500'
-                      : activeDetailUser.status === 'Pending'
+                  <p className={`text-sm font-black mt-1 ${activeDetailUser.status === 'Active'
+                    ? 'text-emerald-500'
+                    : activeDetailUser.status === 'Pending'
                       ? 'text-amber-500'
                       : activeDetailUser.status === 'Inactive'
-                      ? 'text-rose-500'
-                      : 'text-gray-500'
-                  }`}>
+                        ? 'text-rose-500'
+                        : 'text-gray-500'
+                    }`}>
                     {activeDetailUser.status}
                   </p>
                 </div>
@@ -245,13 +255,13 @@ export default function UsersPage() {
                     onClick={() => handleUpdateStatus(activeDetailUser.dbId || activeDetailUser.id, 'approve')}
                     className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer shadow-sm active:scale-95"
                   >
-                    Approve Creator
+                    Approve User
                   </button>
                   <button
                     onClick={() => handleUpdateStatus(activeDetailUser.dbId || activeDetailUser.id, 'reject')}
                     className="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer shadow-sm active:scale-95"
                   >
-                    Reject Creator
+                    Reject User
                   </button>
                 </>
               )}
@@ -491,8 +501,8 @@ export default function UsersPage() {
                 </tr>
               ) : paginatedUsers.length > 0 ? (
                 paginatedUsers.map((user) => (
-                  <tr 
-                    key={user.id} 
+                  <tr
+                    key={user.id}
                     onClick={() => setActiveDetailUser(user)}
                     className="hover:bg-gray-50/50 transition-colors cursor-pointer"
                   >
@@ -546,7 +556,7 @@ export default function UsersPage() {
                         >
                           Delete
                         </button>
-                        <button 
+                        <button
                           onClick={() => setActiveDetailUser(user)}
                           className="px-4 py-1.5 bg-gray-100 rounded-full text-xs font-bold text-gray-400 hover:bg-gray-200 hover:text-gray-500 transition-colors"
                         >
@@ -687,6 +697,79 @@ export default function UsersPage() {
                   Delete User
                 </button>
               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Action Status Feedback Modal */}
+      <AnimatePresence>
+        {showStatusFeedbackModal && (
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100] p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowStatusFeedbackModal(false)}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="relative overflow-visible w-full max-w-lg flex flex-col items-center p-8 pt-12 pb-8 z-10 bg-transparent"
+            >
+              {/* SVG Background */}
+              <img
+                src="/assets/cancel-card.svg"
+                alt=""
+                className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10"
+              />
+
+              {/* Close Button */}
+              <button
+                onClick={() => setShowStatusFeedbackModal(false)}
+                className="absolute -mt-20 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center border border-gray-100/50 text-gray-500 hover:bg-gray-50 transition-all z-20"
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                >
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+
+              {/* Responsive Illustration */}
+              <div className="w-28 sm:w-36 md:w-44 lg:w-56 mt-3 mb-4">
+                <Image
+                  src={statusFeedbackType === 'success' ? '/assets/booking-confirm.png' : '/assets/cancel-appointment.png'}
+                  alt="Feedback Status"
+                  width={240}
+                  height={170}
+                  className="w-full h-auto object-contain"
+                />
+              </div>
+
+              <h3 className="text-xl sm:text-2xl font-bold text-black mb-2 text-center">
+                {statusFeedbackType === 'success' ? 'Success!' : 'Error'}
+              </h3>
+
+              <p className="text-xs sm:text-sm text-gray-500 text-center mb-6 px-4">
+                {statusFeedbackMessage}
+              </p>
+
+              <button
+                onClick={() => setShowStatusFeedbackModal(false)}
+                className={`w-full py-2.5 max-w-[300px] text-white rounded-xl text-sm font-semibold transition-all ${statusFeedbackType === 'success' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-red-600 hover:bg-red-700'
+                  }`}
+              >
+                OK
+              </button>
             </motion.div>
           </div>
         )}

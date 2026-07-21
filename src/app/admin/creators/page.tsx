@@ -987,7 +987,7 @@ export default function AdminCreatorsPage() {
                       setCreatorToReject(null);
                       setRejectSuccess(false);
                     }}
-                    className="w-full py-2.5 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700 transition-all"
+                    className="w-80 py-2.5 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700 transition-all"
                   >
                     OK
                   </button>
@@ -1091,7 +1091,7 @@ export default function AdminCreatorsPage() {
                       setCreatorToAccept(null);
                       setAcceptSuccess(false);
                     }}
-                    className="w-full py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 transition-all"
+                    className="w-80 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 transition-all"
                   >
                     OK
                   </button>
