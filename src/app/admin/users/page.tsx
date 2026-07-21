@@ -115,6 +115,17 @@ export default function UsersPage() {
     }
   };
 
+  // Pagination logic (10 users per page)
+  const itemsPerPage = 10;
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage) || 1;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedStatusFilter]);
+
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedUsers = filteredUsers.slice(startIndex, startIndex + itemsPerPage);
+
   if (activeDetailUser) {
     return (
       <motion.div
@@ -478,8 +489,8 @@ export default function UsersPage() {
                     Loading users list...
                   </td>
                 </tr>
-              ) : filteredUsers.length > 0 ? (
-                filteredUsers.map((user) => (
+              ) : paginatedUsers.length > 0 ? (
+                paginatedUsers.map((user) => (
                   <tr 
                     key={user.id} 
                     onClick={() => setActiveDetailUser(user)}
@@ -558,37 +569,35 @@ export default function UsersPage() {
 
         {/* Pagination Footer */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-4 border-t border-gray-50">
-          <p className="text-xs font-semibold text-gray-400">Showing {filteredUsers.length} of {users.length}</p>
+          <p className="text-xs font-semibold text-gray-400">
+            Showing {filteredUsers.length > 0 ? startIndex + 1 : 0} - {Math.min(startIndex + itemsPerPage, filteredUsers.length)} of {filteredUsers.length}
+          </p>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setCurrentPage(1)}
-              className="w-8 h-8 rounded-full border border-gray-100 flex items-center justify-center text-gray-400 hover:bg-gray-50 transition-colors"
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="w-8 h-8 rounded-full border border-gray-100 flex items-center justify-center text-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <polyline points="15 18 9 12 15 6" />
               </svg>
             </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <button
+                key={page}
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${currentPage === page
+                  ? 'bg-[#0012FF] text-white shadow-md shadow-[#0012FF]/20'
+                  : 'text-gray-500 hover:bg-gray-50'
+                  }`}
+                onClick={() => setCurrentPage(page)}
+              >
+                {page}
+              </button>
+            ))}
             <button
-              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${currentPage === 1
-                ? 'bg-[#0012FF] text-white shadow-md shadow-[#0012FF]/20'
-                : 'text-gray-500 hover:bg-gray-50'
-                }`}
-              onClick={() => setCurrentPage(1)}
-            >
-              1
-            </button>
-            <button
-              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${currentPage === 2
-                ? 'bg-[#0012FF] text-white shadow-md shadow-[#0012FF]/20'
-                : 'text-gray-500 hover:bg-gray-50'
-                }`}
-              onClick={() => setCurrentPage(2)}
-            >
-              2
-            </button>
-            <button
-              onClick={() => setCurrentPage(2)}
-              className="w-8 h-8 rounded-full border border-gray-100 flex items-center justify-center text-gray-400 hover:bg-gray-50 transition-colors"
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className="w-8 h-8 rounded-full border border-gray-100 flex items-center justify-center text-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <polyline points="9 18 15 12 9 6" />
