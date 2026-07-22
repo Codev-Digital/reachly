@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import CreatorNavbar from '@/components/CreatorNavbar';
+import Link from "next/link";
+import CreatorNavbar from "@/components/CreatorNavbar";
 
 export default function AboutPage() {
   return (
@@ -26,7 +26,10 @@ export default function AboutPage() {
             Something amazing is coming soon. Stay tuned!
           </h2>
           <div className="flex items-center justify-center">
-            <Link href="/" className="bg-white text-[#001F7D] font-sans font-semibold px-8 py-3 rounded-full text-sm hover:bg-white/90 transition-all">
+            <Link
+              href="/"
+              className="bg-white text-[#001F7D] font-sans font-semibold px-8 py-3 rounded-full text-sm hover:bg-white/90 transition-all"
+            >
               Back to Home
             </Link>
           </div>
