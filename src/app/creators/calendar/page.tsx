@@ -258,111 +258,132 @@ export default function CreatorCalendar() {
     return list;
   };
 
+const GoogleMeetIcon = () => (
+  <img 
+    src="https://static.vecteezy.com/system/resources/thumbnails/022/484/498/small/google-meet-gmeet-icon-logo-symbol-free-png.png" 
+    alt="Google Meet" 
+    className="w-4 h-4 object-contain shrink-0" 
+  />
+);
+
   if (loading) return <LoadingAnimation />;
 
   return (
     <div className="min-h-screen bg-[#F8F8FA]">
       <CreatorDashboardNav profilePhoto={profilePhoto} displayName={displayName} />
 
-      {/* Main Content Area - Constrained Max Width */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Main Content Area */}
+      <main className="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-10 py-8">
 
-        {/* Header */}
+        {/* Top Header Greeting Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
           <div>
-            <p className="text-gray-500 font-sans mb-1 text-sm sm:text-base">{getGreeting()}, {displayName ? displayName.split(' ')[0] : 'there'}!</p>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-black font-sans tracking-tight">
-              You Have <span className="text-[#0012FF]">{currentBookings.length} Appointments</span> <span className="text-gray-400 font-normal text-base sm:text-lg">/ Today</span>
+            <p className="text-gray-400 font-medium mb-1 text-sm sm:text-base">Hello {displayName ? displayName : 'Sophia Reed'}!</p>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-black tracking-tight font-sans">
+              You Have <span className="text-[#0012FF]">{currentBookings.length} Appointments</span> <span className="text-gray-400 font-normal text-base sm:text-xl">/ Today</span>
             </h1>
           </div>
+
+          <button 
+            onClick={() => {
+              const linkStr = window.location.origin + `/creators/${username || displayName.toLowerCase().replace(/\s+/g, '-')}`;
+              navigator.clipboard.writeText(linkStr);
+              alert('Booking link copied to clipboard!');
+            }}
+            className="flex items-center gap-2 bg-[#0012FF] text-white px-6 py-3 rounded-full font-bold text-sm sm:text-base hover:bg-[#0012FF]/90 transition-all shadow-md active:scale-95 w-fit cursor-pointer"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+            Copy Booking Link
+          </button>
         </div>
 
-        {/* Date Selector Navigation Bar */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 p-4 bg-white rounded-3xl border border-gray-200 shadow-sm mb-8">
-
-          <div className="flex items-center gap-3">
-            {/* Month Selector Dropdown */}
-            <div className="relative">
-              <button
-                onClick={() => { setMonthDropdownOpen(!monthDropdownOpen); setYearDropdownOpen(false); }}
-                className="flex items-center justify-between gap-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-2xl px-4 py-2.5 cursor-pointer transition-all select-none min-w-[130px]"
-              >
-                <div className="flex flex-col text-left">
-                  <span className="text-[9px] uppercase tracking-wider text-gray-400 font-extrabold">Month</span>
-                  <span className="text-sm text-gray-800 font-bold">
-                    {currentDate.toLocaleString('default', { month: 'long' })}
-                  </span>
-                </div>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={`text-gray-500 transition-transform duration-200 ${monthDropdownOpen ? 'rotate-180' : ''}`}>
-                  <polyline points="6 9 12 15 18 9" />
-                </svg>
-              </button>
-              {monthDropdownOpen && (
-                <div className="absolute left-0 top-[calc(100%+6px)] w-44 bg-white rounded-2xl shadow-xl border border-gray-100 py-1.5 z-[50] max-h-60 overflow-y-auto">
-                  {['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].map((m, idx) => (
-                    <button
-                      key={m}
-                      onClick={() => selectMonth(idx)}
-                      className={`w-full text-left px-4 py-2 text-xs font-semibold hover:bg-[#0012FF]/5 transition-colors ${currentDate.getMonth() === idx ? 'text-[#0012FF] bg-[#0012FF]/5' : 'text-gray-600'}`}
-                    >
-                      {m}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Year Selector Dropdown */}
-            <div className="relative">
-              <button
-                onClick={() => { setYearDropdownOpen(!yearDropdownOpen); setMonthDropdownOpen(false); }}
-                className="flex items-center justify-between gap-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-2xl px-4 py-2.5 cursor-pointer transition-all select-none min-w-[100px]"
-              >
-                <div className="flex flex-col text-left">
-                  <span className="text-[9px] uppercase tracking-wider text-gray-400 font-extrabold">Year</span>
-                  <span className="text-sm text-gray-800 font-bold">{currentDate.getFullYear()}</span>
-                </div>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={`text-gray-500 transition-transform duration-200 ${yearDropdownOpen ? 'rotate-180' : ''}`}>
-                  <polyline points="6 9 12 15 18 9" />
-                </svg>
-              </button>
-              {yearDropdownOpen && (
-                <div className="absolute right-0 top-[calc(100%+6px)] w-32 bg-white rounded-2xl shadow-xl border border-gray-100 py-1.5 z-[50]">
-                  {[2024, 2025, 2026, 2027, 2028, 2029].map((y) => (
-                    <button
-                      key={y}
-                      onClick={() => selectYear(y)}
-                      className={`w-full text-left px-4 py-2 text-xs font-semibold hover:bg-[#0012FF]/5 transition-colors ${currentDate.getFullYear() === y ? 'text-[#0012FF] bg-[#0012FF]/5' : 'text-gray-600'}`}
-                    >
-                      {y}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+        {/* Date Filter Strip Bar */}
+        <div className="w-full bg-white rounded-2xl border border-gray-100 p-2.5 sm:p-3 mb-8 flex items-center justify-between gap-3 shadow-xs">
+          {/* Left: Month Selector Button */}
+          <div className="relative flex-shrink-0">
+            <button
+              onClick={() => { setMonthDropdownOpen(!monthDropdownOpen); setYearDropdownOpen(false); }}
+              className="flex items-center gap-2 bg-gray-50 hover:bg-gray-100 border border-gray-200/80 rounded-xl px-3 py-2 text-xs font-semibold text-gray-700 transition-all cursor-pointer"
+            >
+              <span className="text-gray-400 font-normal">Month</span>
+              <span className="font-bold">{currentDate.toLocaleString('default', { month: 'long' })}</span>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+            {monthDropdownOpen && (
+              <div className="absolute left-0 top-[calc(100%+6px)] w-40 bg-white rounded-2xl shadow-xl border border-gray-100 py-1.5 z-50 max-h-60 overflow-y-auto">
+                {['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].map((m, idx) => (
+                  <button
+                    key={m}
+                    onClick={() => selectMonth(idx)}
+                    className={`w-full text-left px-4 py-2 text-xs font-semibold hover:bg-[#0012FF]/5 transition-colors cursor-pointer ${currentDate.getMonth() === idx ? 'text-[#0012FF] bg-[#0012FF]/5' : 'text-gray-600'}`}
+                  >
+                    {m}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* Days Strip */}
-          <div className="flex items-center gap-1 overflow-x-auto py-1 px-1 max-w-full flex-1 no-scrollbar sm:justify-start">
-            {getDaysInMonth().map((day, i) => {
-              const isSelected = currentDate.getDate() === i + 1;
+          {/* Middle: Horizontal Days Strip */}
+          <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar py-1 px-1 flex-1">
+            {Array.from({ length: 31 }, (_, i) => {
+              const dayNum = i + 1;
+              const d = new Date(currentDate.getFullYear(), currentDate.getMonth(), dayNum);
+              const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
+              const isSelected = currentDate.getDate() === dayNum;
+
               return (
                 <button
-                  key={i}
+                  key={dayNum}
                   onClick={() => {
-                    const newDate = new Date(currentDate);
-                    newDate.setDate(i + 1);
-                    setCurrentDate(newDate);
+                    const newD = new Date(currentDate);
+                    newD.setDate(dayNum);
+                    setCurrentDate(newD);
                   }}
-                  className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold transition-all flex-shrink-0 border ${isSelected
-                    ? 'bg-[#0012FF] border-[#0012FF] text-white shadow-md shadow-blue-200 scale-105'
-                    : 'border-transparent text-gray-500 hover:bg-gray-100 hover:text-gray-850'
-                    }`}
+                  className={`flex flex-col items-center justify-center min-w-[46px] sm:min-w-[50px] h-[52px] py-1.5 px-1 rounded-[14px] transition-all cursor-pointer flex-shrink-0 ${
+                    isSelected
+                      ? 'bg-[#EEF2FF] border border-[#0012FF]/30 text-[#0012FF] shadow-xs'
+                      : 'text-[#64748B] hover:bg-gray-100 bg-transparent'
+                  }`}
                 >
-                  {day}
+                  <span className={`text-[9px] uppercase font-bold tracking-wider ${isSelected ? 'text-[#0012FF]/80' : 'text-[#64748B]'}`}>
+                    {dayName}
+                  </span>
+                  <span className={`text-xs sm:text-sm font-extrabold mt-0.5 ${isSelected ? 'text-[#0012FF]' : 'text-gray-800'}`}>
+                    {String(dayNum).padStart(2, '0')}
+                  </span>
                 </button>
               );
             })}
+          </div>
+
+          {/* Right: Year Selector Button */}
+          <div className="relative flex-shrink-0">
+            <button
+              onClick={() => { setYearDropdownOpen(!yearDropdownOpen); setMonthDropdownOpen(false); }}
+              className="flex items-center gap-2 bg-gray-50 hover:bg-gray-100 border border-gray-200/80 rounded-xl px-3 py-2 text-xs font-semibold text-gray-700 transition-all cursor-pointer"
+            >
+              <span className="text-gray-400 font-normal">Year</span>
+              <span className="font-bold">{currentDate.getFullYear()}</span>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+            {yearDropdownOpen && (
+              <div className="absolute right-0 top-[calc(100%+6px)] w-28 bg-white rounded-2xl shadow-xl border border-gray-100 py-1.5 z-50">
+                {[2024, 2025, 2026, 2027, 2028].map((y) => (
+                  <button
+                    key={y}
+                    onClick={() => selectYear(y)}
+                    className={`w-full text-left px-4 py-2 text-xs font-semibold hover:bg-[#0012FF]/5 transition-colors cursor-pointer ${currentDate.getFullYear() === y ? 'text-[#0012FF] bg-[#0012FF]/5' : 'text-gray-600'}`}
+                  >
+                    {y}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -371,83 +392,70 @@ export default function CreatorCalendar() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {currentBookings.map((booking, index) => (
               <motion.div
-                key={booking.id}
-                initial={{ y: 25, opacity: 0 }}
+                key={booking.id || index}
+                initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: index * 0.05 }}
-                className="relative bg-white rounded-3xl p-6 border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-300 hover:scale-[1.01] flex flex-col justify-between min-h-[220px] group overflow-hidden"
+                className="relative w-full bg-white rounded-[20px] p-5 border border-gray-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between min-h-[220px]"
               >
-                {/* Background soft hover glow */}
-                <div className="absolute inset-0 bg-gradient-to-tr from-[#0012FF]/0 via-[#0012FF]/0 to-[#0012FF]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-
-                {/* Top Section: Client Meta */}
                 <div>
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 bg-gray-150 border-2 border-white shadow-sm ring-1 ring-gray-100">
-                        <Image
-                          src={booking.avatar}
-                          alt={booking.name}
-                          className="w-full h-full object-cover"
-                          width={48}
-                          height={48}
+                      <div className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0 bg-gray-100 relative border border-gray-100">
+                        <Image 
+                          src={booking.avatar || '/assets/avatar.png'} 
+                          alt={booking.name || 'User'} 
+                          className="w-full h-full object-cover" 
+                          width={44} 
+                          height={44} 
                         />
                       </div>
                       <div>
-                        <h3 className="font-bold text-base text-black leading-tight group-hover:text-[#0012FF] transition-colors">{booking.name}</h3>
+                        <h3 className="font-extrabold text-sm text-black leading-tight">{booking.name}</h3>
                         <p className="text-xs text-gray-400 font-medium">{booking.handle}</p>
                       </div>
                     </div>
-                    <span className="font-extrabold text-sm text-[#0012FF] bg-blue-50/80 px-3 py-1.5 rounded-xl border border-blue-100/50">
-                      {booking.amount}
-                    </span>
+                    <p className="font-extrabold text-sm text-[#0012FF] whitespace-nowrap">{booking.amount || '2500 PKR'}</p>
                   </div>
 
-                  {/* Middleware Details */}
-                  <div className="flex flex-col gap-2 text-xs text-gray-500 mb-4 bg-gray-50/50 p-3 rounded-2xl border border-gray-100/60">
+                  <div className="flex flex-col gap-2 text-xs text-gray-500 mb-3">
                     <div className="flex items-center gap-2">
-                      <Clock className="h-3.5 w-3.5 text-[#0012FF] shrink-0" />
-                      <span className="font-semibold text-gray-700">{booking.time}</span>
+                      <Calendar className="h-3.5 w-3.5 text-[#0012FF] shrink-0" />
+                      <span className="font-medium text-gray-700">{booking.time}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      {booking.type === 'Online' ? (
-                        <>
-                          <Video className="h-3.5 w-3.5 text-[#0012FF] shrink-0" />
-                          <span className="font-medium text-gray-600">Google Meet (Online)</span>
-                        </>
-                      ) : (
-                        <>
-                          <MapPin className="h-3.5 w-3.5 text-[#0012FF] shrink-0" />
-                          <span className="font-medium text-gray-600">In-person Meeting</span>
-                        </>
-                      )}
+                      <div className="w-3.5 h-3.5 flex items-center justify-center shrink-0">
+                        {booking.type === 'In-person' ? (
+                          <div className="w-2.5 h-2.5 rounded-full bg-[#0012FF]" />
+                        ) : (
+                          <GoogleMeetIcon />
+                        )}
+                      </div>
+                      <span className="font-medium text-gray-700 capitalize">{booking.type}</span>
                     </div>
                   </div>
 
-                  {/* Pre-session query note */}
-                  <div className="flex items-start gap-2 mb-4 bg-[#F8F8FA] p-3 rounded-2xl border border-gray-100/40">
-                    <MessageSquare className="h-4 w-4 text-gray-400 shrink-0 mt-0.5" />
-                    <p className="text-xs text-gray-500 leading-relaxed line-clamp-2 pr-1">
-                      {booking.note}
-                    </p>
-                  </div>
+                  <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed mb-4">
+                    {booking.note || 'I want to start a YouTube channel about Pakistani street food. How do I structure my videos and what...'}
+                    <span className="text-[#0012FF] font-bold ml-1 cursor-pointer hover:underline">Read more</span>
+                  </p>
                 </div>
 
-                {/* Bottom Section: Action Buttons */}
                 <div>
                   <div className="w-full h-px bg-gray-100 mb-4"></div>
-                  <div className="flex items-center gap-2.5">
-                    <button
+
+                  <div className="flex items-center gap-3">
+                    <button 
                       onClick={() => handleRescheduleClick(booking)}
-                      className="flex-1 py-2.5 border border-gray-200 rounded-2xl text-xs font-bold text-gray-600 hover:bg-gray-50 hover:text-black hover:border-gray-300 transition-all bg-white shadow-sm active:scale-[0.98]"
+                      className="flex-1 py-2 sm:py-2.5 border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-full text-xs font-semibold text-center transition-all cursor-pointer"
                     >
                       Reschedule
                     </button>
-                    <button
+                    <button 
                       onClick={() => handleCancelClick(booking)}
-                      className="flex-1 py-2.5 border border-red-100 rounded-2xl text-xs font-bold text-red-500 bg-red-50 hover:bg-red-100/80 transition-all active:scale-[0.98]"
+                      className="flex-1 py-2 sm:py-2.5 bg-[#FFF0F0] border border-red-100 hover:bg-red-100 text-[#FF3B3B] rounded-full text-xs font-semibold text-center transition-all cursor-pointer"
                     >
-                      Cancel
+                      Cancel Appointment
                     </button>
                   </div>
                 </div>
@@ -473,275 +481,225 @@ export default function CreatorCalendar() {
 
       {/* Cancel Appointment Modal */}
       {showCancelModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100] p-4">
-          <div className="relative overflow-visible w-full max-w-lg flex flex-col items-center px-5 sm:px-7 lg:px-8 pt-10 sm:pt-12 pb-6 sm:pb-8 z-10">
-            {/* SVG Background */}
-            <img
-              src="/assets/cancel-card.svg"
-              alt=""
-              className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10"
-            />
-
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[100] p-4">
+          <div className="relative bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl border border-gray-100 w-full max-w-md p-6 sm:p-8 flex flex-col items-center text-center overflow-hidden">
             {/* Close Button */}
             <button
               onClick={() => setShowCancelModal(false)}
-              className="absolute -top-6 sm:-top-6 left-1/2 -translate-x-1/2 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white shadow-md flex items-center justify-center border border-gray-100/50 text-gray-500 hover:bg-gray-50 transition-all z-20"
+              className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 transition-colors p-1.5 rounded-full hover:bg-gray-100 cursor-pointer"
             >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-              >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />
               </svg>
             </button>
 
             {/* Illustration */}
-            <div className="w-24 sm:w-36 md:w-44 lg:w-56 mt-2 sm:mt-3 mb-3 sm:mb-4">
+            <div className="w-40 sm:w-52 h-auto my-2">
               <Image
                 src="/assets/cancel-appointment.png"
                 alt="Cancel Appointment"
-                width={240}
-                height={170}
+                width={220}
+                height={160}
                 className="w-full h-auto object-contain"
               />
             </div>
 
             {/* Title */}
-            <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-black text-center mb-2">
-              Cancel Appointment
+            <h3 className="text-xl sm:text-2xl font-extrabold text-black mb-2 tracking-tight">
+              Are You Sure?
             </h3>
 
             {/* Description */}
-            <p className="text-xs sm:text-sm text-gray-500 text-center mb-5 sm:mb-6">
-              Are you sure you want to cancel this booking with <strong className="text-gray-800 font-semibold">{bookingToCancel?.name}</strong>?
+            <p className="text-xs sm:text-sm text-gray-400 font-medium leading-relaxed mb-6 max-w-[260px] sm:max-w-[280px]">
+              Are you sure you want to cancel this appointment? This action cannot be undone.
             </p>
 
-            {/* Actions */}
-            <div className="flex justify-center gap-3 w-full">
-              <button
-                onClick={() => setShowCancelModal(false)}
-                className="px-6 sm:px-8 py-2 sm:py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-all bg-white cursor-pointer"
-              >
-                Cancel
-              </button>
-
-              <button
-                onClick={handleConfirmCancel}
-                className="px-6 sm:px-8 py-2 sm:py-2.5 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700 transition-all cursor-pointer"
-              >
-                Yes, Cancel
-              </button>
-            </div>
+            {/* Red Pill Action Button */}
+            <button
+              onClick={handleConfirmCancel}
+              className="w-full max-w-[260px] py-3.5 bg-[#E32A2A] hover:bg-[#c92222] text-white rounded-full font-bold text-sm sm:text-base transition-all shadow-md active:scale-98 cursor-pointer"
+            >
+              Cancel Appointment
+            </button>
           </div>
         </div>
       )}
 
       {/* Reschedule Appointment Modal */}
       {showRescheduleModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100] p-4">
-          <div className="relative w-full max-w-lg flex flex-col items-center justify-between p-4 sm:p-8 pt-20 sm:pt-16 pb-8 sm:pb-10 min-h-[470px] sm:min-h-[520px] z-10">
-            {/* SVG Background */}
-            <img
-              src="/assets/cancel-card.svg"
-              alt=""
-              className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10"
-            />
-
-            {/* Close Button */}
-            <button
-              onClick={() => setShowRescheduleModal(false)}
-              className="absolute top-10 sm:-top-1 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center hover:bg-gray-50 transition-all z-20 border border-gray-100/50 cursor-pointer text-gray-500"
-            >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-              >
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </button>
-
-            <div className="flex flex-col items-center w-full flex-grow pt-6 sm:pt-3">
-              <h3 className="text-lg sm:text-[22px] font-bold text-black mb-2">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[100] p-4">
+          <div className="relative bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl border border-gray-100 w-full max-w-2xl p-6 sm:p-8 flex flex-col overflow-hidden">
+            
+            {/* Header */}
+            <div className="mb-6 text-left">
+              <h3 className="text-xl sm:text-2xl font-extrabold text-black tracking-tight mb-1">
                 Reschedule Appointment
               </h3>
-
-              <p className="hidden sm:block text-gray-500 text-center mb-6 text-[13px]">
-                Choose a new slot for your appointment with{" "}
-                <strong className="text-gray-700">
-                  {bookingToReschedule?.name}
-                </strong>
-                .
+              <p className="text-xs sm:text-sm text-gray-400 font-medium">
+                Choose a new date and time for your appointment
               </p>
+            </div>
 
-              {/* Next 14 Days Slider */}
-              <div className="flex items-center gap-1.5 overflow-x-auto w-full no-scrollbar pb-3 mb-4 sm:mb-6 border-b border-gray-100">
+            {/* Date Selector Strip Box */}
+            <div className="w-full bg-white rounded-2xl border border-gray-200/80 p-2 sm:p-2.5 mb-6 flex items-center justify-between gap-1 shadow-2xs">
+              <button 
+                onClick={() => {
+                  const prev = new Date(rescheduleDate);
+                  prev.setDate(prev.getDate() - 1);
+                  setRescheduleDate(prev);
+                }}
+                className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors shrink-0"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6" /></svg>
+              </button>
+
+              <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar py-0.5 px-1 flex-1">
                 {getRescheduleDays().map((d, idx) => {
-                  const isSelected =
-                    rescheduleDate.getDate() === d.getDate() &&
+                  const isSelected = rescheduleDate.getDate() === d.getDate() &&
                     rescheduleDate.getMonth() === d.getMonth() &&
                     rescheduleDate.getFullYear() === d.getFullYear();
 
-                  const dayName = d.toLocaleDateString("en-US", {
-                    weekday: "short",
-                  });
-                  const dayNum = String(d.getDate()).padStart(2, "0");
+                  const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
+                  const dayNum = String(d.getDate()).padStart(2, '0');
 
                   return (
                     <button
                       key={idx}
                       onClick={() => setRescheduleDate(d)}
-                      className={`flex flex-col items-center justify-center min-w-[48px] py-1.5 rounded-xl text-xs transition-all border shrink-0 cursor-pointer ${isSelected
-                        ? "bg-[#EEF2FF] border-[#0012FF] text-[#0012FF] font-bold"
-                        : "border-gray-200 text-gray-400 hover:bg-gray-50 bg-white"
-                        }`}
+                      className={`flex flex-col items-center justify-center min-w-[44px] sm:min-w-[48px] py-1.5 px-1 rounded-xl transition-all cursor-pointer shrink-0 ${
+                        isSelected
+                          ? 'bg-[#EEF2FF] border border-[#0012FF]/30 text-[#0012FF] font-bold shadow-2xs'
+                          : 'text-gray-500 hover:bg-gray-100 bg-transparent'
+                      }`}
                     >
-                      <span className="text-[8px] uppercase font-bold mb-0.5">
-                        {dayName}
-                      </span>
-                      <span className="text-xs sm:text-sm font-black">
-                        {dayNum}
-                      </span>
+                      <span className={`text-[9px] uppercase font-bold tracking-wider ${isSelected ? 'text-[#0012FF]/80' : 'text-gray-400'}`}>{dayName}</span>
+                      <span className={`text-xs sm:text-sm font-extrabold mt-0.5 ${isSelected ? 'text-[#0012FF]' : 'text-gray-800'}`}>{dayNum}</span>
                     </button>
                   );
                 })}
               </div>
 
-              {/* Time Slots */}
-              <div className="w-full mb-3">
-                {loadingSlots ? (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {[1, 2, 3, 4, 5, 6].map((i) => (
-                      <div
-                        key={i}
-                        className="h-9 sm:h-10 bg-gray-100 rounded-xl animate-pulse"
-                      />
-                    ))}
-                  </div>
-                ) : rescheduleSlots.length === 0 ? (
-                  <p className="text-gray-400 text-center text-xs sm:text-sm">
-                    No slots available on this date.
-                  </p>
-                ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-28 sm:max-h-48 overflow-y-auto pr-1 no-scrollbar">
-                    {rescheduleSlots.map((slot) => (
+              <button 
+                onClick={() => {
+                  const next = new Date(rescheduleDate);
+                  next.setDate(next.getDate() + 1);
+                  setRescheduleDate(next);
+                }}
+                className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors shrink-0"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6" /></svg>
+              </button>
+            </div>
+
+            {/* Time Slots Grid (3 Columns) */}
+            <div className="w-full mb-8">
+              {loadingSlots ? (
+                <div className="grid grid-cols-3 gap-3">
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
+                    <div key={i} className="h-11 bg-gray-100 rounded-2xl animate-pulse" />
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-h-56 overflow-y-auto pr-1 no-scrollbar">
+                  {(rescheduleSlots.length > 0 ? rescheduleSlots : [
+                    '11 AM - 12 AM', '12 AM - 1 PM', '1 PM - 2 PM',
+                    '2 PM - 3 PM', '3 PM - 4 PM', '4 PM - 5 PM',
+                    '5 PM - 6 PM', '6 PM - 7 PM', '7 PM - 8 PM',
+                    '8 PM - 9 PM', '9 PM - 10 PM', '10 PM - 11 PM'
+                  ]).map((slot) => {
+                    const isSelected = selectedRescheduleTime === slot;
+                    return (
                       <button
                         key={slot}
                         onClick={() => setSelectedRescheduleTime(slot)}
-                        className={`py-1.5 px-1 border rounded-xl text-[11px] sm:text-xs font-semibold text-center transition-all cursor-pointer ${selectedRescheduleTime === slot
-                          ? "bg-[#EEF2FF] border-[#0012FF] text-[#0012FF]"
-                          : "border-gray-200 text-gray-700 hover:bg-gray-50 bg-white"
-                          }`}
+                        className={`py-3 px-3 border rounded-2xl text-xs sm:text-sm font-medium text-center transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-[#EEF2FF] border-2 border-[#0012FF] text-[#0012FF] font-bold shadow-xs'
+                            : 'bg-white border-gray-200 hover:border-gray-300 text-gray-500'
+                        }`}
                       >
                         {slot}
                       </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Buttons */}
-              <div className="flex gap-3 w-full mt-2">
-                <button
-                  onClick={() => setShowRescheduleModal(false)}
-                  className="flex-1 py-2 border border-gray-200 rounded-xl text-xs sm:text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-all bg-white cursor-pointer"
-                >
-                  Cancel
-                </button>
-
-                <button
-                  onClick={handleConfirmReschedule}
-                  disabled={!selectedRescheduleTime}
-                  className="flex-1 py-2 bg-[#0012FF] text-white rounded-xl text-xs sm:text-sm font-semibold hover:bg-[#0010d0] transition-all disabled:bg-gray-100 disabled:text-gray-400 cursor-pointer"
-                >
-                  Confirm Reschedule
-                </button>
-              </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
+
+            {/* Bottom Actions Row */}
+            <div className="flex items-center gap-4 w-full">
+              <button
+                onClick={() => setShowRescheduleModal(false)}
+                className="flex-1 py-3.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-full font-bold text-xs sm:text-sm text-center transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={handleConfirmReschedule}
+                disabled={!selectedRescheduleTime}
+                className="flex-1 py-3.5 bg-[#0012FF] hover:bg-[#0010d0] text-white rounded-full font-bold text-xs sm:text-sm text-center transition-all shadow-md active:scale-98 disabled:bg-gray-200 disabled:text-gray-400 cursor-pointer"
+              >
+                Reschedule Appointment
+              </button>
+            </div>
+
           </div>
         </div>
       )}
 
       {/* Success Modal (Cancelled or Rescheduled) */}
       {showSuccessModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100] p-4">
-          <div className="relative overflow-visible w-full max-w-lg flex flex-col items-center px-5 sm:px-7 lg:px-8 pt-10 sm:pt-12 pb-6 sm:pb-8 z-10">
-            {/* SVG Background */}
-            <img
-              src="/assets/cancel-card.svg"
-              alt=""
-              className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10"
-            />
-
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[100] p-4">
+          <div className="relative bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl border border-gray-100 w-full max-w-md p-6 sm:p-8 flex flex-col items-center text-center overflow-hidden">
             {/* Close Button */}
             <button
               onClick={() => setShowSuccessModal(false)}
-              className="absolute -top-3 sm:-top-4 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center border border-gray-100/50 text-gray-500 hover:bg-gray-50 transition-all z-20 cursor-pointer"
+              className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 transition-colors p-1.5 rounded-full hover:bg-gray-100 cursor-pointer"
             >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-              >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />
               </svg>
             </button>
 
             {/* Illustration */}
-            <div className="w-24 sm:w-36 md:w-44 lg:w-56 mt-2 sm:mt-3 mb-3 sm:mb-4">
+            <div className="w-40 sm:w-52 h-auto my-2">
               <Image
                 src={
                   successModalType === "cancelled"
                     ? "/assets/cancel-appointment.png"
                     : "/assets/reschedule.png"
                 }
-                alt={
-                  successModalType === "cancelled"
-                    ? "Booking Cancelled"
-                    : "Booking Rescheduled"
-                }
-                width={240}
-                height={170}
+                alt="Success"
+                width={220}
+                height={160}
                 className="w-full h-auto object-contain"
               />
             </div>
 
             {/* Title */}
-            <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-black text-center mb-2">
+            <h3 className="text-xl sm:text-2xl font-extrabold text-black mb-2 tracking-tight">
               {successModalType === "cancelled"
                 ? "Booking Cancelled"
                 : "Booking Rescheduled"}
             </h3>
 
             {/* Description */}
-            <p className="text-xs sm:text-sm text-gray-500 text-center mb-5 sm:mb-6">
+            <p className="text-xs sm:text-sm text-gray-400 font-medium leading-relaxed mb-6 max-w-[260px] sm:max-w-[280px]">
               {successModalType === "cancelled"
                 ? "Your booking has been cancelled successfully."
                 : "Your booking has been rescheduled successfully."}
             </p>
 
             {/* Action */}
-            <div className="flex justify-center w-full">
-              <button
-                onClick={() => setShowSuccessModal(false)}
-                className="w-32 sm:w-36 py-2 sm:py-2.5 bg-[#0012FF] text-white rounded-xl text-sm font-semibold hover:bg-[#0010d0] transition-all cursor-pointer"
-              >
-                Close
-              </button>
-            </div>
+            <button
+              onClick={() => setShowSuccessModal(false)}
+              className="w-full max-w-[220px] py-3.5 bg-[#0012FF] hover:bg-[#0010d0] text-white rounded-full font-bold text-sm transition-all shadow-md cursor-pointer"
+            >
+              Close
+            </button>
           </div>
         </div>
       )}
