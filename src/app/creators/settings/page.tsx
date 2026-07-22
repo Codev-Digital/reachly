@@ -295,6 +295,37 @@ export default function CreatorSettings() {
     setSessionFeatures((prev) => prev.filter((_, i) => i !== idx));
   };
 
+  const handleOpenCreateModal = () => {
+    setEditSessionId(null);
+    setSessionTitle('');
+    setSessionDesc('');
+    setSessionDuration('60');
+    setSessionPrice('1200');
+    setSessionFeatures([]);
+    setNewFeatureText('');
+    setSessionMaxBookings('4');
+    setShowEditModal(true);
+  };
+
+  const handleDeleteSession = async (sessionIdToDelete: string) => {
+    if (!confirm('Are you sure you want to delete this session type?')) return;
+    const updatedList = sessions.filter(s => (s.id || s._id) !== sessionIdToDelete);
+    try {
+      const res = await fetch('/api/creator-onboarding/step-3', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionTypes: updatedList })
+      });
+      if (res.ok) {
+        setSessions(updatedList);
+        setSuccessModalMessage('Session type deleted successfully.');
+        setShowSuccessModal(true);
+      }
+    } catch (err) {
+      console.error('Failed to delete session:', err);
+    }
+  };
+
   const handleSaveSessionEdit = async () => {
     if (!sessionTitle.trim()) {
       alert('Session title is required');
@@ -307,20 +338,29 @@ export default function CreatorSettings() {
 
     setSaving(true);
     try {
-      const updatedList = sessions.map((s) => {
-        if ((s.id || s._id) === editSessionId) {
-          return {
-            ...s,
-            title: sessionTitle.trim(),
-            description: sessionDesc.trim(),
-            duration: Number(sessionDuration),
-            price: Number(sessionPrice),
-            features: sessionFeatures,
-            maxBookings: Number(sessionMaxBookings)
-          };
-        }
-        return s;
-      });
+      let updatedList: DBTypeSession[] = [];
+      const newSessionObj = {
+        title: sessionTitle.trim(),
+        description: sessionDesc.trim(),
+        duration: Number(sessionDuration),
+        price: Number(sessionPrice),
+        features: sessionFeatures,
+        maxBookings: Number(sessionMaxBookings)
+      };
+
+      if (editSessionId) {
+        updatedList = sessions.map((s) => {
+          if ((s.id || s._id) === editSessionId) {
+            return {
+              ...s,
+              ...newSessionObj
+            };
+          }
+          return s;
+        });
+      } else {
+        updatedList = [...sessions, { ...newSessionObj, id: Date.now().toString() }];
+      }
 
       const res = await fetch('/api/creator-onboarding/step-3', {
         method: 'PUT',
@@ -332,15 +372,15 @@ export default function CreatorSettings() {
 
       const data = await res.json();
       if (res.ok && data.success) {
-        setSessions(updatedList);
+        setSessions(data.sessionTypes || updatedList);
         setShowEditModal(false);
-        setSuccessModalMessage('Your session details have been updated successfully.');
+        setSuccessModalMessage(editSessionId ? 'Your session details have been updated successfully.' : 'New session type created and saved successfully!');
         setShowSuccessModal(true);
       } else {
         alert(data.error || 'Failed to update session');
       }
     } catch (err) {
-      alert('Error updating session settings');
+      alert('Error saving session settings');
     } finally {
       setSaving(false);
     }
@@ -537,8 +577,8 @@ export default function CreatorSettings() {
               key={tab.name}
               onClick={() => setActiveTab(tab.name)}
               className={`flex items-center gap-2 px-4.5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all cursor-pointer border ${activeTab === tab.name
-                  ? 'bg-[#0012FF] border-[#0012FF] text-white shadow-md shadow-blue-100 scale-102'
-                  : 'bg-white border-transparent text-gray-500 hover:text-black hover:bg-gray-50'
+                ? 'bg-[#0012FF] border-[#0012FF] text-white shadow-md shadow-blue-100 scale-102'
+                : 'bg-white border-transparent text-gray-500 hover:text-black hover:bg-gray-50'
                 }`}
             >
               {tab.icon}
@@ -813,44 +853,82 @@ export default function CreatorSettings() {
           {/* ============ SESSIONS TAB ============ */}
           {activeTab === 'Sessions' && (
             <div className="space-y-5">
-              {sessions.map((session) => (
-                <div
-                  key={session.id}
-                  className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm flex flex-col sm:flex-row sm:items-start justify-between gap-4"
+              <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm flex items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-lg font-bold text-black font-sans">Session Types & Offerings</h3>
+                  <p className="text-xs text-gray-400 font-medium">Create and edit 1-on-1 sessions displayed on your public profile.</p>
+                </div>
+                <button
+                  onClick={handleOpenCreateModal}
+                  className="bg-[#0012FF] text-white px-5 py-2.5 rounded-full text-xs font-bold hover:bg-[#0010d0] transition-all flex items-center gap-1.5 shadow-sm cursor-pointer shrink-0"
                 >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 flex-wrap mb-3">
-                      <h3 className="text-lg sm:text-xl font-bold text-black">{session.title}</h3>
-                      <span className="bg-[#FEF3E2] text-[#E8940C] px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap">
-                        {session.duration} minutes
-                      </span>
-                      <span className="bg-blue-50 text-[#0012FF] px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap">
-                        {session.price} PKR
-                      </span>
-                    </div>
-                    <p className="text-gray-500 text-sm leading-relaxed">{session.description}</p>
+                  <Plus className="w-4 h-4" />
+                  <span>Add New Session</span>
+                </button>
+              </div>
 
-                    {session.features && session.features.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-4">
-                        {session.features.map((f, i) => (
-                          <span key={i} className="bg-[#F8F8FA] border border-gray-150 text-gray-500 rounded-lg text-xs px-3 py-1 font-medium">
-                            ✓ {f}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+              {sessions.length === 0 ? (
+                <div className="bg-white rounded-3xl border border-gray-200 p-10 text-center">
+                  <p className="text-gray-400 font-medium text-sm mb-4">No sessions created yet.</p>
                   <button
-                    onClick={() => handleOpenEditModal(session)}
-                    className="text-gray-400 hover:text-[#0012FF] transition-all mt-1 p-2 rounded-xl hover:bg-gray-50 cursor-pointer self-start sm:self-auto shrink-0 border border-transparent hover:border-gray-200"
+                    onClick={handleOpenCreateModal}
+                    className="bg-[#0012FF] text-white px-6 py-2.5 rounded-full text-xs font-bold hover:bg-[#0010d0] transition-all cursor-pointer"
                   >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                    </svg>
+                    + Create First Session
                   </button>
                 </div>
-              ))}
+              ) : (
+                sessions.map((session) => (
+                  <div
+                    key={session.id || session._id}
+                    className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm flex flex-col sm:flex-row sm:items-start justify-between gap-4 hover:border-gray-300 transition-all"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3 flex-wrap mb-3">
+                        <h3 className="text-lg sm:text-xl font-bold text-black">{session.title}</h3>
+                        <span className="bg-[#FEF3E2] text-[#E8940C] px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap">
+                          {session.duration} minutes
+                        </span>
+                        <span className="bg-blue-50 text-[#0012FF] px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap">
+                          {session.price} PKR
+                        </span>
+                      </div>
+                      <p className="text-gray-500 text-sm leading-relaxed">{session.description}</p>
+
+                      {session.features && session.features.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-4">
+                          {session.features.map((f, i) => (
+                            <span key={i} className="bg-[#F8F8FA] border border-gray-150 text-gray-500 rounded-lg text-xs px-3 py-1 font-medium">
+                              ✓ {f}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+                      <button
+                        onClick={() => handleOpenEditModal(session)}
+                        className="text-gray-400 hover:text-[#0012FF] transition-all p-2 rounded-xl hover:bg-gray-50 cursor-pointer border border-transparent hover:border-gray-200"
+                        title="Edit Session"
+                      >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                        </svg>
+                      </button>
+
+                      <button
+                        onClick={() => handleDeleteSession(session.id || session._id || '')}
+                        className="text-gray-400 hover:text-red-600 transition-all p-2 rounded-xl hover:bg-red-50 cursor-pointer border border-transparent hover:border-red-100"
+                        title="Delete Session"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           )}
 
@@ -877,8 +955,8 @@ export default function CreatorSettings() {
                         <div
                           key={day}
                           className={`rounded-2xl px-4 py-3.5 border transition-colors ${isEnabled
-                              ? 'bg-gray-50 border-gray-200'
-                              : 'bg-[#F8F8FA]/60 border-transparent opacity-75'
+                            ? 'bg-gray-50 border-gray-200'
+                            : 'bg-[#F8F8FA]/60 border-transparent opacity-75'
                             }`}
                         >
                           <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
@@ -1018,9 +1096,16 @@ export default function CreatorSettings() {
                       type="password"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
-                      placeholder="Min. 8 characters"
+                      placeholder="Enter new password"
                       className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
                     />
+                    {/* Password Strength Indicator Lines */}
+                    <div className="grid grid-cols-4 gap-2 mt-2.5">
+                      <div className={`h-1.5 rounded-full transition-all duration-300 ${newPassword.length > 0 ? 'bg-[#0012FF]' : 'bg-gray-200'}`} />
+                      <div className={`h-1.5 rounded-full transition-all duration-300 ${newPassword.length >= 6 ? 'bg-[#0012FF]' : 'bg-gray-200'}`} />
+                      <div className={`h-1.5 rounded-full transition-all duration-300 ${newPassword.length >= 8 ? 'bg-[#0012FF]' : 'bg-gray-200'}`} />
+                      <div className={`h-1.5 rounded-full transition-all duration-300 ${newPassword.length >= 10 && /[A-Z]/.test(newPassword) ? 'bg-[#0012FF]' : 'bg-gray-200'}`} />
+                    </div>
                   </div>
                   <div>
                     <label className="text-xs font-bold text-gray-700 uppercase tracking-wider block mb-2 font-sans">Confirm New Password</label>
@@ -1028,7 +1113,7 @@ export default function CreatorSettings() {
                       type="password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="Re-type new password"
+                      placeholder="Confirm new password"
                       className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
                     />
                   </div>
@@ -1121,197 +1206,235 @@ export default function CreatorSettings() {
 
       {/* ============ EDIT SESSION MODAL ============ */}
       {showEditModal && (
-        <ModalShell onClose={() => setShowEditModal(false)} maxWidth="max-w-2xl">
-          <div className="pt-8">
-            <h3 className="text-xl sm:text-2xl font-bold text-black text-center mb-1">Edit Session Details</h3>
-            <p className="text-gray-500 text-center mb-6 text-sm">Update your session descriptions, pricing, and features.</p>
-
-            <div className="mb-5">
-              <label className="text-xs font-bold text-gray-700 uppercase tracking-wider block mb-2 font-sans">Title</label>
-              <input
-                type="text"
-                value={sessionTitle}
-                onChange={(e) => setSessionTitle(e.target.value)}
-                placeholder="Style Consultation"
-                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
-              />
-            </div>
-
-            <div className="mb-5">
-              <label className="text-xs font-bold text-gray-700 uppercase tracking-wider block mb-2 font-sans">Description</label>
-              <textarea
-                rows={3}
-                value={sessionDesc}
-                onChange={(e) => setSessionDesc(e.target.value)}
-                placeholder="Personal styling session to revamp your wardrobe..."
-                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] resize-none"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 mb-5">
-              <div>
-                <label className="text-xs font-bold text-gray-700 uppercase tracking-wider block mb-2 font-sans">Duration (minutes)</label>
-                <div className="relative">
-                  <select
-                    value={sessionDuration}
-                    onChange={(e) => setSessionDuration(e.target.value)}
-                    className="w-full appearance-none bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] cursor-pointer"
-                  >
-                    <option value="15">15 mins</option>
-                    <option value="30">30 mins</option>
-                    <option value="45">45 mins</option>
-                    <option value="60">60 mins</option>
-                    <option value="90">90 mins</option>
-                  </select>
-                  <svg className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-450" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <polyline points="6 9 12 15 18 9" />
-                  </svg>
-                </div>
-              </div>
-              <div>
-                <label className="text-xs font-bold text-gray-700 uppercase tracking-wider block mb-2 font-sans">Price (PKR)</label>
-                <input
-                  type="number"
-                  value={sessionPrice}
-                  onChange={(e) => setSessionPrice(e.target.value)}
-                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
-                />
-              </div>
-            </div>
-
-            <div className="mb-5">
-              <label className="text-xs font-bold text-gray-700 uppercase tracking-wider block mb-2 font-sans">Max Bookings Per Day</label>
-              <input
-                type="number"
-                value={sessionMaxBookings}
-                onChange={(e) => setSessionMaxBookings(e.target.value)}
-                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
-              />
-            </div>
-
-            <div className="mb-6">
-              <label className="text-xs font-bold text-gray-700 uppercase tracking-wider block mb-2 font-sans">What&rsquo;s Included</label>
-              <div className="flex gap-2 mb-3">
-                <input
-                  type="text"
-                  value={newFeatureText}
-                  onChange={(e) => setNewFeatureText(e.target.value)}
-                  placeholder="e.g. 1-on-1 Q&A session"
-                  className="flex-grow bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
-                />
-                <button
-                  type="button"
-                  onClick={handleAddFeature}
-                  className="bg-[#0012FF] text-white px-5 rounded-xl text-sm font-semibold hover:bg-[#0010d0] cursor-pointer"
-                >
-                  Add
-                </button>
-              </div>
-
-              {sessionFeatures.length > 0 && (
-                <div className="flex flex-col gap-2 max-h-40 overflow-y-auto border border-gray-100 rounded-xl p-3">
-                  {sessionFeatures.map((feat, idx) => (
-                    <div key={idx} className="flex items-center justify-between bg-gray-50 border border-gray-150 text-xs text-gray-600 rounded-lg px-3 py-2">
-                      <span>{feat}</span>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveFeature(idx)}
-                        className="text-red-500 hover:text-red-700 font-bold cursor-pointer"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <button
-                onClick={() => setShowEditModal(false)}
-                className="bg-gray-100 text-gray-700 rounded-2xl py-3.5 text-sm font-bold hover:bg-gray-200 transition-all cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSaveSessionEdit}
-                disabled={saving}
-                className="bg-[#0012FF] text-white rounded-2xl py-3.5 text-sm font-bold hover:bg-[#0010d0] transition-all disabled:bg-gray-400 cursor-pointer"
-              >
-                {saving ? 'Saving...' : 'Save Changes'}
-              </button>
-            </div>
-          </div>
-        </ModalShell>
-      )}
-
-      {/* ============ DELETE ACCOUNT MODAL ============ */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100] p-4">
-          <div className="relative overflow-visible w-full max-w-lg flex flex-col items-center p-8 pt-12 pb-8 z-10">
-            {/* SVG Background */}
-            <img
-              src="/assets/cancel-card.svg"
-              alt=""
-              className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10"
-            />
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[100] p-4 overflow-y-auto">
+          <div className="relative bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl border border-gray-100 w-full max-w-[540px] p-6 sm:p-8 flex flex-col overflow-hidden max-h-[90vh] overflow-y-auto no-scrollbar">
 
             {/* Close Button */}
             <button
-              onClick={() => setShowDeleteModal(false)}
-              className="absolute -mt-20 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center border border-gray-100/50 text-gray-500 hover:bg-gray-50 transition-all z-20 cursor-pointer"
+              onClick={() => setShowEditModal(false)}
+              className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 transition-colors p-1.5 rounded-full hover:bg-gray-100 cursor-pointer z-20"
             >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-              >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />
               </svg>
             </button>
 
-            {/* Responsive Image */}
-            <div className="w-28 sm:w-36 md:w-44 lg:w-56 mt-3 mb-4">
+            {/* Top Illustration */}
+            <div className="w-40 sm:w-48 h-auto mx-auto mb-2">
               <Image
-                src="/assets/cancel-appointment.png"
-                alt="Delete account"
-                width={240}
-                height={170}
+                src="/assets/reschedule.png"
+                alt="Edit Session"
+                width={220}
+                height={160}
                 className="w-full h-auto object-contain"
               />
             </div>
 
-            <h3 className="text-xl sm:text-2xl font-bold text-black mb-2 text-center">
-              Are You Sure?
+            {/* Header */}
+            <h3 className="text-xl sm:text-2xl font-extrabold text-black text-center mb-1 tracking-tight">
+              Edit Styling Session
             </h3>
-
-            <p className="text-xs sm:text-sm text-gray-500 text-center">
-              Are you sure you want to delete your account?
+            <p className="text-xs sm:text-sm text-gray-400 font-medium text-center mb-6">
+              Update your session details and preferences.
             </p>
 
-            <p className="text-xs sm:text-sm text-gray-500 text-center mb-6">
-              This action cannot be undone.
-            </p>
+            {/* Form Fields */}
+            <div className="space-y-4">
 
-            <div className="flex gap-3 w-full">
+              {/* Title */}
+              <div>
+                <label className="text-xs font-bold text-black mb-1.5 block">Title</label>
+                <input
+                  type="text"
+                  value={sessionTitle}
+                  onChange={(e) => setSessionTitle(e.target.value)}
+                  placeholder="Style Consultation"
+                  className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] transition-all placeholder:text-gray-300 font-medium"
+                />
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="text-xs font-bold text-black mb-1.5 block">Description</label>
+                <textarea
+                  rows={3}
+                  value={sessionDesc}
+                  onChange={(e) => setSessionDesc(e.target.value)}
+                  placeholder="Personal styling session to revamp your wardrobe and discover your signature look."
+                  className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] transition-all resize-none placeholder:text-gray-300 font-medium leading-relaxed"
+                />
+              </div>
+
+              {/* Duration & Price (2 Columns) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-black mb-1.5 block">Duration</label>
+                  <div className="relative">
+                    <select
+                      value={sessionDuration}
+                      onChange={(e) => setSessionDuration(e.target.value)}
+                      className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] appearance-none cursor-pointer font-medium"
+                    >
+                      <option value="15">15 mins</option>
+                      <option value="30">30 mins</option>
+                      <option value="45">45 mins</option>
+                      <option value="60">1 hour</option>
+                      <option value="90">90 mins</option>
+                    </select>
+                    <svg className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-black mb-1.5 block">Price</label>
+                  <input
+                    type="number"
+                    value={sessionPrice}
+                    onChange={(e) => setSessionPrice(e.target.value)}
+                    placeholder="1200"
+                    className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] font-medium"
+                  />
+                </div>
+              </div>
+
+              {/* What's Included & Max Bookings Per Day (2 Columns) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-black mb-1.5 block">What&rsquo;s Included</label>
+                  <input
+                    type="text"
+                    value={newFeatureText}
+                    onChange={(e) => setNewFeatureText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddFeature();
+                      }
+                    }}
+                    placeholder="Feature 1"
+                    className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] placeholder:text-gray-300 font-medium"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddFeature}
+                    className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1 font-medium mt-1.5 cursor-pointer transition-colors"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add feature</span>
+                  </button>
+
+                  {sessionFeatures.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-2 max-h-24 overflow-y-auto no-scrollbar">
+                      {sessionFeatures.map((feat, idx) => (
+                        <span key={idx} className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 text-xs px-2.5 py-1 rounded-full font-medium">
+                          <span>{feat}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveFeature(idx)}
+                            className="text-gray-400 hover:text-red-500 font-bold ml-0.5 cursor-pointer"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-black mb-1.5 block">Max Bookings Per Day</label>
+                  <input
+                    type="number"
+                    value={sessionMaxBookings}
+                    onChange={(e) => setSessionMaxBookings(e.target.value)}
+                    placeholder="4"
+                    className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] font-medium"
+                  />
+                </div>
+              </div>
+
+            </div>
+
+            {/* Add Session Type Dashed Button */}
+            <button
+              type="button"
+              onClick={handleAddFeature}
+              className="w-full py-3.5 border-2 border-dashed border-gray-200 hover:border-gray-300 bg-gray-50/50 hover:bg-gray-50 rounded-2xl text-xs sm:text-sm font-bold text-gray-500 flex items-center justify-center gap-2 transition-all my-5 cursor-pointer"
+            >
+              <Plus className="w-4 h-4 text-gray-400" />
+              <span>Add Session Type</span>
+            </button>
+
+            {/* Bottom Actions Row */}
+            <div className="flex items-center gap-4 w-full">
               <button
-                onClick={() => setShowDeleteModal(false)}
-                className="flex-1 py-2 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-all bg-white cursor-pointer"
+                type="button"
+                onClick={() => setShowEditModal(false)}
+                className="flex-1 py-3.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-full font-bold text-xs sm:text-sm text-center transition-all cursor-pointer"
               >
                 Cancel
               </button>
 
               <button
-                onClick={handleDeleteAccount}
-                className="flex-1 py-2 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700 transition-all cursor-pointer"
+                type="button"
+                onClick={handleSaveSessionEdit}
+                disabled={saving}
+                className="flex-1 py-3.5 bg-[#0012FF] hover:bg-[#0010d0] text-white rounded-full font-bold text-xs sm:text-sm text-center transition-all shadow-md active:scale-98 disabled:bg-gray-200 disabled:text-gray-400 cursor-pointer"
               >
-                Delete Account
+                {saving ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* ============ DELETE ACCOUNT MODAL ============ */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[100] p-4">
+          <div className="relative bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl border border-gray-100 w-full max-w-md p-6 sm:p-8 flex flex-col items-center text-center overflow-hidden">
+            {/* Close Button */}
+            <button
+              onClick={() => setShowDeleteModal(false)}
+              className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 transition-colors p-1.5 rounded-full hover:bg-gray-100 cursor-pointer"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+
+            {/* Illustration */}
+            <div className="w-40 sm:w-52 h-auto my-2">
+              <Image
+                src="/assets/delete.png"
+                alt="Delete Account"
+                width={220}
+                height={160}
+                className="w-full h-auto object-contain"
+              />
+            </div>
+
+            {/* Title */}
+            <h3 className="text-xl sm:text-2xl font-extrabold text-black mb-2 tracking-tight">
+              Are You Sure?
+            </h3>
+
+            {/* Description */}
+            <p className="text-xs sm:text-sm text-gray-400 font-medium leading-relaxed mb-6 max-w-[260px] sm:max-w-[280px]">
+              Are you sure you want to delete your account? This action cannot be undone.
+            </p>
+
+            {/* Red Pill Action Button */}
+            <button
+              onClick={handleDeleteAccount}
+              className="w-full max-w-[260px] py-3.5 bg-[#E32A2A] hover:bg-[#c92222] text-white rounded-full font-bold text-sm sm:text-base transition-all shadow-md active:scale-98 cursor-pointer"
+            >
+              Delete Account
+            </button>
           </div>
         </div>
       )}
