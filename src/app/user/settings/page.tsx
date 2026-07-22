@@ -530,71 +530,47 @@ export default function UserSettings() {
 
       {/* Delete Account Confirmation Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100] p-4">
-          <div className="relative overflow-visible w-full max-w-lg flex flex-col items-center p-8 pt-12 pb-8 z-10">
-            {/* SVG Background */}
-            <img
-              src="/assets/cancel-card.svg"
-              alt=""
-              className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10"
-            />
-
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[100] p-4">
+          <div className="relative bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl border border-gray-100 w-full max-w-md p-6 sm:p-8 flex flex-col items-center text-center overflow-hidden">
             {/* Close Button */}
             <button
               onClick={() => setShowDeleteModal(false)}
-              className="absolute -mt-20 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center border border-gray-100/50 text-gray-500 hover:bg-gray-50 transition-all z-20"
+              className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 transition-colors p-1.5 rounded-full hover:bg-gray-100 cursor-pointer"
             >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-              >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />
               </svg>
             </button>
 
-            {/* Responsive Image */}
-            <div className="w-28 sm:w-36 md:w-44 lg:w-56 mt-3 mb-4">
+            {/* Illustration */}
+            <div className="w-40 sm:w-52 h-auto my-2">
               <Image
-                src="/assets/cancel-appointment.png"
-                alt="Delete account"
-                width={240}
-                height={170}
+                src="/assets/delete.png"
+                alt="Delete Account"
+                width={220}
+                height={160}
                 className="w-full h-auto object-contain"
               />
             </div>
 
-            <h3 className="text-xl sm:text-2xl font-bold text-black mb-2 text-center">
+            {/* Title */}
+            <h3 className="text-xl sm:text-2xl font-extrabold text-black mb-2 tracking-tight">
               Are You Sure?
             </h3>
 
-            <p className="text-xs sm:text-sm text-gray-500 text-center">
-              Are you sure you want to delete your account?
+            {/* Description */}
+            <p className="text-xs sm:text-sm text-gray-400 font-medium leading-relaxed mb-6 max-w-[260px] sm:max-w-[280px]">
+              Are you sure you want to delete your account? This action cannot be undone.
             </p>
 
-            <p className="text-xs sm:text-sm text-gray-500 text-center mb-6">
-              This action cannot be undone.
-            </p>
-
-            <div className="flex gap-3 w-full">
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                className="flex-1 py-2 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-all bg-white"
-              >
-                Cancel
-              </button>
-
-              <button
-                onClick={handleDeleteAccount}
-                className="flex-1 py-2 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700 transition-all"
-              >
-                Delete Account
-              </button>
-            </div>
+            {/* Red Pill Action Button */}
+            <button
+              onClick={handleDeleteAccount}
+              className="w-full max-w-[260px] py-3.5 bg-[#E32A2A] hover:bg-[#c92222] text-white rounded-full font-bold text-sm sm:text-base transition-all shadow-md active:scale-98 cursor-pointer"
+            >
+              Delete Account
+            </button>
           </div>
         </div>
       )}

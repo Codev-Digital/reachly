@@ -276,116 +276,150 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
 
               {/* Notification Panel Overlay */}
               {notificationsOpen && (
-                <div className="notification-panel-container fixed sm:absolute left-4 right-4 sm:left-auto sm:right-0 top-[76px] sm:top-[52px] w-auto sm:w-[620px] h-[540px] sm:h-[632px] bg-transparent overflow-visible z-[100] isolate select-none">
-                  {/* SVG Background notched card */}
-                  <img
-                    src="/assets/notification-panel.svg"
-                    alt=""
-                    className="hidden sm:block absolute inset-0 w-full h-full object-fill pointer-events-none z-0"
-                  />
-                  {/* Mobile Card Background */}
-                  <div className="sm:hidden absolute inset-0 bg-white rounded-[24px] border border-gray-100 shadow-2xl z-0" />
-
-                  {/* Content */}
-                  <div className="relative z-10 pl-6 pr-6 pt-6 pb-6 sm:pl-[38px] sm:pr-[38px] sm:pt-[36px] sm:pb-[36px] flex flex-col h-full">
-                    {/* Header */}
-                    <div className="flex items-center justify-between relative mb-2">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-xl sm:text-2xl font-bold text-black font-sans tracking-tight">Notifications</h3>
-                          {notifications.filter(n => !n.read).length > 0 && (
-                            <span className="bg-[#EBFDF2] text-[#00B050] text-xs font-bold px-2.5 py-0.5 rounded-full">
-                              {notifications.filter(n => !n.read).length} New
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-gray-400 text-xs mt-1">Never miss an update from your account</p>
-                      </div>
-
-                      {/* Clear All Button — in header on mobile, in notch on desktop */}
-                      <button
-                        onClick={handleClearAll}
-                        className="sm:absolute sm:-top-[23px] sm:-right-5 border border-gray-200 bg-white hover:bg-gray-50 transition-colors text-gray-500 rounded-full px-3.5 py-1.5 text-xs font-bold flex items-center gap-1.5 shadow-sm cursor-pointer shrink-0"
-                      >
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                          <line x1="18" y1="6" x2="6" y2="18" />
-                          <line x1="6" y1="6" x2="18" y2="18" />
-                        </svg>
-                        Clear All
-                      </button>
-                    </div>
-
-                    {/* Divider */}
-                    <div className="border-t border-gray-100 my-4" />
-
-                    {/* Notifications Scrollable List */}
-                    <div className="flex-grow overflow-y-auto pr-1 select-text scrollbar-thin scrollbar-thumb-gray-200 max-h-[480px]">
-                      {notifications.length > 0 ? (
-                        <div className="flex flex-col">
-                          {/* New/Unread Notifications */}
-                          {notifications.filter(n => !n.read).map((n, i, arr) => (
-                            <div key={n._id} onClick={() => handleMarkRead(n._id)} className="cursor-pointer">
-                              <div className="flex items-center justify-between gap-4 py-1.5 hover:bg-gray-50/50 rounded-xl transition-all">
-                                <div className="flex items-center gap-3.5">
-                                  <div className="w-11 h-11 flex items-center justify-center rounded-xl shrink-0 bg-[#EEF2FF] text-[#0012FF]">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                                      <polyline points="14 2 14 8 20 8" />
-                                    </svg>
-                                  </div>
-                                  <div className="flex flex-col">
-                                    <span className="font-bold text-sm text-gray-900 leading-tight">{n.title}</span>
-                                    <span className="text-xs text-gray-400 mt-1 leading-normal pr-4">{n.message}</span>
-                                  </div>
-                                </div>
-                              </div>
-                              {i < arr.length - 1 && <div className="border-t border-gray-100/60 my-3.5" />}
-                            </div>
-                          ))}
-
-                          {/* Divider for previous notifications */}
-                          {notifications.filter(n => n.read).length > 0 && (
-                            <div className="flex items-center gap-3 my-5">
-                              <div className="flex-grow h-px bg-gray-100" />
-                              <span className="text-[9px] font-bold text-gray-400 tracking-wider">READ NOTIFICATIONS</span>
-                              <div className="flex-grow h-px bg-gray-100" />
-                            </div>
-                          )}
-
-                          {/* Read Notifications */}
-                          {notifications.filter(n => n.read).map((n, i, arr) => (
-                            <div key={n._id}>
-                              <div className="flex items-center justify-between gap-4 py-1.5 hover:bg-gray-50/50 rounded-xl transition-all">
-                                <div className="flex items-center gap-3.5">
-                                  <div className="w-11 h-11 flex items-center justify-center rounded-xl shrink-0 bg-gray-100 text-gray-400">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                                      <polyline points="14 2 14 8 20 8" />
-                                    </svg>
-                                  </div>
-                                  <div className="flex flex-col">
-                                    <span className="font-bold text-sm text-gray-650 leading-tight">{n.title}</span>
-                                    <span className="text-xs text-gray-400 mt-1 leading-normal pr-4">{n.message}</span>
-                                  </div>
-                                </div>
-                              </div>
-                              {i < arr.length - 1 && <div className="border-t border-gray-100/60 my-3.5" />}
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="h-full flex flex-col items-center justify-center text-center py-20">
-                          <div className="w-16 h-16 rounded-full bg-gray-50 flex items-center justify-center text-gray-300 mb-3">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                            </svg>
-                          </div>
-                          <h4 className="font-bold text-sm text-gray-900 mb-1">All caught up!</h4>
-                          <p className="text-xs text-gray-400 max-w-[200px]">You have no new notifications.</p>
-                        </div>
+                <div className="notification-panel-container fixed sm:absolute left-4 right-4 sm:left-auto sm:right-0 top-[76px] sm:top-[54px] w-auto sm:w-[460px] bg-white rounded-[28px] shadow-2xl border border-gray-100/90 z-[100] isolate select-none overflow-hidden p-5 sm:p-7 text-left">
+                  {/* Header */}
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-xl sm:text-2xl font-extrabold text-black font-sans tracking-tight">Notifications</h3>
+                      {notifications.filter(n => !n.read).length > 0 && (
+                        <span className="bg-[#E6F9EE] text-[#12B76A] text-xs font-bold px-2.5 py-0.5 rounded-full">
+                          {notifications.filter(n => !n.read).length} New
+                        </span>
                       )}
                     </div>
+
+                    {/* Clear All Button */}
+                    <button
+                      onClick={handleClearAll}
+                      className="border border-gray-200 bg-white hover:bg-gray-50 transition-colors text-gray-500 rounded-full px-3 py-1 text-xs font-bold flex items-center gap-1 cursor-pointer shrink-0"
+                    >
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
+                      Clear All
+                    </button>
+                  </div>
+
+                  <p className="text-xs text-gray-400 font-medium mb-4">Never miss an update from your account</p>
+
+                  {/* Header Divider */}
+                  <div className="border-b border-gray-100 mb-4" />
+
+                  {/* Notifications Scrollable List */}
+                  <div className="max-h-[400px] sm:max-h-[440px] overflow-y-auto pr-1 select-text no-scrollbar">
+                    {notifications.length > 0 ? (
+                      <div className="flex flex-col">
+                        {/* New / Unread Notifications */}
+                        {notifications.filter(n => !n.read).map((n) => {
+                          const isReview = n.type === 'review' || n.title?.toLowerCase().includes('review');
+                          return (
+                            <div
+                              key={n._id}
+                              onClick={() => handleMarkRead(n._id)}
+                              className="flex items-start justify-between gap-3 py-3 border-b border-gray-100/70 last:border-0 hover:bg-gray-50/70 rounded-xl px-1.5 transition-all cursor-pointer"
+                            >
+                              <div className="flex items-start gap-3 flex-1 min-w-0">
+                                {/* Left Icon Container */}
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${
+                                  isReview ? 'bg-[#FFF9EA] text-[#D99A00]' : 'bg-[#EEF2FF] text-[#0012FF]'
+                                }`}>
+                                  {isReview ? (
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                                      <polygon points="12 7 13.5 10 17 10.5 14.5 13 15 16.5 12 14.8 9 16.5 9.5 13 7 10.5 10.5 10" />
+                                    </svg>
+                                  ) : (
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                      <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+                                    </svg>
+                                  )}
+                                </div>
+
+                                {/* Middle Content */}
+                                <div className="flex flex-col min-w-0 pr-1">
+                                  <h4 className="font-bold text-sm text-black leading-snug">{n.title}</h4>
+                                  <p className="text-xs text-gray-400 font-normal mt-0.5 leading-relaxed">{n.message}</p>
+                                </div>
+                              </div>
+
+                              {/* Right Time Meta */}
+                              <div className="flex items-center gap-1 text-xs text-gray-400 font-medium shrink-0 mt-0.5">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2.5">
+                                  <circle cx="12" cy="12" r="10" />
+                                  <polyline points="12 6 12 12 16 14" />
+                                </svg>
+                                <span>{n.time || n.formattedTime || '6h ago'}</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+
+                        {/* Divider for Previous Notifications */}
+                        {notifications.filter(n => n.read).length > 0 && (
+                          <div className="flex items-center gap-3 my-4">
+                            <div className="flex-grow h-px bg-gray-100" />
+                            <span className="text-[10px] font-bold text-gray-400 tracking-wider font-sans uppercase">PREVIOUS NOTIFICATIONS</span>
+                            <div className="flex-grow h-px bg-gray-100" />
+                          </div>
+                        )}
+
+                        {/* Read / Previous Notifications */}
+                        {notifications.filter(n => n.read).map((n) => {
+                          const isReview = n.type === 'review' || n.title?.toLowerCase().includes('review');
+                          return (
+                            <div
+                              key={n._id}
+                              className="flex items-start justify-between gap-3 py-3 border-b border-gray-100/70 last:border-0 hover:bg-gray-50/70 rounded-xl px-1.5 transition-all opacity-85"
+                            >
+                              <div className="flex items-start gap-3 flex-1 min-w-0">
+                                {/* Left Icon Container */}
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${
+                                  isReview ? 'bg-[#FFF9EA] text-[#D99A00]' : 'bg-[#EEF2FF] text-[#0012FF]'
+                                }`}>
+                                  {isReview ? (
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                                      <polygon points="12 7 13.5 10 17 10.5 14.5 13 15 16.5 12 14.8 9 16.5 9.5 13 7 10.5 10.5 10" />
+                                    </svg>
+                                  ) : (
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                      <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+                                    </svg>
+                                  )}
+                                </div>
+
+                                {/* Middle Content */}
+                                <div className="flex flex-col min-w-0 pr-1">
+                                  <h4 className="font-bold text-sm text-gray-800 leading-snug">{n.title}</h4>
+                                  <p className="text-xs text-gray-400 font-normal mt-0.5 leading-relaxed">{n.message}</p>
+                                </div>
+                              </div>
+
+                              {/* Right Time Meta */}
+                              <div className="flex items-center gap-1 text-xs text-gray-400 font-medium shrink-0 mt-0.5">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2.5">
+                                  <circle cx="12" cy="12" r="10" />
+                                  <polyline points="12 6 12 12 16 14" />
+                                </svg>
+                                <span>{n.time || n.formattedTime || 'Yesterday'}</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center text-center py-12">
+                        <div className="w-14 h-14 rounded-full bg-gray-50 flex items-center justify-center text-gray-300 mb-3">
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                          </svg>
+                        </div>
+                        <h4 className="font-bold text-sm text-gray-900 mb-0.5">All caught up!</h4>
+                        <p className="text-xs text-gray-400 max-w-[200px]">You have no new notifications.</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
