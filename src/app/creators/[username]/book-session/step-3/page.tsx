@@ -110,7 +110,7 @@ export default function BookSessionStep3() {
       {/* Step Progress Indicator */}
       <BookingProgress currentStep={3} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-[370px_1fr] gap-8 items-start justify-items-center">
+      <div className="grid grid-cols-1 lg:grid-cols-[410px_1fr] gap-8 items-start justify-items-center">
         <CreatorProfileCard creator={creator} />
 
 

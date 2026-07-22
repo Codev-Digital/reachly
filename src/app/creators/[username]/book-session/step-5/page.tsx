@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import BookingProgress from '@/components/booking/BookingProgress';
@@ -40,7 +40,7 @@ export default function BookSessionStep5() {
       {/* Step Progress Indicator */}
       <BookingProgress currentStep={5} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-[370px_1fr] gap-8 items-start justify-items-center">
+      <div className="grid grid-cols-1 lg:grid-cols-[410px_1fr] gap-8 items-start justify-items-center">
         <CreatorProfileCard creator={creator} />
 
                 {/* ============ RIGHT COLUMN: BOOKING CONFIRMATION ============ */}
