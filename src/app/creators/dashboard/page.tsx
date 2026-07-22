@@ -301,72 +301,72 @@ const CreatorDashboard = () => {
     return list;
   };
 
-const BookCardIcon = ({ color }: { color: string }) => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="4" y="3" width="16" height="18" rx="3" />
-    <path d="M9 3v7l3-2 3 2V3" />
-  </svg>
-);
+  const BookCardIcon = ({ color }: { color: string }) => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="4" y="3" width="16" height="18" rx="3" />
+      <path d="M9 3v7l3-2 3 2V3" />
+    </svg>
+  );
 
-const EyeCardIcon = ({ color }: { color: string }) => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" />
-    <circle cx="12" cy="12" r="3" />
-  </svg>
-);
+  const EyeCardIcon = ({ color }: { color: string }) => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
 
-const PresentationCardIcon = ({ color }: { color: string }) => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="7" cy="7" r="2" />
-    <path d="M4 17v-1.5a2.5 2.5 0 0 1 2.5-2.5h1.5" />
-    <rect x="12" y="4" width="8" height="7" rx="1.5" />
-    <path d="M16 11v6" />
-    <path d="M13.5 17h5" />
-  </svg>
-);
+  const PresentationCardIcon = ({ color }: { color: string }) => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="7" cy="7" r="2" />
+      <path d="M4 17v-1.5a2.5 2.5 0 0 1 2.5-2.5h1.5" />
+      <rect x="12" y="4" width="8" height="7" rx="1.5" />
+      <path d="M16 11v6" />
+      <path d="M13.5 17h5" />
+    </svg>
+  );
 
   const stats = [
-    { 
-      label: 'Total Bookings', 
-      value: String(dashboardStats.totalBookingsThisMonth || 192), 
+    {
+      label: 'Total Bookings',
+      value: String(dashboardStats.totalBookingsThisMonth || 192),
       trend: '↑ +18.2% from last month',
-      bg: '#BAC5FF', 
+      bg: '#BAC5FF',
       textColor: '#0012FF',
       iconType: 'book'
     },
-    { 
-      label: 'Total Bookings this month', 
-      value: String(dashboardStats.totalBookingsThisMonth || 12), 
+    {
+      label: 'Total Bookings this month',
+      value: String(dashboardStats.totalBookingsThisMonth || 12),
       trend: '↑ +18.2% from last month',
-      bg: '#AFE8B9', 
+      bg: '#AFE8B9',
       textColor: '#0A4A1C',
       iconType: 'book'
     },
-    { 
-      label: 'Profile Views', 
-      value: dashboardStats.profileViews ? String(dashboardStats.profileViews) : '1,256', 
+    {
+      label: 'Profile Views',
+      value: dashboardStats.profileViews ? String(dashboardStats.profileViews) : '1,256',
       trend: '↑ +18.2% from last month',
-      bg: '#FFB3B3', 
+      bg: '#FFB3B3',
       textColor: '#701C1C',
       iconType: 'eye'
     },
-    { 
-      label: 'Upcoming Sessions', 
-      value: String(dashboardStats.upcomingSessions || 3), 
+    {
+      label: 'Upcoming Sessions',
+      value: String(dashboardStats.upcomingSessions || 3),
       trend: '↑ +18.2% from last month',
-      bg: '#FFEDB5', 
+      bg: '#FFEDB5',
       textColor: '#6C4800',
       iconType: 'presentation'
     },
   ];
 
-const GoogleMeetIcon = () => (
-  <img 
-    src="https://static.vecteezy.com/system/resources/thumbnails/022/484/498/small/google-meet-gmeet-icon-logo-symbol-free-png.png" 
-    alt="Google Meet" 
-    className="w-4 h-4 object-contain shrink-0" 
-  />
-);
+  const GoogleMeetIcon = () => (
+    <img
+      src="https://static.vecteezy.com/system/resources/thumbnails/022/484/498/small/google-meet-gmeet-icon-logo-symbol-free-png.png"
+      alt="Google Meet"
+      className="w-4 h-4 object-contain shrink-0"
+    />
+  );
 
   // Helper to render booking cards matching the design image
   const renderBookingCard = (booking: any, index: number) => (
@@ -381,12 +381,12 @@ const GoogleMeetIcon = () => (
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0 bg-gray-100 relative border border-gray-100">
-              <Image 
-                src={booking.avatar || '/assets/avatar.png'} 
-                alt={booking.name || 'User'} 
-                className="w-full h-full object-cover" 
-                width={44} 
-                height={44} 
+              <Image
+                src={booking.avatar || '/assets/avatar.png'}
+                alt={booking.name || 'User'}
+                className="w-full h-full object-cover"
+                width={44}
+                height={44}
               />
             </div>
             <div>
@@ -424,13 +424,13 @@ const GoogleMeetIcon = () => (
         <div className="w-full h-px bg-gray-100 mb-4"></div>
 
         <div className="flex items-center gap-3">
-          <button 
+          <button
             onClick={() => handleRescheduleClick(booking)}
             className="flex-1 py-2 sm:py-2.5 border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-full text-xs font-semibold text-center transition-all cursor-pointer"
           >
             Reschedule
           </button>
-          <button 
+          <button
             onClick={() => handleCancelClick(booking)}
             className="flex-1 py-2 sm:py-2.5 bg-[#FFF0F0] border border-red-100 hover:bg-red-100 text-[#FF3B3B] rounded-full text-xs font-semibold text-center transition-all cursor-pointer"
           >
@@ -456,7 +456,7 @@ const GoogleMeetIcon = () => (
 
       {/* Main Content Area */}
       <main className="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-10 py-8">
-        
+
         {/* Top Header Greeting Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
           <div>
@@ -466,7 +466,7 @@ const GoogleMeetIcon = () => (
             </h1>
           </div>
 
-          <button 
+          <button
             onClick={handleCopyLink}
             className="flex items-center gap-2 bg-[#0012FF] text-white px-6 py-3 rounded-full font-bold text-sm sm:text-base hover:bg-[#0012FF]/90 transition-all shadow-md active:scale-95 w-fit cursor-pointer"
           >
@@ -477,7 +477,7 @@ const GoogleMeetIcon = () => (
 
         {/* Top Section Grid: 2x2 Stat Cards (Left) & Earnings Bar Chart (Right) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8 items-stretch">
-          
+
           {/* Left: 2x2 Grid of 4 Stat Cards */}
           <div className="lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
             {stats.map((stat, idx) => {
@@ -520,7 +520,7 @@ const GoogleMeetIcon = () => (
               <Card className="rounded-[20px] border border-gray-100 bg-white p-4 sm:p-6 shadow-sm overflow-hidden h-full flex flex-col justify-between">
                 <CardHeader className="flex flex-row items-center justify-between pb-2 pt-0 px-0 space-y-0">
                   <CardTitle className="text-xl font-bold font-sans text-black">Earnings</CardTitle>
-                  
+
                   <div className="relative">
                     <button
                       onClick={() => setChartYearDropdownOpen(!chartYearDropdownOpen)}
@@ -548,7 +548,7 @@ const GoogleMeetIcon = () => (
                 <CardContent className="px-0 pb-0 flex-1 flex flex-col justify-center">
                   {/* Floating Earnings Tooltip Callout Card as seen in design image */}
                   <div className="flex justify-center mb-2">
-                    <div className="bg-white rounded-2xl border border-gray-150 shadow-md px-4 py-2 flex items-center gap-3">
+                    <div className="bg-white rounded-2xl shadow-md px-4 py-2 flex items-center gap-3">
                       <div className="w-8 h-8 bg-[#EEF2FF] rounded-xl flex items-center justify-center text-[#0012FF] font-bold text-sm">
                         $
                       </div>
@@ -682,11 +682,10 @@ const GoogleMeetIcon = () => (
                     newD.setDate(dayNum);
                     setCurrentDate(newD);
                   }}
-                  className={`flex flex-col items-center justify-center min-w-[46px] sm:min-w-[50px] h-[52px] py-1.5 px-1 rounded-[14px] transition-all cursor-pointer flex-shrink-0 ${
-                    isSelected
+                  className={`flex flex-col items-center justify-center min-w-[46px] sm:min-w-[50px] h-[52px] py-1.5 px-1 rounded-[14px] transition-all cursor-pointer flex-shrink-0 ${isSelected
                       ? 'bg-[#EEF2FF] border border-[#0012FF]/30 text-[#0012FF] shadow-xs'
                       : 'text-[#64748B] hover:bg-gray-100 bg-transparent'
-                  }`}
+                    }`}
                 >
                   <span className={`text-[9px] uppercase font-bold tracking-wider ${isSelected ? 'text-[#0012FF]/80' : 'text-[#64748B]'}`}>
                     {dayName}
@@ -820,7 +819,7 @@ const GoogleMeetIcon = () => (
       {showRescheduleModal && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[100] p-4">
           <div className="relative bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl border border-gray-100 w-full max-w-2xl p-6 sm:p-8 flex flex-col overflow-hidden">
-            
+
             {/* Header */}
             <div className="mb-6 text-left">
               <h3 className="text-xl sm:text-2xl font-extrabold text-black tracking-tight mb-1">
@@ -833,7 +832,7 @@ const GoogleMeetIcon = () => (
 
             {/* Date Selector Strip Box */}
             <div className="w-full bg-white rounded-2xl border border-gray-200/80 p-2 sm:p-2.5 mb-6 flex items-center justify-between gap-1 shadow-2xs">
-              <button 
+              <button
                 onClick={() => {
                   const prev = new Date(rescheduleDate);
                   prev.setDate(prev.getDate() - 1);
@@ -857,11 +856,10 @@ const GoogleMeetIcon = () => (
                     <button
                       key={idx}
                       onClick={() => setRescheduleDate(d)}
-                      className={`flex flex-col items-center justify-center min-w-[44px] sm:min-w-[48px] py-1.5 px-1 rounded-xl transition-all cursor-pointer shrink-0 ${
-                        isSelected
+                      className={`flex flex-col items-center justify-center min-w-[44px] sm:min-w-[48px] py-1.5 px-1 rounded-xl transition-all cursor-pointer shrink-0 ${isSelected
                           ? 'bg-[#EEF2FF] border border-[#0012FF]/30 text-[#0012FF] font-bold shadow-2xs'
                           : 'text-gray-500 hover:bg-gray-100 bg-transparent'
-                      }`}
+                        }`}
                     >
                       <span className={`text-[9px] uppercase font-bold tracking-wider ${isSelected ? 'text-[#0012FF]/80' : 'text-gray-400'}`}>{dayName}</span>
                       <span className={`text-xs sm:text-sm font-extrabold mt-0.5 ${isSelected ? 'text-[#0012FF]' : 'text-gray-800'}`}>{dayNum}</span>
@@ -870,7 +868,7 @@ const GoogleMeetIcon = () => (
                 })}
               </div>
 
-              <button 
+              <button
                 onClick={() => {
                   const next = new Date(rescheduleDate);
                   next.setDate(next.getDate() + 1);
@@ -902,11 +900,10 @@ const GoogleMeetIcon = () => (
                       <button
                         key={slot}
                         onClick={() => setSelectedRescheduleTime(slot)}
-                        className={`py-3 px-3 border rounded-2xl text-xs sm:text-sm font-medium text-center transition-all cursor-pointer ${
-                          isSelected
+                        className={`py-3 px-3 border rounded-2xl text-xs sm:text-sm font-medium text-center transition-all cursor-pointer ${isSelected
                             ? 'bg-[#EEF2FF] border-2 border-[#0012FF] text-[#0012FF] font-bold shadow-xs'
                             : 'bg-white border-gray-200 hover:border-gray-300 text-gray-500'
-                        }`}
+                          }`}
                       >
                         {slot}
                       </button>
