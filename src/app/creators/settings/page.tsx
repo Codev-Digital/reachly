@@ -77,6 +77,7 @@ interface DBTypeSession {
 export default function CreatorSettings() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const coverFileInputRef = useRef<HTMLInputElement>(null);
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string>('');
   const [email, setEmail] = useState<string>('');
@@ -160,6 +161,21 @@ export default function CreatorSettings() {
     }
   };
 
+  const handleCoverPhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 8 * 1024 * 1024) {
+        alert('File size exceeds 8MB limit.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setCoverPhoto(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   // Load Profile, Sessions, & Availability on mount
   useEffect(() => {
     async function loadAllData() {
@@ -173,6 +189,7 @@ export default function CreatorSettings() {
             if (data.profile) {
               setDisplayName(data.profile.displayName || '');
               setProfilePhoto(data.profile.profilePhoto || null);
+              setCoverPhoto(data.profile.coverPhoto || null);
               setShortBio(data.profile.shortBio || '');
               setLongBio(data.profile.longBio || '');
               setCity(data.profile.city || 'Karachi');
@@ -257,6 +274,7 @@ export default function CreatorSettings() {
           niches: selectedNiches,
           socialLinks: { instagram, tiktok, youtube, linkedin },
           profilePhoto,
+          coverPhoto,
         })
       });
       const data = await res.json();
@@ -556,8 +574,8 @@ export default function CreatorSettings() {
     <div className="min-h-screen bg-[#F8F8FA]">
       <CreatorDashboardNav profilePhoto={profilePhoto} displayName={displayName} />
 
-      {/* Main Content Area - Constrained Max Width */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Main Content Area - Wide Container */}
+      <main className="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-10 py-8">
 
         {/* Header */}
         <div className="mb-6">
@@ -594,9 +612,9 @@ export default function CreatorSettings() {
           {activeTab === 'Profile' && (
             <div className="bg-white rounded-3xl border border-gray-200 p-6 sm:p-8 shadow-sm">
 
-              {/* Cover Picture Box - Clean with NO overlay text/gradients */}
-              <div className="relative rounded-3xl overflow-hidden mb-6 bg-gray-100 border border-gray-200 shadow-inner">
-                <div className="relative h-56 sm:h-64 w-full">
+              {/* Cover Picture Box - Clean banner with top-right edit button and NO overlay text */}
+              <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden mb-6 bg-gray-900 border border-gray-200 shadow-inner">
+                <div className="relative h-48 sm:h-56 lg:h-64 w-full">
                   {coverPhoto ? (
                     <img
                       src={coverPhoto}
@@ -613,8 +631,22 @@ export default function CreatorSettings() {
                     />
                   )}
                 </div>
+
+                {/* Top-Right Circular Edit Button */}
+                <button
+                  type="button"
+                  onClick={() => coverFileInputRef.current?.click()}
+                  className="absolute top-4 right-4 w-9 h-9 rounded-full bg-black/40 hover:bg-black/70 text-white flex items-center justify-center backdrop-blur-md transition-all shadow-md border border-white/20 z-20 cursor-pointer"
+                  title="Edit Cover Photo"
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                  </svg>
+                </button>
               </div>
 
+              {/* Hidden File Inputs for Profile Photo & Cover Photo */}
               <input
                 type="file"
                 ref={fileInputRef}
@@ -622,25 +654,32 @@ export default function CreatorSettings() {
                 accept="image/*"
                 className="hidden"
               />
+              <input
+                type="file"
+                ref={coverFileInputRef}
+                onChange={handleCoverPhotoChange}
+                accept="image/*"
+                className="hidden"
+              />
 
-              {/* Profile photo + change button */}
-              <div className="flex flex-col sm:flex-row sm:items-end gap-5 -mt-20 sm:-mt-28 px-3 mb-8 relative z-10">
-                <div className="w-28 h-28 sm:w-40 sm:h-40 rounded-full overflow-hidden border-4 border-white bg-gray-200 shadow-xl flex-shrink-0">
+              {/* Profile photo + Change button */}
+              <div className="flex flex-col sm:flex-row sm:items-end gap-5 -mt-20 sm:-mt-24 px-4 mb-8 relative z-10">
+                <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-full overflow-hidden border-4 border-white bg-gray-200 shadow-xl flex-shrink-0">
                   <img
                     src={profilePhoto || '/merium.png'}
                     alt="Profile"
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <div className="flex flex-col gap-2 pb-2">
+                <div className="flex flex-col gap-1.5 pb-2">
                   <button
+                    type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="bg-[#0012FF] text-white px-6 py-3 rounded-2xl text-xs sm:text-sm font-bold hover:bg-[#0010d0] transition-all shadow-md active:scale-95 w-fit flex items-center gap-2 cursor-pointer"
+                    className="bg-[#0012FF] text-white px-5 py-2.5 rounded-full text-xs font-bold hover:bg-[#0010d0] transition-all shadow-md active:scale-95 w-fit flex items-center gap-2 cursor-pointer"
                   >
-                    <Camera className="h-4 w-4" />
-                    Change Photo
+                    <span>Change Profile Photo</span>
                   </button>
-                  <p className="text-gray-500 text-xs font-medium">JPG or PNG, max 5MB</p>
+                  <p className="text-gray-400 text-xs font-medium">JPG or PNG, max 5MB</p>
                 </div>
               </div>
 
@@ -1154,45 +1193,54 @@ export default function CreatorSettings() {
                 <h3 className="text-xl font-bold text-black mb-1">Client Reviews</h3>
                 <p className="text-gray-500 text-sm">See what clients are saying about your sessions.</p>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 justify-items-center gap-8">
-                {[0, 2, 1, 1, 0, 2].map((commaIdx, i) => (
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[
+                  { name: 'Jordan L', location: 'Los Angeles, CA', commaIdx: 0, text: 'Ayesha helped me find my style, stay consistent, and grow my engagement. I feel much more confident creating content. One of the best investments I’ve made for my personal brand!' },
+                  { name: 'Jordan L', location: 'Los Angeles, CA', commaIdx: 1, text: 'Ayesha helped me find my style, stay consistent, and grow my engagement. I feel much more confident creating content. One of the best investments I’ve made for my personal brand!' },
+                  { name: 'Jordan L', location: 'Los Angeles, CA', commaIdx: 2, text: 'Ayesha helped me find my style, stay consistent, and grow my engagement. I feel much more confident creating content. One of the best investments I’ve made for my personal brand!' },
+                  { name: 'Jordan L', location: 'Los Angeles, CA', commaIdx: 1, text: 'Ayesha helped me find my style, stay consistent, and grow my engagement. I feel much more confident creating content. One of the best investments I’ve made for my personal brand!' },
+                  { name: 'Jordan L', location: 'Los Angeles, CA', commaIdx: 2, text: 'Ayesha helped me find my style, stay consistent, and grow my engagement. I feel much more confident creating content. One of the best investments I’ve made for my personal brand!' },
+                  { name: 'Jordan L', location: 'Los Angeles, CA', commaIdx: 0, text: 'Ayesha helped me find my style, stay consistent, and grow my engagement. I feel much more confident creating content. One of the best investments I’ve made for my personal brand!' },
+                ].map((rev, i) => (
                   <div
                     key={i}
-                    className="relative w-full max-w-[424px] h-[255px] bg-transparent overflow-visible justify-self-center"
+                    className="relative bg-[#F8F8FA] border border-gray-200/70 rounded-[20px] p-6 flex flex-col justify-between min-h-[220px] transition-all hover:shadow-sm hover:scale-[1.01]"
                   >
+                    {/* Quotation Mark Badge Asset */}
                     <img
-                      src="/assets/review.svg"
-                      alt=""
-                      className="absolute inset-0 w-full h-full object-fill pointer-events-none z-0"
+                      src={COMMA_SVGS[rev.commaIdx]}
+                      alt="quote"
+                      className="absolute top-4 right-4 w-14 h-14 pointer-events-none object-contain"
                     />
 
-                    <div className="relative z-10 p-6 pt-7 pr-12 pb-7 flex flex-col justify-between h-full">
-                      <div>
-                        <img
-                          src={COMMA_SVGS[commaIdx]}
-                          alt="quote"
-                          className="absolute -top-7 right-5 w-16 h-16"
-                        />
-
-                        <div className="flex items-center gap-3 mb-4">
-                          <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 border border-gray-100 bg-gray-100">
-                            <Image src="/Avatars/8.jpg" alt="Jordan L" width={48} height={48} className="w-full h-full object-cover" />
-                          </div>
-                          <div>
-                            <p className="font-bold text-base text-gray-900 leading-tight">Jordan L</p>
-                            <p className="text-xs text-gray-400 mt-0.5">Los Angeles, CA</p>
-                          </div>
+                    <div>
+                      {/* Reviewer Meta */}
+                      <div className="flex items-center gap-3 mb-4 pr-10">
+                        <div className="w-11 h-11 rounded-full overflow-hidden shrink-0 border border-gray-200 bg-gray-200">
+                          <Image src="/Avatars/8.jpg" alt={rev.name} width={44} height={44} className="w-full h-full object-cover" />
                         </div>
-
-                        <div className="border-t border-gray-100/80 mb-4" />
-
-                        <p className="text-sm text-gray-500 leading-relaxed font-medium">
-                          &ldquo;Ayesha helped me find my style, stay consistent, and grow my engagement. I feel much more confident creating content. One of the best investments I&rsquo;ve made for my personal brand!&rdquo;
-                        </p>
+                        <div>
+                          <p className="font-extrabold text-sm sm:text-base text-black leading-tight">{rev.name}</p>
+                          <p className="text-xs text-gray-400 font-medium mt-0.5">{rev.location}</p>
+                        </div>
                       </div>
 
-                      <button className="absolute right-[4px] bottom-[4px] z-20 hover:scale-110 transition-transform duration-200">
-                        <img src="/assets/danger.svg" alt="report" className="w-[18px] h-[32px]" />
+                      <div className="w-full h-px bg-gray-200/80 mb-4" />
+
+                      {/* Review Text */}
+                      <p className="text-xs sm:text-sm text-gray-500 font-medium leading-relaxed font-sans mb-4">
+                        &ldquo;{rev.text}&rdquo;
+                      </p>
+                    </div>
+
+                    {/* Report Action */}
+                    <div className="flex justify-end pt-2">
+                      <button 
+                        onClick={() => alert('Review reported')} 
+                        className="text-xs text-[#FF3B3B] hover:underline font-bold cursor-pointer"
+                      >
+                        Report
                       </button>
                     </div>
                   </div>

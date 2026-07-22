@@ -125,28 +125,42 @@ export default function CreatorCalendar() {
 
   // Fetch reschedule slots when date changes
   useEffect(() => {
-    if (!showRescheduleModal || !username) return;
+    if (!showRescheduleModal) return;
 
     async function fetchRescheduleSlots() {
       setLoadingSlots(true);
       setSelectedRescheduleTime('');
       try {
-        const year = rescheduleDate.getFullYear();
-        const month = String(rescheduleDate.getMonth() + 1).padStart(2, '0');
-        const day = String(rescheduleDate.getDate()).padStart(2, '0');
-        const dateStr = `${year}-${month}-${day}`;
-
-        const res = await fetch(`/api/creators/${username}/availability?date=${dateStr}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data.success && data.slots) {
-            setRescheduleSlots(data.slots);
-          } else {
-            setRescheduleSlots([]);
+        let activeUsername = username;
+        if (!activeUsername) {
+          const profileRes = await fetch('/api/user/me');
+          if (profileRes.ok) {
+            const data = await profileRes.json();
+            activeUsername = data.creatorProfile?.username || '';
+            if (activeUsername) setUsername(activeUsername);
           }
         }
+
+        if (activeUsername) {
+          const year = rescheduleDate.getFullYear();
+          const month = String(rescheduleDate.getMonth() + 1).padStart(2, '0');
+          const day = String(rescheduleDate.getDate()).padStart(2, '0');
+          const dateStr = `${year}-${month}-${day}`;
+
+          const res = await fetch(`/api/creators/${activeUsername}/availability?date=${dateStr}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.success && Array.isArray(data.slots)) {
+              setRescheduleSlots(data.slots);
+            } else {
+              setRescheduleSlots([]);
+            }
+          }
+        } else {
+          setRescheduleSlots([]);
+        }
       } catch (err) {
-        console.error(err);
+        console.error('Failed to fetch reschedule slots:', err);
         setRescheduleSlots([]);
       } finally {
         setLoadingSlots(false);
@@ -596,18 +610,17 @@ const GoogleMeetIcon = () => (
             <div className="w-full mb-8">
               {loadingSlots ? (
                 <div className="grid grid-cols-3 gap-3">
-                  {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
+                  {[1, 2, 3, 4, 5, 6].map((i) => (
                     <div key={i} className="h-11 bg-gray-100 rounded-2xl animate-pulse" />
                   ))}
                 </div>
+              ) : rescheduleSlots.length === 0 ? (
+                <div className="text-center py-8 px-4 bg-gray-50 border border-gray-200/70 rounded-2xl">
+                  <p className="text-xs sm:text-sm text-gray-500 font-medium">No available time slots for this date.</p>
+                </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-h-56 overflow-y-auto pr-1 no-scrollbar">
-                  {(rescheduleSlots.length > 0 ? rescheduleSlots : [
-                    '11 AM - 12 AM', '12 AM - 1 PM', '1 PM - 2 PM',
-                    '2 PM - 3 PM', '3 PM - 4 PM', '4 PM - 5 PM',
-                    '5 PM - 6 PM', '6 PM - 7 PM', '7 PM - 8 PM',
-                    '8 PM - 9 PM', '9 PM - 10 PM', '10 PM - 11 PM'
-                  ]).map((slot) => {
+                  {rescheduleSlots.map((slot) => {
                     const isSelected = selectedRescheduleTime === slot;
                     return (
                       <button

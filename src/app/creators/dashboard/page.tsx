@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import CreatorDashboardNav from '@/components/CreatorDashboardNav';
 import LoadingAnimation from '@/components/LoadingAnimation';
-import { TrendingUp, BookOpen, Calendar, Eye, Users, Copy, Check } from 'lucide-react';
+import { TrendingUp, BookOpen, Calendar, Eye, Users, Copy, Check, Bookmark, Target, Presentation } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Cell, Tooltip } from 'recharts';
 
 import {
@@ -175,28 +175,42 @@ const CreatorDashboard = () => {
 
   // Fetch reschedule slots when date changes
   useEffect(() => {
-    if (!showRescheduleModal || !username) return;
+    if (!showRescheduleModal) return;
 
     async function fetchRescheduleSlots() {
       setLoadingSlots(true);
       setSelectedRescheduleTime('');
       try {
-        const year = rescheduleDate.getFullYear();
-        const month = String(rescheduleDate.getMonth() + 1).padStart(2, '0');
-        const day = String(rescheduleDate.getDate()).padStart(2, '0');
-        const dateStr = `${year}-${month}-${day}`;
-
-        const res = await fetch(`/api/creators/${username}/availability?date=${dateStr}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data.success && data.slots) {
-            setRescheduleSlots(data.slots);
-          } else {
-            setRescheduleSlots([]);
+        let activeUsername = username;
+        if (!activeUsername) {
+          const profileRes = await fetch('/api/user/me');
+          if (profileRes.ok) {
+            const data = await profileRes.json();
+            activeUsername = data.creatorProfile?.username || '';
+            if (activeUsername) setUsername(activeUsername);
           }
         }
+
+        if (activeUsername) {
+          const year = rescheduleDate.getFullYear();
+          const month = String(rescheduleDate.getMonth() + 1).padStart(2, '0');
+          const day = String(rescheduleDate.getDate()).padStart(2, '0');
+          const dateStr = `${year}-${month}-${day}`;
+
+          const res = await fetch(`/api/creators/${activeUsername}/availability?date=${dateStr}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.success && Array.isArray(data.slots)) {
+              setRescheduleSlots(data.slots);
+            } else {
+              setRescheduleSlots([]);
+            }
+          }
+        } else {
+          setRescheduleSlots([]);
+        }
       } catch (err) {
-        console.error(err);
+        console.error('Failed to fetch reschedule slots:', err);
         setRescheduleSlots([]);
       } finally {
         setLoadingSlots(false);
@@ -287,14 +301,38 @@ const CreatorDashboard = () => {
     return list;
   };
 
+const BookCardIcon = ({ color }: { color: string }) => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="4" y="3" width="16" height="18" rx="3" />
+    <path d="M9 3v7l3-2 3 2V3" />
+  </svg>
+);
+
+const EyeCardIcon = ({ color }: { color: string }) => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+);
+
+const PresentationCardIcon = ({ color }: { color: string }) => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="7" cy="7" r="2" />
+    <path d="M4 17v-1.5a2.5 2.5 0 0 1 2.5-2.5h1.5" />
+    <rect x="12" y="4" width="8" height="7" rx="1.5" />
+    <path d="M16 11v6" />
+    <path d="M13.5 17h5" />
+  </svg>
+);
+
   const stats = [
     { 
       label: 'Total Bookings', 
       value: String(dashboardStats.totalBookingsThisMonth || 192), 
       trend: '↑ +18.2% from last month',
       bg: '#BAC5FF', 
-      textColor: '#0A1C80',
-      icon: BookOpen 
+      textColor: '#0012FF',
+      iconType: 'book'
     },
     { 
       label: 'Total Bookings this month', 
@@ -302,7 +340,7 @@ const CreatorDashboard = () => {
       trend: '↑ +18.2% from last month',
       bg: '#AFE8B9', 
       textColor: '#0A4A1C',
-      icon: BookOpen 
+      iconType: 'book'
     },
     { 
       label: 'Profile Views', 
@@ -310,7 +348,7 @@ const CreatorDashboard = () => {
       trend: '↑ +18.2% from last month',
       bg: '#FFB3B3', 
       textColor: '#701C1C',
-      icon: Eye 
+      iconType: 'eye'
     },
     { 
       label: 'Upcoming Sessions', 
@@ -318,7 +356,7 @@ const CreatorDashboard = () => {
       trend: '↑ +18.2% from last month',
       bg: '#FFEDB5', 
       textColor: '#6C4800',
-      icon: Calendar 
+      iconType: 'presentation'
     },
   ];
 
@@ -452,8 +490,15 @@ const GoogleMeetIcon = () => (
                   className="w-full h-[160px] rounded-[10px] p-5 flex flex-col justify-between transition-all duration-300 hover:scale-[1.01] shadow-sm hover:shadow-md cursor-default"
                   style={{ backgroundColor: stat.bg, color: stat.textColor }}
                 >
+                  <div className="flex justify-between items-start">
+                    <div className="w-10 h-10 bg-white/80 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-2xs">
+                      {stat.iconType === 'book' && <BookCardIcon color={stat.textColor} />}
+                      {stat.iconType === 'eye' && <EyeCardIcon color={stat.textColor} />}
+                      {stat.iconType === 'presentation' && <PresentationCardIcon color={stat.textColor} />}
+                    </div>
+                  </div>
                   <div>
-                    <p className="text-[11px] font-medium opacity-80 uppercase tracking-wide font-sans mb-1">{stat.label}</p>
+                    <p className="text-[11px] font-medium opacity-80 uppercase tracking-wide font-sans mb-0.5">{stat.label}</p>
                     <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-sans my-0.5">{stat.value}</h3>
                   </div>
                   <p className="text-[11px] font-medium opacity-85 flex items-center gap-1 font-sans">
@@ -841,18 +886,17 @@ const GoogleMeetIcon = () => (
             <div className="w-full mb-8">
               {loadingSlots ? (
                 <div className="grid grid-cols-3 gap-3">
-                  {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
+                  {[1, 2, 3, 4, 5, 6].map((i) => (
                     <div key={i} className="h-11 bg-gray-100 rounded-2xl animate-pulse" />
                   ))}
                 </div>
+              ) : rescheduleSlots.length === 0 ? (
+                <div className="text-center py-8 px-4 bg-gray-50 border border-gray-200/70 rounded-2xl">
+                  <p className="text-xs sm:text-sm text-gray-500 font-medium">No available time slots for this date.</p>
+                </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-h-56 overflow-y-auto pr-1 no-scrollbar">
-                  {(rescheduleSlots.length > 0 ? rescheduleSlots : [
-                    '11 AM - 12 AM', '12 AM - 1 PM', '1 PM - 2 PM',
-                    '2 PM - 3 PM', '3 PM - 4 PM', '4 PM - 5 PM',
-                    '5 PM - 6 PM', '6 PM - 7 PM', '7 PM - 8 PM',
-                    '8 PM - 9 PM', '9 PM - 10 PM', '10 PM - 11 PM'
-                  ]).map((slot) => {
+                  {rescheduleSlots.map((slot) => {
                     const isSelected = selectedRescheduleTime === slot;
                     return (
                       <button

@@ -89,7 +89,7 @@ export async function PUT(req: NextRequest) {
     }
 
     // Default: Profile Update
-    const { displayName, shortBio, longBio, city, country, languages, niches, socialLinks, profilePhoto } = body;
+    const { displayName, shortBio, longBio, city, country, languages, niches, socialLinks, profilePhoto, coverPhoto } = body;
 
     // Update User Name
     let userModified = false;
@@ -115,6 +115,29 @@ export async function PUT(req: NextRequest) {
     if (languages !== undefined) creatorProfile.languages = languages;
     if (niches !== undefined) creatorProfile.niches = niches;
     if (socialLinks !== undefined) creatorProfile.socialLinks = socialLinks;
+
+    if (coverPhoto && coverPhoto.startsWith('data:image')) {
+      try {
+        const { uploadToSupabase } = await import('@/lib/supabase');
+        const matches = coverPhoto.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+        if (matches && matches.length === 3) {
+          const type = matches[1];
+          const buffer = Buffer.from(matches[2], 'base64');
+          const ext = type.split('/')[1] || 'png';
+          const url = await uploadToSupabase(
+            buffer,
+            type,
+            `covers/${user._id}/cover_${Date.now()}.${ext}`
+          );
+          creatorProfile.coverPhoto = url;
+        }
+      } catch (uploadErr) {
+        console.error('Error uploading cover photo to supabase:', uploadErr);
+        creatorProfile.coverPhoto = coverPhoto;
+      }
+    } else if (coverPhoto !== undefined) {
+      creatorProfile.coverPhoto = coverPhoto;
+    }
 
     if (profilePhoto && profilePhoto.startsWith('data:image')) {
       try {
