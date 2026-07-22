@@ -327,16 +327,16 @@ export default function UserDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8F8FA] pb-12 text-black overflow-x-hidden">
+<div className="min-h-screen bg-[#F8F8FA] pb-12 text-black overflow-x-hidden">
       <UserNavbar displayName={displayName} profilePhoto={profilePhoto} />
 
       {/* Main Grid Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+      <main className="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-10 py-8">
         {/* Welcome Headers */}
         <div className="mb-8">
           <p className="text-gray-500 text-sm font-sans mb-1">Hello {displayName.split(' ')[0]}!</p>
-          <h1 className="text-4xl font-black text-black font-anton tracking-tight">
-            Your <span className="text-[#0012FF] font-black ">Dashboard</span> <span className="text-gray-400 font-light text-2xl font-sans">at a glance</span>
+          <h1 className="text-4xl font-extrabold text-black font-sans tracking-tight">
+            Your <span className="text-[#0012FF] font-extrabold">Dashboard</span> <span className="text-gray-400 font-normal text-sm font-sans ml-2">at a glance</span>
           </h1>
         </div>
 
@@ -344,86 +344,84 @@ export default function UserDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
           {/* Left Column (takes 8 cols) */}
-          <div className="lg:col-span-8 space-y-10">
+          <div className="lg:col-span-8 space-y-8">
 
-            {/* Stats Cards Grid (using uc-1, uc-2, uc-3) */}
-            <div className="flex flex-col sm:flex-row items-center sm:items-stretch gap-3 sm:gap-0 overflow-hidden">
-
+            {/* 3 Stat Cards Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
               {/* Card 1: Total Bookings */}
-              <div className="relative w-full max-w-[340px] sm:max-w-none h-[156px] sm:flex-1 z-30 flex flex-col justify-between p-5 sm:pl-6">
-                <img
-                  src="/assets/uc-1.svg"
-                  alt=""
-                  className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10"
-                />
-                <div>
-                  <div className="w-11 h-11 bg-white/70 rounded-xl flex items-center justify-center mb-2 shadow-sm">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2.5">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                      <polyline points="14 2 14 8 20 8" />
+              <div className="w-full h-[160px] rounded-[10px] bg-[#AFE8B9] text-[#0A4A1C] p-5 flex flex-col justify-between shadow-xs transition-all duration-300 hover:scale-[1.01]">
+                <div className="flex justify-between items-start">
+                  <div className="w-10 h-10 bg-white/80 backdrop-blur-xs rounded-xl flex items-center justify-center shadow-2xs">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0A4A1C" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="4" y="3" width="16" height="18" rx="3" />
+                      <path d="M9 3v7l3-2 3 2V3" />
                     </svg>
                   </div>
-                  <p className="text-[10px] text-gray-500 font-bold tracking-wide uppercase">Total Bookings</p>
-                  <p className="text-3xl font-black text-[#1B6330] mt-1">
-                    {currentBookings.Upcoming.length + currentBookings.Past.length + currentBookings.Cancelled.length}
-                  </p>
                 </div>
-                <p className="text-[10px] font-bold text-gray-600">↑ +18.2% from last month</p>
+                <div>
+                  <p className="text-[11px] font-medium opacity-80 uppercase tracking-wide font-sans mb-0.5">Total Bookings</p>
+                  <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-sans my-0.5">
+                    {currentBookings.Upcoming.length + currentBookings.Past.length + currentBookings.Cancelled.length}
+                  </h3>
+                </div>
+                <p className="text-[11px] font-medium opacity-85 flex items-center gap-1 font-sans">
+                  <span>↑ +18.2% from last month</span>
+                </p>
               </div>
 
               {/* Card 2: Total Referrals */}
-              <div className="relative w-full max-w-[340px] sm:max-w-none h-[156px] sm:flex-1 sm:-ml-6 z-20 flex flex-col justify-between p-5 pl-16 sm:pl-10 overflow-hidden">
-                <img
-                  src="/assets/uc-2.svg"
-                  alt=""
-                  className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10"
-                />
-                <div>
-                  <div className="w-11 h-11 bg-white/70 rounded-xl flex items-center justify-center mb-2 shadow-sm">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2.5">
-                      <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-                      <polyline points="16 6 12 2 8 6" />
-                      <line x1="12" y1="2" x2="12" y2="15" />
+              <div className="w-full h-[160px] rounded-[10px] bg-[#FFEDB5] text-[#6C4800] p-5 flex flex-col justify-between shadow-xs transition-all duration-300 hover:scale-[1.01]">
+                <div className="flex justify-between items-start">
+                  <div className="w-10 h-10 bg-white/80 backdrop-blur-xs rounded-xl flex items-center justify-center shadow-2xs">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6C4800" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="18" cy="5" r="3" />
+                      <circle cx="6" cy="12" r="3" />
+                      <circle cx="18" cy="19" r="3" />
+                      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                      <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
                     </svg>
                   </div>
-                  <p className="text-[10px] text-gray-500 font-bold tracking-wide uppercase">Total Referrals</p>
-                  <p className="text-3xl font-black text-[#854D0E] mt-1">223</p>
                 </div>
-                <p className="text-[10px] font-bold text-gray-600">↑ +18.2% from last month</p>
+                <div>
+                  <p className="text-[11px] font-medium opacity-80 uppercase tracking-wide font-sans mb-0.5">Total Referrals</p>
+                  <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-sans my-0.5">223</h3>
+                </div>
+                <p className="text-[11px] font-medium opacity-85 flex items-center gap-1 font-sans">
+                  <span>↑ +18.2% from last month</span>
+                </p>
               </div>
 
               {/* Card 3: Total Paid Out */}
-              <div className="relative w-full max-w-[340px] sm:max-w-none h-[156px] sm:flex-1 sm:-ml-6 z-10 flex flex-col justify-between p-5 pl-20 sm:pl-10 overflow-hidden">
-                <img
-                  src="/assets/uc-3.svg"
-                  alt=""
-                  className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10"
-                />
-                <div>
-                  <div className="w-11 h-11 bg-white/70 rounded-xl flex items-center justify-center mb-2 shadow-sm">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="2.5">
+              <div className="w-full h-[160px] rounded-[10px] bg-[#BAC5FF] text-[#0012FF] p-5 flex flex-col justify-between shadow-xs transition-all duration-300 hover:scale-[1.01]">
+                <div className="flex justify-between items-start">
+                  <div className="w-10 h-10 bg-white/80 backdrop-blur-xs rounded-xl flex items-center justify-center shadow-2xs">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <rect x="2" y="5" width="20" height="14" rx="2" />
                       <line x1="2" y1="10" x2="22" y2="10" />
                     </svg>
                   </div>
-                  <p className="text-[10px] text-gray-500 font-bold tracking-wide uppercase">Total Paid Out</p>
-                  <p className="text-2xl font-black text-[#1E1B4B] mt-1">63,458 PKR</p>
                 </div>
-                <p className="text-[10px] font-bold text-gray-600">↑ +18.2% from last month</p>
+                <div>
+                  <p className="text-[11px] font-medium opacity-80 uppercase tracking-wide font-sans mb-0.5">Total Paid Out</p>
+                  <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-sans my-0.5">63,458 PKR</h3>
+                </div>
+                <p className="text-[11px] font-medium opacity-85 flex items-center gap-1 font-sans">
+                  <span>↑ +18.2% from last month</span>
+                </p>
               </div>
-
             </div>
 
             {/* Top Creators Section */}
             <div>
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-3xl font-black text-black font-anton tracking-tight">Top Creators</h2>
+                <h2 className="text-2xl font-bold text-black font-sans">Top Creators</h2>
                 <button
                   onClick={() => router.push('/explore-creators')}
-                  className="flex items-center gap-2 bg-[#0012FF] text-white px-5 py-2.5 rounded-full font-bold text-sm hover:bg-[#0012FF]/90 transition-all shadow-md shadow-[#0012FF]/10"
+                  className="flex items-center gap-2 bg-[#0012FF] text-white px-5 py-2.5 rounded-full font-bold text-xs hover:bg-[#0012FF]/90 transition-all shadow-md shadow-[#0012FF]/10 cursor-pointer"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
                   </svg>
                   Browse Creators
                 </button>
@@ -431,86 +429,104 @@ export default function UserDashboard() {
 
               {/* Creators Grid */}
               {creatorsList.length === 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                   {[1, 2, 3].map(i => (
-                    <div key={i} className="h-[380px] bg-gray-100 rounded-3xl animate-pulse" />
+                    <div key={i} className="aspect-[4/4.2] bg-gray-100 rounded-[20px] animate-pulse" />
                   ))}
                 </div>
               ) : (
                 <>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                     {creatorsList
                       .slice(creatorsPage * CREATORS_PER_PAGE, (creatorsPage + 1) * CREATORS_PER_PAGE)
                       .map((creator, index) => {
-                        const globalIndex = creatorsPage * CREATORS_PER_PAGE + index;
-                        const clipId = `cardClip-dashboard-${globalIndex}`;
                         const isFav = favorites.includes(creator.username);
                         return (
                           <motion.div
-                            key={creator.id}
-                            initial={{ opacity: 0, y: 30 }}
+                            key={creator.id || index}
+                            initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.4, delay: index * 0.08 }}
-                            className="flex flex-col w-full shrink-0 transition-all duration-300 hover:-translate-y-3 hover:scale-[1.04] p-3 rounded-[24px] border border-gray-100/80 group"
+                            transition={{ duration: 0.4, delay: index * 0.05 }}
+                            className="flex flex-col w-full group cursor-pointer"
                           >
-                            {/* Image with SVG clip notch */}
-                            <div className="relative w-full h-[280px]">
-                              <svg width="0" height="0" className="absolute">
-                                <defs>
-                                  <clipPath id={clipId} clipPathUnits="objectBoundingBox">
-                                    <path d="M0 .06 C0 .025 .025 0 .06 0 H0.80 C0.855 0 .865 .01 .865 .03 V.10 C.865 .12 .885 .14 .91 .14 H.95 C.985 .14 1 .15 1 .175 V.91 C1 .975 .975 1 .94 1 H.06 C.025 1 0 .975 0 .94 V.06 Z" />
-                                  </clipPath>
-                                </defs>
-                              </svg>
+                            {/* Top Image Container */}
+                            <div className="relative w-full aspect-[4/4.2] rounded-[20px] overflow-hidden bg-gray-100 mb-3.5 shadow-xs transition-transform duration-300 group-hover:scale-[1.01]">
                               <img
-                                src={creator.profilePhoto || '/Avatars/1.jpg'}
+                                src={creator.profilePhoto || '/avatar.png'}
                                 alt={creator.displayName}
-                                className="w-full h-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.02]"
-                                style={{ clipPath: `url(#${clipId})` }}
+                                className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
                               />
-                              {/* Tag */}
-                              <span className={`absolute top-3 left-4 px-3 py-1 rounded-full text-xs font-semibold ${creator.isVerified ? 'bg-white text-emerald-600' : 'bg-white text-blue-600'}`}>
-                                {creator.isVerified ? 'Verified' : 'Creator'}
-                              </span>
-                              {/* Heart */}
-                              <button
-                                onClick={() => toggleFavorite(creator.username)}
-                                className="absolute top-2 right-0 z-20 flex items-center justify-center hover:scale-110 transition-transform"
+
+                              {/* Top Left Badge */}
+                              <span
+                                className={`absolute top-3.5 left-3.5 px-3 py-1 rounded-full text-xs font-bold shadow-2xs tracking-wide ${
+                                  creator.isVerified
+                                    ? 'bg-[#E6F9EE] text-[#12B76A]'
+                                    : 'bg-[#EEF2FF] text-[#0012FF]'
+                                }`}
                               >
-                                <svg className={`w-6 h-6 transition-colors duration-200 ${isFav ? 'text-red-500' : 'text-gray-300'}`} viewBox="0 0 24 24">
-                                  <path fill="currentColor" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                {creator.isVerified ? 'Verified' : 'Sponsored'}
+                              </span>
+
+                              {/* Top Right Heart Button */}
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleFavorite(creator.username);
+                                }}
+                                className="absolute top-3.5 right-3.5 z-20 hover:scale-110 transition-transform active:scale-90"
+                                aria-label={isFav ? 'Remove from favorites' : 'Add to favorites'}
+                              >
+                                <svg
+                                  className={`w-6 h-6 transition-colors duration-200 ${
+                                    isFav ? 'text-[#E32A2A] fill-[#E32A2A] drop-shadow-sm' : 'text-white fill-white/80 drop-shadow-md'
+                                  }`}
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
                                 </svg>
                               </button>
                             </div>
 
-                            {/* Info */}
-                            <div className="pt-4 pb-2 px-1">
-                              <div className="flex items-center justify-between">
-                                <h3 className="font-sans font-bold text-lg text-black flex items-center gap-1.5 truncate">
-                                  {creator.displayName}
+                            {/* Info Box Below Image */}
+                            <div className="px-0.5 space-y-1">
+                              {/* Title & Star Rating */}
+                              <div className="flex items-center justify-between gap-2">
+                                <h3 className="font-bold text-base text-black font-sans flex items-center gap-1.5 leading-tight truncate">
+                                  <span>{creator.displayName}</span>
                                   {creator.isVerified && (
-                                    <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-                                      <g transform="translate(4 4) scale(0.83)">
-                                        <path fill="#34C759" d="M24 2.5c2.8 0 5 2.4 7.5 3.2 2.6.8 5.8.1 8 1.8 2.2 1.7 2.9 4.9 4.6 7.1 1.7 2.2 4.8 3.8 5.6 6.4.8 2.6-.8 5.6-.8 8.3s1.6 5.7.8 8.3c-.8 2.6-3.9 4.2-5.6 6.4-1.7 2.2-2.4 5.4-4.6 7.1-2.2 1.7-5.4 1-8 1.8-2.5.8-4.7 3.2-7.5 3.2s-5-2.4-7.5-3.2c-2.6-.8-5.8-.1-8-1.8-2.2-1.7-2.9-4.9-4.6-7.1-1.7-2.2-4.8-3.8-5.6-6.4-.8-2.6.8-5.6.8-8.3s-1.6-5.7-.8-8.3c.8-2.6 3.9-4.2 5.6-6.4 1.7-2.2 2.4-5.4 4.6-7.1 2.2-1.7 5.4-1 8-1.8C19 4.9 21.2 2.5 24 2.5z" />
-                                      </g>
-                                      <path d="M17 24L22.5 29.5L32 19" fill="none" stroke="white" strokeWidth="4.8" strokeLinecap="round" strokeLinejoin="round" />
+                                    <svg className="w-4.5 h-4.5 text-[#12B76A] fill-current shrink-0" viewBox="0 0 24 24">
+                                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
                                     </svg>
                                   )}
                                 </h3>
-                                <span className="flex items-center gap-1 text-sm font-bold text-black flex-shrink-0">
-                                  <svg className="w-4 h-4 text-amber-500 fill-current" viewBox="0 0 20 20">
-                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                  </svg>
-                                  {creator.rating}
+                                <span className="flex items-center gap-1 text-xs font-bold text-amber-500 shrink-0">
+                                  ★ {creator.rating || '4.9'}
                                 </span>
                               </div>
-                              <p className="text-xs text-gray-400 font-sans mt-0.5">@{creator.username}</p>
-                              <p className="text-xs text-gray-500 font-sans mt-2.5 line-clamp-2">{creator.shortBio || 'Content creator'}</p>
-                              <div className="flex items-center justify-between mt-4">
-                                <span className="text-xs font-sans text-gray-500">
-                                  Starting from <strong className="text-black font-black">{creator.startingPrice ? `${creator.startingPrice.toLocaleString()} PKR` : 'Free'}</strong>
-                                </span>
-                                <Link href={`/creators/${creator.username}`} className="text-xs font-sans font-bold text-blue-600 underline hover:text-blue-800 transition-colors">
+
+                              {/* Handle */}
+                              <p className="text-xs text-gray-400 font-medium font-sans">@{creator.username}</p>
+
+                              {/* Short Bio */}
+                              <p className="text-xs text-gray-400 font-sans leading-relaxed line-clamp-2 pt-1">
+                                {creator.shortBio || 'Ayesha Khan is one of Pakistan’s leading fashion and lifestyle content creators...'}
+                              </p>
+
+                              {/* Price Row */}
+                              <div className="pt-2 flex items-center gap-1 text-xs text-gray-400 font-sans">
+                                <span>Starting from</span>
+                                <strong className="text-black font-black text-sm ml-1">
+                                  {creator.startingPrice ? `${creator.startingPrice.toLocaleString()} PKR` : '1200 PKR'}
+                                </strong>
+                              </div>
+
+                              {/* Book Now Link */}
+                              <div>
+                                <Link
+                                  href={`/creators/${creator.username}/book-session`}
+                                  className="text-xs font-bold text-[#0012FF] underline hover:text-[#0010d0] font-sans pt-1 inline-block"
+                                >
                                   Book Now
                                 </Link>
                               </div>
@@ -526,13 +542,13 @@ export default function UserDashboard() {
                       <button
                         onClick={() => setCreatorsPage(p => Math.max(0, p - 1))}
                         disabled={creatorsPage === 0}
-                        className={`w-10 h-10 rounded-full flex items-center justify-center border transition-all ${
+                        className={`w-9 h-9 rounded-full flex items-center justify-center border transition-all ${
                           creatorsPage === 0
                             ? 'border-gray-200 text-gray-300 cursor-not-allowed'
                             : 'border-gray-300 text-gray-700 hover:border-[#0012FF] hover:text-[#0012FF] hover:bg-[#EEF2FF]'
                         }`}
                       >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                           <path d="M15 18l-6-6 6-6" />
                         </svg>
                       </button>
@@ -544,13 +560,13 @@ export default function UserDashboard() {
                       <button
                         onClick={() => setCreatorsPage(p => Math.min(Math.ceil(creatorsList.length / CREATORS_PER_PAGE) - 1, p + 1))}
                         disabled={creatorsPage >= Math.ceil(creatorsList.length / CREATORS_PER_PAGE) - 1}
-                        className={`w-10 h-10 rounded-full flex items-center justify-center border transition-all ${
+                        className={`w-9 h-9 rounded-full flex items-center justify-center border transition-all ${
                           creatorsPage >= Math.ceil(creatorsList.length / CREATORS_PER_PAGE) - 1
                             ? 'border-gray-200 text-gray-300 cursor-not-allowed'
                             : 'border-gray-300 text-gray-700 hover:border-[#0012FF] hover:text-[#0012FF] hover:bg-[#EEF2FF]'
                         }`}
                       >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                           <path d="M9 18l6-6-6-6" />
                         </svg>
                       </button>
@@ -563,9 +579,9 @@ export default function UserDashboard() {
           </div>
 
           {/* Right Column (takes 4 cols) - Bookings Tabs & List */}
-          <div className="lg:col-span-4 bg-white rounded-3xl p-6 border border-gray-100 shadow-sm space-y-6">
+          <div className="lg:col-span-4 bg-white rounded-[24px] p-5 border border-gray-100 shadow-2xs space-y-5">
             {/* Bookings Tabs */}
-            <div className="flex bg-gray-100 p-1.5 rounded-2xl justify-between">
+            <div className="flex bg-gray-100/80 p-1 rounded-2xl justify-between border border-gray-200/50">
               {(['Upcoming', 'Past', 'Cancelled'] as const).map((tab) => {
                 const count = currentBookings[tab].length;
                 const isActive = activeBookingTab === tab;
@@ -574,7 +590,7 @@ export default function UserDashboard() {
                     key={tab}
                     onClick={() => setActiveBookingTab(tab)}
                     className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${isActive
-                      ? 'bg-[#0012FF] text-white shadow-md'
+                      ? 'bg-[#0012FF] text-white shadow-sm'
                       : 'text-gray-500 hover:text-gray-900'
                       }`}
                   >
@@ -591,92 +607,91 @@ export default function UserDashboard() {
                   <Image
                     src="/assets/cancel-appointment.png"
                     alt="No bookings yet"
-                    width={200}
-                    height={200}
-                    className="w-48 h-48 object-contain mb-4"
+                    width={180}
+                    height={180}
+                    className="w-40 h-40 object-contain mb-3"
                   />
-                  <p className="text-gray-500 font-semibold">No {activeBookingTab.toLowerCase()} bookings</p>
+                  <p className="text-gray-500 font-semibold text-sm">No {activeBookingTab.toLowerCase()} bookings</p>
                 </div>
               ) : (
                 currentBookings[activeBookingTab].map((booking) => (
                   <div
                     key={booking.id}
-                    className="relative w-full min-h-[200px] flex flex-col"
-                    style={{ backgroundImage: 'url(/assets/rec-card.png)', backgroundSize: '100% 100%', backgroundRepeat: 'no-repeat' }}
+                    className="w-full bg-white border border-gray-200/80 rounded-[20px] p-5 flex flex-col justify-between shadow-2xs hover:shadow-xs transition-all relative group"
                   >
-                    {/* Content */}
-                    <div className="relative w-full pl-5 pr-10 pt-5 pb-5 flex flex-col justify-between flex-grow">
-                      <div>
-                        {/* Header */}
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex items-center gap-3">
-                            <div className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0">
-                              <img
-                                src={booking.avatar}
-                                alt={booking.name}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                            <div>
-                              <h4 className="font-bold text-base text-black leading-tight">{booking.name}</h4>
-                              <p className="text-xs text-gray-500">{booking.handle}</p>
-                            </div>
+                    <div>
+                      {/* Header: Avatar, Name, Verified Badge, Accepted Badge, Amount */}
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-11 h-11 rounded-full overflow-hidden shrink-0 border border-gray-100">
+                            <img
+                              src={booking.avatar || '/avatar.png'}
+                              alt={booking.name}
+                              className="w-full h-full object-cover"
+                            />
                           </div>
-                          <p className="font-bold text-base text-[#0012FF] whitespace-nowrap">{booking.amount}</p>
-                        </div>
-
-                        {/* Time and Type */}
-                        <div className="flex items-center gap-4 text-xs text-gray-600 mb-2">
-                          <div className="flex items-center gap-1.5">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2">
-                              <circle cx="12" cy="12" r="10" />
-                              <polyline points="12 6 12 12 16 14" />
-                            </svg>
-                            <span>{booking.time}</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2">
-                              <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
-                              <polyline points="3.5 20 8 17 16 17 20.5 20" />
-                            </svg>
-                            <span>{booking.type}</span>
+                          <div>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <h4 className="font-extrabold text-base text-black font-sans leading-tight">{booking.name}</h4>
+                              <svg className="w-4 h-4 text-[#12B76A] fill-current shrink-0" viewBox="0 0 24 24">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                              </svg>
+                              <span className="bg-[#E6F9EE] text-[#12B76A] font-bold text-[11px] px-2.5 py-0.5 rounded-full shadow-2xs">
+                                {booking.status || 'Accepted'}
+                              </span>
+                            </div>
+                            <p className="text-xs text-gray-400 font-medium font-sans mt-0.5">{booking.handle}</p>
                           </div>
                         </div>
-
-                        {/* Description */}
-                        <p className="text-xs text-gray-500 mb-3 line-clamp-2 pr-4">
-                          {booking.note}
-                        </p>
+                        <span className="font-extrabold text-lg sm:text-xl text-[#0012FF] font-sans tracking-tight shrink-0 ml-2">
+                          {booking.amount}
+                        </span>
                       </div>
 
-                      {/* Buttons */}
-                      {activeBookingTab === 'Upcoming' && (
-                        <div>
-                          <div className="w-full h-px bg-gray-200 mb-3" />
-                          <div className="flex items-center justify-start gap-2 pr-6">
-                            <button
-                              onClick={() => router.push('/user/bookings')}
-                              className="px-4 py-1.5 border-2 border-gray-200 rounded-[14px] text-xs font-semibold text-gray-500 hover:bg-gray-50 transition-all bg-white whitespace-nowrap"
-                            >
-                              Reschedule
-                            </button>
-                            <button
-                              onClick={() => handleCancelClick(booking.id)}
-                              className="px-4 py-1.5 border-2 border-red-200 rounded-[14px] text-xs font-semibold text-red-500 bg-red-50 hover:bg-red-100 transition-all whitespace-nowrap"
-                            >
-                              Cancel Appointment
-                            </button>
-                          </div>
+                      {/* Time & Meeting Type Row */}
+                      <div className="space-y-1.5 text-xs text-gray-500 font-sans font-medium my-3">
+                        <div className="flex items-center gap-2">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                            <circle cx="12" cy="12" r="10" />
+                            <polyline points="12 6 12 12 16 14" />
+                          </svg>
+                          <span>{booking.time}</span>
                         </div>
-                      )}
+                        <div className="flex items-center gap-2">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                            <circle cx="12" cy="10" r="3" />
+                          </svg>
+                          <span>{booking.type}</span>
+                        </div>
+                      </div>
+
+                      {/* Note Description */}
+                      <p className="text-xs text-gray-400 font-sans leading-relaxed line-clamp-2">
+                        {booking.note}
+                        <span className="text-[#0012FF] font-bold text-xs ml-1 hover:underline cursor-pointer">Read more</span>
+                      </p>
                     </div>
 
-                    {/* Arrow indicator */}
-                    <div className="absolute right-1 bottom-1">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M7 17L17 7M17 7H10M17 7V14" stroke="#0012FF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </div>
+                    {/* Action Buttons (for Upcoming) */}
+                    {activeBookingTab === 'Upcoming' && (
+                      <div className="mt-4 pt-3 border-t border-gray-100">
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() => router.push('/user/bookings')}
+                            className="flex-1 py-2 border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-full text-xs font-semibold text-center transition-all cursor-pointer"
+                          >
+                            Reschedule
+                          </button>
+                          <button
+                            onClick={() => handleCancelClick(booking.id)}
+                            className="flex-1 py-2 bg-[#FFF0F0] border border-red-100 hover:bg-red-100 text-[#FF3B3B] rounded-full text-xs font-semibold text-center transition-all cursor-pointer"
+                          >
+                            Cancel Appointment
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))
               )}
@@ -688,103 +703,91 @@ export default function UserDashboard() {
 
       {/* Cancel Confirmation Modal */}
       {showCancelConfirmModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100] p-4">
-          <div className="relative overflow-visible w-full max-w-lg flex flex-col items-center p-4 xs:p-6 sm:p-8 pt-10 sm:pt-12 pb-6 sm:pb-8 z-10">
-            {/* SVG Background */}
-            <img
-              src="/assets/cancel-card.svg"
-              alt=""
-              className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10"
-            />
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[100] p-4">
+          <div className="relative bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl border border-gray-100 w-full max-w-md p-6 sm:p-8 flex flex-col items-center text-center overflow-hidden">
             {/* Close Button */}
             <button
               onClick={() => setShowCancelConfirmModal(false)}
-              className="absolute -top-0 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center border border-gray-100/50 text-gray-500 hover:bg-gray-50 transition-all z-20"
+              className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 transition-colors p-1.5 rounded-full hover:bg-gray-100 cursor-pointer"
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />
               </svg>
             </button>
 
             {/* Illustration */}
-            <div className="w-20 xs:w-28 sm:w-36 md:w-44 lg:w-56 mt-2 sm:mt-3 mb-3 sm:mb-4">
+            <div className="w-40 sm:w-52 h-auto my-2">
               <Image
                 src="/assets/cancel-appointment.png"
-                alt="Cancel Booking"
-                width={240}
-                height={170}
+                alt="Cancel Appointment"
+                width={220}
+                height={160}
                 className="w-full h-auto object-contain"
               />
             </div>
 
-            <h3 className="text-lg sm:text-2xl font-bold text-black mb-2 text-center">
-              Cancel Appointment
+            {/* Title */}
+            <h3 className="text-xl sm:text-2xl font-extrabold text-black mb-2 tracking-tight">
+              Are You Sure?
             </h3>
-            <p className="text-xs sm:text-sm text-gray-500 text-center mb-4 sm:mb-6">
-              Are you sure you want to cancel this booking?
+
+            {/* Description */}
+            <p className="text-xs sm:text-sm text-gray-400 font-medium leading-relaxed mb-6 max-w-[260px] sm:max-w-[280px]">
+              Are you sure you want to cancel this appointment? This action cannot be undone.
             </p>
 
-            <div className="flex gap-3 w-full">
-              <button
-                onClick={() => setShowCancelConfirmModal(false)}
-                className="flex-1 py-2 border border-gray-200 rounded-xl text-xs sm:text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-all bg-white"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleConfirmCancel}
-                className="flex-1 py-2 bg-red-600 text-white rounded-xl text-xs sm:text-sm font-semibold hover:bg-red-700 transition-all"
-              >
-                Yes, cancel
-              </button>
-            </div>
+            {/* Red Pill Action Button */}
+            <button
+              onClick={handleConfirmCancel}
+              className="w-full max-w-[260px] py-3.5 bg-[#E32A2A] hover:bg-[#c92222] text-white rounded-full font-bold text-sm sm:text-base transition-all shadow-md active:scale-98 cursor-pointer"
+            >
+              Cancel Appointment
+            </button>
           </div>
         </div>
       )}
 
       {/* Success Modal (Cancelled) */}
       {showSuccessModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100] p-4">
-          <div className="relative overflow-visible w-full max-w-lg flex flex-col items-center p-4 xs:p-6 sm:p-8 pt-10 sm:pt-12 pb-6 sm:pb-8 z-10">
-            {/* SVG Background */}
-            <img
-              src="/assets/cancel-card.svg"
-              alt=""
-              className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10"
-            />
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[100] p-4">
+          <div className="relative bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl border border-gray-100 w-full max-w-md p-6 sm:p-8 flex flex-col items-center text-center overflow-hidden">
             {/* Close Button */}
             <button
               onClick={() => setShowSuccessModal(false)}
-              className="absolute -top-0 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center border border-gray-100/50 text-gray-500 hover:bg-gray-50 transition-all z-20"
+              className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 transition-colors p-1.5 rounded-full hover:bg-gray-100 cursor-pointer"
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />
               </svg>
             </button>
 
             {/* Illustration */}
-            <div className="w-20 xs:w-28 sm:w-36 md:w-44 lg:w-56 mt-2 sm:mt-3 mb-3 sm:mb-4">
+            <div className="w-40 sm:w-52 h-auto my-2">
               <Image
                 src="/assets/cancel-appointment.png"
                 alt="Booking Cancelled"
-                width={240}
-                height={170}
+                width={220}
+                height={160}
                 className="w-full h-auto object-contain"
               />
             </div>
 
-            <h3 className="text-lg sm:text-2xl font-bold text-black mb-2 text-center">
+            {/* Title */}
+            <h3 className="text-xl sm:text-2xl font-extrabold text-black mb-2 tracking-tight">
               Booking Cancelled
             </h3>
-            <p className="text-xs sm:text-sm text-gray-500 text-center mb-4 sm:mb-6">
+
+            {/* Description */}
+            <p className="text-xs sm:text-sm text-gray-400 font-medium leading-relaxed mb-6 max-w-[260px] sm:max-w-[280px]">
               Your booking has been cancelled successfully.
             </p>
 
+            {/* Close Button */}
             <button
               onClick={() => setShowSuccessModal(false)}
-              className="w-full py-2 bg-[#0012FF] text-white rounded-xl text-xs sm:text-sm font-semibold hover:bg-[#0010d0] transition-all"
+              className="w-full max-w-[220px] py-3.5 bg-[#0012FF] hover:bg-[#0010d0] text-white rounded-full font-bold text-sm transition-all shadow-md cursor-pointer"
             >
               Close
             </button>

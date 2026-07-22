@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import UserNavbar from '@/components/UserNavbar';
-import { CreditCard, DollarSign, Clock, Calendar, TrendingUp } from 'lucide-react';
+import { CreditCard, DollarSign, Clock, Calendar, TrendingUp, ArrowUpRight } from 'lucide-react';
 
 export default function UserPayments() {
   const [displayName, setDisplayName] = useState('James Richard');
@@ -94,95 +94,118 @@ export default function UserPayments() {
   const availableBalance = Math.max(0, 50000 + totalRefunded - totalSpent);
 
   return (
-    <div className="min-h-screen bg-[#F7F7FA] pb-12">
+    <div className="min-h-screen bg-[#F8F8FA] pb-12">
       <UserNavbar displayName={displayName} profilePhoto={profilePhoto} />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-        <motion.main
+      <main className="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-10 py-8">
+        <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.2 }}
+          transition={{ delay: 0.1 }}
           className="flex-1"
         >
           {/* Header */}
-          <div className="mb-6">
-            <p className="text-gray-400 font-sans mb-1 text-sm sm:text-base font-medium">Hello {displayName}!</p>
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-black font-anton tracking-tight mb-6">
-              Manage Your <span className="text-[#0012FF] italic">Wallet</span> <span className="text-gray-400 font-normal text-xl sm:text-2xl">with ease</span>
+          <div className="mb-6 sm:mb-8">
+            <p className="text-gray-400 font-medium mb-1 text-sm sm:text-base">Hello {displayName.split(' ')[0]}!</p>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-black font-sans tracking-tight">
+              Manage Your <span className="text-[#0012FF]">Wallet Balance</span> <span className="text-gray-400 font-normal text-base sm:text-lg">Easily</span>
             </h1>
           </div>
 
-          {/* Wallet Cards Grid - Shorter height and exact creator wallet cards styling */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {/* Redesigned Wallet Cards Section (Matching Creator Wallet Page) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 mb-8 items-stretch">
 
-            {/* Card 1 - Available Balance (Solid Royal Blue) */}
-            <div className="bg-[#0012FF] text-white rounded-3xl p-6 shadow-sm flex flex-col justify-between h-40 hover:scale-[1.02] transition-all duration-300 hover:shadow-md cursor-default">
-              <div className="flex justify-between items-start">
-                <div className="flex flex-col">
-                  <span className="text-[10px] sm:text-xs font-semibold text-white/80 uppercase tracking-wider mb-1 font-sans">Available Balance</span>
-                  <span className="text-3xl font-bold tracking-tight font-sans">{availableBalance.toLocaleString()} PKR</span>
-                </div>
-                <div className="w-12 h-12 bg-white/15 rounded-2xl flex items-center justify-center backdrop-blur-sm shadow-sm">
-                  <CreditCard className="w-6 h-6 text-white" />
+            {/* Card 1 - Available Balance (Longer Card with 3D Ball/Bubble Effects) */}
+            <div className="lg:col-span-5 relative bg-[#0012FF] text-white rounded-[10px] p-5 shadow-sm flex flex-col justify-between h-[160px] hover:scale-[1.01] transition-all duration-300 overflow-hidden cursor-default">
+
+              {/* 3D Ball / Bubble Background Overlay Effects */}
+              <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-[10px]">
+                <div className="absolute -right-6 -bottom-10 w-48 h-48 rounded-full bg-gradient-to-br from-white/20 via-white/10 to-transparent border border-white/20 shadow-2xl" />
+                <div className="absolute right-16 -top-10 w-36 h-36 rounded-full bg-gradient-to-br from-white/15 via-white/5 to-transparent border border-white/15" />
+                <div className="absolute right-36 bottom-2 w-28 h-28 rounded-full bg-gradient-to-tr from-blue-700/60 to-blue-500/30" />
+                <div className="absolute -left-12 -top-10 w-44 h-44 rounded-full bg-gradient-to-br from-white/15 via-white/5 to-transparent border border-white/15" />
+                <div className="absolute left-20 -bottom-14 w-36 h-36 rounded-full bg-gradient-to-tr from-white/20 to-transparent border border-white/20" />
+                <div className="absolute left-44 top-1/2 -translate-y-1/2 w-32 h-32 rounded-full bg-white/5 border border-white/10" />
+              </div>
+
+              {/* Top Row: Icon Badge */}
+              <div className="flex justify-between items-start z-10">
+                <div className="w-9 h-9 bg-white/90 backdrop-blur-md rounded-lg flex items-center justify-center shadow-xs">
+                  <CreditCard className="w-5 h-5 text-[#0012FF]" />
                 </div>
               </div>
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-1.5 text-xs font-medium text-white/80">
-                  <TrendingUp className="h-3.5 w-3.5" />
-                  <span>+18.2% from last month</span>
+
+              {/* Bottom Row: Balance Meta + Top Up Button */}
+              <div className="flex items-end justify-between gap-4 z-10">
+                <div>
+                  <p className="text-[11px] font-medium text-white/80 uppercase tracking-wide font-sans mb-0.5">Available Balance</p>
+                  <h3 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight font-sans my-0.5">{availableBalance.toLocaleString()} PKR</h3>
+                  <p className="text-[11px] font-medium text-white/85 flex items-center gap-1 font-sans">
+                    <span>↑ +18.2% from last month</span>
+                  </p>
                 </div>
+
+                {/* Top Up Button */}
+                <button className="bg-white hover:bg-gray-50 text-black pl-4 pr-1.5 py-1.5 rounded-full text-xs font-bold transition-all shadow-md active:scale-95 flex items-center gap-2 cursor-pointer shrink-0">
+                  <span>Top Up</span>
+                  <div className="w-5 h-5 bg-[#0012FF] rounded-full flex items-center justify-center text-white">
+                    <ArrowUpRight className="w-3.5 h-3.5 stroke-[3]" />
+                  </div>
+                </button>
               </div>
             </div>
 
-            {/* Card 2 - Total Spent (Light Green) */}
-            <div className="bg-[#AFE8B9] text-[#0A4A1C] rounded-3xl p-6 shadow-sm border border-emerald-100/30 flex flex-col justify-between h-40 hover:scale-[1.02] transition-all duration-300 hover:shadow-md cursor-default">
-              <div className="flex justify-between items-start">
-                <div className="flex flex-col">
-                  <span className="text-[10px] sm:text-xs font-semibold opacity-75 uppercase tracking-wider mb-1 font-sans">Total Spent</span>
-                  <span className="text-3xl font-bold tracking-tight font-sans">{totalSpent.toLocaleString()} PKR</span>
-                </div>
-                <div className="w-12 h-12 bg-white/40 rounded-2xl flex items-center justify-center backdrop-blur-sm shadow-sm">
-                  <DollarSign className="w-6 h-6 text-[#0A4A1C]" />
-                </div>
-              </div>
-              <div className="flex items-center gap-1.5 text-xs font-medium opacity-85">
-                <TrendingUp className="h-3.5 w-3.5" />
-                <span>+18.2% from last month</span>
-              </div>
-            </div>
+            {/* Right Grid: 3 Equal Cards (Total Spent, Active Sessions, Total Refunded) */}
+            <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-4">
 
-            {/* Card 3 - Total Refunded (Light Gold) */}
-            <div className="bg-[#FFEDB5] text-[#6C4800] rounded-3xl p-6 shadow-sm border border-amber-100/30 flex flex-col justify-between h-40 hover:scale-[1.02] transition-all duration-300 hover:shadow-md cursor-default">
-              <div className="flex justify-between items-start">
-                <div className="flex flex-col">
-                  <span className="text-[10px] sm:text-xs font-semibold opacity-75 uppercase tracking-wider mb-1 font-sans">Total Refunded</span>
-                  <span className="text-3xl font-bold tracking-tight font-sans">{totalRefunded.toLocaleString()} PKR</span>
+              {/* Card 2 - Total Spent (Mint Green) */}
+              <div className="bg-[#AFE8B9] text-[#0A4A1C] rounded-[10px] p-5 shadow-sm flex flex-col justify-between h-[160px] hover:scale-[1.01] transition-all duration-300 cursor-default">
+                <div className="flex justify-between items-start">
+                  <div className="w-9 h-9 bg-white/90 backdrop-blur-md rounded-lg flex items-center justify-center shadow-xs">
+                    <DollarSign className="w-5 h-5 text-[#0A4A1C]" />
+                  </div>
                 </div>
-                <div className="w-12 h-12 bg-white/40 rounded-2xl flex items-center justify-center backdrop-blur-sm shadow-sm">
-                  <Clock className="w-6 h-6 text-[#6C4800]" />
+                <div>
+                  <p className="text-[11px] font-medium opacity-80 uppercase tracking-wide font-sans mb-0.5">Total Spent</p>
+                  <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-sans my-0.5">{totalSpent ? totalSpent.toLocaleString() : '12,500'} PKR</h3>
+                  <p className="text-[11px] font-medium opacity-85 flex items-center gap-1 font-sans">
+                    <span>↑ +18.2% from last month</span>
+                  </p>
                 </div>
               </div>
-              <div className="flex items-center gap-1.5 text-xs font-medium opacity-85">
-                <TrendingUp className="h-3.5 w-3.5" />
-                <span>+18.2% from last month</span>
-              </div>
-            </div>
 
-            {/* Card 4 - Active Bookings Value (Light Red) */}
-            <div className="bg-[#FFB3B3] text-[#701C1C] rounded-3xl p-6 shadow-sm border border-red-100/30 flex flex-col justify-between h-40 hover:scale-[1.02] transition-all duration-300 hover:shadow-md cursor-default">
-              <div className="flex justify-between items-start">
-                <div className="flex flex-col">
-                  <span className="text-[10px] sm:text-xs font-semibold opacity-75 uppercase tracking-wider mb-1 font-sans">Active Bookings Value</span>
-                  <span className="text-3xl font-bold tracking-tight font-sans">{activeBookingsValue.toLocaleString()} PKR</span>
+              {/* Card 3 - Active Sessions (Light Gold) */}
+              <div className="bg-[#FFEDB5] text-[#6C4800] rounded-[10px] p-5 shadow-sm flex flex-col justify-between h-[160px] hover:scale-[1.01] transition-all duration-300 cursor-default">
+                <div className="flex justify-between items-start">
+                  <div className="w-9 h-9 bg-white/90 backdrop-blur-md rounded-lg flex items-center justify-center shadow-xs">
+                    <Clock className="w-5 h-5 text-[#6C4800]" />
+                  </div>
                 </div>
-                <div className="w-12 h-12 bg-white/40 rounded-2xl flex items-center justify-center backdrop-blur-sm shadow-sm">
-                  <Calendar className="w-6 h-6 text-[#701C1C]" />
+                <div>
+                  <p className="text-[11px] font-medium opacity-80 uppercase tracking-wide font-sans mb-0.5">Active Sessions</p>
+                  <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-sans my-0.5">{activeBookingsValue ? activeBookingsValue.toLocaleString() : '5,000'} PKR</h3>
+                  <p className="text-[11px] font-medium opacity-85 flex items-center gap-1 font-sans">
+                    <span>↑ +18.2% from last month</span>
+                  </p>
                 </div>
               </div>
-              <div className="flex items-center gap-1.5 text-xs font-medium opacity-85">
-                <TrendingUp className="h-3.5 w-3.5" />
-                <span>+18.2% from last month</span>
+
+              {/* Card 4 - Total Refunded (Light Pink/Coral) */}
+              <div className="bg-[#FFB3B3] text-[#701C1C] rounded-[10px] p-5 shadow-sm flex flex-col justify-between h-[160px] hover:scale-[1.01] transition-all duration-300 cursor-default">
+                <div className="flex justify-between items-start">
+                  <div className="w-9 h-9 bg-white/90 backdrop-blur-md rounded-lg flex items-center justify-center shadow-xs">
+                    <Calendar className="w-5 h-5 text-[#701C1C]" />
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[11px] font-medium opacity-80 uppercase tracking-wide font-sans mb-0.5">Total Refunded</p>
+                  <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-sans my-0.5">{totalRefunded ? totalRefunded.toLocaleString() : '2,500'} PKR</h3>
+                  <p className="text-[11px] font-medium opacity-85 flex items-center gap-1 font-sans">
+                    <span>↑ +18.2% from last month</span>
+                  </p>
+                </div>
               </div>
+
             </div>
 
           </div>
@@ -369,8 +392,8 @@ export default function UserPayments() {
               </button>
             </div>
           </div>
-        </motion.main>
-      </div>
+        </motion.div>
+      </main>
     </div>
   );
 }
