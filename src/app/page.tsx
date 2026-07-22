@@ -30,7 +30,7 @@ export default function Home() {
   const [activeStep, setActiveStep] = useState(0);
   const [creatorPage, setCreatorPage] = useState(0);
   const [activeCategory, setActiveCategory] = useState('All Categories');
-  const [favorites, setFavorites] = useState<string[]>([]);
+  const [favorites, setFavorites] = useState<string[]>(['Sarah Khan', 'Dure Fishan']);
   const [featuredPage, setFeaturedPage] = useState(0);
   const [eventsPage, setEventsPage] = useState(0);
   const [savedEvents, setSavedEvents] = useState<string[]>([]);
@@ -347,7 +347,7 @@ export default function Home() {
                   className="flex flex-col w-full group cursor-pointer"
                 >
                   {/* Top Image Container */}
-                  <div className="relative w-full aspect-[4/4.2] rounded-[20px] overflow-hidden bg-gray-100 mb-3.5 shadow-xs transition-transform duration-300 group-hover:scale-[1.01]">
+                  <div className="relative w-full aspect-square rounded-[22px] overflow-hidden bg-gray-100 mb-3 shadow-xs transition-transform duration-300 group-hover:scale-[1.01]">
                     <img
                       src={creator.img}
                       alt={creator.name}
@@ -358,7 +358,7 @@ export default function Home() {
                     <span
                       className={`absolute top-3.5 left-3.5 px-3 py-1 rounded-full text-xs font-bold shadow-2xs tracking-wide ${
                         creator.isVerified
-                          ? 'bg-[#E6F9EE] text-[#12B76A]'
+                          ? 'bg-white/90 text-[#12B76A] backdrop-blur-xs'
                           : 'bg-[#EEF2FF] text-[#0012FF]'
                       }`}
                     >
@@ -376,7 +376,7 @@ export default function Home() {
                     >
                       <svg
                         className={`w-6 h-6 transition-colors duration-200 ${
-                          isFav ? 'text-[#E32A2A] fill-[#E32A2A] drop-shadow-sm' : 'text-white fill-white/80 drop-shadow-md'
+                          isFav ? 'text-[#E32A2A] fill-[#E32A2A] drop-shadow-sm' : 'text-white fill-white/90 drop-shadow-md'
                         }`}
                         viewBox="0 0 24 24"
                       >
@@ -386,13 +386,17 @@ export default function Home() {
                   </div>
 
                   {/* Info Box Below Image */}
-                  <div className="px-0.5 space-y-1">
+                  <div className="px-0.5 space-y-1 text-left">
                     {/* Title & Rating */}
                     <div className="flex items-center justify-between gap-2">
                       <h3 className="font-bold text-base sm:text-lg text-black font-sans flex items-center gap-1.5 leading-tight truncate">
                         <span>{creator.name}</span>
-                        {creator.isVerified && (
+                        {creator.isVerified ? (
                           <svg className="w-4.5 h-4.5 text-[#12B76A] fill-current shrink-0" viewBox="0 0 24 24">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                          </svg>
+                        ) : (
+                          <svg className="w-4 h-4 text-gray-300 fill-current shrink-0" viewBox="0 0 24 24">
                             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
                           </svg>
                         )}
@@ -406,12 +410,12 @@ export default function Home() {
                     <p className="text-xs text-gray-400 font-medium font-sans">{creator.handle}</p>
 
                     {/* Short Bio */}
-                    <p className="text-xs text-gray-400 font-sans leading-relaxed line-clamp-2 pt-1">
+                    <p className="text-xs text-gray-400 font-sans leading-relaxed line-clamp-2 pt-0.5">
                       {creator.description}
                     </p>
 
                     {/* Price Row */}
-                    <div className="pt-2 flex items-center gap-1 text-xs text-gray-400 font-sans">
+                    <div className="pt-1.5 flex items-center gap-1 text-xs text-gray-400 font-sans">
                       <span>Starting from</span>
                       <strong className="text-black font-black text-sm sm:text-base ml-1">
                         {creator.price}
@@ -567,140 +571,105 @@ export default function Home() {
               {/* On mobile: native scroll; on desktop: arrow-driven translate */}
               <div className="relative w-full overflow-x-auto lg:overflow-x-hidden no-scrollbar">
                 <motion.div
-                  animate={{ x: -categoryIndex * 268 }}
+                  animate={{ x: -categoryIndex * 276 }}
                   transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                  className="flex gap-3 pb-4 w-max lg:w-auto"
+                  className="flex gap-5 pb-4 w-max lg:w-auto"
                 >
                   {filteredCategoryCreators.map((creator, index) => {
-                    const clipId = `cardClip-category-${index}`;
+                    const isFav = favorites.includes(creator.name);
                     return (
                       <motion.div
                         key={index}
                         initial={{ opacity: 0, y: 30 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
-                        transition={{ duration: 0.5, delay: index * 0.1 }}
-                        className="flex flex-col w-[260px] shrink-0 p-3.5 bg-white rounded-[24px] border-0 shadow-sm group"
+                        transition={{ duration: 0.5, delay: index * 0.08 }}
+                        className="flex flex-col w-[250px] sm:w-[260px] shrink-0 group cursor-pointer"
                       >
-                        {/* Image with SVG clip notch */}
-                        <div className="relative w-full h-[280px]">
-                          <svg width="0" height="0" className="absolute">
-                            <defs>
-                              <clipPath id={clipId} clipPathUnits="objectBoundingBox">
-                                <path
-                                  d="
-M0 .06
-C0 .025 .025 0 .06 0
-H0.80
-C0.855 0 .865 .01 .865 .03
-V.10
-C.865 .12 .885 .14 .91 .14
-H.95
-C.985 .14 1 .15 1 .175
-V.91
-C1 .975 .975 1 .94 1
-H.06
-C.025 1 0 .975 0 .94
-V.06
-C0 .025 0 .025 0 .06
-Z
-"
-                                />
-                              </clipPath>
-                            </defs>
-                          </svg>
-
+                        {/* Top Image Container */}
+                        <div className="relative w-full aspect-square rounded-[22px] overflow-hidden bg-gray-100 mb-3 shadow-xs transition-transform duration-300 group-hover:scale-[1.01]">
                           <img
                             src={creator.img}
                             alt={creator.name}
-                            className="w-full h-full object-cover object-top"
-                            style={{ clipPath: `url(#${clipId})` }}
+                            className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
                           />
 
-                          {/* Tag */}
-                          <span className={`absolute top-3 left-4 px-3 py-1 rounded-full text-xs font-semibold ${creator.tag === 'Sponsored'
-                            ? 'bg-white text-blue-600'
-                            : 'bg-white text-emerald-600'
-                            }`}>
-                            {creator.tag}
+                          {/* Top Left Badge */}
+                          <span
+                            className={`absolute top-3.5 left-3.5 px-3 py-1 rounded-full text-xs font-bold shadow-2xs tracking-wide ${
+                              creator.isVerified
+                                ? 'bg-white/90 text-[#12B76A] backdrop-blur-xs'
+                                : 'bg-[#EEF2FF] text-[#0012FF]'
+                            }`}
+                          >
+                            {creator.isVerified ? 'Verified' : 'Sponsored'}
                           </span>
 
-                          {/* Heart — sits in the notch area */}
+                          {/* Top Right Heart Button */}
                           <button
-                            onClick={() => toggleFavorite(creator.name)}
-                            className="absolute top-2 right-0 z-20 flex items-center justify-center hover:scale-110 transition-transform"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleFavorite(creator.name);
+                            }}
+                            className="absolute top-3.5 right-3.5 z-20 hover:scale-110 transition-transform active:scale-90"
+                            aria-label="Add to favorites"
                           >
                             <svg
-                              className={`w-6 h-6 transition-colors duration-200 ${favorites.includes(creator.name)
-                                ? "text-red-500"
-                                : "text-gray-300"
-                                }`}
+                              className={`w-6 h-6 transition-colors duration-200 ${
+                                isFav ? 'text-[#E32A2A] fill-[#E32A2A] drop-shadow-sm' : 'text-white fill-white/90 drop-shadow-md'
+                              }`}
                               viewBox="0 0 24 24"
                             >
-                              <defs>
-                                <filter id="heartGlow" x="-50%" y="-50%" width="200%" height="200%">
-                                  <feGaussianBlur stdDeviation="0.6" result="blur" />
-                                  <feMerge>
-                                    <feMergeNode in="blur" />
-                                    <feMergeNode in="SourceGraphic" />
-                                  </feMerge>
-                                </filter>
-                              </defs>
-
-                              {/* Heart */}
-                              <path
-                                fill="currentColor"
-                                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                              />
-
-                              {/* Glow */}
-                              <path
-                                d="M15.2 6.2c1.5 0 2.7 1.2 2.7 2.7 0 1-.4 1.9-1 2.8"
-                                stroke="white"
-                                strokeWidth="2.4"
-                                strokeOpacity="0.35"
-                                strokeLinecap="round"
-                                fill="none"
-                                filter="url(#heartGlow)"
-                              />
-
-                              {/* Main shine */}
-                              <path
-                                d="M15.2 6.2c1.5 0 2.7 1.2 2.7 2.7 0 1-.4 1.9-1 2.8"
-                                stroke="white"
-                                strokeWidth="1.3"
-                                strokeOpacity="0.95"
-                                strokeLinecap="round"
-                                fill="none"
-                              />
+                              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
                             </svg>
                           </button>
                         </div>
 
-                        {/* Info */}
-                        <div className="pt-4 pb-2 px-1">
-                          <div className="flex items-center justify-between">
-                            <h3 className="font-sans font-bold text-lg text-black flex items-center gap-1.5">
-                              {creator.name}
-                              {creator.isVerified && (
-                                <svg className="w-5 h-5" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-                                  <g transform="translate(4 4) scale(0.83)">
-                                    <path fill="#34C759" d="M24 2.5c2.8 0 5 2.4 7.5 3.2 2.6.8 5.8.1 8 1.8 2.2 1.7 2.9 4.9 4.6 7.1 1.7 2.2 4.8 3.8 5.6 6.4.8 2.6-.8 5.6-.8 8.3s1.6 5.7.8 8.3c-.8 2.6-3.9 4.2-5.6 6.4-1.7 2.2-2.4 5.4-4.6 7.1-2.2 1.7-5.4 1-8 1.8-2.5.8-4.7 3.2-7.5 3.2s-5-2.4-7.5-3.2c-2.6-.8-5.8-.1-8-1.8-2.2-1.7-2.9-4.9-4.6-7.1-1.7-2.2-4.8-3.8-5.6-6.4-.8-2.6.8-5.6.8-8.3s-1.6-5.7-.8-8.3c.8-2.6 3.9-4.2 5.6-6.4 1.7-2.2 2.4-5.4 4.6-7.1 2.2-1.7 5.4-1 8-1.8C19 4.9 21.2 2.5 24 2.5z" />
-                                  </g>
-                                  <path d="M17 24L22.5 29.5L32 19" fill="none" stroke="white" strokeWidth="4.8" strokeLinecap="round" strokeLinejoin="round" />
+                        {/* Info Box Below Image */}
+                        <div className="px-0.5 space-y-1 text-left">
+                          {/* Title & Rating */}
+                          <div className="flex items-center justify-between gap-2">
+                            <h3 className="font-bold text-base sm:text-lg text-black font-sans flex items-center gap-1.5 leading-tight truncate">
+                              <span>{creator.name}</span>
+                              {creator.isVerified ? (
+                                <svg className="w-4.5 h-4.5 text-[#12B76A] fill-current shrink-0" viewBox="0 0 24 24">
+                                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                                </svg>
+                              ) : (
+                                <svg className="w-4 h-4 text-gray-300 fill-current shrink-0" viewBox="0 0 24 24">
+                                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
                                 </svg>
                               )}
                             </h3>
-                            <span className="flex items-center gap-1 text-sm font-bold text-black">
-                              <svg className="w-4 h-4 text-amber-500 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
-                              {creator.rating}
+                            <span className="flex items-center gap-1 text-xs sm:text-sm font-bold text-amber-500 shrink-0">
+                              ★ {creator.rating}
                             </span>
                           </div>
-                          <p className="text-xs text-gray-400 font-sans mt-0.5">{creator.handle}</p>
-                          <p className="text-xs text-gray-500 font-sans mt-2.5 line-clamp-2">{creator.description}</p>
-                          <div className="flex items-center justify-between mt-4">
-                            <span className="text-xs font-sans text-gray-500">Starting from <strong className="text-black font-black">{creator.price}</strong></span>
-                            <Link href="/explore-creators" className="text-xs font-sans font-bold text-blue-600 underline hover:text-blue-800 transition-colors">Book Now</Link>
+
+                          {/* Handle */}
+                          <p className="text-xs text-gray-400 font-medium font-sans">{creator.handle}</p>
+
+                          {/* Short Bio */}
+                          <p className="text-xs text-gray-400 font-sans leading-relaxed line-clamp-2 pt-0.5">
+                            {creator.description}
+                          </p>
+
+                          {/* Price Row */}
+                          <div className="pt-1.5 flex items-center gap-1 text-xs text-gray-400 font-sans">
+                            <span>Starting from</span>
+                            <strong className="text-black font-black text-sm sm:text-base ml-1">
+                              {creator.price}
+                            </strong>
+                          </div>
+
+                          {/* Book Now Link */}
+                          <div>
+                            <Link
+                              href={`/creators/${creator.handle.replace('@', '')}/book-session`}
+                              className="text-xs sm:text-sm font-bold text-[#0012FF] underline hover:text-[#0010d0] font-sans pt-1 inline-block"
+                            >
+                              Book Now
+                            </Link>
                           </div>
                         </div>
                       </motion.div>
