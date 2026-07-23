@@ -187,8 +187,8 @@ export default function CreatorSettings() {
           if (data.success) {
             setEmail(data.user?.email || '');
             if (data.profile) {
-              setDisplayName(data.profile.displayName || '');
-              setProfilePhoto(data.profile.profilePhoto || null);
+              setDisplayName(data.profile.displayName || data.user?.name || '');
+              setProfilePhoto(data.profile.profilePhoto || data.user?.profilePhoto || null);
               setCoverPhoto(data.profile.coverPhoto || null);
               setShortBio(data.profile.shortBio || '');
               setLongBio(data.profile.longBio || '');
@@ -196,13 +196,16 @@ export default function CreatorSettings() {
               setCountry(data.profile.country || 'Pakistan');
               setSelectedLanguages(data.profile.languages || []);
               setSelectedNiches(data.profile.niches || []);
-              setCoverPhoto(data.profile.coverPhoto || null);
 
               const links = data.profile.socialLinks || {};
               setInstagram(links.instagram || '');
               setTiktok(links.tiktok || '');
               setYoutube(links.youtube || '');
               setLinkedin(links.linkedin || '');
+            } else if (data.user) {
+              // Fallback for edge cases where creator profile is missing
+              setDisplayName(data.user.name || '');
+              setProfilePhoto(data.user.profilePhoto || null);
             }
           }
         }

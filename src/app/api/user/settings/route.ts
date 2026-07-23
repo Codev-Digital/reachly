@@ -27,9 +27,10 @@ export async function GET(req: NextRequest) {
       user: {
         name: user.name,
         email: user.email,
+        profilePhoto: user.profilePhoto || null,
       },
       profile: creatorProfile ? {
-        displayName: creatorProfile.displayName,
+        displayName: creatorProfile.displayName || user.name,
         shortBio: creatorProfile.shortBio,
         longBio: creatorProfile.longBio,
         city: creatorProfile.city,
@@ -38,7 +39,7 @@ export async function GET(req: NextRequest) {
         niches: creatorProfile.niches || [],
         socialLinks: creatorProfile.socialLinks || {},
         coverPhoto: creatorProfile.coverPhoto,
-        profilePhoto: creatorProfile.profilePhoto,
+        profilePhoto: creatorProfile.profilePhoto || user.profilePhoto,
       } : null
     });
   } catch (error: any) {
@@ -46,6 +47,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });
   }
 }
+
 
 // PUT to update user/creator profile details
 export async function PUT(req: NextRequest) {
@@ -80,7 +82,6 @@ export async function PUT(req: NextRequest) {
         return NextResponse.json({ error: 'Incorrect old password' }, { status: 400 });
       }
 
-      // Hash and save new password
       const salt = await bcrypt.genSalt(10);
       user.password = await bcrypt.hash(newPassword, salt);
       await user.save();
@@ -92,54 +93,45 @@ export async function PUT(req: NextRequest) {
     const { displayName, shortBio, longBio, city, country, languages, niches, socialLinks, profilePhoto, coverPhoto } = body;
 
     // Update User Name
-    let userModified = false;
     if (displayName) {
       user.name = displayName;
-      userModified = true;
     }
 
-    // Update or Create Creator Profile
+    // Check if the user is already a creator (i.e. has a CreatorProfile)
     let creatorProfile = await CreatorProfile.findOne({ userId: user._id });
-    if (!creatorProfile) {
-      // Clean fallback username to contain only alphanumeric, _, - (e.g., john.doe -> johndoe)
-      const rawPrefix = user.email.split('@')[0].toLowerCase();
-      const sanitizedUsername = rawPrefix.replace(/[^a-z0-9_-]/g, '').slice(0, 30) || `user${user._id.toString().slice(-4)}`;
-      creatorProfile = new CreatorProfile({
-        userId: user._id,
-        username: sanitizedUsername,
-      });
-    }
 
-    if (displayName !== undefined) creatorProfile.displayName = displayName;
-    if (shortBio !== undefined) creatorProfile.shortBio = shortBio;
-    if (longBio !== undefined) creatorProfile.longBio = longBio;
-    if (city !== undefined) creatorProfile.city = city;
-    if (country !== undefined) creatorProfile.country = country;
-    if (languages !== undefined) creatorProfile.languages = languages;
-    if (niches !== undefined) creatorProfile.niches = niches;
-    if (socialLinks !== undefined) creatorProfile.socialLinks = socialLinks;
+    // ONLY UPDATE CreatorProfile IF IT EXISTS! Do NOT create one here.
+    if (creatorProfile) {
+      if (displayName !== undefined) creatorProfile.displayName = displayName;
+      if (shortBio !== undefined) creatorProfile.shortBio = shortBio;
+      if (longBio !== undefined) creatorProfile.longBio = longBio;
+      if (city !== undefined) creatorProfile.city = city;
+      if (country !== undefined) creatorProfile.country = country;
+      if (languages !== undefined) creatorProfile.languages = languages;
+      if (niches !== undefined) creatorProfile.niches = niches;
+      if (socialLinks !== undefined) creatorProfile.socialLinks = socialLinks;
 
-    if (coverPhoto && coverPhoto.startsWith('data:image')) {
-      try {
-        const { uploadToSupabase } = await import('@/lib/supabase');
-        const matches = coverPhoto.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
-        if (matches && matches.length === 3) {
-          const type = matches[1];
-          const buffer = Buffer.from(matches[2], 'base64');
-          const ext = type.split('/')[1] || 'png';
-          const url = await uploadToSupabase(
-            buffer,
-            type,
-            `covers/${user._id}/cover_${Date.now()}.${ext}`
-          );
-          creatorProfile.coverPhoto = url;
+      if (coverPhoto && coverPhoto.startsWith('data:image')) {
+        try {
+          const { uploadToSupabase } = await import('@/lib/supabase');
+          const matches = coverPhoto.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+          if (matches && matches.length === 3) {
+            const type = matches[1];
+            const buffer = Buffer.from(matches[2], 'base64');
+            const ext = type.split('/')[1] || 'png';
+            const url = await uploadToSupabase(
+              buffer,
+              type,
+              `covers/${user._id}/cover_${Date.now()}.${ext}`
+            );
+            creatorProfile.coverPhoto = url;
+          }
+        } catch (uploadErr) {
+          console.error('Error uploading cover photo to supabase:', uploadErr);
         }
-      } catch (uploadErr) {
-        console.error('Error uploading cover photo to supabase:', uploadErr);
+      } else if (coverPhoto !== undefined) {
         creatorProfile.coverPhoto = coverPhoto;
       }
-    } else if (coverPhoto !== undefined) {
-      creatorProfile.coverPhoto = coverPhoto;
     }
 
     if (profilePhoto && profilePhoto.startsWith('data:image')) {
@@ -155,23 +147,21 @@ export async function PUT(req: NextRequest) {
             type,
             `profiles/${user._id}/profile_${Date.now()}.${ext}`
           );
-          creatorProfile.profilePhoto = url;
           user.profilePhoto = url;
-          userModified = true;
+          if (creatorProfile) creatorProfile.profilePhoto = url;
         }
       } catch (uploadErr) {
-        console.error('Error uploading profile photo to supabase:', uploadErr);
+        console.error('Error uploading profile photo:', uploadErr);
       }
-    } else if (profilePhoto !== undefined) {
-      creatorProfile.profilePhoto = profilePhoto;
+    } else if (profilePhoto !== undefined && profilePhoto !== null && !profilePhoto.startsWith('data:image')) {
       user.profilePhoto = profilePhoto;
-      userModified = true;
+      if (creatorProfile) creatorProfile.profilePhoto = profilePhoto;
     }
 
-    if (userModified) {
-      await user.save();
+    await user.save();
+    if (creatorProfile) {
+      await creatorProfile.save();
     }
-    await creatorProfile.save();
 
     return NextResponse.json({
       success: true,
@@ -183,6 +173,7 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: error.message || 'Something went wrong' }, { status: 500 });
   }
 }
+
 
 // DELETE user account
 export async function DELETE(req: NextRequest) {

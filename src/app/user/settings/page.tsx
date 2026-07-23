@@ -41,17 +41,9 @@ export default function UserSettings() {
         if (res.ok) {
           const data = await res.json();
           if (data.user) {
-            setDisplayName(data.profile?.displayName || data.user.name || 'James Richard');
-            setEmailAddress(data.user.email || 'jamesrichard@gmail.com');
-          }
-          if (data.profile) {
-            setProfilePhoto(data.profile.profilePhoto || null);
-            setBio(data.profile.shortBio || '');
-            setCity(data.profile.city || 'Karachi');
-            setCountry(data.profile.country || 'Pakistan');
-            if (data.profile.languages && data.profile.languages.length > 0) {
-              setSelectedLanguage(data.profile.languages[0]);
-            }
+            setDisplayName(data.user.name || '');
+            setEmailAddress(data.user.email || '');
+            setProfilePhoto(data.user.profilePhoto || null);
           }
         }
       } catch (err) {
@@ -79,14 +71,8 @@ export default function UserSettings() {
   const handleSaveChanges = async () => {
     setIsSavingProfile(true);
     try {
-      const payload = {
-        displayName,
-        shortBio: bio,
-        city,
-        country,
-        languages: [selectedLanguage],
-        profilePhoto
-      };
+      const payload: Record<string, any> = { displayName };
+      if (profilePhoto) payload.profilePhoto = profilePhoto;
 
       const res = await fetch('/api/user/settings', {
         method: 'PUT',

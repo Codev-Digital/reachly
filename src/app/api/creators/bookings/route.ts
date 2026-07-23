@@ -69,10 +69,16 @@ export async function GET(request: NextRequest) {
                             name: user.name,
                             email: user.email
                         };
-                        // Check if user has CreatorProfile for avatar
-                        const creatorProfile = await CreatorProfile.findOne({ userId: user._id });
-                        if (creatorProfile?.profilePhoto) {
-                            avatar = creatorProfile.profilePhoto;
+                        
+                        // Check if user has profilePhoto on User model first
+                        if (user.profilePhoto) {
+                            avatar = user.profilePhoto;
+                        } else {
+                            // Check if user has CreatorProfile for avatar
+                            const creatorProfile = await CreatorProfile.findOne({ userId: user._id });
+                            if (creatorProfile?.profilePhoto) {
+                                avatar = creatorProfile.profilePhoto;
+                            }
                         }
                     }
                 } else if (booking.guestDetails) {

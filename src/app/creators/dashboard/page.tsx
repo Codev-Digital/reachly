@@ -450,11 +450,13 @@ const CreatorDashboard = () => {
     </motion.div>
   );
 
-  // Filter bookings based on Month / Year selectors
+  // Filter bookings based on Month / Year / Day selectors
   const filteredBookingsList = bookingsList.filter((booking) => {
     if (!booking.scheduledDate) return false;
     const date = new Date(booking.scheduledDate);
-    return date.getMonth() === currentDate.getMonth() && date.getFullYear() === currentDate.getFullYear();
+    return date.getDate() === currentDate.getDate() && 
+           date.getMonth() === currentDate.getMonth() && 
+           date.getFullYear() === currentDate.getFullYear();
   });
 
   if (loadingData) return <LoadingAnimation />;
@@ -469,7 +471,7 @@ const CreatorDashboard = () => {
         {/* Top Header Greeting Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
           <div>
-            <p className="text-gray-400 font-medium mb-1 text-sm sm:text-base">Hello {displayName ? displayName : 'Sophia Reed'}!</p>
+            <p className="text-gray-400 font-medium mb-1 text-sm sm:text-base">Hello {displayName ? displayName : 'Creator'}!</p>
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-black tracking-tight font-sans">
               You Have <span className="text-[#0012FF]">{dashboardStats.upcomingSessions} Appointments</span> <span className="text-gray-400 font-normal text-base sm:text-xl">/ Scheduled</span>
             </h1>
@@ -763,18 +765,17 @@ const CreatorDashboard = () => {
         {/* Upcoming Bookings Section */}
         <div className="space-y-6">
           {filteredBookingsList.length === 0 ? (
-            <div className="flex flex-col items-center justify-center text-center py-16 px-4 bg-white rounded-[20px] border border-gray-100 shadow-xs">
-              <div className="relative w-36 h-36 mb-4 opacity-90">
-                <Image
-                  src="/assets/no-appointment.png"
-                  alt="No bookings"
-                  fill
-                  className="object-contain"
-                />
-              </div>
-              <h3 className="text-lg font-bold text-black font-sans mb-1">No bookings till now</h3>
-              <p className="text-xs text-gray-400 max-w-[260px] leading-relaxed">
-                No sessions scheduled for this period. Choose another date in the strip above or share your booking link.
+            <div className="bg-white rounded-3xl border border-gray-200 shadow-sm p-16 flex flex-col items-center justify-center text-center">
+              <Image
+                src="/assets/no-appointment.png"
+                alt="No Appointments"
+                width={220}
+                height={220}
+                className="mb-8 opacity-85"
+              />
+              <h2 className="text-xl font-bold text-black mb-2">No Appointments Today</h2>
+              <p className="text-gray-500 max-w-sm text-sm">
+                You are free! There are no sessions scheduled for this date. Click other dates to view bookings.
               </p>
             </div>
           ) : (

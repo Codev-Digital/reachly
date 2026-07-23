@@ -109,7 +109,7 @@ export default function CreatorCalendar() {
             id: b.id,
             _id: b.id,
             name: b.follower || 'Client',
-            handle: b.email ? `@${b.email.split('@')[0]}` : '@client',
+            handle: b.email || '@client',
             avatar: b.avatar || '/Avatars/3.jpg',
             time: b.time || 'N/A',
             type: b.type || 'Online',

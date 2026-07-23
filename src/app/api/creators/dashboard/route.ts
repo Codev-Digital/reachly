@@ -85,7 +85,7 @@ export async function GET(req: NextRequest) {
       return {
         id: b._id || b.bookingRef,
         name: b.guestDetails?.fullName || 'Guest Client',
-        handle: b.guestDetails?.email ? `@${b.guestDetails.email.split('@')[0]}` : '@client',
+        handle: b.guestDetails?.email || '@client',
         avatar: avatarUrl,
         time: `${scheduledDateStr} at ${b.scheduledTime} (${duration} mins)`,
         type: b.paymentMethod || 'Online',
