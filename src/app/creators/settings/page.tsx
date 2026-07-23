@@ -149,7 +149,7 @@ export default function CreatorSettings() {
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
+      if (file.size > 50 * 1024 * 1024) {
         alert('File size exceeds 5MB limit.');
         return;
       }
@@ -164,7 +164,7 @@ export default function CreatorSettings() {
   const handleCoverPhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 8 * 1024 * 1024) {
+      if (file.size > 80 * 1024 * 1024) {
         alert('File size exceeds 8MB limit.');
         return;
       }
@@ -1239,8 +1239,8 @@ export default function CreatorSettings() {
 
                     {/* Report Action */}
                     <div className="flex justify-end pt-2">
-                      <button 
-                        onClick={() => alert('Review reported')} 
+                      <button
+                        onClick={() => alert('Review reported')}
                         className="text-xs text-[#FF3B3B] hover:underline font-bold cursor-pointer"
                       >
                         Report
