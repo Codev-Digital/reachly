@@ -123,9 +123,6 @@ export default function CreatorWallet() {
                 <h3 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight font-sans my-0.5">
                   {availableBalance !== undefined && availableBalance !== null ? `${availableBalance.toLocaleString()} PKR` : '0 PKR'}
                 </h3>
-                <p className="text-[11px] font-medium text-white/85 flex items-center gap-1 font-sans">
-                  <span>↑ +18.2% from last month</span>
-                </p>
               </div>
 
               {/* Payout Button */}
@@ -153,9 +150,6 @@ export default function CreatorWallet() {
                 <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-sans my-0.5">
                   {lifetimeEarning !== undefined && lifetimeEarning !== null ? `${lifetimeEarning.toLocaleString()} PKR` : '0 PKR'}
                 </h3>
-                <p className="text-[11px] font-medium opacity-85 flex items-center gap-1 font-sans">
-                  <span>↑ +18.2% from last month</span>
-                </p>
               </div>
             </div>
 
@@ -171,9 +165,6 @@ export default function CreatorWallet() {
                 <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-sans my-0.5">
                   {pendingEarning !== undefined && pendingEarning !== null ? `${pendingEarning.toLocaleString()} PKR` : '0 PKR'}
                 </h3>
-                <p className="text-[11px] font-medium opacity-85 flex items-center gap-1 font-sans">
-                  <span>↑ +18.2% from last month</span>
-                </p>
               </div>
             </div>
 
@@ -189,9 +180,6 @@ export default function CreatorWallet() {
                 <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-sans my-0.5">
                   {totalPaidOut !== undefined && totalPaidOut !== null ? `${totalPaidOut.toLocaleString()} PKR` : '0 PKR'}
                 </h3>
-                <p className="text-[11px] font-medium opacity-85 flex items-center gap-1 font-sans">
-                  <span>↑ +18.2% from last month</span>
-                </p>
               </div>
             </div>
 

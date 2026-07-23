@@ -347,69 +347,80 @@ export default function UserDashboard() {
           <div className="lg:col-span-8 space-y-8">
 
             {/* 3 Stat Cards Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
-              {/* Card 1: Total Bookings */}
-              <div className="w-full h-[160px] rounded-[10px] bg-[#AFE8B9] text-[#0A4A1C] p-5 flex flex-col justify-between shadow-xs transition-all duration-300 hover:scale-[1.01]">
-                <div className="flex justify-between items-start">
-                  <div className="w-10 h-10 bg-white/80 backdrop-blur-xs rounded-xl flex items-center justify-center shadow-2xs">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0A4A1C" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="4" y="3" width="16" height="18" rx="3" />
-                      <path d="M9 3v7l3-2 3 2V3" />
-                    </svg>
-                  </div>
-                </div>
-                <div>
-                  <p className="text-[11px] font-medium opacity-80 uppercase tracking-wide font-sans mb-0.5">Total Bookings</p>
-                  <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-sans my-0.5">
-                    {currentBookings.Upcoming.length + currentBookings.Past.length + currentBookings.Cancelled.length}
-                  </h3>
-                </div>
-                <p className="text-[11px] font-medium opacity-85 flex items-center gap-1 font-sans">
-                  <span>↑ +18.2% from last month</span>
-                </p>
-              </div>
+            {/* 3 Overview Stat Cards */}
+            {(() => {
+              const totalBookingsCount = useFallback ? 0 : (realBookingsList.Upcoming.length + realBookingsList.Past.length + realBookingsList.Cancelled.length);
+              
+              // Calculate total paid/spent on non-cancelled bookings
+              let totalSpent = 0;
+              if (!useFallback) {
+                [...realBookingsList.Upcoming, ...realBookingsList.Past].forEach(b => {
+                  const numericPrice = parseInt(String(b.amount).replace(/[^0-9]/g, ''), 10) || 0;
+                  totalSpent += numericPrice;
+                });
+              }
 
-              {/* Card 2: Total Referrals */}
-              <div className="w-full h-[160px] rounded-[10px] bg-[#FFEDB5] text-[#6C4800] p-5 flex flex-col justify-between shadow-xs transition-all duration-300 hover:scale-[1.01]">
-                <div className="flex justify-between items-start">
-                  <div className="w-10 h-10 bg-white/80 backdrop-blur-xs rounded-xl flex items-center justify-center shadow-2xs">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6C4800" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="18" cy="5" r="3" />
-                      <circle cx="6" cy="12" r="3" />
-                      <circle cx="18" cy="19" r="3" />
-                      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-                      <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-                    </svg>
+              return (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
+                  {/* Card 1: Total Bookings */}
+                  <div className="w-full h-[160px] rounded-[10px] bg-[#AFE8B9] text-[#0A4A1C] p-5 flex flex-col justify-between shadow-xs transition-all duration-300 hover:scale-[1.01]">
+                    <div className="flex justify-between items-start">
+                      <div className="w-10 h-10 bg-white/80 backdrop-blur-xs rounded-xl flex items-center justify-center shadow-2xs">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0A4A1C" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="4" y="3" width="16" height="18" rx="3" />
+                          <path d="M9 3v7l3-2 3 2V3" />
+                        </svg>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-medium opacity-80 uppercase tracking-wide font-sans mb-0.5">Total Bookings</p>
+                      <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-sans my-0.5">
+                        {totalBookingsCount}
+                      </h3>
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <p className="text-[11px] font-medium opacity-80 uppercase tracking-wide font-sans mb-0.5">Total Referrals</p>
-                  <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-sans my-0.5">223</h3>
-                </div>
-                <p className="text-[11px] font-medium opacity-85 flex items-center gap-1 font-sans">
-                  <span>↑ +18.2% from last month</span>
-                </p>
-              </div>
 
-              {/* Card 3: Total Paid Out */}
-              <div className="w-full h-[160px] rounded-[10px] bg-[#BAC5FF] text-[#0012FF] p-5 flex flex-col justify-between shadow-xs transition-all duration-300 hover:scale-[1.01]">
-                <div className="flex justify-between items-start">
-                  <div className="w-10 h-10 bg-white/80 backdrop-blur-xs rounded-xl flex items-center justify-center shadow-2xs">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="2" y="5" width="20" height="14" rx="2" />
-                      <line x1="2" y1="10" x2="22" y2="10" />
-                    </svg>
+                  {/* Card 2: Total Referrals */}
+                  <div className="w-full h-[160px] rounded-[10px] bg-[#FFEDB5] text-[#6C4800] p-5 flex flex-col justify-between shadow-xs transition-all duration-300 hover:scale-[1.01]">
+                    <div className="flex justify-between items-start">
+                      <div className="w-10 h-10 bg-white/80 backdrop-blur-xs rounded-xl flex items-center justify-center shadow-2xs">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6C4800" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="18" cy="5" r="3" />
+                          <circle cx="6" cy="12" r="3" />
+                          <circle cx="18" cy="19" r="3" />
+                          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                          <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+                        </svg>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-medium opacity-80 uppercase tracking-wide font-sans mb-0.5">Total Referrals</p>
+                      <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-sans my-0.5">
+                        0
+                      </h3>
+                    </div>
+                  </div>
+
+                  {/* Card 3: Total Paid Out / Spent */}
+                  <div className="w-full h-[160px] rounded-[10px] bg-[#BAC5FF] text-[#0012FF] p-5 flex flex-col justify-between shadow-xs transition-all duration-300 hover:scale-[1.01]">
+                    <div className="flex justify-between items-start">
+                      <div className="w-10 h-10 bg-white/80 backdrop-blur-xs rounded-xl flex items-center justify-center shadow-2xs">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="2" y="5" width="20" height="14" rx="2" />
+                          <line x1="2" y1="10" x2="22" y2="10" />
+                        </svg>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-medium opacity-80 uppercase tracking-wide font-sans mb-0.5">Total Paid Out</p>
+                      <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-sans my-0.5">
+                        {totalSpent > 0 ? `${totalSpent.toLocaleString()} PKR` : '0 PKR'}
+                      </h3>
+                    </div>
                   </div>
                 </div>
-                <div>
-                  <p className="text-[11px] font-medium opacity-80 uppercase tracking-wide font-sans mb-0.5">Total Paid Out</p>
-                  <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-sans my-0.5">63,458 PKR</h3>
-                </div>
-                <p className="text-[11px] font-medium opacity-85 flex items-center gap-1 font-sans">
-                  <span>↑ +18.2% from last month</span>
-                </p>
-              </div>
-            </div>
+              );
+            })()}
 
             {/* Top Creators Section */}
             <div>

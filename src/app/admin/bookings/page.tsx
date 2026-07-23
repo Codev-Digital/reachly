@@ -228,7 +228,6 @@ export default function AdminEventsPage() {
           <div className="mt-auto">
             <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Total Events</p>
             <p className="text-2xl font-black text-[#0012FF]">1,410</p>
-            <p className="text-[10px] text-gray-400">↑ +18.2% from last month</p>
           </div>
         </div>
 
@@ -247,7 +246,6 @@ export default function AdminEventsPage() {
           <div className="mt-auto">
             <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Completed Events</p>
             <p className="text-2xl font-black text-[#10B981]">1,376</p>
-            <p className="text-[10px] text-gray-400">↑ +18.2% from last month</p>
           </div>
         </div>
 
@@ -267,7 +265,6 @@ export default function AdminEventsPage() {
           <div className="mt-auto">
             <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Cancelled Events</p>
             <p className="text-2xl font-black text-[#EF4444]">34</p>
-            <p className="text-[10px] text-gray-400">↑ +18.2% from last month</p>
           </div>
         </div>
 
@@ -287,7 +284,6 @@ export default function AdminEventsPage() {
           <div className="mt-auto">
             <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Upcoming Events</p>
             <p className="text-2xl font-black text-[#F59E0B]">234</p>
-            <p className="text-[10px] text-gray-400">↑ +18.2% from last month</p>
           </div>
         </div>
       </div>

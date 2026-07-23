@@ -175,7 +175,6 @@ const AdminDashboard = () => {
                 <div className="mt-auto">
                   <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Total Users</p>
                   <p className="text-2xl font-black text-[#0012FF]">{stats.totalUsers.toLocaleString()}</p>
-                  <p className="text-[10px] text-gray-400">↑ {stats.userGrowthTrend} from last month</p>
                 </div>
               </div>
 
@@ -199,9 +198,6 @@ const AdminDashboard = () => {
                     Total Creators
                   </p>
                   <p className="text-2xl font-black text-[#10B981]">{stats.totalCreators.toLocaleString()}</p>
-                  <p className="text-[10px] text-gray-400">
-                    ↑ {stats.creatorGrowthTrend} from last month
-                  </p>
                 </div>
               </div>
             </div>

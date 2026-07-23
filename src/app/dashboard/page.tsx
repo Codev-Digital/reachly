@@ -18,7 +18,7 @@ export default function DashboardRedirect() {
           const userData = await res.json();
 
           if (userData.user.approvalStatus === 'pending') {
-            router.push('/creators/pending-approval');
+            router.replace('/creators/pending-approval');
             return;
           }
           
@@ -29,34 +29,34 @@ export default function DashboardRedirect() {
           // Case 1: Has Creator Profile and is a creator
           if (userData.creatorProfile && isCreator) {
             if (userData.creatorProfile.isProfileComplete) {
-              router.push('/creators/dashboard');
+              router.replace('/creators/dashboard');
             } else {
-              router.push('/creator-onboarding/step-1');
+              router.replace('/creator-onboarding/step-1');
             }
             return;
           }
           
           // Case 2: Onboarding step >0 → creator (even without CreatorProfile yet)
           if (userData.user.onboardingStep > 0 && isCreator) {
-            router.push(`/creator-onboarding/step-${userData.user.onboardingStep}`);
+            router.replace(`/creator-onboarding/step-${userData.user.onboardingStep}`);
             return;
           }
           
           if (userData.user.hasSeenWelcome || userData.user.approvalStatus === 'none') {
-            router.push('/user/dashboard');
+            router.replace('/user/dashboard');
             return;
           }
           
           // Else, go to welcome
-          router.push('/welcome');
+          router.replace('/welcome');
         } else {
           // Fallback to welcome
-          router.push('/welcome');
+          router.replace('/welcome');
         }
       };
       redirectUser();
     } else if (status === 'unauthenticated') {
-      router.push('/login');
+      router.replace('/login');
     }
   }, [status, router]);
 

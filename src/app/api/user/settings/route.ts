@@ -101,9 +101,12 @@ export async function PUT(req: NextRequest) {
     // Update or Create Creator Profile
     let creatorProfile = await CreatorProfile.findOne({ userId: user._id });
     if (!creatorProfile) {
+      // Clean fallback username to contain only alphanumeric, _, - (e.g., john.doe -> johndoe)
+      const rawPrefix = user.email.split('@')[0].toLowerCase();
+      const sanitizedUsername = rawPrefix.replace(/[^a-z0-9_-]/g, '').slice(0, 30) || `user${user._id.toString().slice(-4)}`;
       creatorProfile = new CreatorProfile({
         userId: user._id,
-        username: user.email.split('@')[0], // default fallback username
+        username: sanitizedUsername,
       });
     }
 

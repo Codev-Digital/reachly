@@ -114,7 +114,7 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
 
   const navItems = [
     { name: 'Dashboard', href: '/user/dashboard', icon: 'dashboard' },
-    { name: 'Events', href: '/explore-creators', icon: 'events' },
+    // { name: 'Events', href: '/explore-creators', icon: 'events' },
     { name: 'Bookings', href: '/user/bookings', icon: 'bookings' },
     { name: 'Referrals', href: '/user/referrals', icon: 'referrals' },
     { name: 'Wallet', href: '/user/payments', icon: 'wallet' },
@@ -166,7 +166,7 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
                     )
                   )}
 
-                  {/* Events Icon */}
+                  {/* Events Icon
                   {item.icon === 'events' && (
                     isActive ? (
                       <img
@@ -180,7 +180,7 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
                         <polyline points="14 2 14 8 20 8" />
                       </svg>
                     )
-                  )}
+                  )} */}
 
                   {/* Bookings Icon */}
                   {item.icon === 'bookings' && (

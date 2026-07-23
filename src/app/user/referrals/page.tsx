@@ -99,16 +99,9 @@ export default function UserReferrals() {
                     </div>
                     <div>
                       <p className="text-[10px] font-sans mb-0.5 text-gray-500 font-bold uppercase tracking-wide">Total Referrals</p>
-                      <p className="text-3xl font-black text-[#0012FF] font-sans">223</p>
+                      <p className="text-3xl font-black text-[#0012FF] font-sans">0</p>
                     </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-1 text-[#0012FF]">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-                    <polyline points="17 6 23 6 23 12" />
-                  </svg>
-                  <span className="text-xs font-semibold">+18.2% from last month</span>
                 </div>
               </div>
             </div>
@@ -126,15 +119,8 @@ export default function UserReferrals() {
                   </div>
                   <div>
                     <p className="text-[10px] font-sans mb-0.5 text-gray-500 font-bold uppercase tracking-wide">Successful Referrals</p>
-                    <p className="text-2xl font-black font-sans text-[#22C55E]">23</p>
+                    <p className="text-2xl font-black font-sans text-[#22C55E]">0</p>
                   </div>
-                </div>
-                <div className="flex items-center gap-1 text-[#22C55E]">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-                    <polyline points="17 6 23 6 23 12" />
-                  </svg>
-                  <span className="text-xs font-semibold">+18.2% from last month</span>
                 </div>
               </div>
             </div>
@@ -151,15 +137,8 @@ export default function UserReferrals() {
                   </div>
                   <div>
                     <p className="text-[10px] font-sans mb-0.5 text-gray-500 font-bold uppercase tracking-wide">Total Rewards Earned</p>
-                    <p className="text-2xl font-black font-sans text-[#F43F5E]">2,058 PKR</p>
+                    <p className="text-2xl font-black font-sans text-[#F43F5E]">0 PKR</p>
                   </div>
-                </div>
-                <div className="flex items-center gap-1 text-[#F43F5E]">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-                    <polyline points="17 6 23 6 23 12" />
-                  </svg>
-                  <span className="text-xs font-semibold">+18.2% from last month</span>
                 </div>
               </div>
             </div>

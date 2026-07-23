@@ -274,26 +274,21 @@ export default function AdminPaymentsPage() {
                   <line x1="2" y1="10" x2="22" y2="10" />
                 </svg>
               </div>
-              <div>
-                <p className="text-xs font-sans mb-0.5 text-white/80">Available Balance</p>
-                <p className="text-2xl sm:text-3xl font-bold text-white font-sans">1,63,458 PKR</p>
+              <div className="flex items-end justify-between gap-4 z-10">
+                <div>
+                  <p className="text-xs font-sans mb-0.5 text-white/80">Available Balance</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-white font-sans">1,63,458 PKR</p>
+                </div>
+                
+                <button className="flex items-center hover:opacity-90 transition-all">
+                  <img
+                    src="/assets/payout.svg"
+                    alt="Payout"
+                    className="w-20 h-auto -translate-y-2 translate-x-3"
+                  />
+                </button>
               </div>
             </div>
-            
-            <button className="flex items-center hover:opacity-90 transition-all">
-              <img
-                src="/assets/payout.svg"
-                alt="Payout"
-                className="w-20 h-auto -translate-y-2 translate-x-3"
-              />
-            </button>
-          </div>
-          <div className="flex items-center gap-1 text-white">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-              <polyline points="17 6 23 6 23 12" />
-            </svg>
-            <span className="text-xs sm:text-sm font-semibold">+18.2% from last month</span>
           </div>
         </div>
 
@@ -314,13 +309,6 @@ export default function AdminPaymentsPage() {
               <p className="text-xs font-sans mb-0.5 text-gray-500 font-medium">Successful Payments</p>
               <p className="text-xl sm:text-2xl font-bold font-sans text-[#22C55E]">2,234</p>
             </div>
-          </div>
-          <div className="flex items-center gap-1 text-[#22C55E]">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-              <polyline points="17 6 23 6 23 12" />
-            </svg>
-            <span className="text-xs sm:text-sm font-semibold">+18.2% from last month</span>
           </div>
         </div>
 
@@ -343,13 +331,6 @@ export default function AdminPaymentsPage() {
               <p className="text-xl sm:text-2xl font-bold font-sans text-[#F59E0B]">2,058 PKR</p>
             </div>
           </div>
-          <div className="flex items-center gap-1 text-[#F59E0B]">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-              <polyline points="17 6 23 6 23 12" />
-            </svg>
-            <span className="text-xs sm:text-sm font-semibold">+18.2% from last month</span>
-          </div>
         </div>
 
         {/* Card 4: Failed Payments */}
@@ -370,13 +351,6 @@ export default function AdminPaymentsPage() {
               <p className="text-xs font-sans mb-0.5 text-gray-500 font-medium">Failed Payments</p>
               <p className="text-xl sm:text-2xl font-bold font-sans text-[#F43F5E]">543</p>
             </div>
-          </div>
-          <div className="flex items-center gap-1 text-[#F43F5E]">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-              <polyline points="17 6 23 6 23 12" />
-            </svg>
-            <span className="text-xs sm:text-sm font-semibold">+18.2% from last month</span>
           </div>
         </div>
       </div>

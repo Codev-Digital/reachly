@@ -9,7 +9,7 @@ import { signOut } from 'next-auth/react';
 
 const NAV_ITEMS = [
   { name: 'Dashboard', href: '/creators/dashboard', icon: 'dashboard' },
-  { name: 'Events', href: '/creators/events', icon: 'events' },
+  // { name: 'Events', href: '/creators/events', icon: 'events' },
   { name: 'Calendar', href: '/creators/calendar', icon: 'calendar' },
   { name: 'Wallet', href: '/creators/wallet', icon: 'wallet' },
   { name: 'Settings', href: '/creators/settings', icon: 'settings' },
@@ -27,14 +27,14 @@ function NavIcon({ icon, active }: { icon: string; active: boolean }) {
       </svg>
     );
   }
-  if (icon === 'events') {
-    return (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="flex-shrink-0">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-        <polyline points="14 2 14 8 20 8" />
-      </svg>
-    );
-  }
+  // if (icon === 'events') {
+  //   return (
+  //     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="flex-shrink-0">
+  //       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+  //       <polyline points="14 2 14 8 20 8" />
+  //     </svg>
+  //   );
+  // }
   if (icon === 'calendar') {
     if (active) return <Image src="/assets/calendar.svg" alt="Calendar" width={20} height={20} className="object-contain flex-shrink-0" />;
     return (
@@ -179,7 +179,8 @@ export default function CreatorDashboardNav({
                 alt="Reachly"
                 width={90}
                 height={36}
-                className="object-contain w-auto h-8 sm:h-9"
+                style={{ width: 'auto', height: 'auto' }}
+                className="object-contain h-8 sm:h-9"
               />
             </Link>
 

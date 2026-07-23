@@ -31,7 +31,7 @@ export default function WelcomePage() {
           if (data.user.email === 'admin@reachly.com' || data.user.email === 'abdullahgotaccess@gmail.com') {
             setRedirected(true);
             hasSelected.current = true;
-            router.push('/admin/requests');
+            router.replace('/admin/requests');
             return;
           }
 
@@ -39,14 +39,14 @@ export default function WelcomePage() {
           if (data.user.approvalStatus === 'pending' && data.user.hasCreatorProfile) {
             setRedirected(true);
             hasSelected.current = true;
-            router.push('/creators/pending-approval');
+            router.replace('/creators/pending-approval');
             return;
           }
 
           if (data.user.approvalStatus === 'pending') {
             setRedirected(true);
             hasSelected.current = true;
-            router.push('/user/pending-approval');
+            router.replace('/user/pending-approval');
             return;
           }
 
@@ -55,11 +55,11 @@ export default function WelcomePage() {
             setRedirected(true);
             hasSelected.current = true;
             if (data.user.approvalStatus === 'approved' && data.creatorProfile.isProfileComplete) {
-              router.push('/creators/dashboard');
+              router.replace('/creators/dashboard');
             } else if (!data.creatorProfile.isProfileComplete) {
-              router.push('/creator-onboarding/step-1');
+              router.replace('/creator-onboarding/step-1');
             } else {
-              router.push('/creators/pending-approval');
+              router.replace('/creators/pending-approval');
             }
             return;
           }
@@ -68,7 +68,7 @@ export default function WelcomePage() {
           if (data.user.onboardingStep > 0) {
             setRedirected(true);
             hasSelected.current = true;
-            router.push(`/creator-onboarding/step-${data.user.onboardingStep}`);
+            router.replace(`/creator-onboarding/step-${data.user.onboardingStep}`);
             return;
           }
 
@@ -76,7 +76,7 @@ export default function WelcomePage() {
           if (data.user.hasSeenWelcome) {
             setRedirected(true);
             hasSelected.current = true;
-            router.push('/user/dashboard');
+            router.replace('/user/dashboard');
             return;
           }
         }
@@ -84,7 +84,7 @@ export default function WelcomePage() {
       };
       redirectUser();
     } else if (status === 'unauthenticated') {
-      router.push('/login');
+      router.replace('/login');
     }
   }, [status, redirected, router]);
 

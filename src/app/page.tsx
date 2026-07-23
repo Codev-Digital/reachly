@@ -146,7 +146,7 @@ export default function Home() {
                 Book a 1 on 1 With<br />Your Favorite Creator
               </h1>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-                <Link href="/welcome" className="bg-white text-[#001F7D] font-sans font-semibold px-8 py-3 rounded-full text-sm hover:bg-white/90 transition-all">
+                <Link href="/explore-creators" className="bg-white text-[#001F7D] font-sans font-semibold px-8 py-3 rounded-full text-sm hover:bg-white/90 transition-all">
                   Explore Creators
                 </Link>
                 <Link href="/signup?type=creator" className="border border-white/50 text-white font-sans font-semibold px-8 py-3 rounded-full text-sm hover:bg-white/10 transition-all">
@@ -356,11 +356,10 @@ export default function Home() {
 
                     {/* Top Left Badge */}
                     <span
-                      className={`absolute top-3.5 left-3.5 px-3 py-1 rounded-full text-xs font-bold shadow-2xs tracking-wide ${
-                        creator.isVerified
-                          ? 'bg-white/90 text-[#12B76A] backdrop-blur-xs'
-                          : 'bg-[#EEF2FF] text-[#0012FF]'
-                      }`}
+                      className={`absolute top-3.5 left-3.5 px-3 py-1 rounded-full text-xs font-bold shadow-2xs tracking-wide ${creator.isVerified
+                        ? 'bg-white/90 text-[#12B76A] backdrop-blur-xs'
+                        : 'bg-[#EEF2FF] text-[#0012FF]'
+                        }`}
                     >
                       {creator.isVerified ? 'Verified' : 'Sponsored'}
                     </span>
@@ -375,9 +374,8 @@ export default function Home() {
                       aria-label="Add to favorites"
                     >
                       <svg
-                        className={`w-6 h-6 transition-colors duration-200 ${
-                          isFav ? 'text-[#E32A2A] fill-[#E32A2A] drop-shadow-sm' : 'text-white fill-white/90 drop-shadow-md'
-                        }`}
+                        className={`w-6 h-6 transition-colors duration-200 ${isFav ? 'text-[#E32A2A] fill-[#E32A2A] drop-shadow-sm' : 'text-white fill-white/90 drop-shadow-md'
+                          }`}
                         viewBox="0 0 24 24"
                       >
                         <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
@@ -524,26 +522,26 @@ export default function Home() {
             {/* Left category buttons — horizontal scroll on mobile, vertical on desktop */}
             <div className="lg:col-span-3">
               <div className="flex flex-row lg:flex-col gap-2 overflow-x-auto lg:overflow-x-visible pb-2 lg:pb-0 no-scrollbar">
-              {[
-                { name: 'All Categories', icon: <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg> },
-                { name: 'Lifestyle', icon: <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg> },
-                { name: 'Tech', icon: <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg> },
-                { name: 'Fitness', icon: <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg> },
-                { name: 'Fashion', icon: <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg> },
-                { name: 'Business', icon: <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg> },
-                { name: 'Education', icon: <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.168.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.168.477-4.5 1.253" /></svg> },
-                { name: 'Beauty', icon: <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg> },
-                { name: 'Food', icon: <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m12.728 12.728l.707.707M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> },
-              ].map((cat, i) => (
-                <motion.button
-                  key={i}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => { setActiveCategory(cat.name); setCategoryIndex(0); }}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-sans font-medium whitespace-nowrap shrink-0 cursor-pointer ${activeCategory === cat.name ? 'bg-[#0012FF] text-white shadow-md shadow-[#0012FF]/20' : 'bg-white text-gray-500 border border-gray-100'}`}
-                >
-                  {cat.icon} {cat.name}
-                </motion.button>
-              ))}
+                {[
+                  { name: 'All Categories', icon: <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg> },
+                  { name: 'Lifestyle', icon: <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg> },
+                  { name: 'Tech', icon: <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg> },
+                  { name: 'Fitness', icon: <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg> },
+                  { name: 'Fashion', icon: <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg> },
+                  { name: 'Business', icon: <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg> },
+                  { name: 'Education', icon: <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.168.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.168.477-4.5 1.253" /></svg> },
+                  { name: 'Beauty', icon: <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg> },
+                  { name: 'Food', icon: <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m12.728 12.728l.707.707M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> },
+                ].map((cat, i) => (
+                  <motion.button
+                    key={i}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => { setActiveCategory(cat.name); setCategoryIndex(0); }}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-sans font-medium whitespace-nowrap shrink-0 cursor-pointer ${activeCategory === cat.name ? 'bg-[#0012FF] text-white shadow-md shadow-[#0012FF]/20' : 'bg-white text-gray-500 border border-gray-100'}`}
+                  >
+                    {cat.icon} {cat.name}
+                  </motion.button>
+                ))}
               </div>
             </div>
 
@@ -596,11 +594,10 @@ export default function Home() {
 
                           {/* Top Left Badge */}
                           <span
-                            className={`absolute top-3.5 left-3.5 px-3 py-1 rounded-full text-xs font-bold shadow-2xs tracking-wide ${
-                              creator.isVerified
-                                ? 'bg-white/90 text-[#12B76A] backdrop-blur-xs'
-                                : 'bg-[#EEF2FF] text-[#0012FF]'
-                            }`}
+                            className={`absolute top-3.5 left-3.5 px-3 py-1 rounded-full text-xs font-bold shadow-2xs tracking-wide ${creator.isVerified
+                              ? 'bg-white/90 text-[#12B76A] backdrop-blur-xs'
+                              : 'bg-[#EEF2FF] text-[#0012FF]'
+                              }`}
                           >
                             {creator.isVerified ? 'Verified' : 'Sponsored'}
                           </span>
@@ -615,9 +612,8 @@ export default function Home() {
                             aria-label="Add to favorites"
                           >
                             <svg
-                              className={`w-6 h-6 transition-colors duration-200 ${
-                                isFav ? 'text-[#E32A2A] fill-[#E32A2A] drop-shadow-sm' : 'text-white fill-white/90 drop-shadow-md'
-                              }`}
+                              className={`w-6 h-6 transition-colors duration-200 ${isFav ? 'text-[#E32A2A] fill-[#E32A2A] drop-shadow-sm' : 'text-white fill-white/90 drop-shadow-md'
+                                }`}
                               viewBox="0 0 24 24"
                             >
                               <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
@@ -762,7 +758,7 @@ export default function Home() {
                       </div>
                     </div>
                   </div>
-                  <Link href="/explore-creators" className="shrink-0 bg-white text-blue-600 hover:bg-white/95 px-5 py-2.5 rounded-full font-sans font-bold text-xs sm:text-sm tracking-wide shadow-lg transition-all active:scale-95 whitespace-nowrap">Book Now</Link>
+                  <Link href="/" className="shrink-0 bg-white text-blue-600 hover:bg-white/95 px-5 py-2.5 rounded-full font-sans font-bold text-xs sm:text-sm tracking-wide shadow-lg transition-all active:scale-95 whitespace-nowrap">Coming soon</Link>
                 </div>
               </motion.div>
             ))}

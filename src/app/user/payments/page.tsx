@@ -84,14 +84,14 @@ export default function UserPayments() {
     .reduce((sum, t) => sum + t.rawPrice, 0);
 
   const totalRefunded = transactions
-    .filter(t => t.rawStatus === 'refunded')
+    .filter(t => t.rawStatus === 'refunded' || t.rawStatus === 'cancelled')
     .reduce((sum, t) => sum + t.rawPrice, 0);
 
   const activeBookingsValue = transactions
-    .filter(t => t.rawStatus === 'confirmed' && new Date(t.scheduledDate) > new Date())
+    .filter(t => (t.rawStatus === 'confirmed' || t.rawStatus === 'pending') && new Date(t.scheduledDate || Date.now()) >= new Date())
     .reduce((sum, t) => sum + t.rawPrice, 0);
 
-  const availableBalance = Math.max(0, 50000 + totalRefunded - totalSpent);
+  const availableBalance = totalRefunded;
 
   return (
     <div className="min-h-screen bg-[#F8F8FA] pb-12">
@@ -140,9 +140,6 @@ export default function UserPayments() {
                 <div>
                   <p className="text-[11px] font-medium text-white/80 uppercase tracking-wide font-sans mb-0.5">Available Balance</p>
                   <h3 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight font-sans my-0.5">{availableBalance.toLocaleString()} PKR</h3>
-                  <p className="text-[11px] font-medium text-white/85 flex items-center gap-1 font-sans">
-                    <span>↑ +18.2% from last month</span>
-                  </p>
                 </div>
 
                 {/* Top Up Button */}
@@ -167,10 +164,7 @@ export default function UserPayments() {
                 </div>
                 <div>
                   <p className="text-[11px] font-medium opacity-80 uppercase tracking-wide font-sans mb-0.5">Total Spent</p>
-                  <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-sans my-0.5">{totalSpent ? totalSpent.toLocaleString() : '12,500'} PKR</h3>
-                  <p className="text-[11px] font-medium opacity-85 flex items-center gap-1 font-sans">
-                    <span>↑ +18.2% from last month</span>
-                  </p>
+                  <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-sans my-0.5">{totalSpent ? totalSpent.toLocaleString() : '0'} PKR</h3>
                 </div>
               </div>
 
@@ -183,10 +177,7 @@ export default function UserPayments() {
                 </div>
                 <div>
                   <p className="text-[11px] font-medium opacity-80 uppercase tracking-wide font-sans mb-0.5">Active Sessions</p>
-                  <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-sans my-0.5">{activeBookingsValue ? activeBookingsValue.toLocaleString() : '5,000'} PKR</h3>
-                  <p className="text-[11px] font-medium opacity-85 flex items-center gap-1 font-sans">
-                    <span>↑ +18.2% from last month</span>
-                  </p>
+                  <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-sans my-0.5">{activeBookingsValue ? activeBookingsValue.toLocaleString() : '0'} PKR</h3>
                 </div>
               </div>
 
@@ -199,10 +190,7 @@ export default function UserPayments() {
                 </div>
                 <div>
                   <p className="text-[11px] font-medium opacity-80 uppercase tracking-wide font-sans mb-0.5">Total Refunded</p>
-                  <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-sans my-0.5">{totalRefunded ? totalRefunded.toLocaleString() : '2,500'} PKR</h3>
-                  <p className="text-[11px] font-medium opacity-85 flex items-center gap-1 font-sans">
-                    <span>↑ +18.2% from last month</span>
-                  </p>
+                  <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-sans my-0.5">{totalRefunded ? totalRefunded.toLocaleString() : '0'} PKR</h3>
                 </div>
               </div>
 

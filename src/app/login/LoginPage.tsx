@@ -51,23 +51,23 @@ export default function LoginPage() {
           const isBookingPath = callbackUrl.startsWith('/creators/') && callbackUrl.includes('/book-session');
 
           if (email.toLowerCase().trim() === 'admin@reachly.com' || email.toLowerCase().trim() === 'abdullahgotaccess@gmail.com') {
-            router.push('/admin/dashboard');
+            router.replace('/admin/dashboard');
           } else if (approvalStatus === 'pending') {
-            router.push(hasCreatorProfile ? '/creators/pending-approval' : '/user/pending-approval');
+            router.replace(hasCreatorProfile ? '/creators/pending-approval' : '/user/pending-approval');
           } else if (isBookingPath) {
-            router.push(callbackUrl);
+            router.replace(callbackUrl);
           } else if (isFullyApproved) {
-            router.push('/creators/dashboard');
+            router.replace('/creators/dashboard');
           } else if (isInOnboarding) {
             const resumeStep = Math.max(1, Math.min(onboardingStep, 7));
-            router.push(`/creator-onboarding/step-${resumeStep}`);
+            router.replace(`/creator-onboarding/step-${resumeStep}`);
           } else if (!hasSeenWelcome) {
-            router.push('/welcome');
+            router.replace('/welcome');
           } else {
-            router.push('/user/dashboard');
+            router.replace('/user/dashboard');
           }
         } else {
-          router.push('/welcome');
+          router.replace('/welcome');
         }
       }
     } catch (err) {

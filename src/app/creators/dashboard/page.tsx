@@ -342,7 +342,6 @@ const CreatorDashboard = () => {
     {
       label: 'Total Bookings',
       value: String(dashboardStats.totalBookings ?? 0),
-      trend: '↑ +18.2% from last month',
       bg: '#BAC5FF',
       textColor: '#0012FF',
       iconType: 'book'
@@ -350,7 +349,6 @@ const CreatorDashboard = () => {
     {
       label: 'Total Bookings this month',
       value: String(dashboardStats.totalBookingsThisMonth ?? 0),
-      trend: '↑ +18.2% from last month',
       bg: '#AFE8B9',
       textColor: '#0A4A1C',
       iconType: 'book'
@@ -358,7 +356,6 @@ const CreatorDashboard = () => {
     {
       label: 'Profile Views',
       value: String(dashboardStats.profileViews ?? 0),
-      trend: '↑ +18.2% from last month',
       bg: '#FFB3B3',
       textColor: '#701C1C',
       iconType: 'eye'
@@ -366,7 +363,6 @@ const CreatorDashboard = () => {
     {
       label: 'Upcoming Sessions',
       value: String(dashboardStats.upcomingSessions ?? 0),
-      trend: '↑ +18.2% from last month',
       bg: '#FFEDB5',
       textColor: '#6C4800',
       iconType: 'presentation'
@@ -514,9 +510,6 @@ const CreatorDashboard = () => {
                     <p className="text-[11px] font-medium opacity-80 uppercase tracking-wide font-sans mb-0.5">{stat.label}</p>
                     <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-sans my-0.5">{stat.value}</h3>
                   </div>
-                  <p className="text-[11px] font-medium opacity-85 flex items-center gap-1 font-sans">
-                    <span>{stat.trend}</span>
-                  </p>
                 </motion.div>
               );
             })}

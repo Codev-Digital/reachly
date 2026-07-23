@@ -106,7 +106,7 @@ export default function CreatorNavbar() {
               Explore Creators
             </Link>
 
-            <Link
+            {/* <Link
               href="/events"
               className={`font-sans text-sm font-medium transition-colors ${pathname === '/events'
                 ? 'text-white'
@@ -114,7 +114,7 @@ export default function CreatorNavbar() {
                 }`}
             >
               Events
-            </Link>
+            </Link> */}
 
             <Link
               href="/for-creators"

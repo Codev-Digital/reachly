@@ -29,6 +29,9 @@ export default function UserSettings() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -74,6 +77,7 @@ export default function UserSettings() {
   };
 
   const handleSaveChanges = async () => {
+    setIsSavingProfile(true);
     try {
       const payload = {
         displayName,
@@ -100,6 +104,8 @@ export default function UserSettings() {
     } catch (err) {
       console.error(err);
       alert('Error saving changes');
+    } finally {
+      setIsSavingProfile(false);
     }
   };
 
@@ -112,6 +118,7 @@ export default function UserSettings() {
       alert('Passwords do not match');
       return;
     }
+    setIsUpdatingPassword(true);
     try {
       const res = await fetch('/api/user/settings', {
         method: 'PUT',
@@ -136,6 +143,8 @@ export default function UserSettings() {
     } catch (err) {
       console.error(err);
       alert('Error updating password');
+    } finally {
+      setIsUpdatingPassword(false);
     }
   };
 
@@ -374,15 +383,27 @@ export default function UserSettings() {
               <div className="flex items-center justify-end gap-3">
                 <button
                   onClick={() => router.back()}
-                  className="bg-white border border-gray-200 text-gray-500 px-6 py-2.5 rounded-full text-xs font-bold hover:bg-gray-50 transition-all shadow-sm"
+                  disabled={isSavingProfile}
+                  className="bg-white border border-gray-200 text-gray-500 px-6 py-2.5 rounded-full text-xs font-bold hover:bg-gray-50 transition-all shadow-sm disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSaveChanges}
-                  className="bg-[#0012FF] text-white px-6 py-2.5 rounded-full text-xs font-bold shadow-sm hover:opacity-90 transition-all"
+                  disabled={isSavingProfile}
+                  className="bg-[#0012FF] text-white px-6 py-2.5 rounded-full text-xs font-bold shadow-sm hover:opacity-90 transition-all flex items-center justify-center gap-2 min-w-[130px] disabled:opacity-80"
                 >
-                  Save Changes
+                  {isSavingProfile ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    'Save Changes'
+                  )}
                 </button>
               </div>
             </div>
@@ -497,15 +518,27 @@ export default function UserSettings() {
                       setNewPassword('');
                       setConfirmPassword('');
                     }}
-                    className="bg-white border border-gray-200 text-gray-500 px-6 py-2.5 rounded-full text-xs font-bold hover:bg-gray-50 transition-all shadow-sm"
+                    disabled={isUpdatingPassword}
+                    className="bg-white border border-gray-200 text-gray-500 px-6 py-2.5 rounded-full text-xs font-bold hover:bg-gray-50 transition-all shadow-sm disabled:opacity-50"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleUpdatePassword}
-                    className="bg-[#0012FF] text-white px-6 py-2.5 rounded-full text-xs font-bold shadow-sm hover:opacity-90 transition-all"
+                    disabled={isUpdatingPassword}
+                    className="bg-[#0012FF] text-white px-6 py-2.5 rounded-full text-xs font-bold shadow-sm hover:opacity-90 transition-all flex items-center justify-center gap-2 min-w-[150px] disabled:opacity-80"
                   >
-                    Update Password
+                    {isUpdatingPassword ? (
+                      <>
+                        <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        <span>Updating...</span>
+                      </>
+                    ) : (
+                      'Update Password'
+                    )}
                   </button>
                 </div>
               </div>
