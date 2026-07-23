@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import CreatorDashboardNav from '@/components/CreatorDashboardNav';
@@ -35,12 +35,22 @@ export default function CreatorCalendar() {
   const [displayName, setDisplayName] = useState<string>('');
   const [username, setUsername] = useState<string>('');
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
+  const selectedDayRef = useRef<HTMLButtonElement | null>(null);
 
   const [monthDropdownOpen, setMonthDropdownOpen] = useState(false);
   const [yearDropdownOpen, setYearDropdownOpen] = useState(false);
 
   const [bookings, setBookings] = useState<BookingType[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (selectedDayRef.current) {
+        selectedDayRef.current.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      }
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [currentDate, loading]);
 
   // Reschedule & Cancel Modal States
   const [showCancelModal, setShowCancelModal] = useState<boolean>(false);
@@ -351,6 +361,7 @@ const GoogleMeetIcon = () => (
               return (
                 <button
                   key={dayNum}
+                  ref={isSelected ? selectedDayRef : null}
                   onClick={() => {
                     const newD = new Date(currentDate);
                     newD.setDate(dayNum);

@@ -120,7 +120,9 @@ export default function CreatorWallet() {
             <div className="flex items-end justify-between gap-4 z-10">
               <div>
                 <p className="text-[11px] font-medium text-white/80 uppercase tracking-wide font-sans mb-0.5">Available Balance</p>
-                <h3 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight font-sans my-0.5">{availableBalance ? availableBalance.toLocaleString() : '64,458'} PKR</h3>
+                <h3 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight font-sans my-0.5">
+                  {availableBalance !== undefined && availableBalance !== null ? `${availableBalance.toLocaleString()} PKR` : '0 PKR'}
+                </h3>
                 <p className="text-[11px] font-medium text-white/85 flex items-center gap-1 font-sans">
                   <span>↑ +18.2% from last month</span>
                 </p>
@@ -148,7 +150,9 @@ export default function CreatorWallet() {
               </div>
               <div>
                 <p className="text-[11px] font-medium opacity-80 uppercase tracking-wide font-sans mb-0.5">Lifetime Earning</p>
-                <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-sans my-0.5">{lifetimeEarning ? lifetimeEarning.toLocaleString() : '2,22,458'} PKR</h3>
+                <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-sans my-0.5">
+                  {lifetimeEarning !== undefined && lifetimeEarning !== null ? `${lifetimeEarning.toLocaleString()} PKR` : '0 PKR'}
+                </h3>
                 <p className="text-[11px] font-medium opacity-85 flex items-center gap-1 font-sans">
                   <span>↑ +18.2% from last month</span>
                 </p>
@@ -164,7 +168,9 @@ export default function CreatorWallet() {
               </div>
               <div>
                 <p className="text-[11px] font-medium opacity-80 uppercase tracking-wide font-sans mb-0.5">Pending Earning</p>
-                <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-sans my-0.5">{pendingEarning ? pendingEarning.toLocaleString() : '22,580'} PKR</h3>
+                <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-sans my-0.5">
+                  {pendingEarning !== undefined && pendingEarning !== null ? `${pendingEarning.toLocaleString()} PKR` : '0 PKR'}
+                </h3>
                 <p className="text-[11px] font-medium opacity-85 flex items-center gap-1 font-sans">
                   <span>↑ +18.2% from last month</span>
                 </p>
@@ -180,7 +186,9 @@ export default function CreatorWallet() {
               </div>
               <div>
                 <p className="text-[11px] font-medium opacity-80 uppercase tracking-wide font-sans mb-0.5">Total Paid Out</p>
-                <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-sans my-0.5">{totalPaidOut ? totalPaidOut.toLocaleString() : '1,55,543'} PKR</h3>
+                <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-sans my-0.5">
+                  {totalPaidOut !== undefined && totalPaidOut !== null ? `${totalPaidOut.toLocaleString()} PKR` : '0 PKR'}
+                </h3>
                 <p className="text-[11px] font-medium opacity-85 flex items-center gap-1 font-sans">
                   <span>↑ +18.2% from last month</span>
                 </p>

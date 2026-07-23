@@ -34,6 +34,8 @@ export async function GET(req: NextRequest) {
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
 
     // Stats calculations
+    const totalBookings = bookings.filter((b) => b.status !== 'cancelled').length;
+
     const totalBookingsThisMonth = bookings.filter((b) => {
       const created = new Date(b.createdAt);
       return created >= startOfMonth && created <= endOfMonth && b.status !== 'cancelled';
@@ -97,6 +99,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       success: true,
       stats: {
+        totalBookings,
         totalBookingsThisMonth,
         upcomingSessions,
         profileViews,

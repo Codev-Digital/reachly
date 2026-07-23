@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -35,22 +35,15 @@ const CreatorDashboard = () => {
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string>('');
   const [username, setUsername] = useState<string>('');
-  const [activePeriod, setActivePeriod] = useState<'daily' | 'weekly' | 'monthly'>('monthly');
-  const [currentDate, setCurrentDate] = useState<Date>(new Date(2026, 6, 2));
+  const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [monthDropdownOpen, setMonthDropdownOpen] = useState(false);
   const [yearDropdownOpen, setYearDropdownOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-
-  // Earnings chart state
-  const [chartData, setChartData] = useState<{ month: string; earnings: number; bookings: number }[]>([]);
-  const [activeBarIndex, setActiveBarIndex] = useState<number | null>(null);
-  const [chartYear, setChartYear] = useState<number>(new Date().getFullYear());
-  const [totalEarnings, setTotalEarnings] = useState<number>(0);
-  const [loadingChart, setLoadingChart] = useState(true);
-  const [chartYearDropdownOpen, setChartYearDropdownOpen] = useState(false);
+  const selectedDayRef = useRef<HTMLButtonElement | null>(null);
 
   // Real stats & bookings state
   const [dashboardStats, setDashboardStats] = useState({
+    totalBookings: 0,
     totalBookingsThisMonth: 0,
     upcomingSessions: 0,
     profileViews: 0,
@@ -58,6 +51,24 @@ const CreatorDashboard = () => {
   });
   const [bookingsList, setBookingsList] = useState<any[]>([]);
   const [loadingData, setLoadingData] = useState(true);
+
+  // Earnings chart state
+  const [chartData, setChartData] = useState<{ month: string; earnings: number; bookings: number }[]>([]);
+  const [activeBarIndex, setActiveBarIndex] = useState<number | null>(null);
+  const [chartYear, setChartYear] = useState<number>(new Date().getFullYear());
+  const [chartTimeframe, setChartTimeframe] = useState<'weekly' | 'monthly'>('monthly');
+  const [totalEarnings, setTotalEarnings] = useState<number>(0);
+  const [loadingChart, setLoadingChart] = useState(true);
+  const [chartYearDropdownOpen, setChartYearDropdownOpen] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (selectedDayRef.current) {
+        selectedDayRef.current.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      }
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [currentDate, loadingData]);
 
   // Reschedule & Cancel Modal States
   const [showCancelModal, setShowCancelModal] = useState<boolean>(false);
@@ -104,18 +115,20 @@ const CreatorDashboard = () => {
   } satisfies ChartConfig;
 
   // Fetch real earnings chart data
-  const loadEarningsChart = async (year: number) => {
+  const loadEarningsChart = async (year: number, timeframe: 'weekly' | 'monthly') => {
     setLoadingChart(true);
     try {
-      const res = await fetch(`/api/creators/earnings?year=${year}`);
+      const res = await fetch(`/api/creators/earnings?year=${year}&timeframe=${timeframe}`);
       if (res.ok) {
         const data = await res.json();
         if (data.success) {
           setChartData(data.chartData);
           setTotalEarnings(data.totalEarnings);
-          // Default active bar to current month if same year, else last non-zero month
           const now = new Date();
-          if (year === now.getFullYear()) {
+          if (timeframe === 'weekly') {
+            const dayIdx = (now.getDay() + 6) % 7;
+            setActiveBarIndex(dayIdx);
+          } else if (year === now.getFullYear()) {
             setActiveBarIndex(now.getMonth());
           } else {
             const lastNonZero = [...data.chartData].reverse().findIndex((d: any) => d.earnings > 0);
@@ -130,7 +143,7 @@ const CreatorDashboard = () => {
     }
   };
 
-  useEffect(() => { loadEarningsChart(chartYear); }, [chartYear]);
+  useEffect(() => { loadEarningsChart(chartYear, chartTimeframe); }, [chartYear, chartTimeframe]);
 
   // Helper to load fresh stats & bookings
   const loadDashboardData = async () => {
@@ -328,7 +341,7 @@ const CreatorDashboard = () => {
   const stats = [
     {
       label: 'Total Bookings',
-      value: String(dashboardStats.totalBookingsThisMonth || 192),
+      value: String(dashboardStats.totalBookings ?? 0),
       trend: '↑ +18.2% from last month',
       bg: '#BAC5FF',
       textColor: '#0012FF',
@@ -336,7 +349,7 @@ const CreatorDashboard = () => {
     },
     {
       label: 'Total Bookings this month',
-      value: String(dashboardStats.totalBookingsThisMonth || 12),
+      value: String(dashboardStats.totalBookingsThisMonth ?? 0),
       trend: '↑ +18.2% from last month',
       bg: '#AFE8B9',
       textColor: '#0A4A1C',
@@ -344,7 +357,7 @@ const CreatorDashboard = () => {
     },
     {
       label: 'Profile Views',
-      value: dashboardStats.profileViews ? String(dashboardStats.profileViews) : '1,256',
+      value: String(dashboardStats.profileViews ?? 0),
       trend: '↑ +18.2% from last month',
       bg: '#FFB3B3',
       textColor: '#701C1C',
@@ -352,12 +365,12 @@ const CreatorDashboard = () => {
     },
     {
       label: 'Upcoming Sessions',
-      value: String(dashboardStats.upcomingSessions || 3),
+      value: String(dashboardStats.upcomingSessions ?? 0),
       trend: '↑ +18.2% from last month',
       bg: '#FFEDB5',
       textColor: '#6C4800',
       iconType: 'presentation'
-    },
+    }
   ];
 
   const GoogleMeetIcon = () => (
@@ -518,30 +531,57 @@ const CreatorDashboard = () => {
               className="h-full"
             >
               <Card className="rounded-[20px] border border-gray-100 bg-white p-4 sm:p-6 shadow-sm overflow-hidden h-full flex flex-col justify-between">
-                <CardHeader className="flex flex-row items-center justify-between pb-2 pt-0 px-0 space-y-0">
+                <CardHeader className="flex flex-row items-center justify-between pb-2 pt-0 px-0 space-y-0 flex-wrap gap-2">
                   <CardTitle className="text-xl font-bold font-sans text-black">Earnings</CardTitle>
 
-                  <div className="relative">
-                    <button
-                      onClick={() => setChartYearDropdownOpen(!chartYearDropdownOpen)}
-                      className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
-                    >
-                      <span>{chartYear}</span>
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9" /></svg>
-                    </button>
-                    {chartYearDropdownOpen && (
-                      <div className="absolute right-0 top-[calc(100%+6px)] w-24 bg-white rounded-xl shadow-xl border border-gray-100 py-1.5 z-50">
-                        {[2024, 2025, 2026, 2027].map((y) => (
-                          <button
-                            key={y}
-                            onClick={() => { setChartYear(y); setChartYearDropdownOpen(false); }}
-                            className={`w-full text-left px-3 py-1.5 text-xs font-semibold hover:bg-[#0012FF]/5 transition-colors cursor-pointer ${chartYear === y ? 'text-[#0012FF] bg-[#0012FF]/5' : 'text-gray-600'}`}
-                          >
-                            {y}
-                          </button>
-                        ))}
-                      </div>
-                    )}
+                  <div className="flex items-center gap-2">
+                    {/* Weekly / Monthly timeframe toggle */}
+                    <div className="flex items-center bg-gray-100 p-1 rounded-xl border border-gray-200/60">
+                      <button
+                        onClick={() => setChartTimeframe('weekly')}
+                        className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                          chartTimeframe === 'weekly'
+                            ? 'bg-[#0012FF] text-white shadow-xs'
+                            : 'text-gray-500 hover:text-gray-800'
+                        }`}
+                      >
+                        Weekly
+                      </button>
+                      <button
+                        onClick={() => setChartTimeframe('monthly')}
+                        className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                          chartTimeframe === 'monthly'
+                            ? 'bg-[#0012FF] text-white shadow-xs'
+                            : 'text-gray-500 hover:text-gray-800'
+                        }`}
+                      >
+                        Monthly
+                      </button>
+                    </div>
+
+                    {/* Year dropdown */}
+                    <div className="relative">
+                      <button
+                        onClick={() => setChartYearDropdownOpen(!chartYearDropdownOpen)}
+                        className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
+                      >
+                        <span>{chartYear}</span>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9" /></svg>
+                      </button>
+                      {chartYearDropdownOpen && (
+                        <div className="absolute right-0 top-[calc(100%+6px)] w-24 bg-white rounded-xl shadow-xl border border-gray-100 py-1.5 z-50">
+                          {[2024, 2025, 2026, 2027].map((y) => (
+                            <button
+                              key={y}
+                              onClick={() => { setChartYear(y); setChartYearDropdownOpen(false); }}
+                              className={`w-full text-left px-3 py-1.5 text-xs font-semibold hover:bg-[#0012FF]/5 transition-colors cursor-pointer ${chartYear === y ? 'text-[#0012FF] bg-[#0012FF]/5' : 'text-gray-600'}`}
+                            >
+                              {y}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </CardHeader>
 
@@ -574,7 +614,7 @@ const CreatorDashboard = () => {
                     <ResponsiveContainer width="100%" height={210}>
                       <BarChart
                         data={chartData}
-                        margin={{ top: 12, right: 8, left: -20, bottom: 0 }}
+                        margin={{ top: 12, right: 12, left: 0, bottom: 0 }}
                         barCategoryGap="16%"
                         onClick={(data) => {
                           if (data?.activeTooltipIndex !== undefined) {
@@ -588,15 +628,15 @@ const CreatorDashboard = () => {
                           tickLine={false}
                           tickMargin={8}
                           axisLine={false}
-                          tick={{ fill: '#94A3B8', fontSize: 11, fontWeight: 500 }}
+                          tick={{ fill: '#64748B', fontSize: 11, fontWeight: 500 }}
                         />
                         <YAxis
                           tickLine={false}
                           axisLine={false}
-                          tickMargin={4}
-                          tick={{ fill: '#94A3B8', fontSize: 10 }}
+                          tickMargin={6}
+                          tick={{ fill: '#64748B', fontSize: 10, fontWeight: 600 }}
                           tickFormatter={(v) => v === 0 ? '0' : `${(v / 1000).toFixed(0)}k`}
-                          width={32}
+                          width={44}
                         />
                         <Tooltip
                           cursor={false}
@@ -677,6 +717,7 @@ const CreatorDashboard = () => {
               return (
                 <button
                   key={dayNum}
+                  ref={isSelected ? selectedDayRef : null}
                   onClick={() => {
                     const newD = new Date(currentDate);
                     newD.setDate(dayNum);

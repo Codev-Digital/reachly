@@ -127,8 +127,8 @@ export default function AdminNavbar() {
   ];
 
   return (
-    <div className="px-4 sm:px-6 pt-4">
-      <nav className="bg-white shadow-sm border border-gray-100 sticky top-0 z-50 max-w-7xl mx-auto px-8 py-3 flex flex-col rounded-3xl">
+    <div className="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-10 pt-4">
+      <nav className="bg-white shadow-sm border border-gray-100 sticky top-0 z-50 rounded-3xl px-6 sm:px-8 py-3 flex flex-col">
         <div className="flex w-full items-center justify-between">
           {/* Left: Brand Logo */}
           <Link href="/" className="flex items-center gap-2">
@@ -190,7 +190,7 @@ export default function AdminNavbar() {
                       <polyline points="16 17 21 12 16 7" />
                       <line x1="21" y1="12" x2="9" y2="12" />
                     </svg>
-                    Sign Out
+                    Log Out
                   </button>
                 </div>
               )}

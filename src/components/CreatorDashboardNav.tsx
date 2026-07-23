@@ -168,7 +168,7 @@ export default function CreatorDashboardNav({
   }, [notificationsOpen, profileDropdownOpen]);
 
   return (
-    <div className="px-3 sm:px-4 lg:px-6 pt-3 sm:pt-4">
+    <div className="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-10 pt-3 sm:pt-4">
       <nav className="bg-white shadow-sm border border-gray-100 sticky top-0 z-50 rounded-2xl sm:rounded-3xl">
         <div className="px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between gap-4">
@@ -267,9 +267,8 @@ export default function CreatorDashboardNav({
                               >
                                 <div className="flex items-start gap-3 flex-1 min-w-0">
                                   {/* Left Icon Container */}
-                                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${
-                                    isReview ? 'bg-[#FFF9EA] text-[#D99A00]' : 'bg-[#EEF2FF] text-[#0012FF]'
-                                  }`}>
+                                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${isReview ? 'bg-[#FFF9EA] text-[#D99A00]' : 'bg-[#EEF2FF] text-[#0012FF]'
+                                    }`}>
                                     {isReview ? (
                                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
@@ -320,9 +319,8 @@ export default function CreatorDashboardNav({
                               >
                                 <div className="flex items-start gap-3 flex-1 min-w-0">
                                   {/* Left Icon Container */}
-                                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${
-                                    isReview ? 'bg-[#FFF9EA] text-[#D99A00]' : 'bg-[#EEF2FF] text-[#0012FF]'
-                                  }`}>
+                                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${isReview ? 'bg-[#FFF9EA] text-[#D99A00]' : 'bg-[#EEF2FF] text-[#0012FF]'
+                                    }`}>
                                     {isReview ? (
                                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
@@ -389,16 +387,7 @@ export default function CreatorDashboardNav({
                 {/* Profile Dropdown Menu in settings theme */}
                 {profileDropdownOpen && (
                   <div className="absolute right-0 top-[48px] sm:top-[52px] w-56 bg-white rounded-2xl shadow-xl border border-gray-100 py-2.5 z-[100] text-left animate-in fade-in slide-in-from-top-2 duration-150">
-                    <div className="px-4 py-2 border-b border-gray-100/80 mb-1.5">
-                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Signed In As</p>
-                      <p className="text-sm font-bold text-black truncate mt-0.5">{displayName || 'Creator'}</p>
-                    </div>
-                    <Link
-                      href="/creators/settings"
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 font-semibold transition-colors"
-                    >
-                      Account Settings
-                    </Link>
+
                     <button
                       onClick={() => {
                         setProfileDropdownOpen(false);
@@ -406,7 +395,7 @@ export default function CreatorDashboardNav({
                       }}
                       className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50/70 font-semibold transition-colors text-left cursor-pointer"
                     >
-                      Sign Out
+                      Log Out
                     </button>
                   </div>
                 )}

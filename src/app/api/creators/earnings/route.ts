@@ -41,26 +41,71 @@ export async function GET(req: NextRequest) {
       monthlyBookings[month] += 1;
     });
 
+    const timeframe = searchParams.get('timeframe') || 'monthly'; // 'weekly' | 'monthly' | 'yearly'
+
+    if (timeframe === 'weekly') {
+      // Return 7 days of the current week (or recent 7 days)
+      const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      const dailyTotals = Array(7).fill(0);
+      const dailyBookings = Array(7).fill(0);
+
+      const now = new Date();
+      const currentDayOfWeek = now.getDay(); // 0 is Sun, 1 is Mon
+      const distanceToMon = (currentDayOfWeek + 6) % 7;
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() - distanceToMon);
+      startOfWeek.setHours(0, 0, 0, 0);
+
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 6);
+      endOfWeek.setHours(23, 59, 59, 999);
+
+      const weekBookings = await Booking.find({
+        creatorId: user._id,
+        status: { $in: ['confirmed', 'completed'] },
+        scheduledDate: { $gte: startOfWeek, $lte: endOfWeek },
+      }).select('finalPrice scheduledDate status');
+
+      weekBookings.forEach((b) => {
+        const d = new Date(b.scheduledDate);
+        const dayIdx = (d.getDay() + 6) % 7;
+        dailyTotals[dayIdx] += b.finalPrice || 0;
+        dailyBookings[dayIdx] += 1;
+      });
+
+      const chartData = days.map((day, idx) => ({
+        label: day,
+        month: day,
+        earnings: dailyTotals[idx],
+        bookings: dailyBookings[idx],
+      }));
+
+      const totalEarnings = dailyTotals.reduce((sum, v) => sum + v, 0);
+
+      return NextResponse.json({
+        success: true,
+        year,
+        timeframe: 'weekly',
+        totalEarnings,
+        chartData,
+      });
+    }
+
+    // Monthly view (default)
     const chartData = MONTHS.map((month, idx) => ({
+      label: month,
       month,
       earnings: monthlyTotals[idx],
       bookings: monthlyBookings[idx],
     }));
 
-    // Total for the year
     const totalEarnings = monthlyTotals.reduce((sum, v) => sum + v, 0);
-
-    // Selected month earnings (if month param provided)
-    const selectedMonth = searchParams.get('month');
-    const selectedMonthEarnings = selectedMonth !== null
-      ? monthlyTotals[parseInt(selectedMonth, 10)]
-      : null;
 
     return NextResponse.json({
       success: true,
       year,
+      timeframe: 'monthly',
       totalEarnings,
-      selectedMonthEarnings,
       chartData,
     });
   } catch (error: any) {

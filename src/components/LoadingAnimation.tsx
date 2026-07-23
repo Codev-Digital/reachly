@@ -1,44 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useLottie } from 'lottie-react';
-
 export default function LoadingAnimation() {
-  const [animationData, setAnimationData] = useState<any>(null);
-
-  useEffect(() => {
-    fetch('/loading.json')
-      .then(res => res.json())
-      .then(data => setAnimationData(data))
-      .catch(err => console.error('Error loading animation:', err));
-  }, []);
-
-  // Default empty animation data so useLottie is always called
-  const defaultAnimationData = {
-    v: '5.5.7',
-    fr: 60,
-    ip: 0,
-    op: 1,
-    w: 500,
-    h: 500,
-    nm: '',
-    ddd: 0,
-    assets: [],
-    layers: [],
-  };
-
-  const options = {
-    animationData: animationData || defaultAnimationData,
-    loop: true,
-    autoplay: true,
-  };
-
-  const { View } = useLottie(options);
-
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-white">
-      <div className="w-64 h-64">
-        {View}
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-10 h-10 border-4 border-[#0012FF]/20 border-t-[#0012FF] rounded-full animate-spin" />
+        <span className="text-xs font-semibold text-gray-400 tracking-wide font-sans">Loading...</span>
       </div>
     </div>
   );
