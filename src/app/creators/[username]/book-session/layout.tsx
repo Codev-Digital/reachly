@@ -244,35 +244,41 @@ export default function BookSessionLayout({ children }: { children: ReactNode })
         <Footer />
 
         {showLoginModal && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <div className="w-full max-w-md rounded-3xl bg-white shadow-2xl border border-gray-100 overflow-hidden text-center">
-              <div className="bg-[#0012FF] px-6 py-8">
-                <div className="mx-auto w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center mb-4">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                    <path d="M19 25L12 19L5 25V4C5 2.9 5.9 2 7 2H17C18.1 2 19 2.9 19 4V25Z" />
-                  </svg>
-                </div>
-                <h3 className="text-white text-xl font-bold">Login Required</h3>
-                <p className="text-white/70 text-sm mt-1">Please log in or sign up to continue booking this session.</p>
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[200] p-4">
+            <div className="relative bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl border border-gray-100 w-full max-w-md p-6 sm:p-8 flex flex-col items-center text-center overflow-hidden">
+              {/* Illustration */}
+              <div className="w-40 sm:w-52 h-auto my-2">
+                <img
+                  src="/assets/login.png"
+                  alt="Login Required"
+                  className="w-full h-auto object-contain"
+                />
               </div>
-              <div className="p-6">
-                <p className="text-sm text-gray-500 leading-relaxed mb-6">
-                  Guest booking is disabled for this flow. Your booking progress will be kept, and you can continue from the same step after login.
-                </p>
-                <div className="flex flex-col gap-3">
-                  <button
-                    onClick={() => router.push(`/login?callbackUrl=${encodeURIComponent(pathname)}`)}
-                    className="w-full rounded-2xl bg-[#0012FF] text-white py-3 font-semibold"
-                  >
-                    Log In
-                  </button>
-                  <button
-                    onClick={() => router.push(`/signup?callbackUrl=${encodeURIComponent(pathname)}`)}
-                    className="w-full rounded-2xl border border-gray-200 text-gray-700 py-3 font-semibold"
-                  >
-                    Sign Up
-                  </button>
-                </div>
+
+              {/* Title */}
+              <h3 className="text-xl sm:text-2xl font-extrabold text-black mb-2 tracking-tight">
+                Login Required
+              </h3>
+
+              {/* Description */}
+              <p className="text-xs sm:text-sm text-gray-400 font-medium leading-relaxed mb-6 max-w-[260px] sm:max-w-[280px]">
+                Please log in or sign up to continue booking this session with the creator.
+              </p>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col gap-3 w-full max-w-[280px]">
+                <button
+                  onClick={() => router.push(`/login?callbackUrl=${encodeURIComponent(pathname)}`)}
+                  className="w-full py-3.5 bg-[#0012FF] hover:bg-[#0010d0] text-white rounded-full font-bold text-sm sm:text-base transition-all shadow-md active:scale-98 cursor-pointer"
+                >
+                  Log In
+                </button>
+                <button
+                  onClick={() => router.push(`/signup?callbackUrl=${encodeURIComponent(pathname)}`)}
+                  className="w-full py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full font-bold text-xs sm:text-sm transition-all cursor-pointer"
+                >
+                  Create Account
+                </button>
               </div>
             </div>
           </div>

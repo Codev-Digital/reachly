@@ -233,61 +233,64 @@ export default function CreatorProfileCard({ creator }: CreatorProfileCardProps)
         </div>
       </div>
 
-      {/* Guest Login Modal */}
+      {/* Guest Login / Favourites Modal */}
       <AnimatePresence>
         {showLoginModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/45 backdrop-blur-sm"
-            onClick={(e) => { if (e.target === e.currentTarget) setShowLoginModal(false); }}
-          >
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[150] p-4">
             <motion.div
               initial={{ scale: 0.92, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.92, opacity: 0, y: 20 }}
               transition={{ type: 'spring', stiffness: 300, damping: 28 }}
-              className="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden text-center"
+              className="relative bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl border border-gray-100 w-full max-w-md p-6 sm:p-8 flex flex-col items-center text-center overflow-hidden"
             >
-              {/* Blue header */}
-              <div className="bg-[#0012FF] px-6 pt-8 pb-10 flex flex-col items-center text-center">
-                <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center mb-4">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                    <path d="M19 25L12 19L5 25V4C5 2.9 5.9 2 7 2H17C18.1 2 19 2.9 19 4V25Z" />
-                  </svg>
-                </div>
-                <h3 className="text-white text-xl font-bold font-sans mb-1">Save Creator</h3>
-                <p className="text-white/70 text-xs font-sans">Log in to save creators and access them anytime</p>
+              {/* Close Button */}
+              <button
+                onClick={() => setShowLoginModal(false)}
+                className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 transition-colors p-1.5 rounded-full hover:bg-gray-100 cursor-pointer z-10"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+
+              {/* Illustration */}
+              <div className="w-40 sm:w-52 h-auto my-2">
+                <img
+                  src="/assets/favourites.png"
+                  alt="Save Favourites"
+                  className="w-full h-auto object-contain"
+                />
               </div>
-              {/* Body */}
-              <div className="px-6 py-6 text-center">
-                <p className="text-gray-500 text-sm font-sans leading-relaxed mb-6">
-                  Create a free account or log in to save your favourite creators and get personalised recommendations.
-                </p>
-                <div className="flex flex-col gap-3">
-                  <button
-                    onClick={() => window.location.href = '/login'}
-                    className="w-full bg-[#0012FF] text-white py-3 rounded-2xl text-sm font-semibold font-sans hover:bg-[#0012FF]/90 transition-all cursor-pointer"
-                  >
-                    Log In
-                  </button>
-                  <button
-                    onClick={() => window.location.href = '/signup'}
-                    className="w-full border border-gray-200 text-gray-700 py-3 rounded-2xl text-sm font-semibold font-sans hover:bg-gray-50 transition-all cursor-pointer"
-                  >
-                    Create Account
-                  </button>
-                  <button
-                    onClick={() => setShowLoginModal(false)}
-                    className="text-xs text-gray-400 hover:text-gray-600 transition-colors mt-1 cursor-pointer"
-                  >
-                    Maybe later
-                  </button>
-                </div>
+
+              {/* Title */}
+              <h3 className="text-xl sm:text-2xl font-extrabold text-black mb-2 tracking-tight">
+                Save Creator
+              </h3>
+
+              {/* Description */}
+              <p className="text-xs sm:text-sm text-gray-400 font-medium leading-relaxed mb-6 max-w-[260px] sm:max-w-[280px]">
+                Create a free account or log in to save your favourite creators and access them anytime.
+              </p>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col gap-3 w-full max-w-[280px]">
+                <button
+                  onClick={() => window.location.href = '/login'}
+                  className="w-full py-3.5 bg-[#0012FF] hover:bg-[#0010d0] text-white rounded-full font-bold text-sm sm:text-base transition-all shadow-md active:scale-98 cursor-pointer"
+                >
+                  Log In
+                </button>
+                <button
+                  onClick={() => window.location.href = '/signup'}
+                  className="w-full py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full font-bold text-xs sm:text-sm transition-all cursor-pointer"
+                >
+                  Create Account
+                </button>
               </div>
             </motion.div>
-          </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </>

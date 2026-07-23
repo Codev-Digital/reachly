@@ -1488,29 +1488,44 @@ export default function CreatorSettings() {
       )}
 
       {showSuccessModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[150] p-4">
-          <div className="relative overflow-visible w-full max-w-md flex flex-col items-center p-6 sm:p-8 pt-10 sm:pt-12 pb-6 sm:pb-8 bg-white rounded-3xl shadow-2xl border border-gray-100 z-10 text-center">
-            {/* Success Icon */}
-            <div className="w-16 h-16 rounded-full bg-[#EBFDF2] flex items-center justify-center mb-4 text-[#00B050] border-4 border-[#F3FEF7]">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                <polyline points="20 6 9 17 4 12" />
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[150] p-4">
+          <div className="relative bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl border border-gray-100 w-full max-w-md p-6 sm:p-8 flex flex-col items-center text-center overflow-hidden">
+            {/* Close Button */}
+            <button
+              onClick={() => setShowSuccessModal(false)}
+              className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 transition-colors p-1.5 rounded-full hover:bg-gray-100 cursor-pointer"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
               </svg>
+            </button>
+
+            {/* Illustration */}
+            <div className="w-40 sm:w-52 h-auto my-2">
+              <Image
+                src="/assets/settings-saved.png"
+                alt="Settings Saved"
+                width={220}
+                height={160}
+                className="w-full h-auto object-contain"
+              />
             </div>
 
             {/* Title */}
-            <h3 className="text-xl sm:text-2xl font-bold text-black mb-2">
-              Settings Updated
+            <h3 className="text-xl sm:text-2xl font-extrabold text-black mb-2 tracking-tight">
+              Settings Saved!
             </h3>
 
             {/* Description */}
-            <p className="text-xs sm:text-sm text-gray-500 mb-6 font-medium">
+            <p className="text-xs sm:text-sm text-gray-400 font-medium leading-relaxed mb-6 max-w-[260px] sm:max-w-[280px]">
               {successModalMessage || 'Your settings have been saved successfully.'}
             </p>
 
-            {/* Close button */}
+            {/* Blue Pill Action Button */}
             <button
               onClick={() => setShowSuccessModal(false)}
-              className="w-full py-2.5 bg-[#0012FF] text-white rounded-xl text-sm font-semibold hover:bg-[#0010d0] transition-all cursor-pointer shadow-sm"
+              className="w-full max-w-[260px] py-3.5 bg-[#0012FF] hover:bg-[#0010d0] text-white rounded-full font-bold text-sm sm:text-base transition-all shadow-md active:scale-98 cursor-pointer"
             >
               Continue
             </button>
