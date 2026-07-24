@@ -44,11 +44,22 @@ export default function Home() {
   const [loadingDbCreators, setLoadingDbCreators] = useState(true);
 
   const featuredScrollRef = useRef<HTMLDivElement>(null);
+  const categoryScrollRef = useRef<HTMLDivElement>(null);
 
   const scrollFeatured = (direction: 'left' | 'right') => {
     if (featuredScrollRef.current) {
       const scrollAmount = 320;
       featuredScrollRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth',
+      });
+    }
+  };
+
+  const scrollCategory = (direction: 'left' | 'right') => {
+    if (categoryScrollRef.current) {
+      const scrollAmount = 320;
+      categoryScrollRef.current.scrollBy({
         left: direction === 'left' ? -scrollAmount : scrollAmount,
         behavior: 'smooth',
       });
@@ -160,14 +171,8 @@ export default function Home() {
     { name: 'Dure Fishan', handle: '@durefishan', tag: 'Verified', img: '/Avatars/6.jpg', rating: '4.9', description: "Beauty, fashion & lifestyle creator beloved across Pakistan.", price: '1200 PKR', category: 'Beauty', bgClass: 'bg-[#ECA2A2]', isVerified: true },
   ];
 
-  const filteredCategoryCreators = categoryCreators.filter(c => {
-    if (activeCategory === 'All Categories') return true;
-    if (activeCategory === 'Lifestyle') return c.category === 'Lifestyle';
-    if (['Tech', 'Business', 'Fitness'].includes(activeCategory)) return c.category === 'Tech';
-    if (['Fashion', 'Education'].includes(activeCategory)) return c.category === 'Fashion';
-    if (['Beauty', 'Food'].includes(activeCategory)) return c.category === 'Beauty';
-    return false;
-  });
+  // Explore By Category uses the same real-time DB creators (already priority-sorted)
+  const filteredCategoryCreators = dbCreators;
 
   return (
     <div className="min-h-screen">
@@ -374,7 +379,7 @@ export default function Home() {
 
           <div
             ref={featuredScrollRef}
-            className="flex flex-nowrap items-stretch gap-6 no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden scroll-smooth pb-4 max-w-full"
+            className="flex flex-nowrap items-stretch gap-6 overflow-x-auto overflow-y-visible no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden scroll-smooth py-4 max-w-full"
           >
             {loadingDbCreators ? (
               [1, 2, 3, 4].map((i) => (
@@ -602,44 +607,51 @@ export default function Home() {
                 <span className="text-xs font-sans text-gray-400">Use arrows to navigate</span>
                 <div className="flex items-center gap-3">
                   <button
-                    onClick={() => setCategoryIndex(prev => Math.max(0, prev - 1))}
-                    disabled={categoryIndex === 0}
-                    className="w-10 h-10 rounded-full border border-[#0012FF] flex items-center justify-center text-[#0012FF] hover:bg-[#0012FF]/5 transition-all active:scale-95 disabled:opacity-40"
+                    onClick={() => scrollCategory('left')}
+                    className="w-10 h-10 rounded-full border border-[#0012FF] flex items-center justify-center text-[#0012FF] hover:bg-[#0012FF]/5 transition-all cursor-pointer"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
                   </button>
                   <button
-                    onClick={() => setCategoryIndex(prev => (prev + 1 < filteredCategoryCreators.length ? prev + 1 : 0))}
-                    className="w-10 h-10 rounded-full bg-[#0012FF] flex items-center justify-center text-white hover:bg-[#0012FF]/95 transition-all active:scale-95"
+                    onClick={() => scrollCategory('right')}
+                    className="w-10 h-10 rounded-full bg-[#0012FF] flex items-center justify-center text-white hover:bg-[#0010d0] transition-all cursor-pointer shadow-md shadow-[#0012FF]/20"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
                   </button>
                 </div>
               </div>
 
-              {/* On mobile: native scroll; on desktop: arrow-driven translate */}
-              <div className="relative w-full overflow-x-auto lg:overflow-x-hidden no-scrollbar">
-                <motion.div
-                  animate={{ x: -categoryIndex * 276 }}
-                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                  className="flex gap-5 pb-4 w-max lg:w-auto"
-                >
-                  {filteredCategoryCreators.map((creator, index) => {
-                    const isFav = favorites.includes(creator.name);
+              {/* Single row horizontal slider */}
+              <div
+                ref={categoryScrollRef}
+                className="flex flex-nowrap items-stretch gap-6 overflow-x-auto overflow-y-visible no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden scroll-smooth py-4 max-w-full"
+              >
+                {loadingDbCreators ? (
+                  [1, 2, 3, 4].map((i) => (
+                    <div key={i} className="flex flex-col w-[290px] sm:w-[325px] shrink-0">
+                      <div className="w-full h-[300px] sm:h-[330px] rounded-[24px] bg-gray-200 animate-pulse mb-3" />
+                      <div className="h-4 w-3/4 bg-gray-200 animate-pulse rounded-md mb-2" />
+                      <div className="h-3 w-1/2 bg-gray-200 animate-pulse rounded-md" />
+                    </div>
+                  ))
+                ) : filteredCategoryCreators.length > 0 ? (
+                  filteredCategoryCreators.map((creator, index) => {
+                    const isFav = favorites.includes(creator.username);
                     return (
                       <motion.div
-                        key={index}
+                        key={creator.id || creator.username || index}
                         initial={{ opacity: 0, y: 30 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
-                        transition={{ duration: 0.5, delay: index * 0.08 }}
-                        className="flex flex-col w-[250px] sm:w-[260px] shrink-0 group cursor-pointer"
+                        transition={{ duration: 0.5, delay: index * 0.05 }}
+                        onClick={() => router.push(`/creators/${creator.username}/book-session`)}
+                        className="flex flex-col w-[290px] sm:w-[325px] shrink-0 group cursor-pointer"
                       >
                         {/* Top Image Container */}
-                        <div className="relative w-full aspect-square rounded-[22px] overflow-hidden bg-gray-100 mb-3 shadow-xs transition-transform duration-300 group-hover:scale-[1.01]">
+                        <div className="relative w-full h-[300px] sm:h-[330px] rounded-[24px] overflow-hidden bg-gray-100 mb-3 shadow-xs transition-transform duration-300 group-hover:scale-[1.01]">
                           <img
-                            src={creator.img}
-                            alt={creator.name}
+                            src={creator.profilePhoto || '/merium.png'}
+                            alt={creator.displayName}
                             className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
                           />
 
@@ -650,20 +662,20 @@ export default function Home() {
                               : 'bg-[#EEF2FF] text-[#0012FF]'
                               }`}
                           >
-                            {creator.isVerified ? 'Verified' : 'Sponsored'}
+                            {creator.isVerified ? 'Verified' : 'Featured'}
                           </span>
 
                           {/* Top Right Heart Button */}
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              toggleFavorite(creator.name);
+                              toggleFavorite(creator.username);
                             }}
-                            className="absolute top-3.5 right-3.5 z-20 hover:scale-110 transition-transform active:scale-90"
+                            className="absolute top-3.5 right-3.5 z-20 hover:scale-110 active:scale-90 transition-transform cursor-pointer"
                             aria-label="Add to favorites"
                           >
                             <svg
-                              className={`w-6 h-6 transition-colors duration-200 ${isFav ? 'text-[#E32A2A] fill-[#E32A2A] drop-shadow-sm' : 'text-white fill-white/90 drop-shadow-md'
+                              className={`w-6 h-6 transition-colors duration-200 ${isFav ? 'text-[#FF3B3B] fill-[#FF3B3B] drop-shadow-md' : 'text-white fill-white drop-shadow-md'
                                 }`}
                               viewBox="0 0 24 24"
                             >
@@ -677,13 +689,9 @@ export default function Home() {
                           {/* Title & Rating */}
                           <div className="flex items-center justify-between gap-2">
                             <h3 className="font-bold text-base sm:text-lg text-black font-sans flex items-center gap-1.5 leading-tight truncate">
-                              <span>{creator.name}</span>
-                              {creator.isVerified ? (
+                              <span>{creator.displayName}</span>
+                              {creator.isVerified && (
                                 <svg className="w-4.5 h-4.5 text-[#12B76A] fill-current shrink-0" viewBox="0 0 24 24">
-                                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
-                                </svg>
-                              ) : (
-                                <svg className="w-4 h-4 text-gray-300 fill-current shrink-0" viewBox="0 0 24 24">
                                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
                                 </svg>
                               )}
@@ -694,25 +702,25 @@ export default function Home() {
                           </div>
 
                           {/* Handle */}
-                          <p className="text-xs text-gray-400 font-medium font-sans">{creator.handle}</p>
+                          <p className="text-xs text-gray-400 font-medium font-sans">@{creator.username}</p>
 
                           {/* Short Bio */}
                           <p className="text-xs text-gray-400 font-sans leading-relaxed line-clamp-2 pt-0.5">
-                            {creator.description}
+                            {creator.shortBio}
                           </p>
 
                           {/* Price Row */}
                           <div className="pt-1.5 flex items-center gap-1 text-xs text-gray-400 font-sans">
                             <span>Starting from</span>
                             <strong className="text-black font-black text-sm sm:text-base ml-1">
-                              {creator.price}
+                              {creator.startingPrice > 0 ? `${creator.startingPrice} PKR` : 'Free'}
                             </strong>
                           </div>
 
                           {/* Book Now Link */}
                           <div>
                             <Link
-                              href={`/creators/${creator.handle.replace('@', '')}/book-session`}
+                              href={`/creators/${creator.username}/book-session`}
                               className="text-xs sm:text-sm font-bold text-[#0012FF] underline hover:text-[#0010d0] font-sans pt-1 inline-block"
                             >
                               Book Now
@@ -721,8 +729,9 @@ export default function Home() {
                         </div>
                       </motion.div>
                     );
-                  })}
-                </motion.div>
+                  })
+                ) : null}
+
               </div>
             </div>
           </div>
