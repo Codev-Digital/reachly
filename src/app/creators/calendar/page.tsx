@@ -502,7 +502,7 @@ export default function CreatorCalendar() {
                 <div>
                   <div className="w-full h-px bg-gray-100 mb-4"></div>
 
-                  {booking.status === 'cancelled' || booking.status === 'Cancelled' ? (
+                  {booking.status === 'cancelled' ? (
                     <div className="w-full py-2.5 bg-[#FFF0F0] border border-red-100 text-[#FF3B3B] rounded-full text-xs font-bold text-center select-none">
                       Cancelled
                     </div>
