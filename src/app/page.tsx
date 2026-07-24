@@ -5,9 +5,11 @@ import { useState, useEffect } from 'react';
 import { motion, useInView } from 'framer-motion';
 import { useRef } from 'react';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import CreatorNavbar from '@/components/CreatorNavbar';
 import Footer from '@/components/Footer';
 import Image from "next/image";
+
 /* ─── Fade-in-up wrapper for scroll-triggered sections ─── */
 function FadeUp({ children, delay = 0, className = '' }: { children: React.ReactNode; delay?: number; className?: string }) {
   const ref = useRef(null);
@@ -26,16 +28,61 @@ function FadeUp({ children, delay = 0, className = '' }: { children: React.React
 }
 
 export default function Home() {
+  const router = useRouter();
   const { data: session, status } = useSession();
   const [activeStep, setActiveStep] = useState(0);
   const [creatorPage, setCreatorPage] = useState(0);
   const [activeCategory, setActiveCategory] = useState('All Categories');
-  const [favorites, setFavorites] = useState<string[]>(['Sarah Khan', 'Dure Fishan']);
+  const [favorites, setFavorites] = useState<string[]>([]);
   const [featuredPage, setFeaturedPage] = useState(0);
   const [eventsPage, setEventsPage] = useState(0);
   const [savedEvents, setSavedEvents] = useState<string[]>([]);
   const [categoryIndex, setCategoryIndex] = useState(0);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+
+  const [dbCreators, setDbCreators] = useState<any[]>([]);
+  const [loadingDbCreators, setLoadingDbCreators] = useState(true);
+
+  const featuredScrollRef = useRef<HTMLDivElement>(null);
+
+  const scrollFeatured = (direction: 'left' | 'right') => {
+    if (featuredScrollRef.current) {
+      const scrollAmount = 320;
+      featuredScrollRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth',
+      });
+    }
+  };
+
+  useEffect(() => {
+    async function fetchDbCreators() {
+      try {
+        const res = await fetch('/api/creators');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && Array.isArray(data.creators)) {
+            const sorted = [...data.creators].sort((a, b) => {
+              const getPriority = (creator: any) => {
+                const name = (creator.displayName || '').toLowerCase();
+                const uname = (creator.username || '').toLowerCase();
+                if (name.includes('codev') || uname.includes('codev')) return 1;
+                if (name.includes('abdoo') || name.includes('abdullah') || uname.includes('abdoo') || uname.includes('abdullah')) return 2;
+                return 3;
+              };
+              return getPriority(a) - getPriority(b);
+            });
+            setDbCreators(sorted);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching database creators:', err);
+      } finally {
+        setLoadingDbCreators(false);
+      }
+    }
+    fetchDbCreators();
+  }, []);
 
   // Clear cookies only if user is fully unauthenticated (not logged in at all).
   // Do NOT log out authenticated users here — even if they haven't seen the welcome screen yet.
@@ -316,124 +363,128 @@ export default function Home() {
               <p className="font-sans text-sm sm:text-base text-gray-500 mt-2">We've got the best of the best! Our curated talent go above and beyond</p>
             </div>
             <div className="flex items-center gap-3">
-              <button onClick={() => setFeaturedPage(prev => (prev > 0 ? prev - 1 : 1))} className="w-12 h-12 rounded-full border border-[#0012FF] flex items-center justify-center text-[#0012FF]">
+              <button onClick={() => scrollFeatured('left')} className="w-12 h-12 rounded-full border border-[#0012FF] flex items-center justify-center text-[#0012FF] hover:bg-[#0012FF]/5 transition-all cursor-pointer">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
               </button>
-              <button onClick={() => setFeaturedPage(prev => (prev < 1 ? prev + 1 : 0))} className="w-12 h-12 rounded-full bg-[#0012FF] flex items-center justify-center text-white shadow-md shadow-[#0012FF]/20">
+              <button onClick={() => scrollFeatured('right')} className="w-12 h-12 rounded-full bg-[#0012FF] flex items-center justify-center text-white shadow-md shadow-[#0012FF]/20 hover:bg-[#0010d0] transition-all cursor-pointer">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
               </button>
             </div>
           </FadeUp>
 
-          <motion.div
-            animate={{ x: featuredPage === 0 ? 0 : -10 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6 max-w-[1280px] mx-auto"
+          <div
+            ref={featuredScrollRef}
+            className="flex flex-nowrap items-stretch gap-6 no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden scroll-smooth pb-4 max-w-full"
           >
-            {[
-              { name: 'Sarah Khan', handle: '@sarahkhan', tag: 'Sponsored', img: '/Avatars/12.jpg', rating: '4.9', description: "Ayesha Khan is one of Pakistan's leading fashion and lifestyle content creators....", price: '1200 PKR', isVerified: false },
-              { name: 'Dananeer Mobeen', handle: '@dananeermobeen', tag: 'Verified', img: '/Avatars/5.jpg', rating: '4.9', description: "Ayesha Khan is one of Pakistan's leading fashion and lifestyle content creators....", price: '1200 PKR', isVerified: true },
-              { name: 'Bilal Abbas', handle: '@bilalabbas', tag: 'Sponsored', img: '/Avatars/10.jpg', rating: '4.9', description: "Ayesha Khan is one of Pakistan's leading fashion and lifestyle content creators....", price: '1200 PKR', isVerified: false },
-              { name: 'Dure Fishan', handle: '@durefishan', tag: 'Verified', img: '/Avatars/6.jpg', rating: '4.9', description: "Ayesha Khan is one of Pakistan's leading fashion and lifestyle content creators....", price: '1200 PKR', isVerified: true },
-            ].map((creator, index) => {
-              const isFav = favorites.includes(creator.name);
-              return (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="flex flex-col w-full group cursor-pointer"
-                >
-                  {/* Top Image Container */}
-                  <div className="relative w-full aspect-square rounded-[22px] overflow-hidden bg-gray-100 mb-3 shadow-xs transition-transform duration-300 group-hover:scale-[1.01]">
-                    <img
-                      src={creator.img}
-                      alt={creator.name}
-                      className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
-                    />
+            {loadingDbCreators ? (
+              [1, 2, 3, 4].map((i) => (
+                <div key={i} className="flex flex-col w-[290px] sm:w-[325px] shrink-0">
+                  <div className="w-full h-[300px] sm:h-[330px] rounded-[24px] bg-gray-200 animate-pulse mb-3" />
+                  <div className="h-4 w-3/4 bg-gray-200 animate-pulse rounded-md mb-2" />
+                  <div className="h-3 w-1/2 bg-gray-200 animate-pulse rounded-md" />
+                </div>
+              ))
+            ) : dbCreators.length > 0 ? (
+              dbCreators.map((creator, index) => {
+                const isFav = favorites.includes(creator.username);
+                return (
+                  <motion.div
+                    key={creator.id || creator.username || index}
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5, delay: index * 0.05 }}
+                    onClick={() => router.push(`/creators/${creator.username}/book-session`)}
+                    className="flex flex-col w-[290px] sm:w-[325px] shrink-0 group cursor-pointer"
+                  >
+                    {/* Top Image Container */}
+                    <div className="relative w-full h-[300px] sm:h-[330px] rounded-[24px] overflow-hidden bg-gray-100 mb-3 shadow-xs transition-transform duration-300 group-hover:scale-[1.01]">
+                      <img
+                        src={creator.profilePhoto || '/merium.png'}
+                        alt={creator.displayName}
+                        className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
+                      />
 
-                    {/* Top Left Badge */}
-                    <span
-                      className={`absolute top-3.5 left-3.5 px-3 py-1 rounded-full text-xs font-bold shadow-2xs tracking-wide ${creator.isVerified
-                        ? 'bg-white/90 text-[#12B76A] backdrop-blur-xs'
-                        : 'bg-[#EEF2FF] text-[#0012FF]'
-                        }`}
-                    >
-                      {creator.isVerified ? 'Verified' : 'Sponsored'}
-                    </span>
-
-                    {/* Top Right Heart Button */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleFavorite(creator.name);
-                      }}
-                      className="absolute top-3.5 right-3.5 z-20 hover:scale-110 transition-transform active:scale-90"
-                      aria-label="Add to favorites"
-                    >
-                      <svg
-                        className={`w-6 h-6 transition-colors duration-200 ${isFav ? 'text-[#E32A2A] fill-[#E32A2A] drop-shadow-sm' : 'text-white fill-white/90 drop-shadow-md'
+                      {/* Top Left Badge */}
+                      <span
+                        className={`absolute top-3.5 left-3.5 px-3 py-1 rounded-full text-xs font-bold shadow-2xs tracking-wide ${creator.isVerified
+                          ? 'bg-white/90 text-[#12B76A] backdrop-blur-xs'
+                          : 'bg-[#EEF2FF] text-[#0012FF]'
                           }`}
-                        viewBox="0 0 24 24"
                       >
-                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                      </svg>
-                    </button>
-                  </div>
-
-                  {/* Info Box Below Image */}
-                  <div className="px-0.5 space-y-1 text-left">
-                    {/* Title & Rating */}
-                    <div className="flex items-center justify-between gap-2">
-                      <h3 className="font-bold text-base sm:text-lg text-black font-sans flex items-center gap-1.5 leading-tight truncate">
-                        <span>{creator.name}</span>
-                        {creator.isVerified ? (
-                          <svg className="w-4.5 h-4.5 text-[#12B76A] fill-current shrink-0" viewBox="0 0 24 24">
-                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
-                          </svg>
-                        ) : (
-                          <svg className="w-4 h-4 text-gray-300 fill-current shrink-0" viewBox="0 0 24 24">
-                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
-                          </svg>
-                        )}
-                      </h3>
-                      <span className="flex items-center gap-1 text-xs sm:text-sm font-bold text-amber-500 shrink-0">
-                        ★ {creator.rating}
+                        {creator.isVerified ? 'Verified' : 'Featured'}
                       </span>
-                    </div>
 
-                    {/* Handle */}
-                    <p className="text-xs text-gray-400 font-medium font-sans">{creator.handle}</p>
-
-                    {/* Short Bio */}
-                    <p className="text-xs text-gray-400 font-sans leading-relaxed line-clamp-2 pt-0.5">
-                      {creator.description}
-                    </p>
-
-                    {/* Price Row */}
-                    <div className="pt-1.5 flex items-center gap-1 text-xs text-gray-400 font-sans">
-                      <span>Starting from</span>
-                      <strong className="text-black font-black text-sm sm:text-base ml-1">
-                        {creator.price}
-                      </strong>
-                    </div>
-
-                    {/* Book Now Link */}
-                    <div>
-                      <Link
-                        href={`/creators/${creator.handle.replace('@', '')}/book-session`}
-                        className="text-xs sm:text-sm font-bold text-[#0012FF] underline hover:text-[#0010d0] font-sans pt-1 inline-block"
+                      {/* Top Right Heart Button */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleFavorite(creator.username);
+                        }}
+                        className="absolute top-3.5 right-3.5 z-20 hover:scale-110 active:scale-90 transition-transform cursor-pointer"
+                        aria-label="Add to favorites"
                       >
-                        Book Now
-                      </Link>
+                        <svg
+                          className={`w-6 h-6 transition-colors duration-200 ${isFav ? 'text-[#FF3B3B] fill-[#FF3B3B] drop-shadow-md' : 'text-white fill-white drop-shadow-md'
+                            }`}
+                          viewBox="0 0 24 24"
+                        >
+                          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                      </button>
                     </div>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </motion.div>
+
+                    {/* Info Box Below Image */}
+                    <div className="px-0.5 space-y-1 text-left">
+                      {/* Title & Rating */}
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="font-bold text-base sm:text-lg text-black font-sans flex items-center gap-1.5 leading-tight truncate">
+                          <span>{creator.displayName}</span>
+                          {creator.isVerified && (
+                            <svg className="w-4.5 h-4.5 text-[#12B76A] fill-current shrink-0" viewBox="0 0 24 24">
+                              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                            </svg>
+                          )}
+                        </h3>
+                        <span className="flex items-center gap-1 text-xs sm:text-sm font-bold text-amber-500 shrink-0">
+                          ★ {creator.rating || '4.9'}
+                        </span>
+                      </div>
+
+                      {/* Handle */}
+                      <p className="text-xs text-gray-400 font-medium font-sans">@{creator.username}</p>
+
+                      {/* Short Bio */}
+                      <p className="text-xs text-gray-400 font-sans leading-relaxed line-clamp-2 pt-0.5">
+                        {creator.shortBio || 'Content Creator & Mentor'}
+                      </p>
+
+                      {/* Price Row */}
+                      <div className="pt-1.5 flex items-center gap-1 text-xs text-gray-400 font-sans">
+                        <span>Starting from</span>
+                        <strong className="text-black font-black text-sm sm:text-base ml-1">
+                          {creator.startingPrice ? `${creator.startingPrice} PKR` : '1000 PKR'}
+                        </strong>
+                      </div>
+
+                      {/* Book Now Link */}
+                      <div>
+                        <span
+                          className="text-xs sm:text-sm font-bold text-[#0012FF] underline hover:text-[#0010d0] font-sans pt-1 inline-block"
+                        >
+                          Book Now
+                        </span>
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })
+            ) : (
+              <div className="col-span-full py-12 text-center text-gray-400 font-medium">
+                No featured creators found.
+              </div>
+            )}
+          </div>
         </div>
       </section>
 
