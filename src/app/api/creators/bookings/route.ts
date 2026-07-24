@@ -137,6 +137,7 @@ export async function GET(request: NextRequest) {
                     isPaid: booking.paymentStatus === 'paid',
                     bookedOn: bookedOn,
                     scheduledDate: booking.scheduledDate,
+                    isRescheduled: booking.isRescheduled || false,
                 };
             })
         );

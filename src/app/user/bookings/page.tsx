@@ -36,6 +36,7 @@ interface Booking {
   status: string;
   originalStatus: string;
   scheduledDate: string;
+  isRescheduled: boolean;
 }
 
 export default function UserBookingsPage() {
@@ -106,6 +107,7 @@ export default function UserBookingsPage() {
             originalStatus: b.originalStatus,
             status: b.status,
             scheduledDate: b.scheduledDate,
+            isRescheduled: b.isRescheduled || false,
           }));
           setBookings(list);
         }
@@ -406,6 +408,11 @@ export default function UserBookingsPage() {
                         <polyline points="12 6 12 12 16 14" />
                       </svg>
                       <span>{booking.date} at {booking.time}</span>
+                      {booking.isRescheduled && (
+                        <span className="text-[10px] font-bold text-[#0012FF] bg-[#EEF2FF] px-2 py-0.5 rounded-full shrink-0 leading-none">
+                          Rescheduled
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">

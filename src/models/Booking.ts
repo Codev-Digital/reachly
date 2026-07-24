@@ -27,6 +27,8 @@ export interface IBooking extends Document {
     discountAmount?: number;
     finalPrice: number;
 
+    isRescheduled?: boolean;
+
     createdAt: Date;
     updatedAt: Date;
 }
@@ -98,6 +100,10 @@ const BookingSchema = new Schema<IBooking>(
         finalPrice: {
             type: Number,
             required: true,
+        },
+        isRescheduled: {
+            type: Boolean,
+            default: false,
         },
     },
     { timestamps: true }

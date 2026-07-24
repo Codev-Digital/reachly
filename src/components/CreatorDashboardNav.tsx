@@ -476,7 +476,7 @@ export default function CreatorDashboardNav({
             {/* Illustration */}
             <div className="w-40 sm:w-52 h-auto my-2">
               <Image
-                src="/assets/logout.png"
+                src="/assets/logout.webp"
                 alt="Logout"
                 width={220}
                 height={160}

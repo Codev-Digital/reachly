@@ -64,9 +64,11 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
         }
         if (selectedDate) {
             updatePayload.scheduledDate = new Date(selectedDate);
+            updatePayload.isRescheduled = true;
         }
         if (selectedTime) {
             updatePayload.scheduledTime = selectedTime;
+            updatePayload.isRescheduled = true;
         }
 
         const updatedBooking = await Booking.findByIdAndUpdate(

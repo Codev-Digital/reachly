@@ -121,6 +121,7 @@ export async function GET(request: NextRequest) {
                     bookedOn: bookedOn,
                     originalStatus: booking.status,
                     scheduledDate: booking.scheduledDate,
+                    isRescheduled: booking.isRescheduled || false,
                 };
             });
 

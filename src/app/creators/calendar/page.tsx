@@ -28,6 +28,7 @@ interface BookingType {
   selectedDate: string;
   selectedTime: string;
   status: 'confirmed' | 'cancelled' | 'completed';
+  isRescheduled?: boolean;
 }
 
 export default function CreatorCalendar() {
@@ -122,6 +123,7 @@ export default function CreatorCalendar() {
             selectedDate: b.scheduledDate,
             selectedTime: b.time,
             status: b.statusRaw,
+            isRescheduled: b.isRescheduled || false,
           }));
           setBookings(list);
         }
@@ -473,6 +475,11 @@ export default function CreatorCalendar() {
                     <div className="flex items-center gap-2">
                       <Calendar className="h-3.5 w-3.5 text-[#0012FF] shrink-0" />
                       <span className="font-medium text-gray-700">{booking.time}</span>
+                      {booking.isRescheduled && (
+                        <span className="text-[10px] font-bold text-[#0012FF] bg-[#EEF2FF] px-2 py-0.5 rounded-full shrink-0 leading-none">
+                          Rescheduled
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-3.5 h-3.5 flex items-center justify-center shrink-0">

@@ -27,6 +27,7 @@ interface Booking {
   reason?: string;
   isPaid?: boolean;
   bookedOn: string;
+  isRescheduled?: boolean;
 }
 
 const CreatorBookings = () => {
@@ -71,6 +72,7 @@ const CreatorBookings = () => {
           const normalizedBookings = (data.bookings || []).map((booking: any) => ({
             ...booking,
             status: normalizeStatus(booking.status, booking.statusRaw),
+            isRescheduled: booking.isRescheduled || false,
           }));
           setBookings(normalizedBookings);
         }
@@ -536,8 +538,13 @@ const CreatorBookings = () => {
                             <h3 className="font-sans text-lg font-semibold text-[#F9F6F2] mb-1">
                               {booking.session} with {booking.follower}
                             </h3>
-                            <p className="font-sans text-sm text-[#F9F6F2] opacity-70">
+                            <p className="font-sans text-sm text-[#F9F6F2] opacity-70 flex items-center gap-2 flex-wrap">
                               {booking.date} at {booking.time} · {booking.duration} · {booking.amount}
+                              {booking.isRescheduled && (
+                                <span className="text-[10px] font-bold text-[#0012FF] bg-[#EEF2FF] px-2 py-0.5 rounded-full leading-none opacity-100">
+                                  Rescheduled
+                                </span>
+                              )}
                             </p>
                           </div>
                         </div>
