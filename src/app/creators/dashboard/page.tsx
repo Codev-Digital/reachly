@@ -161,12 +161,15 @@ const CreatorDashboard = () => {
     }
   };
 
-  // Load profile and dashboard stats
+  // Load profile and dashboard stats in parallel
   useEffect(() => {
     async function loadData() {
       try {
-        // Fetch Profile
-        const profileRes = await fetch('/api/user/me');
+        const [profileRes, statsRes] = await Promise.all([
+          fetch('/api/user/me'),
+          fetch('/api/creators/dashboard')
+        ]);
+
         if (profileRes.ok) {
           const data = await profileRes.json();
           const name = data.creatorProfile?.displayName || data.user?.name || '';
@@ -176,7 +179,13 @@ const CreatorDashboard = () => {
           setUsername(data.creatorProfile?.username || '');
         }
 
-        await loadDashboardData();
+        if (statsRes.ok) {
+          const data = await statsRes.json();
+          if (data.success) {
+            setDashboardStats(data.stats);
+            setBookingsList(data.bookings || []);
+          }
+        }
       } catch (err) {
         console.error('Failed to load dashboard:', err);
       } finally {
@@ -459,7 +468,39 @@ const CreatorDashboard = () => {
            date.getFullYear() === currentDate.getFullYear();
   });
 
-  if (loadingData) return <LoadingAnimation />;
+  if (loadingData) {
+    return (
+      <div className="min-h-screen bg-[#F8F8FA]">
+        <CreatorDashboardNav profilePhoto={profilePhoto} displayName={displayName} />
+        <main className="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-10 py-8">
+          {/* Top Header Greeting Bar Skeleton */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
+            <div className="space-y-2">
+              <div className="h-4 w-36 bg-gray-200 animate-pulse rounded-md" />
+              <div className="h-9 w-80 bg-gray-200 animate-pulse rounded-lg" />
+            </div>
+            <div className="h-11 w-44 bg-gray-200 animate-pulse rounded-full" />
+          </div>
+
+          {/* Top Section Grid: 4 Stat Cards & Bar Chart Skeleton */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8 items-stretch">
+            <div className="lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="w-full h-[160px] rounded-[10px] bg-gray-200 animate-pulse" />
+              ))}
+            </div>
+            <div className="lg:col-span-6 h-[336px] rounded-[24px] bg-gray-200 animate-pulse" />
+          </div>
+
+          {/* Calendar & Schedule Skeleton */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="lg:col-span-8 h-[400px] bg-gray-200 rounded-[28px] animate-pulse" />
+            <div className="lg:col-span-4 h-[400px] bg-gray-200 rounded-[28px] animate-pulse" />
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F8F8FA]">

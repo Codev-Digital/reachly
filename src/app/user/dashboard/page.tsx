@@ -135,9 +135,16 @@ export default function UserDashboard() {
 
   const loadData = useCallback(async () => {
     try {
-      const res = await fetch('/api/user/me');
-      if (res.ok) {
-        const data = await res.json();
+      // Execute all dashboard requests in parallel to eliminate sequential network latency
+      const [meRes, bookingsRes, favRes, creatorsRes] = await Promise.all([
+        fetch('/api/user/me'),
+        fetch('/api/user/bookings'),
+        fetch('/api/user/favourite-creators'),
+        fetch('/api/creators'),
+      ]);
+
+      if (meRes.ok) {
+        const data = await meRes.json();
         setIsAuthenticated(true);
         if (data.user) {
           if (data.user.approvalStatus === 'pending' && data.user.hasCreatorProfile) {
@@ -155,16 +162,18 @@ export default function UserDashboard() {
         setIsAuthenticated(false);
       }
 
-      // Fetch bookings + favourites in parallel
-      const [bookingsRes, favRes] = await Promise.all([
-        fetch('/api/user/bookings'),
-        fetch('/api/user/favourite-creators'),
-      ]);
-
       if (favRes.ok) {
         const favData = await favRes.json();
         setFavorites(favData.favouriteCreators || []);
       }
+
+      if (creatorsRes.ok) {
+        const creatorsData = await creatorsRes.json();
+        if (creatorsData.success && creatorsData.creators?.length) {
+          setCreatorsList(creatorsData.creators);
+        }
+      }
+
       if (bookingsRes.ok) {
         const bData = await bookingsRes.json();
         if (bData.bookings && bData.bookings.length > 0) {
@@ -213,7 +222,7 @@ export default function UserDashboard() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     if (status === 'authenticated') {
@@ -301,9 +310,56 @@ export default function UserDashboard() {
     fetchCreators();
   }, [fetchCreators]);
 
-  const currentBookings = realBookingsList;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F8F8FA] pb-12 text-black overflow-x-hidden">
+        <UserNavbar displayName={displayName} profilePhoto={profilePhoto} />
+        <main className="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-10 py-8">
+          {/* Welcome Header Skeleton */}
+          <div className="mb-8 space-y-2">
+            <div className="h-4 w-32 bg-gray-200 animate-pulse rounded-md" />
+            <div className="h-9 w-80 bg-gray-200 animate-pulse rounded-lg" />
+          </div>
 
-  if (loading) return <LoadingAnimation />;
+          {/* 2-Column Skeleton Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            <div className="lg:col-span-8 space-y-8">
+              {/* 3 Stat Cards Skeleton */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="w-full h-[160px] rounded-[10px] bg-gray-200 animate-pulse" />
+                ))}
+              </div>
+
+              {/* Top Creators Skeleton */}
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="h-7 w-36 bg-gray-200 animate-pulse rounded-md" />
+                  <div className="h-9 w-36 bg-gray-200 animate-pulse rounded-full" />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="aspect-[4/4.2] bg-gray-200 rounded-[20px] animate-pulse" />
+                  ))}
+                </div>
+              </div>
+
+              {/* Bookings Section Skeleton */}
+              <div className="space-y-4">
+                <div className="h-7 w-48 bg-gray-200 animate-pulse rounded-md" />
+                <div className="h-[280px] w-full bg-gray-200 rounded-3xl animate-pulse" />
+              </div>
+            </div>
+
+            {/* Right Column Skeleton */}
+            <div className="lg:col-span-4 space-y-6">
+              <div className="h-[420px] w-full bg-gray-200 rounded-3xl animate-pulse" />
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return (

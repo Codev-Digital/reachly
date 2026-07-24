@@ -55,10 +55,15 @@ export async function GET(request: NextRequest) {
             })
             .lean();
 
-        // Now populate CreatorProfile info manually
-        const enrichedBookings = await Promise.all(
-            bookings.map(async (booking: any) => {
-                const creatorProfile = await CreatorProfile.findOne({ userId: booking.creatorId });
+        // Batch fetch CreatorProfiles in one query to avoid N+1 bottleneck
+        const creatorIds = Array.from(new Set(bookings.map((b: any) => b.creatorId?.toString()).filter(Boolean)));
+        const creatorProfiles = creatorIds.length > 0 
+            ? await CreatorProfile.find({ userId: { $in: creatorIds } }).lean()
+            : [];
+        const profileMap = new Map(creatorProfiles.map((cp: any) => [cp.userId.toString(), cp]));
+
+        const enrichedBookings = bookings.map((booking: any) => {
+            const creatorProfile = profileMap.get(booking.creatorId?.toString());
 
                 const d = new Date(booking.scheduledDate);
                 const formattedShortDate = d.toLocaleDateString('en-GB', {
@@ -117,8 +122,7 @@ export async function GET(request: NextRequest) {
                     originalStatus: booking.status,
                     scheduledDate: booking.scheduledDate,
                 };
-            })
-        );
+            });
 
         return NextResponse.json({ bookings: enrichedBookings });
     } catch (error: any) {

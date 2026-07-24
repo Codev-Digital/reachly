@@ -59,8 +59,20 @@ export async function GET(req: NextRequest) {
     });
     const totalCustomers = uniqueCustomerEmails.size;
 
+    // Batch fetch CreatorProfiles for users who don't have direct profilePhoto to avoid N+1 bottleneck
+    const userIdsNeedingProfile = Array.from(new Set(
+      bookings
+        .filter((b) => b.userId && !(b.userId as any).profilePhoto)
+        .map((b) => (b.userId as any)._id?.toString())
+        .filter(Boolean)
+    ));
+    const cpDocs = userIdsNeedingProfile.length > 0
+      ? await CreatorProfile.find({ userId: { $in: userIdsNeedingProfile } }).select('userId profilePhoto').lean()
+      : [];
+    const cpMap = new Map(cpDocs.map((cp: any) => [cp.userId.toString(), cp.profilePhoto]));
+
     // Format recent bookings list
-    const formattedBookings = await Promise.all(bookings.map(async (b) => {
+    const formattedBookings = bookings.map((b) => {
       const scheduledDateStr = new Date(b.scheduledDate).toLocaleDateString('en-US', {
         weekday: 'short',
         month: 'short',
@@ -72,14 +84,7 @@ export async function GET(req: NextRequest) {
       let avatarUrl = '/avatar.png'; // Default
       if (b.userId) {
         const u = b.userId as any;
-        if (u.profilePhoto) {
-          avatarUrl = u.profilePhoto;
-        } else {
-          const cp = await CreatorProfile.findOne({ userId: u._id });
-          if (cp?.profilePhoto) {
-            avatarUrl = cp.profilePhoto;
-          }
-        }
+        avatarUrl = u.profilePhoto || cpMap.get(u._id?.toString()) || '/avatar.png';
       }
       
       return {
@@ -94,7 +99,7 @@ export async function GET(req: NextRequest) {
         status: b.status,
         scheduledDate: b.scheduledDate,
       };
-    }));
+    });
 
     return NextResponse.json({
       success: true,
