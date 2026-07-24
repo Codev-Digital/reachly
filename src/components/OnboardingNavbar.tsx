@@ -70,9 +70,9 @@ export default function OnboardingNavbar({ showAuthButtons = false }: { showAuth
   };
 
   return (
-    <div className="px-3 sm:px-4 lg:px-6 pt-3 sm:pt-4 w-full">
+    <div className="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-10 pt-3 sm:pt-4 w-full">
       {/* Top Navbar */}
-      <nav className="bg-white shadow-sm border border-gray-100 rounded-2xl sm:rounded-3xl mb-4 max-w-7xl mx-auto">
+      <nav className="bg-white shadow-sm border border-gray-100 rounded-2xl sm:rounded-3xl mb-4">
         <div className="px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between gap-4">
             {/* Logo */}
@@ -151,10 +151,10 @@ export default function OnboardingNavbar({ showAuthButtons = false }: { showAuth
                   {/* Step Circle */}
                   <div
                     className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold transition-all shadow-sm flex-shrink-0 ${isCompleted
-                        ? 'bg-[#0012FF] text-white border border-[#0012FF]'
-                        : isActive
-                          ? 'bg-[#EEF2FF] text-[#0012FF] border border-[#0012FF] ring-4 ring-blue-50'
-                          : 'bg-white text-gray-400 border border-gray-200'
+                      ? 'bg-[#0012FF] text-white border border-[#0012FF]'
+                      : isActive
+                        ? 'bg-[#EEF2FF] text-[#0012FF] border border-[#0012FF] ring-4 ring-blue-50'
+                        : 'bg-white text-gray-400 border border-gray-200'
                       }`}
                   >
                     {isCompleted ? (

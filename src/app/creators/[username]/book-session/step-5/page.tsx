@@ -43,7 +43,7 @@ export default function BookSessionStep5() {
       <div className="grid grid-cols-1 lg:grid-cols-[410px_1fr] gap-8 items-start justify-items-center">
         <CreatorProfileCard creator={creator} />
 
-                {/* ============ RIGHT COLUMN: BOOKING CONFIRMATION ============ */}
+        {/* ============ RIGHT COLUMN: BOOKING CONFIRMATION ============ */}
         <div className="w-full">
           <div className="bg-white rounded-3xl border border-gray-200/80 p-8 sm:p-10 shadow-sm flex flex-col items-center text-center w-full max-w-[790px] mx-auto">
             {/* Booking Confirm Illustration */}

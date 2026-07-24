@@ -88,7 +88,7 @@ export default function BookSessionStep4() {
         <CreatorProfileCard creator={creator} />
 
 
-                {/* ============ RIGHT COLUMN: PAYMENT SELECTION / CONFIRMATION ============ */}
+        {/* ============ RIGHT COLUMN: PAYMENT SELECTION / CONFIRMATION ============ */}
         <div className="w-full">
           {showQr ? (
             /* ============ VIEW: CONFIRMATION ============ */
@@ -260,11 +260,10 @@ export default function BookSessionStep4() {
                 <button
                   onClick={() => saveDraft()}
                   disabled={isDraftSaved}
-                  className={`font-bold py-2.5 px-5 rounded-full text-xs transition-colors shadow-sm flex items-center justify-center gap-1.5 border ${
-                    isDraftSaved
+                  className={`font-bold py-2.5 px-5 rounded-full text-xs transition-colors shadow-sm flex items-center justify-center gap-1.5 border ${isDraftSaved
                       ? 'bg-green-50 border-green-200 text-green-600 cursor-default'
                       : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
-                  }`}
+                    }`}
                 >
                   {isDraftSaved ? (
                     <>
