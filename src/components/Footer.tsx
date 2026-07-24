@@ -80,9 +80,14 @@ export default function Footer() {
             <div>
               <h4 className="font-sans font-semibold text-white text-sm mb-5">Platform</h4>
               <ul className="space-y-3">
-                {['Explore', 'How it Works', 'For Creators', 'Pricing'].map(item => (
-                  <li key={item}>
-                    <Link href="#" className="font-sans text-sm text-white/55 hover:text-white transition-colors">{item}</Link>
+                {[
+                  { name: 'Explore', href: '/explore-creators' },
+                  { name: 'How it Works', href: '/#how-it-works' },
+                  { name: 'For Creators', href: '/for-creators' },
+                  { name: 'Pricing', href: '/#pricing' },
+                ].map(item => (
+                  <li key={item.name}>
+                    <Link href={item.href} className="font-sans text-sm text-white/55 hover:text-white transition-colors">{item.name}</Link>
                   </li>
                 ))}
               </ul>
@@ -92,9 +97,14 @@ export default function Footer() {
             <div>
               <h4 className="font-sans font-semibold text-white text-sm mb-5">Company</h4>
               <ul className="space-y-3">
-                {['About', 'Blog', 'Careers', 'Press'].map(item => (
-                  <li key={item}>
-                    <Link href="#" className="font-sans text-sm text-white/55 hover:text-white transition-colors">{item}</Link>
+                {[
+                  { name: 'About', href: '/about' },
+                  { name: 'Service Policy', href: '/service-policy' },
+                  { name: 'Careers', href: '/about' },
+                  { name: 'Press', href: '/about' },
+                ].map(item => (
+                  <li key={item.name}>
+                    <Link href={item.href} className="font-sans text-sm text-white/55 hover:text-white transition-colors">{item.name}</Link>
                   </li>
                 ))}
               </ul>
@@ -104,9 +114,14 @@ export default function Footer() {
             <div>
               <h4 className="font-sans font-semibold text-white text-sm mb-5">Support</h4>
               <ul className="space-y-3">
-                {['Help Center', 'Contact', 'FAQ', 'Guidelines'].map(item => (
-                  <li key={item}>
-                    <Link href="#" className="font-sans text-sm text-white/55 hover:text-white transition-colors">{item}</Link>
+                {[
+                  { name: 'Service Policy', href: '/service-policy' },
+                  { name: 'Refund Policy', href: '/refund-policy' },
+                  { name: 'FAQ', href: '/#faq' },
+                  { name: 'Guidelines', href: '/terms-and-conditions' },
+                ].map(item => (
+                  <li key={item.name}>
+                    <Link href={item.href} className="font-sans text-sm text-white/55 hover:text-white transition-colors">{item.name}</Link>
                   </li>
                 ))}
               </ul>
@@ -116,9 +131,14 @@ export default function Footer() {
             <div>
               <h4 className="font-sans font-semibold text-white text-sm mb-5">Legal</h4>
               <ul className="space-y-3">
-                {['Terms', 'Privacy', 'Refund', 'Policy'].map(item => (
-                  <li key={item}>
-                    <Link href="#" className="font-sans text-sm text-white/55 hover:text-white transition-colors">{item}</Link>
+                {[
+                  { name: 'Terms & Conditions', href: '/terms-and-conditions' },
+                  { name: 'Privacy Policy', href: '/privacy-policy' },
+                  { name: 'Refund Policy', href: '/refund-policy' },
+                  { name: 'Service Policy', href: '/service-policy' },
+                ].map(item => (
+                  <li key={item.name}>
+                    <Link href={item.href} className="font-sans text-sm text-white/55 hover:text-white transition-colors">{item.name}</Link>
                   </li>
                 ))}
               </ul>
@@ -134,7 +154,11 @@ export default function Footer() {
         <div className="relative z-10 py-4">
           <div className="max-w-7xl mx-auto px-6 sm:px-8">
             <p className="font-sans text-xs text-white/40 text-center">
-              © 2026 Reachly. Registered in England and Wales. VAT No. [to add]. Terms of Service · Privacy Policy · Cookie Policy · Modern Slavery Statement
+              © 2026 Reachly. All rights reserved. {' '}
+              <Link href="/terms-and-conditions" className="hover:text-white underline">Terms & Conditions</Link> · {' '}
+              <Link href="/privacy-policy" className="hover:text-white underline">Privacy Policy</Link> · {' '}
+              <Link href="/refund-policy" className="hover:text-white underline">Refund Policy</Link> · {' '}
+              <Link href="/service-policy" className="hover:text-white underline">Service Policy</Link>
             </p>
           </div>
         </div>
