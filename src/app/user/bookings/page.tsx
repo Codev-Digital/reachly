@@ -300,11 +300,10 @@ export default function UserBookingsPage() {
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
-                    isActive
-                      ? 'bg-[#0012FF] text-white shadow-sm'
-                      : 'bg-white border border-gray-200/80 text-gray-600 hover:bg-gray-50 shadow-2xs'
-                  }`}
+                  className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer ${isActive
+                    ? 'bg-[#0012FF] text-white shadow-sm'
+                    : 'bg-white border border-gray-200/80 text-gray-600 hover:bg-gray-50 shadow-2xs'
+                    }`}
                 >
                   {tab} ({count})
                 </button>
@@ -490,8 +489,8 @@ export default function UserBookingsPage() {
                       key={idx}
                       onClick={() => setRescheduleDate(d)}
                       className={`flex flex-col items-center justify-center min-w-[44px] sm:min-w-[48px] py-1.5 px-1 rounded-xl transition-all cursor-pointer shrink-0 ${isSelected
-                          ? 'bg-[#EEF2FF] border border-[#0012FF]/30 text-[#0012FF] font-bold shadow-2xs'
-                          : 'text-gray-500 hover:bg-gray-100 bg-transparent'
+                        ? 'bg-[#EEF2FF] border border-[#0012FF]/30 text-[#0012FF] font-bold shadow-2xs'
+                        : 'text-gray-500 hover:bg-gray-100 bg-transparent'
                         }`}
                     >
                       <span className={`text-[9px] uppercase font-bold tracking-wider ${isSelected ? 'text-[#0012FF]/80' : 'text-gray-400'}`}>{dayName}</span>
@@ -534,8 +533,8 @@ export default function UserBookingsPage() {
                         key={slot}
                         onClick={() => setSelectedRescheduleTimeSlot(slot)}
                         className={`py-3 px-3 border rounded-2xl text-xs sm:text-sm font-medium text-center transition-all cursor-pointer ${isSelected
-                            ? 'bg-[#EEF2FF] border-2 border-[#0012FF] text-[#0012FF] font-bold shadow-xs'
-                            : 'bg-white border-gray-200 hover:border-gray-300 text-gray-500'
+                          ? 'bg-[#EEF2FF] border-2 border-[#0012FF] text-[#0012FF] font-bold shadow-xs'
+                          : 'bg-white border-gray-200 hover:border-gray-300 text-gray-500'
                           }`}
                       >
                         {slot}
@@ -585,7 +584,7 @@ export default function UserBookingsPage() {
             {/* Illustration */}
             <div className="w-40 sm:w-52 h-auto my-2">
               <Image
-                src="/assets/cancel-appointment.png"
+                src="/assets/cancel-appointment.webp"
                 alt="Cancel Appointment"
                 width={220}
                 height={160}
@@ -634,8 +633,8 @@ export default function UserBookingsPage() {
               <Image
                 src={
                   successModalType === 'cancelled'
-                    ? '/assets/cancel-appointment.png'
-                    : '/assets/reschedule.png'
+                    ? '/assets/cancel-appointment.webp'
+                    : '/assets/reschedule.webp'
                 }
                 alt="Success"
                 width={220}

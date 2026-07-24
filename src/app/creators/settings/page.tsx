@@ -1293,7 +1293,7 @@ export default function CreatorSettings() {
             {/* Top Illustration */}
             <div className="w-40 sm:w-48 h-auto mx-auto mb-2">
               <Image
-                src="/assets/reschedule.png"
+                src="/assets/reschedule.webp"
                 alt="Edit Session"
                 width={220}
                 height={160}

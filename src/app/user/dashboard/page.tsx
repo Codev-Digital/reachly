@@ -382,8 +382,10 @@ export default function UserDashboard() {
     );
   }
 
+  const currentBookings = realBookingsList;
+
   return (
-<div className="min-h-screen bg-[#F8F8FA] pb-12 text-black overflow-x-hidden">
+    <div className="min-h-screen bg-[#F8F8FA] pb-12 text-black overflow-x-hidden">
       <UserNavbar displayName={displayName} profilePhoto={profilePhoto} />
 
       {/* Main Grid Content */}
@@ -406,7 +408,7 @@ export default function UserDashboard() {
             {/* 3 Overview Stat Cards */}
             {(() => {
               const totalBookingsCount = useFallback ? 0 : (realBookingsList.Upcoming.length + realBookingsList.Past.length + realBookingsList.Cancelled.length);
-              
+
               // Calculate total paid/spent on non-cancelled bookings
               let totalSpent = 0;
               if (!useFallback) {
@@ -526,11 +528,10 @@ export default function UserDashboard() {
 
                               {/* Top Left Badge */}
                               <span
-                                className={`absolute top-3.5 left-3.5 px-3 py-1 rounded-full text-xs font-bold shadow-2xs tracking-wide ${
-                                  creator.isVerified
-                                    ? 'bg-[#E6F9EE] text-[#12B76A]'
-                                    : 'bg-[#EEF2FF] text-[#0012FF]'
-                                }`}
+                                className={`absolute top-3.5 left-3.5 px-3 py-1 rounded-full text-xs font-bold shadow-2xs tracking-wide ${creator.isVerified
+                                  ? 'bg-[#E6F9EE] text-[#12B76A]'
+                                  : 'bg-[#EEF2FF] text-[#0012FF]'
+                                  }`}
                               >
                                 {creator.isVerified ? 'Verified' : 'Sponsored'}
                               </span>
@@ -545,9 +546,8 @@ export default function UserDashboard() {
                                 aria-label={isFav ? 'Remove from favorites' : 'Add to favorites'}
                               >
                                 <svg
-                                  className={`w-6 h-6 transition-colors duration-200 ${
-                                    isFav ? 'text-[#E32A2A] fill-[#E32A2A] drop-shadow-sm' : 'text-white fill-white/80 drop-shadow-md'
-                                  }`}
+                                  className={`w-6 h-6 transition-colors duration-200 ${isFav ? 'text-[#E32A2A] fill-[#E32A2A] drop-shadow-sm' : 'text-white fill-white/80 drop-shadow-md'
+                                    }`}
                                   viewBox="0 0 24 24"
                                 >
                                   <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
@@ -609,11 +609,10 @@ export default function UserDashboard() {
                       <button
                         onClick={() => setCreatorsPage(p => Math.max(0, p - 1))}
                         disabled={creatorsPage === 0}
-                        className={`w-9 h-9 rounded-full flex items-center justify-center border transition-all ${
-                          creatorsPage === 0
-                            ? 'border-gray-200 text-gray-300 cursor-not-allowed'
-                            : 'border-gray-300 text-gray-700 hover:border-[#0012FF] hover:text-[#0012FF] hover:bg-[#EEF2FF]'
-                        }`}
+                        className={`w-9 h-9 rounded-full flex items-center justify-center border transition-all ${creatorsPage === 0
+                          ? 'border-gray-200 text-gray-300 cursor-not-allowed'
+                          : 'border-gray-300 text-gray-700 hover:border-[#0012FF] hover:text-[#0012FF] hover:bg-[#EEF2FF]'
+                          }`}
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                           <path d="M15 18l-6-6 6-6" />
@@ -627,11 +626,10 @@ export default function UserDashboard() {
                       <button
                         onClick={() => setCreatorsPage(p => Math.min(Math.ceil(creatorsList.length / CREATORS_PER_PAGE) - 1, p + 1))}
                         disabled={creatorsPage >= Math.ceil(creatorsList.length / CREATORS_PER_PAGE) - 1}
-                        className={`w-9 h-9 rounded-full flex items-center justify-center border transition-all ${
-                          creatorsPage >= Math.ceil(creatorsList.length / CREATORS_PER_PAGE) - 1
-                            ? 'border-gray-200 text-gray-300 cursor-not-allowed'
-                            : 'border-gray-300 text-gray-700 hover:border-[#0012FF] hover:text-[#0012FF] hover:bg-[#EEF2FF]'
-                        }`}
+                        className={`w-9 h-9 rounded-full flex items-center justify-center border transition-all ${creatorsPage >= Math.ceil(creatorsList.length / CREATORS_PER_PAGE) - 1
+                          ? 'border-gray-200 text-gray-300 cursor-not-allowed'
+                          : 'border-gray-300 text-gray-700 hover:border-[#0012FF] hover:text-[#0012FF] hover:bg-[#EEF2FF]'
+                          }`}
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                           <path d="M9 18l6-6-6-6" />
@@ -672,7 +670,7 @@ export default function UserDashboard() {
               {currentBookings[activeBookingTab].length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-10 w-full h-full min-h-[200px]">
                   <Image
-                    src="/assets/cancel-appointment.png"
+                    src="/assets/no-appointment.webp"
                     alt="No bookings yet"
                     width={180}
                     height={180}
@@ -786,7 +784,7 @@ export default function UserDashboard() {
             {/* Illustration */}
             <div className="w-40 sm:w-52 h-auto my-2">
               <Image
-                src="/assets/cancel-appointment.png"
+                src="/assets/cancel-appointment.webp"
                 alt="Cancel Appointment"
                 width={220}
                 height={160}
@@ -833,7 +831,7 @@ export default function UserDashboard() {
             {/* Illustration */}
             <div className="w-40 sm:w-52 h-auto my-2">
               <Image
-                src="/assets/cancel-appointment.png"
+                src="/assets/cancel-appointment.webp"
                 alt="Booking Cancelled"
                 width={220}
                 height={160}

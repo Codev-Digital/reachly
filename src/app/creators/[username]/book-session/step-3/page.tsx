@@ -206,8 +206,8 @@ export default function BookSessionStep3() {
                   onClick={() => saveDraft()}
                   disabled={isDraftSaved}
                   className={`font-bold py-2.5 px-4 sm:px-5 rounded-full text-xs transition-colors shadow-sm flex items-center justify-center gap-1.5 border ${isDraftSaved
-                      ? 'bg-green-50 border-green-200 text-green-600 cursor-default'
-                      : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                    ? 'bg-green-50 border-green-200 text-green-600 cursor-default'
+                    : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
                     }`}
                 >
                   {isDraftSaved ? (
@@ -278,7 +278,7 @@ export default function BookSessionStep3() {
             </button>
             <div className="w-24 sm:w-36 md:w-44 lg:w-56 mt-2 sm:mt-3 mb-3 sm:mb-4">
               <img
-                src="/assets/cancel-appointment.png"
+                src="/assets/cancel-appointment.webp"
                 alt="Cancel Appointment"
                 width={240}
                 height={170}
