@@ -175,13 +175,35 @@ export default function ExploreCreatorsPage() {
         )
       ) : (
         <div className="px-4 sm:px-6 pt-4">
-          <nav className="bg-white shadow-sm border border-gray-100 max-w-7xl mx-auto rounded-3xl px-6 py-4 flex items-center justify-between">
+          <nav className="bg-white shadow-sm border border-gray-100 max-w-[1536px] mx-auto rounded-3xl px-6 py-4 flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2">
               <img src="/assets/logo1.png" alt="Reachly" className="h-10 w-auto object-contain" />
             </Link>
-            <div className="flex gap-3">
-              <button onClick={() => router.push('/login')} className="text-gray-600 font-semibold text-sm hover:text-black transition-all">Login</button>
-              <button onClick={() => router.push('/signup')} className="bg-[#0012FF] text-white px-5 py-2 rounded-full font-semibold text-sm hover:bg-[#0012FF]/90 transition-all">Sign up</button>
+
+            <div className="hidden sm:flex items-center gap-8 font-medium text-sm text-gray-600">
+              <Link
+                href="/explore-creators"
+                className="text-[#0012FF] font-bold"
+              >
+                Explore Creators
+              </Link>
+              <Link
+                href="/for-creators"
+                className="hover:text-black transition-colors"
+              >
+                For Creators
+              </Link>
+              <Link
+                href="/about"
+                className="hover:text-black transition-colors"
+              >
+                About
+              </Link>
+            </div>
+
+            <div className="flex gap-3 items-center">
+              <button onClick={() => router.push('/login')} className="text-gray-600 font-semibold text-sm hover:text-black transition-all cursor-pointer">Login</button>
+              <button onClick={() => router.push('/signup')} className="bg-[#0012FF] text-white px-5 py-2 rounded-full font-semibold text-sm hover:bg-[#0012FF]/90 transition-all cursor-pointer">Sign up</button>
             </div>
           </nav>
         </div>

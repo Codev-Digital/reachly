@@ -251,19 +251,44 @@ export default function UserBookingsPage() {
   const countPast = bookings.filter((b) => b.status === 'Past').length;
   const countCancelled = bookings.filter((b) => b.originalStatus === 'cancelled').length;
 
-  if (loading) return <LoadingAnimation />;
-
   return (
     <div className="min-h-screen bg-[#F8F8FA] pb-12">
       <UserNavbar displayName={displayName} profilePhoto={profilePhoto} />
       <main className="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-10 py-8">
-        {/* Page Heading */}
-        <FadeUp className="mb-8">
-          <p className="text-gray-500 text-sm font-sans mb-1">Hello {displayName.split(' ')[0]}!</p>
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-black font-sans tracking-tight">
-            Manage Your <span className="text-[#0012FF] font-extrabold">Bookings</span> <span className="text-gray-400 font-normal text-sm font-sans ml-2">with ease</span>
-          </h1>
-        </FadeUp>
+        {loading ? (
+          <div className="space-y-8">
+            {/* Header Skeleton */}
+            <div className="space-y-2">
+              <div className="h-4 w-32 bg-gray-200 animate-pulse rounded-md" />
+              <div className="h-9 w-80 bg-gray-200 animate-pulse rounded-lg" />
+            </div>
+
+            {/* Filter bar & Search Skeleton */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex gap-2 w-full sm:w-auto">
+                <div className="h-10 w-28 bg-gray-200 animate-pulse rounded-2xl" />
+                <div className="h-10 w-28 bg-gray-200 animate-pulse rounded-2xl" />
+                <div className="h-10 w-28 bg-gray-200 animate-pulse rounded-2xl" />
+              </div>
+              <div className="h-10 w-full sm:w-64 bg-gray-200 animate-pulse rounded-2xl" />
+            </div>
+
+            {/* Bookings Grid Skeleton */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="h-64 bg-gray-200 animate-pulse rounded-[20px]" />
+              ))}
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Page Heading */}
+            <FadeUp className="mb-8">
+              <p className="text-gray-500 text-sm font-sans mb-1">Hello {displayName.split(' ')[0]}!</p>
+              <h1 className="text-3xl sm:text-4xl font-extrabold text-black font-sans tracking-tight">
+                Manage Your <span className="text-[#0012FF] font-extrabold">Bookings</span> <span className="text-gray-400 font-normal text-sm font-sans ml-2">with ease</span>
+              </h1>
+            </FadeUp>
 
         {/* Guest banner — shown when viewing without login */}
         {isGuest && (
@@ -435,6 +460,8 @@ export default function UserBookingsPage() {
             No {activeTab.toLowerCase()} bookings found.
           </div>
         )}
+      </>
+      )}
       </main>
 
       {/* Reschedule Appointment Modal */}
