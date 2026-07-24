@@ -92,7 +92,11 @@ export default function CreatorCalendar() {
   // Fetch creator profile & bookings
   const loadInitialData = useCallback(async () => {
     try {
-      const meRes = await fetch('/api/user/me');
+      const [meRes, bookingsRes] = await Promise.all([
+        fetch('/api/user/me'),
+        fetch('/api/creators/bookings')
+      ]);
+
       if (meRes.ok) {
         const data = await meRes.json();
         setDisplayName(data.creatorProfile?.displayName || data.user?.name || '');
@@ -100,7 +104,6 @@ export default function CreatorCalendar() {
         setUsername(data.creatorProfile?.username || '');
       }
 
-      const bookingsRes = await fetch('/api/creators/bookings');
       if (bookingsRes.ok) {
         const data = await bookingsRes.json();
         if (data.bookings) {
@@ -290,7 +293,33 @@ const GoogleMeetIcon = () => (
   />
 );
 
-  if (loading) return <LoadingAnimation />;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F8F8FA]">
+        <CreatorDashboardNav profilePhoto={profilePhoto} displayName={displayName} />
+        <main className="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-10 py-8">
+          {/* Header Greeting Skeleton */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
+            <div className="space-y-2">
+              <div className="h-4 w-36 bg-gray-200 animate-pulse rounded-md" />
+              <div className="h-9 w-80 bg-gray-200 animate-pulse rounded-lg" />
+            </div>
+            <div className="h-11 w-44 bg-gray-200 animate-pulse rounded-full" />
+          </div>
+
+          {/* Date Picker Bar Skeleton */}
+          <div className="h-20 bg-gray-200 rounded-3xl animate-pulse mb-8" />
+
+          {/* Appointments Grid Skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {[1, 2, 3, 4, 5, 6].map(i => (
+              <div key={i} className="h-60 bg-gray-200 rounded-[20px] animate-pulse" />
+            ))}
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F8F8FA]">
