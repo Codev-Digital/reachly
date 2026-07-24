@@ -516,6 +516,7 @@ export default function UserDashboard() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.4, delay: index * 0.05 }}
+                            onClick={() => router.push(`/creators/${creator.username}/book-session`)}
                             className="flex flex-col w-full group cursor-pointer"
                           >
                             {/* Top Image Container */}
@@ -542,11 +543,11 @@ export default function UserDashboard() {
                                   e.stopPropagation();
                                   toggleFavorite(creator.username);
                                 }}
-                                className="absolute top-3.5 right-3.5 z-20 hover:scale-110 transition-transform active:scale-90"
+                                className="absolute top-3.5 right-3.5 z-20 hover:scale-110 active:scale-90 transition-transform cursor-pointer"
                                 aria-label={isFav ? 'Remove from favorites' : 'Add to favorites'}
                               >
                                 <svg
-                                  className={`w-6 h-6 transition-colors duration-200 ${isFav ? 'text-[#E32A2A] fill-[#E32A2A] drop-shadow-sm' : 'text-white fill-white/80 drop-shadow-md'
+                                  className={`w-6 h-6 transition-colors duration-200 ${isFav ? 'text-[#FF3B3B] fill-[#FF3B3B] drop-shadow-md' : 'text-white fill-white drop-shadow-md'
                                     }`}
                                   viewBox="0 0 24 24"
                                 >
