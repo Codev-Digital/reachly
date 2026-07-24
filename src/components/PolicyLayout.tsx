@@ -106,8 +106,13 @@ function renderMarkdown(md: string) {
 
 export default function PolicyLayout({ title, lastUpdated = 'July 9, 2026', markdownContent }: PolicyLayoutProps) {
   return (
-    <div className="min-h-screen bg-[#070B19] text-white flex flex-col justify-between overflow-x-hidden selection:bg-[#0012FF] selection:text-white">
-      
+    <div 
+      className="min-h-screen bg-[#070B19] text-white flex flex-col justify-between overflow-x-hidden selection:bg-[#0012FF] selection:text-white bg-cover bg-center bg-no-repeat relative"
+      style={{ backgroundImage: "url('/assets/new-bg-image.png')" }}
+    >
+      {/* Dark overlay for contrast */}
+      <div className="absolute inset-0 bg-[#050d2e]/40 backdrop-blur-xs pointer-events-none" />
+
       {/* Background glow accents */}
       <div className="fixed top-0 left-1/4 w-[600px] h-[600px] bg-[#0012FF]/15 rounded-full blur-[140px] pointer-events-none -z-10" />
       <div className="fixed bottom-0 right-1/4 w-[500px] h-[500px] bg-[#E32A2A]/10 rounded-full blur-[140px] pointer-events-none -z-10" />
