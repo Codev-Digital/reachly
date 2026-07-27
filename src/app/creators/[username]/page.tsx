@@ -86,7 +86,7 @@ export default function CreatorProfilePage() {
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <h1 className="font-serif text-2xl sm:text-3xl font-bold">{creator.displayName}</h1>
-                  {creator.isVerified && <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 1.5L14.8 7.5L21 8L16.5 12.5L17.5 18.5L12 15.5L6.5 18.5L7.5 12.5L3 8L9.2 7.5L12 1.5Z" fill="#22C55E"/><path d="M10 13L7 10L8.5 8.5L10 10L15.5 5L17 6.5L10 13Z" fill="white"/></svg>}
+                  {creator.isVerified && <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 1.5L14.8 7.5L21 8L16.5 12.5L17.5 18.5L12 15.5L6.5 18.5L7.5 12.5L3 8L9.2 7.5L12 1.5Z" fill="#22C55E" /><path d="M10 13L7 10L8.5 8.5L10 10L15.5 5L17 6.5L10 13Z" fill="white" /></svg>}
                 </div>
                 <p className="text-white/70 text-sm mb-2">@{creator.username}</p>
                 <div className="flex items-center gap-4 text-white/50 text-xs">
@@ -97,7 +97,7 @@ export default function CreatorProfilePage() {
               </div>
             </div>
             <div className="ml-auto">
-              <Link 
+              <Link
                 href={`/creators/${username}/book-session`}
                 className="bg-[#C8A97E] text-[#0C0C0C] font-semibold font-sans px-6 py-2 rounded-full text-sm hover:opacity-90 transition-all inline-block"
               >
@@ -225,7 +225,7 @@ export default function CreatorProfilePage() {
                     <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
                   </svg>
                 </div>
-                <img src="/merium in creators section.png" alt={review.name} className="w-16 h-16 rounded-full object-cover flex-shrink-0" />
+                <img src="/avatar.png" alt={review.name} className="w-16 h-16 rounded-full object-cover flex-shrink-0" />
                 <div className="flex-1">
                   <div className="flex items-start gap-4 mb-4">
                     <div>

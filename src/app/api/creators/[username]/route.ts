@@ -20,10 +20,12 @@ export async function GET(
         const lowerUsername = username.toLowerCase();
         const cleanUsername = lowerUsername.replace(/-/g, '');
         const profile = await CreatorProfile.findOneAndUpdate(
-            { $or: [
-                { username: lowerUsername },
-                { username: cleanUsername }
-            ]},
+            {
+                $or: [
+                    { username: lowerUsername },
+                    { username: cleanUsername }
+                ]
+            },
             { $inc: { views: 1 } },
             { new: true }
         );
@@ -54,7 +56,7 @@ export async function GET(
                 displayName: profile.displayName,
                 shortBio: profile.shortBio,
                 longBio: profile.longBio,
-                profilePhoto: profile.profilePhoto || '/merium.png',
+                profilePhoto: profile.profilePhoto || '/avatar.png',
                 coverPhoto: profile.coverPhoto,
                 city: profile.city,
                 country: profile.country,

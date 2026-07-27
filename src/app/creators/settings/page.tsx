@@ -669,7 +669,7 @@ export default function CreatorSettings() {
               <div className="flex flex-col sm:flex-row sm:items-end gap-5 -mt-20 sm:-mt-24 px-4 mb-8 relative z-10">
                 <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-full overflow-hidden border-4 border-white bg-gray-200 shadow-xl flex-shrink-0">
                   <img
-                    src={profilePhoto || '/merium.png'}
+                    src={profilePhoto || '/avatar.png'}
                     alt="Profile"
                     className="w-full h-full object-cover"
                   />
