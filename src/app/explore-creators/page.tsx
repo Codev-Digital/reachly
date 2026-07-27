@@ -175,13 +175,35 @@ export default function ExploreCreatorsPage() {
         )
       ) : (
         <div className="px-4 sm:px-6 pt-4">
-          <nav className="bg-white shadow-sm border border-gray-100 max-w-7xl mx-auto rounded-3xl px-6 py-4 flex items-center justify-between">
+          <nav className="bg-white shadow-sm border border-gray-100 max-w-[1536px] mx-auto rounded-3xl px-6 py-4 flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2">
               <img src="/assets/logo1.png" alt="Reachly" className="h-10 w-auto object-contain" />
             </Link>
-            <div className="flex gap-3">
-              <button onClick={() => router.push('/login')} className="text-gray-600 font-semibold text-sm hover:text-black transition-all">Login</button>
-              <button onClick={() => router.push('/signup')} className="bg-[#0012FF] text-white px-5 py-2 rounded-full font-semibold text-sm hover:bg-[#0012FF]/90 transition-all">Sign up</button>
+
+            <div className="hidden sm:flex items-center gap-8 font-medium text-sm text-gray-600">
+              <Link
+                href="/explore-creators"
+                className="text-[#0012FF] font-bold"
+              >
+                Explore Creators
+              </Link>
+              <Link
+                href="/for-creators"
+                className="hover:text-black transition-colors"
+              >
+                For Creators
+              </Link>
+              <Link
+                href="/about"
+                className="hover:text-black transition-colors"
+              >
+                About
+              </Link>
+            </div>
+
+            <div className="flex gap-3 items-center">
+              <button onClick={() => router.push('/login')} className="text-gray-600 font-semibold text-sm hover:text-black transition-all cursor-pointer">Login</button>
+              <button onClick={() => router.push('/signup')} className="bg-[#0012FF] text-white px-5 py-2 rounded-full font-semibold text-sm hover:bg-[#0012FF]/90 transition-all cursor-pointer">Sign up</button>
             </div>
           </nav>
         </div>
@@ -428,6 +450,7 @@ export default function ExploreCreatorsPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.4, delay: index * 0.04 }}
+                  onClick={() => router.push(`/creators/${creator.username}/book-session`)}
                   className="flex flex-col w-full group cursor-pointer"
                 >
                   {/* Top Image Container */}
@@ -456,12 +479,12 @@ export default function ExploreCreatorsPage() {
                         toggleFavourite(creator.username);
                       }}
                       disabled={favLoading === creator.username}
-                      className="absolute top-3.5 right-3.5 z-20 hover:scale-110 transition-transform active:scale-90"
+                      className="absolute top-3.5 right-3.5 z-20 hover:scale-110 active:scale-90 transition-transform cursor-pointer"
                       aria-label={isFav ? 'Remove from favourites' : 'Add to favourites'}
                     >
                       <svg
                         className={`w-6 h-6 transition-colors duration-200 ${
-                          isFav ? 'text-[#E32A2A] fill-[#E32A2A] drop-shadow-sm' : 'text-white fill-white/80 drop-shadow-md'
+                          isFav ? 'text-[#FF3B3B] fill-[#FF3B3B] drop-shadow-md' : 'text-white fill-white drop-shadow-md'
                         }`}
                         viewBox="0 0 24 24"
                       >

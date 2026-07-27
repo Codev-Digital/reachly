@@ -961,7 +961,7 @@ export default function AdminCreatorsPage() {
               {/* Responsive Illustration */}
               <div className="w-28 sm:w-36 md:w-44 lg:w-56 mt-3 mb-4">
                 <Image
-                  src="/assets/cancel-appointment.png"
+                  src="/assets/cancel-appointment.webp"
                   alt="Reject creator"
                   width={240}
                   height={170}

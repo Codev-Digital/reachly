@@ -177,8 +177,8 @@ export default function BookSessionLayout({ children }: { children: ReactNode })
           setUserData(data);
           
           const isCreator = 
-            (data.user?.approvalStatus && data.user?.approvalStatus !== 'none') || 
-            (data.user?.onboardingStep && data.user?.onboardingStep > 0);
+            Boolean(data.creatorProfile) && 
+            (data.user?.approvalStatus === 'approved' || data.user?.approvalStatus === 'active' || data.creatorProfile?.isProfileComplete === true);
           setUserRole(isCreator ? 'creator' : 'user');
         } else {
           setShowLoginModal(true);
@@ -225,7 +225,7 @@ export default function BookSessionLayout({ children }: { children: ReactNode })
         {isLoggedIn ? (
           userRole === 'creator' ? (
             <CreatorDashboardNav 
-              profilePhoto={userData?.creatorProfile?.profilePhoto} 
+              profilePhoto={userData?.creatorProfile?.profilePhoto || userData?.user?.profilePhoto} 
               displayName={userData?.creatorProfile?.displayName || userData?.user?.name} 
             />
           ) : (

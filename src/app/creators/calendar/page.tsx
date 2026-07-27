@@ -28,6 +28,7 @@ interface BookingType {
   selectedDate: string;
   selectedTime: string;
   status: 'confirmed' | 'cancelled' | 'completed';
+  isRescheduled?: boolean;
 }
 
 export default function CreatorCalendar() {
@@ -58,6 +59,7 @@ export default function CreatorCalendar() {
 
   const [showRescheduleModal, setShowRescheduleModal] = useState<boolean>(false);
   const [bookingToReschedule, setBookingToReschedule] = useState<BookingType | null>(null);
+  const [isRescheduleSuccess, setIsRescheduleSuccess] = useState<boolean>(false);
 
   const [rescheduleDate, setRescheduleDate] = useState<Date>(new Date());
   const [rescheduleSlots, setRescheduleSlots] = useState<string[]>([]);
@@ -92,7 +94,11 @@ export default function CreatorCalendar() {
   // Fetch creator profile & bookings
   const loadInitialData = useCallback(async () => {
     try {
-      const meRes = await fetch('/api/user/me');
+      const [meRes, bookingsRes] = await Promise.all([
+        fetch('/api/user/me'),
+        fetch('/api/creators/bookings')
+      ]);
+
       if (meRes.ok) {
         const data = await meRes.json();
         setDisplayName(data.creatorProfile?.displayName || data.user?.name || '');
@@ -100,7 +106,6 @@ export default function CreatorCalendar() {
         setUsername(data.creatorProfile?.username || '');
       }
 
-      const bookingsRes = await fetch('/api/creators/bookings');
       if (bookingsRes.ok) {
         const data = await bookingsRes.json();
         if (data.bookings) {
@@ -118,6 +123,7 @@ export default function CreatorCalendar() {
             selectedDate: b.scheduledDate,
             selectedTime: b.time,
             status: b.statusRaw,
+            isRescheduled: b.isRescheduled || false,
           }));
           setBookings(list);
         }
@@ -181,7 +187,7 @@ export default function CreatorCalendar() {
 
   // Group and filter bookings for currently selected day
   const currentBookings = bookings.filter((b) => {
-    if (!b.selectedDate || b.status === 'cancelled') return false;
+    if (!b.selectedDate) return false;
     const d = new Date(b.selectedDate);
     return (
       d.getDate() === currentDate.getDate() &&
@@ -204,7 +210,7 @@ export default function CreatorCalendar() {
         body: JSON.stringify({ status: 'cancelled' })
       });
       if (res.ok) {
-        setBookings((prev) => prev.filter((b) => b.id !== bookingToCancel.id));
+        setBookings((prev) => prev.map((b) => b.id === bookingToCancel.id ? { ...b, status: 'cancelled' } : b));
         setSuccessModalType('cancelled');
         setShowSuccessModal(true);
       } else {
@@ -221,6 +227,7 @@ export default function CreatorCalendar() {
   const handleRescheduleClick = (booking: BookingType) => {
     setBookingToReschedule(booking);
     setRescheduleDate(booking.selectedDate ? new Date(booking.selectedDate) : new Date());
+    setIsRescheduleSuccess(false);
     setShowRescheduleModal(true);
   };
 
@@ -256,16 +263,12 @@ export default function CreatorCalendar() {
           }
           return b;
         }));
-        setSuccessModalType('rescheduled');
-        setShowSuccessModal(true);
+        setIsRescheduleSuccess(true);
       } else {
         alert('Failed to reschedule appointment');
       }
     } catch (err) {
       alert('Error rescheduling appointment');
-    } finally {
-      setShowRescheduleModal(false);
-      setBookingToReschedule(null);
     }
   };
 
@@ -282,15 +285,41 @@ export default function CreatorCalendar() {
     return list;
   };
 
-const GoogleMeetIcon = () => (
-  <img 
-    src="https://static.vecteezy.com/system/resources/thumbnails/022/484/498/small/google-meet-gmeet-icon-logo-symbol-free-png.png" 
-    alt="Google Meet" 
-    className="w-4 h-4 object-contain shrink-0" 
-  />
-);
+  const GoogleMeetIcon = () => (
+    <img
+      src="https://static.vecteezy.com/system/resources/thumbnails/022/484/498/small/google-meet-gmeet-icon-logo-symbol-free-png.png"
+      alt="Google Meet"
+      className="w-4 h-4 object-contain shrink-0"
+    />
+  );
 
-  if (loading) return <LoadingAnimation />;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F8F8FA]">
+        <CreatorDashboardNav profilePhoto={profilePhoto} displayName={displayName} />
+        <main className="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-10 py-8">
+          {/* Header Greeting Skeleton */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
+            <div className="space-y-2">
+              <div className="h-4 w-36 bg-gray-200 animate-pulse rounded-md" />
+              <div className="h-9 w-80 bg-gray-200 animate-pulse rounded-lg" />
+            </div>
+            <div className="h-11 w-44 bg-gray-200 animate-pulse rounded-full" />
+          </div>
+
+          {/* Date Picker Bar Skeleton */}
+          <div className="h-20 bg-gray-200 rounded-3xl animate-pulse mb-8" />
+
+          {/* Appointments Grid Skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {[1, 2, 3, 4, 5, 6].map(i => (
+              <div key={i} className="h-60 bg-gray-200 rounded-[20px] animate-pulse" />
+            ))}
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F8F8FA]">
@@ -308,7 +337,7 @@ const GoogleMeetIcon = () => (
             </h1>
           </div>
 
-          <button 
+          <button
             onClick={() => {
               const linkStr = window.location.origin + `/creators/${username || displayName.toLowerCase().replace(/\s+/g, '-')}`;
               navigator.clipboard.writeText(linkStr);
@@ -367,11 +396,10 @@ const GoogleMeetIcon = () => (
                     newD.setDate(dayNum);
                     setCurrentDate(newD);
                   }}
-                  className={`flex flex-col items-center justify-center min-w-[46px] sm:min-w-[50px] h-[52px] py-1.5 px-1 rounded-[14px] transition-all cursor-pointer flex-shrink-0 ${
-                    isSelected
-                      ? 'bg-[#EEF2FF] border border-[#0012FF]/30 text-[#0012FF] shadow-xs'
-                      : 'text-[#64748B] hover:bg-gray-100 bg-transparent'
-                  }`}
+                  className={`flex flex-col items-center justify-center min-w-[46px] sm:min-w-[50px] h-[52px] py-1.5 px-1 rounded-[14px] transition-all cursor-pointer flex-shrink-0 ${isSelected
+                    ? 'bg-[#EEF2FF] border border-[#0012FF]/30 text-[#0012FF] shadow-xs'
+                    : 'text-[#64748B] hover:bg-gray-100 bg-transparent'
+                    }`}
                 >
                   <span className={`text-[9px] uppercase font-bold tracking-wider ${isSelected ? 'text-[#0012FF]/80' : 'text-[#64748B]'}`}>
                     {dayName}
@@ -427,12 +455,12 @@ const GoogleMeetIcon = () => (
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
                       <div className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0 bg-gray-100 relative border border-gray-100">
-                        <Image 
-                          src={booking.avatar || '/assets/avatar.png'} 
-                          alt={booking.name || 'User'} 
-                          className="w-full h-full object-cover" 
-                          width={44} 
-                          height={44} 
+                        <Image
+                          src={booking.avatar || '/assets/avatar.png'}
+                          alt={booking.name || 'User'}
+                          className="w-full h-full object-cover"
+                          width={44}
+                          height={44}
                         />
                       </div>
                       <div>
@@ -447,6 +475,11 @@ const GoogleMeetIcon = () => (
                     <div className="flex items-center gap-2">
                       <Calendar className="h-3.5 w-3.5 text-[#0012FF] shrink-0" />
                       <span className="font-medium text-gray-700">{booking.time}</span>
+                      {booking.isRescheduled && (
+                        <span className="text-[10px] font-bold text-[#0012FF] bg-[#EEF2FF] px-2 py-0.5 rounded-full shrink-0 leading-none">
+                          Rescheduled
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-3.5 h-3.5 flex items-center justify-center shrink-0">
@@ -469,20 +502,26 @@ const GoogleMeetIcon = () => (
                 <div>
                   <div className="w-full h-px bg-gray-100 mb-4"></div>
 
-                  <div className="flex items-center gap-3">
-                    <button 
-                      onClick={() => handleRescheduleClick(booking)}
-                      className="flex-1 py-2 sm:py-2.5 border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-full text-xs font-semibold text-center transition-all cursor-pointer"
-                    >
-                      Reschedule
-                    </button>
-                    <button 
-                      onClick={() => handleCancelClick(booking)}
-                      className="flex-1 py-2 sm:py-2.5 bg-[#FFF0F0] border border-red-100 hover:bg-red-100 text-[#FF3B3B] rounded-full text-xs font-semibold text-center transition-all cursor-pointer"
-                    >
-                      Cancel Appointment
-                    </button>
-                  </div>
+                  {booking.status === 'cancelled' ? (
+                    <div className="w-full py-2.5 bg-[#FFF0F0] border border-red-100 text-[#FF3B3B] rounded-full text-xs font-bold text-center select-none">
+                      Cancelled
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => handleRescheduleClick(booking)}
+                        className="flex-1 py-2 sm:py-2.5 border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-full text-xs font-semibold text-center transition-all cursor-pointer"
+                      >
+                        Reschedule
+                      </button>
+                      <button
+                        onClick={() => handleCancelClick(booking)}
+                        className="flex-1 py-2 sm:py-2.5 bg-[#FFF0F0] border border-red-100 hover:bg-red-100 text-[#FF3B3B] rounded-full text-xs font-semibold text-center transition-all cursor-pointer"
+                      >
+                        Cancel Appointment
+                      </button>
+                    </div>
+                  )}
                 </div>
               </motion.div>
             ))}
@@ -490,7 +529,7 @@ const GoogleMeetIcon = () => (
         ) : (
           <div className="bg-white rounded-3xl border border-gray-200 shadow-sm p-16 flex flex-col items-center justify-center text-center">
             <Image
-              src="/assets/no-appointment.png"
+              src="/assets/no-appointment.webp"
               alt="No Appointments"
               width={220}
               height={220}
@@ -522,7 +561,7 @@ const GoogleMeetIcon = () => (
             {/* Illustration */}
             <div className="w-40 sm:w-52 h-auto my-2">
               <Image
-                src="/assets/cancel-appointment.png"
+                src="/assets/cancel-appointment.webp"
                 alt="Cancel Appointment"
                 width={220}
                 height={160}
@@ -554,122 +593,167 @@ const GoogleMeetIcon = () => (
       {/* Reschedule Appointment Modal */}
       {showRescheduleModal && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[100] p-4">
-          <div className="relative bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl border border-gray-100 w-full max-w-2xl p-6 sm:p-8 flex flex-col overflow-hidden">
-            
-            {/* Header */}
-            <div className="mb-6 text-left">
-              <h3 className="text-xl sm:text-2xl font-extrabold text-black tracking-tight mb-1">
-                Reschedule Appointment
-              </h3>
-              <p className="text-xs sm:text-sm text-gray-400 font-medium">
-                Choose a new date and time for your appointment
-              </p>
-            </div>
-
-            {/* Date Selector Strip Box */}
-            <div className="w-full bg-white rounded-2xl border border-gray-200/80 p-2 sm:p-2.5 mb-6 flex items-center justify-between gap-1 shadow-2xs">
-              <button 
+          {isRescheduleSuccess ? (
+            <div className="relative bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl border border-gray-100 w-full max-w-md p-6 sm:p-8 flex flex-col items-center text-center overflow-hidden">
+              <button
                 onClick={() => {
-                  const prev = new Date(rescheduleDate);
-                  prev.setDate(prev.getDate() - 1);
-                  setRescheduleDate(prev);
+                  setShowRescheduleModal(false);
+                  setIsRescheduleSuccess(false);
+                  setBookingToReschedule(null);
                 }}
-                className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors shrink-0"
+                className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 transition-colors p-1.5 rounded-full hover:bg-gray-100 cursor-pointer"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6" /></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
               </button>
 
-              <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar py-0.5 px-1 flex-1">
-                {getRescheduleDays().map((d, idx) => {
-                  const isSelected = rescheduleDate.getDate() === d.getDate() &&
-                    rescheduleDate.getMonth() === d.getMonth() &&
-                    rescheduleDate.getFullYear() === d.getFullYear();
-
-                  const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
-                  const dayNum = String(d.getDate()).padStart(2, '0');
-
-                  return (
-                    <button
-                      key={idx}
-                      onClick={() => setRescheduleDate(d)}
-                      className={`flex flex-col items-center justify-center min-w-[44px] sm:min-w-[48px] py-1.5 px-1 rounded-xl transition-all cursor-pointer shrink-0 ${
-                        isSelected
-                          ? 'bg-[#EEF2FF] border border-[#0012FF]/30 text-[#0012FF] font-bold shadow-2xs'
-                          : 'text-gray-500 hover:bg-gray-100 bg-transparent'
-                      }`}
-                    >
-                      <span className={`text-[9px] uppercase font-bold tracking-wider ${isSelected ? 'text-[#0012FF]/80' : 'text-gray-400'}`}>{dayName}</span>
-                      <span className={`text-xs sm:text-sm font-extrabold mt-0.5 ${isSelected ? 'text-[#0012FF]' : 'text-gray-800'}`}>{dayNum}</span>
-                    </button>
-                  );
-                })}
+              <div className="w-40 sm:w-52 h-auto my-2">
+                <Image
+                  src="/assets/reschedule.webp"
+                  alt="Success"
+                  width={220}
+                  height={160}
+                  className="w-full h-auto object-contain"
+                />
               </div>
 
-              <button 
+              <h3 className="text-xl sm:text-2xl font-extrabold text-black mb-2 tracking-tight">
+                Booking Rescheduled
+              </h3>
+
+              <p className="text-xs sm:text-sm text-gray-400 font-medium leading-relaxed mb-6 max-w-[260px] sm:max-w-[280px]">
+                Your booking has been rescheduled successfully.
+              </p>
+
+              <button
                 onClick={() => {
-                  const next = new Date(rescheduleDate);
-                  next.setDate(next.getDate() + 1);
-                  setRescheduleDate(next);
+                  setShowRescheduleModal(false);
+                  setIsRescheduleSuccess(false);
+                  setBookingToReschedule(null);
                 }}
-                className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors shrink-0"
+                className="w-full max-w-[220px] py-3.5 bg-[#0012FF] hover:bg-[#0010d0] text-white rounded-full font-bold text-sm transition-all shadow-md cursor-pointer"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6" /></svg>
+                Done
               </button>
             </div>
+          ) : (
+            <div className="relative bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl border border-gray-100 w-full max-w-2xl p-6 sm:p-8 flex flex-col overflow-hidden">
 
-            {/* Time Slots Grid (3 Columns) */}
-            <div className="w-full mb-8">
-              {loadingSlots ? (
-                <div className="grid grid-cols-3 gap-3">
-                  {[1, 2, 3, 4, 5, 6].map((i) => (
-                    <div key={i} className="h-11 bg-gray-100 rounded-2xl animate-pulse" />
-                  ))}
-                </div>
-              ) : rescheduleSlots.length === 0 ? (
-                <div className="text-center py-8 px-4 bg-gray-50 border border-gray-200/70 rounded-2xl">
-                  <p className="text-xs sm:text-sm text-gray-500 font-medium">No available time slots for this date.</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-h-56 overflow-y-auto pr-1 no-scrollbar">
-                  {rescheduleSlots.map((slot) => {
-                    const isSelected = selectedRescheduleTime === slot;
+              {/* Header */}
+              <div className="mb-6 text-left">
+                <h3 className="text-xl sm:text-2xl font-extrabold text-black tracking-tight mb-1">
+                  Reschedule Appointment
+                </h3>
+                <p className="text-xs sm:text-sm text-gray-400 font-medium">
+                  Choose a new date and time for your appointment
+                </p>
+              </div>
+
+              {/* Date Selector Strip Box */}
+              <div className="w-full bg-white rounded-2xl border border-gray-200/80 p-2 sm:p-2.5 mb-6 flex items-center justify-between gap-1 shadow-2xs">
+                <button
+                  onClick={() => {
+                    const prev = new Date(rescheduleDate);
+                    prev.setDate(prev.getDate() - 1);
+                    setRescheduleDate(prev);
+                  }}
+                  className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors shrink-0"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6" /></svg>
+                </button>
+
+                <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar py-0.5 px-1 flex-1">
+                  {getRescheduleDays().map((d, idx) => {
+                    const isSelected = rescheduleDate.getDate() === d.getDate() &&
+                      rescheduleDate.getMonth() === d.getMonth() &&
+                      rescheduleDate.getFullYear() === d.getFullYear();
+
+                    const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
+                    const dayNum = String(d.getDate()).padStart(2, '0');
+
                     return (
                       <button
-                        key={slot}
-                        onClick={() => setSelectedRescheduleTime(slot)}
-                        className={`py-3 px-3 border rounded-2xl text-xs sm:text-sm font-medium text-center transition-all cursor-pointer ${
-                          isSelected
-                            ? 'bg-[#EEF2FF] border-2 border-[#0012FF] text-[#0012FF] font-bold shadow-xs'
-                            : 'bg-white border-gray-200 hover:border-gray-300 text-gray-500'
-                        }`}
+                        key={idx}
+                        onClick={() => setRescheduleDate(d)}
+                        className={`flex flex-col items-center justify-center min-w-[44px] sm:min-w-[48px] py-1.5 px-1 rounded-xl transition-all cursor-pointer shrink-0 ${isSelected
+                          ? 'bg-[#EEF2FF] border border-[#0012FF]/30 text-[#0012FF] font-bold shadow-2xs'
+                          : 'text-gray-500 hover:bg-gray-100 bg-transparent'
+                          }`}
                       >
-                        {slot}
+                        <span className={`text-[9px] uppercase font-bold tracking-wider ${isSelected ? 'text-[#0012FF]/80' : 'text-gray-400'}`}>{dayName}</span>
+                        <span className={`text-xs sm:text-sm font-extrabold mt-0.5 ${isSelected ? 'text-[#0012FF]' : 'text-gray-800'}`}>{dayNum}</span>
                       </button>
                     );
                   })}
                 </div>
-              )}
+
+                <button
+                  onClick={() => {
+                    const next = new Date(rescheduleDate);
+                    next.setDate(next.getDate() + 1);
+                    setRescheduleDate(next);
+                  }}
+                  className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors shrink-0"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6" /></svg>
+                </button>
+              </div>
+
+              {/* Time Slots Grid (3 Columns) */}
+              <div className="w-full mb-8">
+                {loadingSlots ? (
+                  <div className="grid grid-cols-3 gap-3">
+                    {[1, 2, 3, 4, 5, 6].map((i) => (
+                      <div key={i} className="h-11 bg-gray-100 rounded-2xl animate-pulse" />
+                    ))}
+                  </div>
+                ) : rescheduleSlots.length === 0 ? (
+                  <div className="text-center py-8 px-4 bg-gray-50 border border-gray-200/70 rounded-2xl">
+                    <p className="text-xs sm:text-sm text-gray-500 font-medium">No available time slots for this date.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-h-56 overflow-y-auto pr-1 no-scrollbar">
+                    {rescheduleSlots.map((slot) => {
+                      const isSelected = selectedRescheduleTime === slot;
+                      return (
+                        <button
+                          key={slot}
+                          onClick={() => setSelectedRescheduleTime(slot)}
+                          className={`py-3 px-3 border rounded-2xl text-xs sm:text-sm font-medium text-center transition-all cursor-pointer ${isSelected
+                            ? 'bg-[#EEF2FF] border-2 border-[#0012FF] text-[#0012FF] font-bold shadow-xs'
+                            : 'bg-white border-gray-200 hover:border-gray-300 text-gray-500'
+                            }`}
+                        >
+                          {slot}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Bottom Actions Row */}
+              <div className="flex items-center gap-4 w-full">
+                <button
+                  onClick={() => setShowRescheduleModal(false)}
+                  className="flex-1 py-3.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-full font-bold text-xs sm:text-sm text-center transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  onClick={handleConfirmReschedule}
+                  disabled={!selectedRescheduleTime}
+                  className="flex-1 py-3.5 bg-[#0012FF] hover:bg-[#0010d0] text-white rounded-full font-bold text-xs sm:text-sm text-center transition-all shadow-md active:scale-98 disabled:bg-gray-200 disabled:text-gray-400 cursor-pointer"
+                >
+                  Reschedule Appointment
+                </button>
+              </div>
+
             </div>
-
-            {/* Bottom Actions Row */}
-            <div className="flex items-center gap-4 w-full">
-              <button
-                onClick={() => setShowRescheduleModal(false)}
-                className="flex-1 py-3.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-full font-bold text-xs sm:text-sm text-center transition-all cursor-pointer"
-              >
-                Cancel
-              </button>
-
-              <button
-                onClick={handleConfirmReschedule}
-                disabled={!selectedRescheduleTime}
-                className="flex-1 py-3.5 bg-[#0012FF] hover:bg-[#0010d0] text-white rounded-full font-bold text-xs sm:text-sm text-center transition-all shadow-md active:scale-98 disabled:bg-gray-200 disabled:text-gray-400 cursor-pointer"
-              >
-                Reschedule Appointment
-              </button>
-            </div>
-
-          </div>
+          )}
         </div>
       )}
 
@@ -693,8 +777,8 @@ const GoogleMeetIcon = () => (
               <Image
                 src={
                   successModalType === "cancelled"
-                    ? "/assets/cancel-appointment.png"
-                    : "/assets/reschedule.png"
+                    ? "/assets/cancel-appointment.webp"
+                    : "/assets/reschedule.webp"
                 }
                 alt="Success"
                 width={220}

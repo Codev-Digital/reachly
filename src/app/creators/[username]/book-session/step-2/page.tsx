@@ -356,8 +356,8 @@ export default function BookSessionStep2() {
               onClick={handleSaveDraft}
               disabled={isDraftSaved}
               className={`font-bold py-2.5 px-4 sm:px-6 rounded-full text-xs transition-colors shadow-sm mr-auto flex items-center justify-center gap-1.5 border ${isDraftSaved
-                  ? 'bg-green-50 border-green-200 text-green-600 cursor-default'
-                  : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                ? 'bg-green-50 border-green-200 text-green-600 cursor-default'
+                : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
                 }`}
             >
               {isDraftSaved ? (

@@ -180,8 +180,12 @@ export default function CreatorSettings() {
   useEffect(() => {
     async function loadAllData() {
       try {
-        // Fetch Profile
-        const profileRes = await fetch('/api/user/settings');
+        const [profileRes, sessionsRes, availRes] = await Promise.all([
+          fetch('/api/user/settings'),
+          fetch('/api/creator-onboarding/step-3'),
+          fetch('/api/creator-onboarding/step-5')
+        ]);
+
         if (profileRes.ok) {
           const data = await profileRes.json();
           if (data.success) {
@@ -210,8 +214,6 @@ export default function CreatorSettings() {
           }
         }
 
-        // Fetch Sessions
-        const sessionsRes = await fetch('/api/creator-onboarding/step-3');
         if (sessionsRes.ok) {
           const data = await sessionsRes.json();
           if (data.sessionTypes) {
@@ -222,8 +224,6 @@ export default function CreatorSettings() {
           }
         }
 
-        // Fetch Availability Settings
-        const availRes = await fetch('/api/creator-onboarding/step-5');
         if (availRes.ok) {
           const data = await availRes.json();
           if (data.availability) {
@@ -571,7 +571,26 @@ export default function CreatorSettings() {
     }));
   };
 
-  if (loading) return <LoadingAnimation />;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F8F8FA]">
+        <CreatorDashboardNav profilePhoto={profilePhoto} displayName={displayName} />
+        <main className="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-10 py-8">
+          {/* Header Skeleton */}
+          <div className="mb-6 space-y-2">
+            <div className="h-4 w-32 bg-gray-200 animate-pulse rounded-md" />
+            <div className="h-9 w-72 bg-gray-200 animate-pulse rounded-lg" />
+          </div>
+
+          {/* Segment Tabs Skeleton */}
+          <div className="h-12 w-full max-w-2xl mx-auto bg-gray-200 rounded-3xl animate-pulse mb-8" />
+
+          {/* Main Card Skeleton */}
+          <div className="bg-gray-200 rounded-[32px] h-[550px] animate-pulse max-w-4xl mx-auto" />
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F8F8FA]">
@@ -1274,7 +1293,7 @@ export default function CreatorSettings() {
             {/* Top Illustration */}
             <div className="w-40 sm:w-48 h-auto mx-auto mb-2">
               <Image
-                src="/assets/reschedule.png"
+                src="/assets/reschedule.webp"
                 alt="Edit Session"
                 width={220}
                 height={160}

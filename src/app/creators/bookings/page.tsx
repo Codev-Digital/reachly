@@ -27,6 +27,7 @@ interface Booking {
   reason?: string;
   isPaid?: boolean;
   bookedOn: string;
+  isRescheduled?: boolean;
 }
 
 const CreatorBookings = () => {
@@ -71,6 +72,7 @@ const CreatorBookings = () => {
           const normalizedBookings = (data.bookings || []).map((booking: any) => ({
             ...booking,
             status: normalizeStatus(booking.status, booking.statusRaw),
+            isRescheduled: booking.isRescheduled || false,
           }));
           setBookings(normalizedBookings);
         }
@@ -99,8 +101,8 @@ const CreatorBookings = () => {
         return;
       }
 
-      setBookings(prevBookings => 
-        prevBookings.map(booking => 
+      setBookings(prevBookings =>
+        prevBookings.map(booking =>
           booking.id === bookingId ? { ...booking, statusRaw: 'confirmed', status: 'Upcoming' } : booking
         )
       );
@@ -125,8 +127,8 @@ const CreatorBookings = () => {
         return;
       }
 
-      setBookings(prevBookings => 
-        prevBookings.map(booking => 
+      setBookings(prevBookings =>
+        prevBookings.map(booking =>
           booking.id === bookingId ? { ...booking, statusRaw: 'cancelled', status: 'Cancelled' } : booking
         )
       );
@@ -352,8 +354,8 @@ const CreatorBookings = () => {
                     clearSelection();
                   }}
                   className={`px-4 py-2 rounded-lg text-sm font-sans transition-all ${activeTab === tab.name
-                      ? 'bg-[rgba(200,169,126,0.1)] border border-[rgba(200,169,126,0.3)] text-[#C8A97E]'
-                      : 'bg-[#141414] border border-[rgba(255,255,255,0.1)] text-[#F9F6F2] opacity-70 hover:opacity-100'
+                    ? 'bg-[rgba(200,169,126,0.1)] border border-[rgba(200,169,126,0.3)] text-[#C8A97E]'
+                    : 'bg-[#141414] border border-[rgba(255,255,255,0.1)] text-[#F9F6F2] opacity-70 hover:opacity-100'
                     }`}
                 >
                   {tab.name} ({tab.count})
@@ -402,8 +404,8 @@ const CreatorBookings = () => {
                           setShowSessionDropdown(false);
                         }}
                         className={`w-full text-left px-4 py-3 text-sm font-sans transition-colors ${sessionTypeFilter === type
-                            ? 'bg-[#C8A97E] text-[#0C0C0C]'
-                            : 'text-[#F9F6F2] hover:bg-[rgba(200,169,126,0.1)]'
+                          ? 'bg-[#C8A97E] text-[#0C0C0C]'
+                          : 'text-[#F9F6F2] hover:bg-[rgba(200,169,126,0.1)]'
                           }`}
                       >
                         {type}
@@ -436,8 +438,8 @@ const CreatorBookings = () => {
                           setShowStatusDropdown(false);
                         }}
                         className={`w-full text-left px-4 py-3 text-sm font-sans transition-colors ${statusFilter === status
-                            ? 'bg-[#C8A97E] text-[#0C0C0C]'
-                            : 'text-[#F9F6F2] hover:bg-[rgba(200,169,126,0.1)]'
+                          ? 'bg-[#C8A97E] text-[#0C0C0C]'
+                          : 'text-[#F9F6F2] hover:bg-[rgba(200,169,126,0.1)]'
                           }`}
                       >
                         {status}
@@ -511,8 +513,8 @@ const CreatorBookings = () => {
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-1">
                               <span className={`px-3 py-1 rounded-full text-xs font-sans border ${booking.status === 'Pending Action'
-                                  ? 'bg-[rgba(251,191,36,0.1)] text-[#fbbf24] border-[rgba(251,191,36,0.3)]'
-                                  : getStatusColor(booking.status)
+                                ? 'bg-[rgba(251,191,36,0.1)] text-[#fbbf24] border-[rgba(251,191,36,0.3)]'
+                                : getStatusColor(booking.status)
                                 }`}>
                                 {booking.status === 'Past' ? 'Completed' : booking.status === 'Pending Action' ? 'Pending' : booking.status}
                               </span>
@@ -536,8 +538,13 @@ const CreatorBookings = () => {
                             <h3 className="font-sans text-lg font-semibold text-[#F9F6F2] mb-1">
                               {booking.session} with {booking.follower}
                             </h3>
-                            <p className="font-sans text-sm text-[#F9F6F2] opacity-70">
+                            <p className="font-sans text-sm text-[#F9F6F2] opacity-70 flex items-center gap-2 flex-wrap">
                               {booking.date} at {booking.time} · {booking.duration} · {booking.amount}
+                              {booking.isRescheduled && (
+                                <span className="text-[10px] font-bold text-[#0012FF] bg-[#EEF2FF] px-2 py-0.5 rounded-full leading-none opacity-100">
+                                  Rescheduled
+                                </span>
+                              )}
                             </p>
                           </div>
                         </div>
@@ -692,7 +699,7 @@ const CreatorBookings = () => {
                   {/* Illustration */}
                   <div className="w-20 xs:w-28 sm:w-36 md:w-44 lg:w-56 mt-2 sm:mt-3 mb-3 sm:mb-4">
                     <Image
-                      src="/assets/cancel-appointment.png"
+                      src="/assets/cancel-appointment.webp"
                       alt="Cancel Booking"
                       width={240}
                       height={170}
@@ -758,7 +765,7 @@ const CreatorBookings = () => {
                   {/* Illustration */}
                   <div className="w-20 xs:w-28 sm:w-36 md:w-44 lg:w-56 mt-2 sm:mt-3 mb-3 sm:mb-4">
                     <Image
-                      src="/assets/cancel-appointment.png"
+                      src="/assets/cancel-appointment.webp"
                       alt="Booking Cancelled"
                       width={240}
                       height={170}
