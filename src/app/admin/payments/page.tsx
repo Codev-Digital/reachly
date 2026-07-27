@@ -1,7 +1,8 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { CreditCard, DollarSign, Clock, Calendar, ArrowUpRight } from 'lucide-react';
 
 interface Payment {
   id: string;
@@ -33,94 +34,32 @@ export default function AdminPaymentsPage() {
   // Track selected payment for detailed view
   const [activeDetailPayment, setActiveDetailPayment] = useState<Payment | null>(null);
 
-  const initialPayments: Payment[] = [
-    {
-      id: 'TXN-10245',
-      user: { name: 'James Richard', username: '@jamesrichard', avatar: '/ahad raza mir.png' },
-      creator: { name: 'Sophia Reed', username: '@sophiareed', avatar: '/ahad raza mir.png' },
-      paymentMethod: 'Jazzcash',
-      date: '02 July 2026',
-      time: '10:45 AM',
-      amount: '25,000 PKR',
-      platformFee: '5,000 PKR',
-      creatorEarnings: '20,000 PKR',
-      status: 'Completed'
-    },
-    {
-      id: 'TXN-10246',
-      user: { name: 'James Richard', username: '@jamesrichard', avatar: '/ahad raza mir.png' },
-      creator: { name: 'Sophia Reed', username: '@sophiareed', avatar: '/ahad raza mir.png' },
-      paymentMethod: 'Easy Paisa',
-      date: '02 July 2026',
-      time: '10:45 AM',
-      amount: '25,000 PKR',
-      platformFee: '5,000 PKR',
-      creatorEarnings: '20,000 PKR',
-      status: 'Pending'
-    },
-    {
-      id: 'TXN-10247',
-      user: { name: 'James Richard', username: '@jamesrichard', avatar: '/ahad raza mir.png' },
-      creator: { name: 'Sophia Reed', username: '@sophiareed', avatar: '/ahad raza mir.png' },
-      paymentMethod: 'Bank Card',
-      date: '02 July 2026',
-      time: '10:45 AM',
-      amount: '25,000 PKR',
-      platformFee: '5,000 PKR',
-      creatorEarnings: '20,000 PKR',
-      status: 'Completed'
-    },
-    {
-      id: 'TXN-10248',
-      user: { name: 'James Richard', username: '@jamesrichard', avatar: '/ahad raza mir.png' },
-      creator: { name: 'Sophia Reed', username: '@sophiareed', avatar: '/ahad raza mir.png' },
-      paymentMethod: 'Jazzcash',
-      date: '02 July 2026',
-      time: '10:45 AM',
-      amount: '25,000 PKR',
-      platformFee: '5,000 PKR',
-      creatorEarnings: '20,000 PKR',
-      status: 'Refunded'
-    },
-    {
-      id: 'TXN-10249',
-      user: { name: 'James Richard', username: '@jamesrichard', avatar: '/ahad raza mir.png' },
-      creator: { name: 'Sophia Reed', username: '@sophiareed', avatar: '/ahad raza mir.png' },
-      paymentMethod: 'Easy Paisa',
-      date: '02 July 2026',
-      time: '10:45 AM',
-      amount: '25,000 PKR',
-      platformFee: '5,000 PKR',
-      creatorEarnings: '20,000 PKR',
-      status: 'Pending'
-    },
-    {
-      id: 'TXN-10250',
-      user: { name: 'James Richard', username: '@jamesrichard', avatar: '/ahad raza mir.png' },
-      creator: { name: 'Sophia Reed', username: '@sophiareed', avatar: '/ahad raza mir.png' },
-      paymentMethod: 'Bank Card',
-      date: '02 July 2026',
-      time: '10:45 AM',
-      amount: '25,000 PKR',
-      platformFee: '5,000 PKR',
-      creatorEarnings: '20,000 PKR',
-      status: 'Refunded'
-    },
-    {
-      id: 'TXN-10251',
-      user: { name: 'James Richard', username: '@jamesrichard', avatar: '/ahad raza mir.png' },
-      creator: { name: 'Sophia Reed', username: '@sophiareed', avatar: '/ahad raza mir.png' },
-      paymentMethod: 'Jazzcash',
-      date: '02 July 2026',
-      time: '10:45 AM',
-      amount: '25,000 PKR',
-      platformFee: '5,000 PKR',
-      creatorEarnings: '20,000 PKR',
-      status: 'Completed'
-    }
-  ];
+  const [payments, setPayments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const [payments] = useState<Payment[]>(initialPayments);
+  useEffect(() => {
+    async function loadPayments() {
+      try {
+        setLoading(true);
+        const res = await fetch('/api/admin/payments');
+        if (res.ok) {
+          const data = await res.json();
+          setPayments(data.payments || []);
+        }
+      } catch (err) {
+        console.error('Failed to load payments:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadPayments();
+  }, []);
+
+  // Calculate dynamic stats
+  const totalBalance = payments.reduce((sum, p) => sum + (p.rawAmount || 0), 0);
+  const successfulPayments = payments.filter(p => p.status === 'Completed').length;
+  const refundIssued = payments.filter(p => p.status === 'Refunded').reduce((sum, p) => sum + (p.rawAmount || 0), 0);
+  const pendingPayments = payments.filter(p => p.status === 'Pending').length;
 
   // Filter logic
   const filteredPayments = payments.filter(payment => {
@@ -257,99 +196,82 @@ export default function AdminPaymentsPage() {
           <span className="text-gray-400 font-normal text-sm sm:text-base">Overview</span>
         </h1>
       </div>
-      {/* Metrics Cards */}
-      <div className="flex flex-col sm:flex-row w-full gap-3 sm:gap-5 mb-10 overflow-visible">
-        {/* Card 1: Available Balance (Wallet Card) */}
-        <div className="relative w-full sm:flex-[2.5] h-[160px] sm:h-[180px] p-5 flex flex-col justify-between overflow-visible z-[1]">
-          <img
-            src="/assets/wr-1.png"
-            alt=""
-            className="absolute inset-0 w-full h-full object-fill -z-10 pointer-events-none rounded-2xl sm:rounded-none"
-          />
-          <div className="flex items-start justify-between w-full">
-            <div className="flex items-center gap-3 sm:gap-4">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/60 rounded-lg flex items-center justify-center flex-shrink-0">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2">
-                  <rect x="2" y="5" width="20" height="14" rx="2" />
-                  <line x1="2" y1="10" x2="22" y2="10" />
-                </svg>
+      {/* Metrics Cards (Wallet Style) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 mb-10 items-stretch">
+        {/* Card 1 - Available Balance (Longer Card with 3D Ball/Bubble Effects) */}
+        <div className="lg:col-span-5 relative bg-[#0012FF] text-white rounded-[10px] p-5 shadow-sm flex flex-col justify-between h-[160px] hover:scale-[1.01] transition-all duration-300 overflow-hidden cursor-default">
+          {/* 3D Ball / Bubble Background Overlay Effects */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-[10px]">
+            <div className="absolute -right-6 -bottom-10 w-48 h-48 rounded-full bg-gradient-to-br from-white/20 via-white/10 to-transparent border border-white/20 shadow-2xl" />
+            <div className="absolute right-16 -top-10 w-36 h-36 rounded-full bg-gradient-to-br from-white/15 via-white/5 to-transparent border border-white/15" />
+            <div className="absolute right-36 bottom-2 w-28 h-28 rounded-full bg-gradient-to-tr from-blue-700/60 to-blue-500/30" />
+            <div className="absolute -left-12 -top-10 w-44 h-44 rounded-full bg-gradient-to-br from-white/15 via-white/5 to-transparent border border-white/15" />
+            <div className="absolute left-20 -bottom-14 w-36 h-36 rounded-full bg-gradient-to-tr from-white/20 to-transparent border border-white/20" />
+            <div className="absolute left-44 top-1/2 -translate-y-1/2 w-32 h-32 rounded-full bg-white/5 border border-white/10" />
+          </div>
+
+          {/* Top Row: Icon Badge */}
+          <div className="flex justify-between items-start z-10">
+            <div className="w-9 h-9 bg-white/90 backdrop-blur-md rounded-lg flex items-center justify-center shadow-xs">
+              <CreditCard className="w-5 h-5 text-[#0012FF]" />
+            </div>
+          </div>
+
+          {/* Bottom Row: Balance Meta + Top Up Button */}
+          <div className="flex items-end justify-between gap-4 z-10">
+            <div>
+              <p className="text-[11px] font-medium text-white/80 uppercase tracking-wide font-sans mb-0.5">Available Balance</p>
+              <h3 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight font-sans my-0.5">{totalBalance.toLocaleString()} PKR</h3>
+            </div>
+
+            {/* Payout Button */}
+            <button className="bg-white hover:bg-gray-50 text-black pl-4 pr-1.5 py-1.5 rounded-full text-xs font-bold transition-all shadow-md active:scale-95 flex items-center gap-2 cursor-pointer shrink-0">
+              <span>Payout</span>
+              <div className="w-5 h-5 bg-[#0012FF] rounded-full flex items-center justify-center text-white">
+                <ArrowUpRight className="w-3.5 h-3.5 stroke-[3]" />
               </div>
-              <div className="flex items-end justify-between gap-4 z-10">
-                <div>
-                  <p className="text-xs font-sans mb-0.5 text-white/80">Available Balance</p>
-                  <p className="text-2xl sm:text-3xl font-bold text-white font-sans">1,63,458 PKR</p>
-                </div>
-                
-                <button className="flex items-center hover:opacity-90 transition-all">
-                  <img
-                    src="/assets/payout.svg"
-                    alt="Payout"
-                    className="w-20 h-auto -translate-y-2 translate-x-3"
-                  />
-                </button>
+            </button>
+          </div>
+        </div>
+
+        {/* Right Grid: 3 Equal Cards */}
+        <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* Card 2 - Successful Payments */}
+          <div className="bg-[#AFE8B9] text-[#0A4A1C] rounded-[10px] p-5 shadow-sm flex flex-col justify-between h-[160px] hover:scale-[1.01] transition-all duration-300 cursor-default">
+            <div className="flex justify-between items-start">
+              <div className="w-9 h-9 bg-white/90 backdrop-blur-md rounded-lg flex items-center justify-center shadow-xs">
+                <DollarSign className="w-5 h-5 text-[#0A4A1C]" />
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* Card 2: Successful Payments */}
-        <div className="relative w-full sm:flex-1 h-[145px] sm:h-[180px] p-5 flex flex-col justify-between overflow-visible z-[2] mt-4 sm:mt-0 sm:-ml-0.5">
-          <img
-            src="/assets/wr-2.png"
-            alt=""
-            className="absolute inset-0 w-full h-full object-fill -z-10 pointer-events-none rounded-2xl sm:rounded-none"
-          />
-          <div className="flex items-center gap-3 sm:gap-4">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/60 rounded-lg flex items-center justify-center flex-shrink-0">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-            </div>
             <div>
-              <p className="text-xs font-sans mb-0.5 text-gray-500 font-medium">Successful Payments</p>
-              <p className="text-xl sm:text-2xl font-bold font-sans text-[#22C55E]">2,234</p>
+              <p className="text-[11px] font-medium opacity-80 uppercase tracking-wide font-sans mb-0.5">Successful Payments</p>
+              <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-sans my-0.5">{successfulPayments}</h3>
             </div>
           </div>
-        </div>
 
-        {/* Card 3: Refund Issued */}
-        <div className="relative w-full sm:flex-1 h-[145px] sm:h-[180px] pt-5 pb-5 pr-5 pl-12 sm:pl-14 flex flex-col justify-between overflow-visible z-[3] mt-4 sm:mt-0 sm:-ml-10">
-          <img
-            src="/assets/wr-3.png"
-            alt=""
-            className="absolute inset-0 w-full h-full object-fill -z-10 pointer-events-none rounded-2xl sm:rounded-none"
-          />
-          <div className="flex items-center gap-3 sm:gap-4">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/60 rounded-lg flex items-center justify-center flex-shrink-0">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2">
-                <circle cx="12" cy="12" r="10" />
-                <polyline points="12 6 12 12 16 14" />
-              </svg>
+          {/* Card 3 - Refund Issued */}
+          <div className="bg-[#FFEDB5] text-[#6C4800] rounded-[10px] p-5 shadow-sm flex flex-col justify-between h-[160px] hover:scale-[1.01] transition-all duration-300 cursor-default">
+            <div className="flex justify-between items-start">
+              <div className="w-9 h-9 bg-white/90 backdrop-blur-md rounded-lg flex items-center justify-center shadow-xs">
+                <Clock className="w-5 h-5 text-[#6C4800]" />
+              </div>
             </div>
             <div>
-              <p className="text-xs font-sans mb-0.5 text-gray-500 font-medium">Refund Issued</p>
-              <p className="text-xl sm:text-2xl font-bold font-sans text-[#F59E0B]">2,058 PKR</p>
+              <p className="text-[11px] font-medium opacity-80 uppercase tracking-wide font-sans mb-0.5">Refund Issued</p>
+              <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-sans my-0.5">{refundIssued.toLocaleString()} PKR</h3>
             </div>
           </div>
-        </div>
 
-        {/* Card 4: Failed Payments */}
-        <div className="relative w-full sm:flex-1 h-[145px] sm:h-[180px] pt-5 pb-5 pr-5 pl-12 sm:pl-14 flex flex-col justify-between overflow-visible z-[4] mt-4 sm:mt-0 sm:-ml-10">
-          <img
-            src="/assets/wr-4.png"
-            alt=""
-            className="absolute inset-0 w-full h-full object-fill -z-10 pointer-events-none"
-          />
-          <div className="flex items-center gap-3 sm:gap-4">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/60 rounded-lg flex items-center justify-center flex-shrink-0">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F43F5E" strokeWidth="2">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
+          {/* Card 4 - Failed Payments */}
+          <div className="bg-[#FFB3B3] text-[#701C1C] rounded-[10px] p-5 shadow-sm flex flex-col justify-between h-[160px] hover:scale-[1.01] transition-all duration-300 cursor-default">
+            <div className="flex justify-between items-start">
+              <div className="w-9 h-9 bg-white/90 backdrop-blur-md rounded-lg flex items-center justify-center shadow-xs">
+                <Calendar className="w-5 h-5 text-[#701C1C]" />
+              </div>
             </div>
             <div>
-              <p className="text-xs font-sans mb-0.5 text-gray-500 font-medium">Failed Payments</p>
-              <p className="text-xl sm:text-2xl font-bold font-sans text-[#F43F5E]">543</p>
+              <p className="text-[11px] font-medium opacity-80 uppercase tracking-wide font-sans mb-0.5">Pending Payments</p>
+              <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-sans my-0.5">{pendingPayments}</h3>
             </div>
           </div>
         </div>

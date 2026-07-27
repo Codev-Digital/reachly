@@ -612,28 +612,14 @@ export default function UsersPage() {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="relative overflow-visible w-full max-w-lg flex flex-col items-center p-8 pt-12 pb-8 z-10 bg-transparent"
+              className="bg-white rounded-[32px] p-6 sm:p-8 w-full max-w-[400px] shadow-2xl relative flex flex-col items-center z-10 overflow-hidden"
             >
-              {/* SVG Background */}
-              <img
-                src="/assets/cancel-card.svg"
-                alt=""
-                className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10"
-              />
-
               {/* Close Button */}
               <button
                 onClick={() => setShowDeleteModal(false)}
-                className="absolute -mt-20 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center border border-gray-100/50 text-gray-500 hover:bg-gray-50 transition-all z-20"
+                className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
               >
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <line x1="18" y1="6" x2="6" y2="18" />
                   <line x1="6" y1="6" x2="18" y2="18" />
                 </svg>
@@ -697,28 +683,14 @@ export default function UsersPage() {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="relative overflow-visible w-full max-w-lg flex flex-col items-center p-8 pt-12 pb-8 z-10 bg-transparent"
+              className="bg-white rounded-[32px] p-6 sm:p-8 w-full max-w-[400px] shadow-2xl relative flex flex-col items-center z-10 overflow-hidden"
             >
-              {/* SVG Background */}
-              <img
-                src="/assets/cancel-card.svg"
-                alt=""
-                className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10"
-              />
-
               {/* Close Button */}
               <button
                 onClick={() => setShowStatusFeedbackModal(false)}
-                className="absolute -mt-20 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center border border-gray-100/50 text-gray-500 hover:bg-gray-50 transition-all z-20"
+                className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
               >
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <line x1="18" y1="6" x2="6" y2="18" />
                   <line x1="6" y1="6" x2="18" y2="18" />
                 </svg>

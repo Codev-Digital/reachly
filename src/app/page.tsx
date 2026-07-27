@@ -988,13 +988,13 @@ export default function Home() {
               className="flex gap-5 w-max"
             >
               {marqueeTestimonials1.map((t, i) => (
-                <div key={i} className="w-[300px] sm:w-[330px] shrink-0 bg-white rounded-2xl p-6 shadow-sm border border-gray-100 relative">
+                <div key={i} className="w-[270px] sm:w-[330px] shrink-0 bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-gray-100 relative">
                   {/* Big quote mark top-right */}
-                  <div className="absolute -mt-10 right-5">
+                  <div className="absolute -mt-8 sm:-mt-10 right-4 sm:right-5">
                     <img
                       src={commaSvgs[t.commaIndex]}
                       alt="quote"
-                      className="w-16 h-16 -translate-y-2"
+                      className="w-12 h-12 sm:w-16 sm:h-16 -translate-y-2"
                     />
                   </div>
                   {/* Avatar + name */}
@@ -1030,10 +1030,10 @@ export default function Home() {
               className="flex gap-5 w-max"
             >
               {marqueeTestimonials2.map((t, i) => (
-                <div key={i} className="w-[300px] sm:w-[330px] shrink-0 bg-white rounded-2xl p-6 shadow-sm border border-gray-100 relative">
+                <div key={i} className="w-[270px] sm:w-[330px] shrink-0 bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-gray-100 relative">
                   {/* Big quote mark top-right */}
-                  <div className="absolute -mt-12 right-5">
-                    <img src={commaSvgs[t.commaIndex]} alt="quote" className="w-16 h-16" />
+                  <div className="absolute -mt-10 sm:-mt-12 right-4 sm:right-5">
+                    <img src={commaSvgs[t.commaIndex]} alt="quote" className="w-12 h-12 sm:w-16 sm:h-16" />
                   </div>
                   {/* Avatar + name */}
                   <div className="flex items-center gap-3 mb-4">

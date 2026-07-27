@@ -61,7 +61,7 @@ const AdminDashboard = () => {
 
   // Pagination state for Top Creators
   const [creatorPage, setCreatorPage] = useState<number>(1);
-  const creatorsPerPage = 3;
+  const creatorsPerPage = 2;
 
   const [stats, setStats] = useState<DashboardStats>({
     totalUsers: 0,
@@ -169,7 +169,9 @@ const AdminDashboard = () => {
               <div>
                 <p className="text-[11px] text-white/90 font-semibold mb-0.5">Total Users</p>
                 <p className="text-3xl font-black text-[#0012FF] leading-none mb-1">{stats.totalUsers.toLocaleString()}</p>
-                <p className="text-[10px] text-white flex items-center gap-1">↑ +18.2% from last month</p>
+                <p className="text-[10px] text-white flex items-center gap-1">
+                  {stats.userGrowthTrend.startsWith('-') ? '↓' : '↑'} {stats.userGrowthTrend} from last month
+                </p>
               </div>
             </div>
 
@@ -184,7 +186,9 @@ const AdminDashboard = () => {
               <div>
                 <p className="text-[11px] text-white/90 font-semibold mb-0.5">Total Creators</p>
                 <p className="text-3xl font-black text-[#12B76A] leading-none mb-1">{stats.totalCreators.toLocaleString()}</p>
-                <p className="text-[10px] text-white flex items-center gap-1">↑ +18.2% from last month</p>
+                <p className="text-[10px] text-white flex items-center gap-1">
+                  {stats.creatorGrowthTrend.startsWith('-') ? '↓' : '↑'} {stats.creatorGrowthTrend} from last month
+                </p>
               </div>
             </div>
 
@@ -199,7 +203,9 @@ const AdminDashboard = () => {
               <div>
                 <p className="text-[11px] text-white/90 font-semibold mb-0.5">Total Revenue</p>
                 <p className="text-3xl font-black text-[#EF4444] leading-none mb-1">{stats.totalRevenue}</p>
-                <p className="text-[10px] text-white flex items-center gap-1">↑ +18.2% from last month</p>
+                <p className="text-[10px] text-white flex items-center gap-1">
+                  {activeBar?.trend?.startsWith('-') ? '↓' : '↑'} {activeBar?.trend || '+0%'} from last month
+                </p>
               </div>
             </div>
 
@@ -214,7 +220,6 @@ const AdminDashboard = () => {
               <div>
                 <p className="text-[11px] text-white/90 font-semibold mb-0.5">Pending Payouts</p>
                 <p className="text-3xl font-black text-[#F59E0B] leading-none mb-1">{stats.pendingPayouts}</p>
-                <p className="text-[10px] text-white flex items-center gap-1">↑ +18.2% from last month</p>
               </div>
             </div>
           </div>
@@ -408,7 +413,7 @@ const AdminDashboard = () => {
             {topCreators.length === 0 ? (
               <p className="text-gray-400 text-xs py-4 text-center">No creators found yet.</p>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {paginatedCreators.map((creator, index) => {
                   const clipId = `cardClip-admin-${creator.id || index}`;
                   return (
