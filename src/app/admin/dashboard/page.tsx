@@ -159,7 +159,7 @@ const AdminDashboard = () => {
           {/* Stats Grid */}
           <div className="grid grid-cols-2 gap-4 sm:gap-6">
             {/* Card 1 */}
-            <div className="bg-[#BAC4FF] rounded-[20px] p-5 sm:p-6 flex flex-col justify-between h-[150px] sm:h-[140px]">
+            <div className="bg-[#BAC4FF] rounded-xl p-5 sm:p-6 flex flex-col justify-between h-[170px] sm:h-[160px]">
               <div className="w-10 h-10 bg-white/70 backdrop-blur-sm rounded-lg flex items-center justify-center mb-4 sm:mb-6">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2">
                   <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -174,7 +174,7 @@ const AdminDashboard = () => {
             </div>
 
             {/* Card 2 */}
-            <div className="bg-[#A3E5A5] rounded-[20px] p-5 sm:p-6 flex flex-col justify-between h-[150px] sm:h-[140px]">
+            <div className="bg-[#A3E5A5] rounded-xl p-5 sm:p-6 flex flex-col justify-between h-[170px] sm:h-[160px]">
               <div className="w-10 h-10 bg-white/70 backdrop-blur-sm rounded-lg flex items-center justify-center mb-4 sm:mb-6">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#12B76A" strokeWidth="2">
                   <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -189,7 +189,7 @@ const AdminDashboard = () => {
             </div>
 
             {/* Card 3 */}
-            <div className="bg-[#FFADAD] rounded-[20px] p-5 sm:p-6 flex flex-col justify-between h-[150px] sm:h-[140px]">
+            <div className="bg-[#FFADAD] rounded-xl p-5 sm:p-6 flex flex-col justify-between h-[170px] sm:h-[160px]">
               <div className="w-10 h-10 bg-white/70 backdrop-blur-sm rounded-lg flex items-center justify-center mb-4 sm:mb-6">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2">
                   <line x1="12" y1="1" x2="12" y2="23" />
@@ -204,7 +204,7 @@ const AdminDashboard = () => {
             </div>
 
             {/* Card 4 */}
-            <div className="bg-[#FFE199] rounded-[20px] p-5 sm:p-6 flex flex-col justify-between h-[150px] sm:h-[140px]">
+            <div className="bg-[#FFE199] rounded-xl p-5 sm:p-6 flex flex-col justify-between h-[170px] sm:h-[160px]">
               <div className="w-10 h-10 bg-white/70 backdrop-blur-sm rounded-lg flex items-center justify-center mb-4 sm:mb-6">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2">
                   <circle cx="12" cy="12" r="10" />
