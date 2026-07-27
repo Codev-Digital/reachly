@@ -77,6 +77,44 @@ const AdminDashboard = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [topCreators, setTopCreators] = useState<Creator[]>([]);
 
+  // Earnings chart state
+  const [chartData, setChartData] = useState<any[]>([]);
+  const [chartYear, setChartYear] = useState<number>(new Date().getFullYear());
+  const [chartTimeframe, setChartTimeframe] = useState<'weekly' | 'monthly'>('monthly');
+  const [totalEarnings, setTotalEarnings] = useState<number>(0);
+  const [loadingChart, setLoadingChart] = useState(true);
+  const [chartYearDropdownOpen, setChartYearDropdownOpen] = useState(false);
+
+  const loadEarningsChart = async (year: number, timeframe: 'weekly' | 'monthly') => {
+    setLoadingChart(true);
+    try {
+      const res = await fetch(`/api/admin/earnings?year=${year}&timeframe=${timeframe}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          setChartData(data.chartData);
+          setTotalEarnings(data.totalEarnings);
+          const now = new Date();
+          if (timeframe === 'weekly') {
+            const dayIdx = (now.getDay() + 6) % 7;
+            setActiveBarIndex(dayIdx);
+          } else if (year === now.getFullYear()) {
+            setActiveBarIndex(now.getMonth());
+          } else {
+            const lastNonZero = [...data.chartData].reverse().findIndex((d: any) => d.rawEarnings > 0);
+            setActiveBarIndex(lastNonZero === -1 ? 11 : 11 - lastNonZero);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load earnings chart:', err);
+    } finally {
+      setLoadingChart(false);
+    }
+  };
+
+  useEffect(() => { loadEarningsChart(chartYear, chartTimeframe); }, [chartYear, chartTimeframe]);
+
   useEffect(() => {
     fetchDashboardData();
   }, []);
@@ -89,13 +127,9 @@ const AdminDashboard = () => {
 
       if (res.ok && data.success) {
         setStats(data.stats);
-        setMonthlyData(data.monthlyData || []);
         setCategories(data.categories || []);
         setTopCreators(data.topCreators || []);
         setAdminName(data.adminName || 'Admin');
-
-        const currentMonthIndex = new Date().getMonth();
-        setActiveBarIndex(currentMonthIndex < (data.monthlyData?.length || 0) ? currentMonthIndex : 0);
       } else {
         setError(data.error || 'Failed to load dashboard data');
       }
@@ -134,7 +168,7 @@ const AdminDashboard = () => {
   const startIndex = (creatorPage - 1) * creatorsPerPage;
   const paginatedCreators = topCreators.slice(startIndex, startIndex + creatorsPerPage);
 
-  const activeBar = activeBarIndex !== null && monthlyData[activeBarIndex] ? monthlyData[activeBarIndex] : null;
+  const activeBar = activeBarIndex !== null && chartData[activeBarIndex] ? chartData[activeBarIndex] : null;
 
   return (
     <motion.div
@@ -237,107 +271,151 @@ const AdminDashboard = () => {
                   <CardDescription className="text-gray-500 font-sans mt-1">
                     {activeBar
                       ? `${activeBar.month} · ${activeBar.earnings}`
-                      : `Full year ${new Date().getFullYear()}`}
+                      : `Full year ${chartYear}`}
                   </CardDescription>
                 </div>
 
-                {/* Active Month Earnings Pill */}
-                {activeBar && (
-                  <div className="bg-[#EEF2FF] rounded-2xl px-4 py-2 flex items-center gap-2 self-start sm:self-center">
-                    <div className="w-6 h-6 bg-[#0012FF] rounded-lg flex items-center justify-center">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
-                        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-[#0012FF]/70 font-semibold uppercase tracking-wider leading-none">Earnings</p>
-                      <p className="text-sm font-bold text-[#0012FF] font-sans leading-tight">{activeBar.earnings}</p>
-                    </div>
-                  </div>
-                )}
-              </CardHeader>
-
-              <CardContent className="px-2 sm:px-4 pb-2">
-                <ResponsiveContainer width="100%" height={288}>
-                  <BarChart
-                    data={monthlyData}
-                    margin={{ top: 16, right: 8, left: 0, bottom: 0 }}
-                    barCategoryGap="18%"
-                    onClick={(data) => {
-                      if (data?.activeTooltipIndex !== undefined) {
-                        setActiveBarIndex(Number(data.activeTooltipIndex));
-                      }
-                    }}
-                  >
-                    <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#F1F5F9" />
-                    <XAxis
-                      dataKey="month"
-                      tickLine={false}
-                      tickMargin={10}
-                      axisLine={false}
-                      tick={{ fill: '#94A3B8', fontSize: 12, fontWeight: 500 }}
-                    />
-                    <YAxis
-                      tickLine={false}
-                      axisLine={false}
-                      tickMargin={8}
-                      tick={{ fill: '#94A3B8', fontSize: 11 }}
-                      tickFormatter={(v) => (v === 0 ? '0' : `${(v / 1000).toFixed(0)}k`)}
-                      width={36}
-                    />
-                    <Tooltip
-                      cursor={false}
-                      content={({ active, payload, label }) => {
-                        if (!active || !payload?.length) return null;
-                        const d = payload[0].payload;
-                        return (
-                          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-3 flex items-center gap-3 min-w-[180px]">
-                            <div className="w-8 h-8 bg-[#EEF2FF] rounded-xl flex items-center justify-center flex-shrink-0">
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2.5">
-                                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                              </svg>
-                            </div>
-                            <div className="flex-1">
-                              <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">{label} Earnings</p>
-                              <p className="text-sm font-bold text-black font-sans">{d.earnings}</p>
-                            </div>
-                            {d.rawEarnings > 0 && (
-                              <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
-                                {d.trend}
-                              </span>
-                            )}
-                          </div>
-                        );
-                      }}
-                    />
-                    <Bar
-                      dataKey="rawEarnings"
-                      radius={[6, 6, 0, 0]}
-                      maxBarSize={52}
-                      cursor="pointer"
+                <div className="flex flex-wrap items-center gap-2 self-start sm:self-center">
+                  {/* Weekly / Monthly timeframe toggle */}
+                  <div className="flex items-center bg-gray-100 p-1 rounded-xl border border-gray-200/60">
+                    <button
+                      onClick={() => setChartTimeframe('weekly')}
+                      className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${chartTimeframe === 'weekly'
+                        ? 'bg-[#0012FF] text-white shadow-xs'
+                        : 'text-gray-500 hover:text-gray-800'
+                        }`}
                     >
-                      {monthlyData.map((entry, index) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={
-                            activeBarIndex === null
-                              ? '#0012FF'
-                              : index === activeBarIndex
-                              ? '#0012FF'
-                              : '#E5E7EB'
-                          }
-                          fillOpacity={
-                            activeBarIndex === null
-                              ? 1
-                              : index === activeBarIndex
-                              ? 1
-                              : 0.6
-                          }
-                        />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+                      Weekly
+                    </button>
+                    <button
+                      onClick={() => setChartTimeframe('monthly')}
+                      className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${chartTimeframe === 'monthly'
+                        ? 'bg-[#0012FF] text-white shadow-xs'
+                        : 'text-gray-500 hover:text-gray-800'
+                        }`}
+                    >
+                      Monthly
+                    </button>
+                  </div>
+
+                  {/* Year dropdown */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setChartYearDropdownOpen(!chartYearDropdownOpen)}
+                      className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
+                    >
+                      <span>{chartYear}</span>
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9" /></svg>
+                    </button>
+                    {chartYearDropdownOpen && (
+                      <div className="absolute right-0 top-[calc(100%+6px)] w-24 bg-white rounded-xl shadow-xl border border-gray-100 py-1.5 z-50">
+                        {[2024, 2025, 2026, 2027].map((y) => (
+                          <button
+                            key={y}
+                            onClick={() => { setChartYear(y); setChartYearDropdownOpen(false); }}
+                            className={`w-full text-left px-3 py-1.5 text-xs font-semibold hover:bg-[#0012FF]/5 transition-colors cursor-pointer ${chartYear === y ? 'text-[#0012FF] bg-[#0012FF]/5' : 'text-gray-600'}`}
+                          >
+                            {y}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Active Month Earnings Pill */}
+                  {activeBar && (
+                    <div className="bg-[#EEF2FF] rounded-2xl px-4 py-2 flex items-center gap-2 ml-auto">
+                      <div className="w-6 h-6 bg-[#0012FF] rounded-lg flex items-center justify-center">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
+                          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-[#0012FF]/70 font-semibold uppercase tracking-wider leading-none">Earnings</p>
+                        <p className="text-sm font-bold text-[#0012FF] font-sans leading-tight">{activeBar.earnings}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent className="px-0 pb-0">
+                {loadingChart ? (
+                  <div className="w-full h-48 flex items-center justify-center">
+                    <div className="w-6 h-6 border-2 border-[#0012FF] border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height={260}>
+                    <BarChart
+                      data={chartData}
+                      margin={{ top: 20, right: 12, left: -20, bottom: 0 }}
+                      onClick={(data) => {
+                        if (data?.activeTooltipIndex !== undefined) {
+                          setActiveBarIndex(Number(data.activeTooltipIndex));
+                        }
+                      }}
+                    >
+                      <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#F1F5F9" />
+                      <XAxis
+                        dataKey="month"
+                        tickLine={false}
+                        tickMargin={12}
+                        axisLine={false}
+                        tick={{ fill: '#64748B', fontSize: 12, fontWeight: 500 }}
+                      />
+                      <YAxis
+                        tickLine={false}
+                        axisLine={false}
+                        tickMargin={12}
+                        tick={{ fill: '#64748B', fontSize: 11, fontWeight: 600 }}
+                        tickFormatter={(v) => v === 0 ? '0' : `${(v / 1000).toFixed(0)}k`}
+                      />
+                      <Tooltip
+                        cursor={false}
+                        content={({ active, payload, label }) => {
+                          if (!active || !payload?.length) return null;
+                          const d = payload[0].payload;
+                          return (
+                            <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-3 text-xs z-50">
+                              <p className="font-bold text-gray-800 mb-1">{label}</p>
+                              <p className="text-[#0012FF] font-bold text-sm">{d.earnings}</p>
+                              {d.trend && (
+                                <span className="inline-block mt-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+                                  {d.trend}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        }}
+                      />
+                      <Bar
+                        dataKey="rawEarnings"
+                        radius={[6, 6, 0, 0]}
+                        maxBarSize={52}
+                        cursor="pointer"
+                      >
+                        {chartData.map((entry, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={
+                              activeBarIndex === null
+                                ? '#0012FF'
+                                : index === activeBarIndex
+                                ? '#0012FF'
+                                : '#E5E7EB'
+                            }
+                            fillOpacity={
+                              activeBarIndex === null
+                                ? 1
+                                : index === activeBarIndex
+                                ? 1
+                                : 0.6
+                            }
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
               </CardContent>
 
               <CardFooter className="flex-row items-center justify-between border-t border-gray-100 pt-4 px-6 text-sm">

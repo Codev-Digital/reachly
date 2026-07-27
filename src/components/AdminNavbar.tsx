@@ -182,7 +182,7 @@ export default function AdminNavbar() {
           <div className="flex items-center gap-4">
             {/* Notification Bell */}
             <div className="relative notifications-dropdown-container">
-              <button 
+              <button
                 onClick={() => {
                   setNotificationsDropdownOpen(!notificationsDropdownOpen);
                   setProfileDropdownOpen(false);
@@ -200,7 +200,7 @@ export default function AdminNavbar() {
 
               <AnimatePresence>
                 {notificationsDropdownOpen && (
-                  <motion.div 
+                  <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 10 }}
@@ -216,7 +216,7 @@ export default function AdminNavbar() {
                         )}
                       </div>
                     </div>
-                    
+
                     <p className="text-xs text-gray-400 font-medium mb-4">Never miss an update from your account</p>
                     <div className="border-b border-gray-100 mb-4" />
 
@@ -224,8 +224,8 @@ export default function AdminNavbar() {
                       {notifications.length > 0 ? (
                         <div className="flex flex-col">
                           {notifications.map((notif, idx) => (
-                            <Link 
-                              key={notif.id || idx} 
+                            <Link
+                              key={notif.id || idx}
                               href={notif.link || '#'}
                               onClick={() => setNotificationsDropdownOpen(false)}
                               className="flex items-start justify-between gap-3 py-3 border-b border-gray-100/70 last:border-0 hover:bg-gray-50/70 rounded-xl px-1.5 transition-all cursor-pointer"
