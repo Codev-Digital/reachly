@@ -130,10 +130,10 @@ export default function AdminPaymentsPage() {
             <div>
               <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Status</p>
               <p className={`text-sm font-black mt-1 ${activeDetailPayment.status === 'Completed'
-                  ? 'text-emerald-500'
-                  : activeDetailPayment.status === 'Pending'
-                    ? 'text-amber-500'
-                    : 'text-rose-500'
+                ? 'text-emerald-500'
+                : activeDetailPayment.status === 'Pending'
+                  ? 'text-amber-500'
+                  : 'text-rose-500'
                 }`}>
                 {activeDetailPayment.status}
               </p>
@@ -190,7 +190,7 @@ export default function AdminPaymentsPage() {
     >
       {/* Header */}
       <div className="mb-8">
-        <p className="text-gray-500 font-sans text-sm sm:text-base mb-1">Hello Anna Chris!</p>
+        <p className="text-gray-500 font-sans text-sm sm:text-base mb-1">Hello Admin Abdullah!</p>
         <h1 className="text-3xl sm:text-4xl font-bold font-sans text-black">
           <span className="text-[#0012FF] font-black">Payments</span> Management{' '}
           <span className="text-gray-400 font-normal text-sm sm:text-base">Overview</span>
@@ -212,7 +212,7 @@ export default function AdminPaymentsPage() {
 
           {/* Top Row: Icon Badge */}
           <div className="flex justify-between items-start z-10">
-            <div className="w-9 h-9 bg-white/90 backdrop-blur-md rounded-lg flex items-center justify-center shadow-xs">
+            <div className="w-9 h-9 shrink-0 self-start bg-white/90 backdrop-blur-md rounded-lg flex items-center justify-center shadow-xs">
               <CreditCard className="w-5 h-5 text-[#0012FF]" />
             </div>
           </div>
@@ -239,7 +239,7 @@ export default function AdminPaymentsPage() {
           {/* Card 2 - Successful Payments */}
           <div className="bg-[#AFE8B9] text-[#0A4A1C] rounded-[10px] p-5 shadow-sm flex flex-col justify-between h-[160px] hover:scale-[1.01] transition-all duration-300 cursor-default">
             <div className="flex justify-between items-start">
-              <div className="w-9 h-9 bg-white/90 backdrop-blur-md rounded-lg flex items-center justify-center shadow-xs">
+              <div className="w-9 h-9 shrink-0 self-start bg-white/90 backdrop-blur-md rounded-lg flex items-center justify-center shadow-xs">
                 <DollarSign className="w-5 h-5 text-[#0A4A1C]" />
               </div>
             </div>
@@ -252,7 +252,7 @@ export default function AdminPaymentsPage() {
           {/* Card 3 - Refund Issued */}
           <div className="bg-[#FFEDB5] text-[#6C4800] rounded-[10px] p-5 shadow-sm flex flex-col justify-between h-[160px] hover:scale-[1.01] transition-all duration-300 cursor-default">
             <div className="flex justify-between items-start">
-              <div className="w-9 h-9 bg-white/90 backdrop-blur-md rounded-lg flex items-center justify-center shadow-xs">
+              <div className="w-9 h-9 shrink-0 self-start bg-white/90 backdrop-blur-md rounded-lg flex items-center justify-center shadow-xs">
                 <Clock className="w-5 h-5 text-[#6C4800]" />
               </div>
             </div>
@@ -265,7 +265,7 @@ export default function AdminPaymentsPage() {
           {/* Card 4 - Failed Payments */}
           <div className="bg-[#FFB3B3] text-[#701C1C] rounded-[10px] p-5 shadow-sm flex flex-col justify-between h-[160px] hover:scale-[1.01] transition-all duration-300 cursor-default">
             <div className="flex justify-between items-start">
-              <div className="w-9 h-9 bg-white/90 backdrop-blur-md rounded-lg flex items-center justify-center shadow-xs">
+              <div className="w-9 h-9 shrink-0 self-start bg-white/90 backdrop-blur-md rounded-lg flex items-center justify-center shadow-xs">
                 <Calendar className="w-5 h-5 text-[#701C1C]" />
               </div>
             </div>
@@ -432,10 +432,10 @@ export default function AdminPaymentsPage() {
                     <td className="py-4 px-4">
                       <span
                         className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${payment.status === 'Completed'
-                            ? 'bg-emerald-50 text-[#10B981] border border-emerald-200'
-                            : payment.status === 'Pending'
-                              ? 'bg-amber-50 text-[#F59E0B] border border-amber-200'
-                              : 'bg-blue-50 text-blue-500 border border-blue-200'
+                          ? 'bg-emerald-50 text-[#10B981] border border-emerald-200'
+                          : payment.status === 'Pending'
+                            ? 'bg-amber-50 text-[#F59E0B] border border-amber-200'
+                            : 'bg-blue-50 text-blue-500 border border-blue-200'
                           }`}
                       >
                         {payment.status}

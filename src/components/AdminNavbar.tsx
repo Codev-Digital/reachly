@@ -204,7 +204,7 @@ export default function AdminNavbar() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 10 }}
-                    className="absolute right-0 mt-2 w-auto sm:w-[460px] bg-white rounded-[28px] shadow-2xl border border-gray-100/90 z-50 overflow-hidden flex flex-col p-5 sm:p-7 text-left"
+                    className="fixed sm:absolute left-4 right-4 sm:left-auto sm:right-0 top-[76px] sm:top-auto sm:mt-2 w-auto sm:w-[460px] bg-white rounded-[28px] shadow-2xl border border-gray-100/90 z-[100] overflow-hidden flex flex-col p-5 sm:p-7 text-left"
                   >
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
