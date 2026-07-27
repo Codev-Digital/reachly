@@ -178,7 +178,9 @@ export default function Home() {
   ];
 
   // Explore By Category uses the same real-time DB creators (already priority-sorted)
-  const filteredCategoryCreators = dbCreators;
+  const filteredCategoryCreators = activeCategory === 'All Categories'
+    ? dbCreators
+    : dbCreators.filter(creator => (creator.niches || []).includes(activeCategory) || creator.category === activeCategory);
 
   return (
     <div className="min-h-screen">
@@ -736,7 +738,11 @@ export default function Home() {
                       </motion.div>
                     );
                   })
-                ) : null}
+                ) : (
+                  <div className="w-full flex items-center justify-center py-10">
+                    <img src="/no-creators.webp" alt="No creators found" className="w-48 sm:w-64 h-auto object-contain opacity-80" />
+                  </div>
+                )}
 
               </div>
             </div>
