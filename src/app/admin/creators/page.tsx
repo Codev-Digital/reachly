@@ -917,19 +917,12 @@ export default function AdminCreatorsPage() {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="relative overflow-visible w-full max-w-lg flex flex-col items-center p-8 pt-12 pb-8 z-10 bg-transparent"
+              className="relative w-full max-w-sm flex flex-col items-center p-8 z-10 bg-white rounded-[24px] shadow-xl"
             >
-              {/* SVG Background */}
-              <img
-                src="/assets/cancel-card.svg"
-                alt=""
-                className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10"
-              />
-
               {/* Close Button */}
               <button
                 onClick={() => setShowRejectModal(false)}
-                className="absolute -mt-20 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center border border-gray-100/50 text-gray-500 hover:bg-gray-50 transition-all z-20"
+                className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-500 hover:bg-gray-100 transition-all z-20"
               >
                 <svg
                   width="14"
@@ -969,7 +962,7 @@ export default function AdminCreatorsPage() {
                       setCreatorToReject(null);
                       setRejectSuccess(false);
                     }}
-                    className="w-80 py-2.5 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700 transition-all"
+                    className="w-full py-2.5 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700 transition-all"
                   >
                     OK
                   </button>
@@ -1021,19 +1014,12 @@ export default function AdminCreatorsPage() {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="relative overflow-visible w-full max-w-lg flex flex-col items-center p-8 pt-12 pb-8 z-10 bg-transparent"
+              className="relative w-full max-w-sm flex flex-col items-center p-8 z-10 bg-white rounded-[24px] shadow-xl"
             >
-              {/* SVG Background */}
-              <img
-                src="/assets/cancel-card.svg"
-                alt=""
-                className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10"
-              />
-
               {/* Close Button */}
               <button
                 onClick={() => setShowAcceptModal(false)}
-                className="absolute -mt-20 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center border border-gray-100/50 text-gray-500 hover:bg-gray-50 transition-all z-20"
+                className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-500 hover:bg-gray-100 transition-all z-20"
               >
                 <svg
                   width="14"
@@ -1073,7 +1059,7 @@ export default function AdminCreatorsPage() {
                       setCreatorToAccept(null);
                       setAcceptSuccess(false);
                     }}
-                    className="w-80 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 transition-all"
+                    className="w-full py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 transition-all"
                   >
                     OK
                   </button>
@@ -1125,19 +1111,12 @@ export default function AdminCreatorsPage() {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="relative overflow-visible w-full max-w-lg flex flex-col items-center p-8 pt-12 pb-8 z-10 bg-transparent animate-fade-in"
+              className="relative w-full max-w-sm flex flex-col items-center p-8 z-10 bg-white rounded-[24px] shadow-xl animate-fade-in"
             >
-              {/* SVG Background */}
-              <img
-                src="/assets/cancel-card.svg"
-                alt=""
-                className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10"
-              />
-
               {/* Close Button */}
               <button
                 onClick={() => setShowAddCategoryModal(false)}
-                className="absolute -mt-20 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center border border-gray-100/50 text-gray-500 hover:bg-gray-50 transition-all z-20"
+                className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-500 hover:bg-gray-100 transition-all z-20"
               >
                 <svg
                   width="14"
