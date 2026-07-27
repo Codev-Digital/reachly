@@ -152,96 +152,69 @@ const AdminDashboard = () => {
         </h1>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left Column: Stats & Earnings Graph */}
-        <div className="space-y-8">
+        <div className="lg:col-span-7 space-y-8">
           {/* Overlapping Stats Cards Container */}
-          <div className="space-y-4">
-            {/* Row 1: Total Users & Total Creators */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-start w-full">
-              {/* Card 1: Total Users */}
-              <div className="relative w-full sm:w-[48%] aspect-[329/160] p-6 flex flex-col justify-between overflow-visible z-[1]">
-                <img
-                  src="/assets/admin-rc-1.svg"
-                  alt=""
-                  className="absolute inset-0 w-full h-full object-fill -z-10 pointer-events-none"
-                />
-                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[#0012FF] shadow-sm">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                    <circle cx="9" cy="7" r="4" />
-                  </svg>
-                </div>
-                <div className="mt-auto">
-                  <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Total Users</p>
-                  <p className="text-2xl font-black text-[#0012FF]">{stats.totalUsers.toLocaleString()}</p>
-                </div>
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 gap-4 sm:gap-6">
+            {/* Card 1 */}
+            <div className="bg-[#BAC4FF] rounded-[20px] p-5 sm:p-6 flex flex-col justify-between h-[150px] sm:h-[140px]">
+              <div className="w-10 h-10 bg-white/70 backdrop-blur-sm rounded-lg flex items-center justify-center mb-4 sm:mb-6">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                </svg>
               </div>
-
-              {/* Card 2: Total Creators */}
-              <div className="relative w-full sm:w-[53%] aspect-[361/160] pl-10 pr-6 py-6 flex flex-col justify-between overflow-visible z-[2] mt-4 sm:mt-0 sm:-ml-[3%]">
-                <img
-                  src="/assets/admin-rc-2.svg"
-                  alt=""
-                  className="absolute inset-0 w-full h-full object-fill -z-10 pointer-events-none"
-                />
-
-                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[#10B981] shadow-sm">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                    <circle cx="8.5" cy="7" r="4" />
-                  </svg>
-                </div>
-
-                <div className="mt-auto">
-                  <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">
-                    Total Creators
-                  </p>
-                  <p className="text-2xl font-black text-[#10B981]">{stats.totalCreators.toLocaleString()}</p>
-                </div>
+              <div>
+                <p className="text-[11px] text-white/90 font-semibold mb-0.5">Total Users</p>
+                <p className="text-3xl font-black text-[#0012FF] leading-none mb-1">{stats.totalUsers.toLocaleString()}</p>
+                <p className="text-[10px] text-white flex items-center gap-1">↑ +18.2% from last month</p>
               </div>
             </div>
 
-            {/* Row 2: Total Revenue & Pending Payouts */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-start w-full">
-              {/* Card 3: Total Revenue */}
-              <div className="relative w-full sm:w-[48%] aspect-[329/160] p-6 flex flex-col justify-between overflow-visible z-[1]">
-                <img
-                  src="/assets/admin-rc-3.svg"
-                  alt=""
-                  className="absolute inset-0 w-full h-full object-fill -z-10 pointer-events-none"
-                />
-                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[#EF4444] shadow-sm">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                    <line x1="12" y1="1" x2="12" y2="23" />
-                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                  </svg>
-                </div>
-                <div className="mt-auto">
-                  <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Total Revenue</p>
-                  <p className="text-2xl font-black text-[#EF4444]">{stats.totalRevenue}</p>
-                  <p className="text-[10px] text-gray-400">Real-time revenue</p>
-                </div>
+            {/* Card 2 */}
+            <div className="bg-[#A3E5A5] rounded-[20px] p-5 sm:p-6 flex flex-col justify-between h-[150px] sm:h-[140px]">
+              <div className="w-10 h-10 bg-white/70 backdrop-blur-sm rounded-lg flex items-center justify-center mb-4 sm:mb-6">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#12B76A" strokeWidth="2">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                  <circle cx="8.5" cy="7" r="4" />
+                </svg>
               </div>
+              <div>
+                <p className="text-[11px] text-white/90 font-semibold mb-0.5">Total Creators</p>
+                <p className="text-3xl font-black text-[#12B76A] leading-none mb-1">{stats.totalCreators.toLocaleString()}</p>
+                <p className="text-[10px] text-white flex items-center gap-1">↑ +18.2% from last month</p>
+              </div>
+            </div>
 
-              {/* Card 4: Pending Payouts */}
-              <div className="relative w-full sm:w-[53%] aspect-[361/160] pl-10 pr-6 py-6 flex flex-col justify-between overflow-visible z-[2] mt-4 sm:mt-0 sm:-ml-[3%]">
-                <img
-                  src="/assets/admin-rc-4.svg"
-                  alt=""
-                  className="absolute inset-0 w-full h-full object-fill -z-10 pointer-events-none"
-                />
-                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[#F59E0B] shadow-sm">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="10" />
-                    <polyline points="12 6 12 12 16 14" />
-                  </svg>
-                </div>
-                <div className="mt-auto">
-                  <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Pending Payouts</p>
-                  <p className="text-2xl font-black text-[#F59E0B]">{stats.pendingPayouts}</p>
-                  <p className="text-[10px] text-gray-400">Completed sessions</p>
-                </div>
+            {/* Card 3 */}
+            <div className="bg-[#FFADAD] rounded-[20px] p-5 sm:p-6 flex flex-col justify-between h-[150px] sm:h-[140px]">
+              <div className="w-10 h-10 bg-white/70 backdrop-blur-sm rounded-lg flex items-center justify-center mb-4 sm:mb-6">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2">
+                  <line x1="12" y1="1" x2="12" y2="23" />
+                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-[11px] text-white/90 font-semibold mb-0.5">Total Revenue</p>
+                <p className="text-3xl font-black text-[#EF4444] leading-none mb-1">{stats.totalRevenue}</p>
+                <p className="text-[10px] text-white flex items-center gap-1">↑ +18.2% from last month</p>
+              </div>
+            </div>
+
+            {/* Card 4 */}
+            <div className="bg-[#FFE199] rounded-[20px] p-5 sm:p-6 flex flex-col justify-between h-[150px] sm:h-[140px]">
+              <div className="w-10 h-10 bg-white/70 backdrop-blur-sm rounded-lg flex items-center justify-center mb-4 sm:mb-6">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-[11px] text-white/90 font-semibold mb-0.5">Pending Payouts</p>
+                <p className="text-3xl font-black text-[#F59E0B] leading-none mb-1">{stats.pendingPayouts}</p>
+                <p className="text-[10px] text-white flex items-center gap-1">↑ +18.2% from last month</p>
               </div>
             </div>
           </div>
@@ -374,7 +347,7 @@ const AdminDashboard = () => {
         </div>
 
         {/* Right Column: Top Categories & Top Creators */}
-        <div className="space-y-8">
+        <div className="lg:col-span-5 space-y-8">
           {/* Top Categories Card */}
           <div className="bg-white rounded-[32px] p-6 border border-gray-100 shadow-sm">
             <h2 className="text-xl font-bold text-black mb-6 font-sans">Top Categories</h2>
@@ -439,92 +412,74 @@ const AdminDashboard = () => {
                 {paginatedCreators.map((creator, index) => {
                   const clipId = `cardClip-admin-${creator.id || index}`;
                   return (
-                    <div key={creator.id || index}>
-                      {/* Image with SVG clip notch */}
-                      <div className="relative w-full h-48 sm:h-52 md:h-56 overflow-hidden rounded-t-[18px]">
-                        <svg width="0" height="0" className="absolute">
-                          <defs>
-                            <clipPath id={clipId} clipPathUnits="objectBoundingBox">
-                              <path
-                                d="
-  M0 .06
-  C0 .025 .025 0 .06 0
-  H0.80
-  C0.855 0 .865 .01 .865 .03
-  V.10
-  C.865 .12 .885 .14 .91 .14
-  H.95
-  C.985 .14 1 .15 1 .175
-  V.91
-  C1 .975 .975 1 .94 1
-  H.06
-  C.025 1 0 .975 0 .94
-  V.06
-  C0 .025 0 .025 0 .06
-  Z
-  "
-                              />
-                            </clipPath>
-                          </defs>
-                        </svg>
-
+                    <div key={creator.id || index} className="group cursor-pointer">
+                      {/* Top Image Container */}
+                      <div className="relative w-full h-48 sm:h-52 md:h-56 overflow-hidden rounded-t-[18px] mb-3">
                         <img
                           src={creator.img}
                           alt={creator.name}
-                          className="w-full h-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.02]"
-                          style={{ clipPath: `url(#${clipId})` }}
+                          className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
                         />
 
-                        {/* Tag */}
+                        {/* Top Left Badge */}
                         <span
-                          className={`absolute top-2.5 left-3.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                          className={`absolute top-3 left-3 px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide ${
                             creator.tag === 'Verified'
-                              ? 'bg-white text-emerald-600'
-                              : 'bg-white text-blue-600'
+                              ? 'bg-[#E5F7ED] text-[#12B76A]'
+                              : 'bg-[#EBF0FF] text-[#0012FF]'
                           }`}
                         >
                           {creator.tag}
                         </span>
 
                         {/* Heart Icon */}
-                        <button className="absolute top-2 right-0.25 z-20 flex items-center justify-center hover:scale-110 transition-transform">
-                          <svg className="w-5 h-5 text-gray-300 hover:text-red-500 transition-colors" viewBox="0 0 24 24" fill="currentColor">
+                        <button className="absolute top-2.5 right-2.5 z-20 flex items-center justify-center hover:scale-110 transition-transform bg-transparent">
+                          <svg className="w-5 h-5 text-white drop-shadow-md hover:text-red-500 transition-colors" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
                           </svg>
                         </button>
                       </div>
 
                       {/* Content Details */}
-                      <div className="pt-3 pb-1 px-1">
-                        <div className="flex items-center justify-between">
-                          <h3 className="font-sans font-bold text-sm text-black flex items-center gap-1 truncate">
-                            {creator.name}
+                      <div className="px-0.5 space-y-1 text-left">
+                        {/* Title & Rating */}
+                        <div className="flex items-center justify-between gap-2">
+                          <h3 className="font-bold text-sm sm:text-base text-black font-sans flex items-center gap-1.5 leading-tight truncate">
+                            <span>{creator.name}</span>
                             {creator.isVerified && (
-                              <svg className="w-4 h-4 text-emerald-500 fill-current flex-shrink-0" viewBox="0 0 24 24">
-                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                              <svg className="w-4 h-4 text-[#12B76A] fill-current shrink-0" viewBox="0 0 24 24">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
                               </svg>
                             )}
                           </h3>
-                          <span className="flex items-center gap-0.5 text-xs font-bold text-black">
-                            <svg className="w-3.5 h-3.5 text-amber-500 fill-current" viewBox="0 0 20 20">
-                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                            </svg>
-                            {creator.rating}
+                          <span className="flex items-center gap-1 text-xs font-bold text-amber-500 shrink-0">
+                            ★ {creator.rating}
                           </span>
                         </div>
-                        <p className="text-[10px] text-gray-400 font-sans mt-0.5">{creator.handle}</p>
-                        <p className="text-[10px] text-gray-500 font-sans mt-2 line-clamp-2 leading-relaxed">
+
+                        {/* Handle */}
+                        <p className="text-[10px] sm:text-xs text-gray-400 font-medium font-sans">{creator.handle}</p>
+
+                        {/* Short Bio */}
+                        <p className="text-[10px] sm:text-xs text-gray-400 font-sans leading-relaxed line-clamp-2 pt-0.5">
                           {creator.description}
                         </p>
-                        <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-50">
-                          <span className="text-[10px] font-sans text-gray-400">
-                            Starting from <strong className="text-black font-extrabold">{creator.price}</strong>
-                          </span>
+
+                        {/* Price Row */}
+                        <div className="pt-2 flex items-center gap-1 text-[10px] sm:text-xs text-gray-400 font-sans">
+                          <span>Starting from</span>
+                          <strong className="text-black font-black text-xs sm:text-sm ml-1">
+                            {creator.price}
+                          </strong>
+                        </div>
+
+                        {/* Book Now Link */}
+                        <div>
                           <Link
                             href="/admin/creators"
-                            className="text-[10px] font-sans font-bold text-blue-600 underline hover:text-blue-800 transition-colors"
+                            className="text-[10px] sm:text-xs font-bold text-[#0012FF] underline hover:text-[#0010d0] font-sans pt-1 inline-block"
                           >
-                            View Profile
+                            Book Now
                           </Link>
                         </div>
                       </div>
