@@ -29,7 +29,6 @@ export async function GET(req: NextRequest) {
     const endOfYear = new Date(year, 11, 31, 23, 59, 59);
 
     const bookings = await Booking.find({
-      status: { $in: ['completed'] },
       paymentStatus: 'paid',
       createdAt: { $gte: startOfYear, $lte: endOfYear },
     }).select('finalPrice price createdAt status paymentStatus');
@@ -68,7 +67,6 @@ export async function GET(req: NextRequest) {
       endOfWeek.setHours(23, 59, 59, 999);
 
       const weekBookings = await Booking.find({
-        status: { $in: ['completed'] },
         paymentStatus: 'paid',
         createdAt: { $gte: startOfWeek, $lte: endOfWeek },
       }).select('finalPrice price createdAt status paymentStatus');
