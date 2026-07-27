@@ -310,84 +310,64 @@ export default function UsersPage() {
         </h1>
       </div>
 
-      {/* Interlocking Metrics Cards */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-start w-full gap-1 sm:gap-7 mb-10 overflow-visible">
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-10">
         {/* Card 1: Total Users */}
-        <div className="relative w-full sm:w-[26%] aspect-[329/160] p-6 flex flex-col justify-between overflow-visible z-[1]">
-          <img
-            src="/assets/admin-user-rc-1.svg"
-            alt=""
-            className="absolute inset-0 w-full h-full object-fill -z-10 pointer-events-none"
-          />
-          <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[#0012FF] shadow-sm">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <div className="bg-[#BAC4FF] rounded-xl p-5 sm:p-6 flex flex-col justify-between h-[170px] sm:h-[160px]">
+          <div className="w-10 h-10 bg-white/70 backdrop-blur-sm rounded-lg flex items-center justify-center mb-4 sm:mb-6">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2">
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
               <circle cx="9" cy="7" r="4" />
             </svg>
           </div>
-          <div className="mt-auto">
-            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Total Users</p>
-            <p className="text-2xl font-black text-[#0012FF]">{users.length}</p>
-            <p className="text-[10px] text-gray-400">All registered users</p>
+          <div>
+            <p className="text-[11px] text-white/90 font-semibold mb-0.5">Total Users</p>
+            <p className="text-3xl font-black text-[#0012FF] leading-none mb-1">{users.length}</p>
+            <p className="text-[10px] text-white/90">All registered users</p>
           </div>
         </div>
 
         {/* Card 2: Active Users */}
-        <div className="relative w-full sm:w-[28.5%] aspect-[361/160] pl-10 pr-6 py-6 flex flex-col justify-between overflow-visible z-[2] mt-4 sm:mt-0 sm:-ml-[3.9%]">
-          <img
-            src="/assets/admin-user-rc-2.svg"
-            alt=""
-            className="absolute inset-0 w-full h-full object-fill -z-10 pointer-events-none"
-          />
-          <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[#10B981] shadow-sm">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+        <div className="bg-[#A3E5A5] rounded-xl p-5 sm:p-6 flex flex-col justify-between h-[170px] sm:h-[160px]">
+          <div className="w-10 h-10 bg-white/70 backdrop-blur-sm rounded-lg flex items-center justify-center mb-4 sm:mb-6">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#12B76A" strokeWidth="2.5">
               <polyline points="20 6 9 17 4 12" />
             </svg>
           </div>
-          <div className="mt-auto">
-            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Active Users</p>
-            <p className="text-2xl font-black text-[#10B981]">{users.filter(u => u.status === 'Active').length}</p>
-            <p className="text-[10px] text-gray-400">Approved & active profiles</p>
+          <div>
+            <p className="text-[11px] text-white/90 font-semibold mb-0.5">Active Users</p>
+            <p className="text-3xl font-black text-[#12B76A] leading-none mb-1">{users.filter(u => u.status === 'Active').length}</p>
+            <p className="text-[10px] text-white/90">Approved & active profiles</p>
           </div>
         </div>
 
         {/* Card 3: Inactive Users */}
-        <div className="relative w-full sm:w-[28.5%] aspect-[363/160] pl-10 pr-6 py-6 flex flex-col justify-between overflow-visible z-[3] mt-4 sm:mt-0 sm:-ml-[3.9%]">
-          <img
-            src="/assets/admin-user-rc-3.svg"
-            alt=""
-            className="absolute inset-0 w-full h-full object-fill -z-10 pointer-events-none"
-          />
-          <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[#EF4444] shadow-sm">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+        <div className="bg-[#FFADAD] rounded-xl p-5 sm:p-6 flex flex-col justify-between h-[170px] sm:h-[160px]">
+          <div className="w-10 h-10 bg-white/70 backdrop-blur-sm rounded-lg flex items-center justify-center mb-4 sm:mb-6">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.5">
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
           </div>
-          <div className="mt-auto">
-            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Suspended & Inactive</p>
-            <p className="text-2xl font-black text-[#EF4444]">{users.filter(u => u.status === 'Inactive' || u.status === 'Suspended').length}</p>
-            <p className="text-[10px] text-gray-400">Inactive or blocked users</p>
+          <div>
+            <p className="text-[11px] text-white/90 font-semibold mb-0.5">Suspended & Inactive</p>
+            <p className="text-3xl font-black text-[#EF4444] leading-none mb-1">{users.filter(u => u.status === 'Inactive' || u.status === 'Suspended').length}</p>
+            <p className="text-[10px] text-white/90">Inactive or blocked users</p>
           </div>
         </div>
 
         {/* Card 4: Pending Approval */}
-        <div className="relative w-full sm:w-[28.5%] aspect-[363/160] pl-10 pr-6 py-6 flex flex-col justify-between overflow-visible z-[4] mt-4 sm:mt-0 sm:-ml-[3.9%]">
-          <img
-            src="/assets/admin-user-rc-4.svg"
-            alt=""
-            className="absolute inset-0 w-full h-full object-fill -z-10 pointer-events-none"
-          />
-          <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[#F59E0B] shadow-sm">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <div className="bg-[#FFE199] rounded-xl p-5 sm:p-6 flex flex-col justify-between h-[170px] sm:h-[160px]">
+          <div className="w-10 h-10 bg-white/70 backdrop-blur-sm rounded-lg flex items-center justify-center mb-4 sm:mb-6">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2">
               <circle cx="12" cy="12" r="10" />
               <polyline points="12 6 12 12 16 14" />
             </svg>
           </div>
-          <div className="mt-auto">
-            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Pending Approval</p>
-            <p className="text-2xl font-black text-[#F59E0B]">{users.filter(u => u.status === 'Pending').length}</p>
-            <p className="text-[10px] text-gray-400">Awaiting creator approval</p>
+          <div>
+            <p className="text-[11px] text-white/90 font-semibold mb-0.5">Pending Approval</p>
+            <p className="text-3xl font-black text-[#F59E0B] leading-none mb-1">{users.filter(u => u.status === 'Pending').length}</p>
+            <p className="text-[10px] text-white/90">Awaiting creator approval</p>
           </div>
         </div>
       </div>
