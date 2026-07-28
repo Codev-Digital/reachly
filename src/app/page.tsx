@@ -47,6 +47,50 @@ export default function Home() {
   const featuredScrollRef = useRef<HTMLDivElement>(null);
   const categoryScrollRef = useRef<HTMLDivElement>(null);
 
+  // Refs for How It Works swipe/scroll
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
+  const lastScrollTime = useRef<number>(0);
+
+  const handleHowItWorksTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleHowItWorksTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null || touchStartY.current === null) return;
+    const touchEndX = e.changedTouches[0].clientX;
+    const touchEndY = e.changedTouches[0].clientY;
+    const deltaX = touchStartX.current - touchEndX;
+    const deltaY = touchStartY.current - touchEndY;
+    
+    // Horizontal swipe threshold
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 40) {
+      if (deltaX > 0) {
+        setActiveStep(prev => (prev < 2 ? prev + 1 : 0));
+      } else {
+        setActiveStep(prev => (prev > 0 ? prev - 1 : 2));
+      }
+    }
+    touchStartX.current = null;
+    touchStartY.current = null;
+  };
+
+  const handleHowItWorksWheel = (e: React.WheelEvent) => {
+    // Only intercept horizontal scrolls to prevent trapping vertical scroll on laptops
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY) && Math.abs(e.deltaX) > 10) {
+      const now = Date.now();
+      if (now - lastScrollTime.current < 400) return; // Debounce
+      
+      if (e.deltaX > 0) {
+        setActiveStep(prev => (prev < 2 ? prev + 1 : 0));
+      } else {
+        setActiveStep(prev => (prev > 0 ? prev - 1 : 2));
+      }
+      lastScrollTime.current = now;
+    }
+  };
+
   const scrollFeatured = (direction: 'left' | 'right') => {
     if (featuredScrollRef.current) {
       const scrollAmount = 320;
@@ -504,7 +548,12 @@ export default function Home() {
       {/* ════════════════════════════════════════
             HOW IT WORKS
         ════════════════════════════════════════ */}
-      <section className="py-24 bg-[#F7F7FA] text-[#0C0C0C] border-t border-gray-100">
+      <section 
+        className="py-24 bg-[#F7F7FA] text-[#0C0C0C] border-t border-gray-100"
+        onTouchStart={handleHowItWorksTouchStart}
+        onTouchEnd={handleHowItWorksTouchEnd}
+        onWheel={handleHowItWorksWheel}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="grid md:grid-cols-2 gap-12 lg:gap-16 items-center">
             {/* Left: animated card stack */}
