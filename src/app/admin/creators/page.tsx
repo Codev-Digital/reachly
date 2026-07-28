@@ -65,158 +65,14 @@ export default function AdminCreatorsPage() {
     'Education'
   ];
 
-  const initialCreators: Creator[] = [
-    {
-      id: 'CRT-10245',
-      name: 'Sophia Reed',
-      username: '@sophiareed',
-      email: 'sophiareed@gmail.com',
-      joinedDate: '02 July 2026',
-      time: '10:45 AM',
-      eventsCreated: 'Creator Growth',
-      status: 'Active',
-      avatar: '/ahad raza mir.png',
-      city: 'Los Angeles',
-      country: 'United States',
-      languages: 'English',
-      startingPrice: '15,000 PKR',
-      onboardingStep: '7 / 7',
-      niches: ['Fashion Tips', 'Style Guide', 'Shopping'],
-      bio: 'Fashion creator sharing timeless style, seasonal trends, and everyday outfit inspiration for every occasion.',
-      bannerName: 'Nageen Shah',
-      bannerNiche: 'Software Engineering',
-      bannerContact: '+ 123-456-7890   |   hello@reallygreatsite.com'
-    },
-    {
-      id: 'CRT-10246',
-      name: 'Sophia Reed',
-      username: '@sophiareed',
-      email: 'sophiareed@gmail.com',
-      joinedDate: '02 July 2026',
-      time: '10:45 AM',
-      eventsCreated: 'Creator Growth +2',
-      status: 'Pending',
-      avatar: '/ahad raza mir.png',
-      city: 'London',
-      country: 'United Kingdom',
-      languages: 'English',
-      startingPrice: '20,000 PKR',
-      onboardingStep: '5 / 7',
-      niches: ['Travel', 'Food'],
-      bio: 'Sophia explores local cuisines and hidden travel spots around Europe.',
-      bannerName: 'Nageen Shah',
-      bannerNiche: 'Travel Vlogging',
-      bannerContact: '+ 123-456-7890   |   hello@reallygreatsite.com'
-    },
-    {
-      id: 'CRT-10247',
-      name: 'Sophia Reed',
-      username: '@sophiareed',
-      email: 'sophiareed@gmail.com',
-      joinedDate: '02 July 2026',
-      time: '10:45 AM',
-      eventsCreated: 'None',
-      status: 'Active',
-      avatar: '/ahad raza mir.png',
-      city: 'Lahore',
-      country: 'Pakistan',
-      languages: 'Urdu, English',
-      startingPrice: '10,000 PKR',
-      onboardingStep: '6 / 7',
-      niches: ['Tech', 'Gadgets'],
-      bio: 'Unboxing and reviewing the latest tech products and smart home devices.',
-      bannerName: 'Nageen Shah',
-      bannerNiche: 'Tech Reviewing',
-      bannerContact: '+ 123-456-7890   |   hello@reallygreatsite.com'
-    },
-    {
-      id: 'CRT-10248',
-      name: 'Sophia Reed',
-      username: '@sophiareed',
-      email: 'sophiareed@gmail.com',
-      joinedDate: '02 July 2026',
-      time: '10:45 AM',
-      eventsCreated: 'Creator Growth +1',
-      status: 'Inactive',
-      avatar: '/ahad raza mir.png',
-      city: 'Dubai',
-      country: 'UAE',
-      languages: 'English, Arabic',
-      startingPrice: '30,000 PKR',
-      onboardingStep: '7 / 7',
-      niches: ['Business', 'Finance'],
-      bio: 'Helping young entrepreneurs scale their brands using digital platforms.',
-      bannerName: 'Nageen Shah',
-      bannerNiche: 'Business Growth',
-      bannerContact: '+ 123-456-7890   |   hello@reallygreatsite.com'
-    },
-    {
-      id: 'CRT-10249',
-      name: 'Sophia Reed',
-      username: '@sophiareed',
-      email: 'sophiareed@gmail.com',
-      joinedDate: '02 July 2026',
-      time: '10:45 AM',
-      eventsCreated: 'Creator Growth',
-      status: 'Pending',
-      avatar: '/ahad raza mir.png',
-      city: 'Karachi',
-      country: 'Pakistan',
-      languages: 'Urdu, English',
-      startingPrice: '12,000 PKR',
-      onboardingStep: '7 / 7',
-      niches: ['Education', 'Skill Development'],
-      bio: 'Sharing tutorials and courses on UI/UX design and development.',
-      bannerName: 'Nageen Shah',
-      bannerNiche: 'UI/UX Design',
-      bannerContact: '+ 123-456-7890   |   hello@reallygreatsite.com'
-    },
-    {
-      id: 'CRT-10250',
-      name: 'Sophia Reed',
-      username: '@sophiareed',
-      email: 'sophiareed@gmail.com',
-      joinedDate: '02 July 2026',
-      time: '10:45 AM',
-      eventsCreated: 'Creator Growth',
-      status: 'Suspended',
-      avatar: '/ahad raza mir.png',
-      city: 'New York',
-      country: 'United States',
-      languages: 'English',
-      startingPrice: '25,000 PKR',
-      onboardingStep: '4 / 7',
-      niches: ['Fitness', 'Wellness'],
-      bio: 'Sophia is a certified trainer sharing workout routines and meal plans.',
-      bannerName: 'Nageen Shah',
-      bannerNiche: 'Fitness Training',
-      bannerContact: '+ 123-456-7890   |   hello@reallygreatsite.com'
-    },
-    {
-      id: 'CRT-10251',
-      name: 'Sophia Reed',
-      username: '@sophiareed',
-      email: 'sophiareed@gmail.com',
-      joinedDate: '02 July 2026',
-      time: '10:45 AM',
-      eventsCreated: 'None',
-      status: 'Active',
-      avatar: '/ahad raza mir.png',
-      city: 'Sydney',
-      country: 'Australia',
-      languages: 'English',
-      startingPrice: '18,000 PKR',
-      onboardingStep: '7 / 7',
-      niches: ['Art', 'Design'],
-      bio: 'Digital artist showcasing illustration processes and design tutorials.',
-      bannerName: 'Nageen Shah',
-      bannerNiche: 'Digital Art',
-      bannerContact: '+ 123-456-7890   |   hello@reallygreatsite.com'
-    }
-  ];
-
   const [creators, setCreators] = useState<Creator[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Dynamic stats
+  const totalCreators = creators.length;
+  const activeCreators = creators.filter(c => c.status === 'Active').length;
+  const inactiveCreators = creators.filter(c => c.status === 'Inactive' || c.status === 'Suspended').length;
+  const pendingCreators = creators.filter(c => c.status === 'Pending').length;
 
   const loadCreators = async () => {
     try {
@@ -615,8 +471,8 @@ export default function AdminCreatorsPage() {
           </div>
           <div>
             <p className="text-[11px] text-white/90 font-semibold mb-0.5">Total Creators</p>
-            <p className="text-3xl font-black text-[#0012FF] leading-none mb-1">410</p>
-            <p className="text-[10px] text-white flex items-center gap-1">↑ +18.2% from last month</p>
+            <p className="text-3xl font-black text-[#0012FF] leading-none mb-1">{totalCreators}</p>
+            <p className="text-[10px] text-white flex items-center gap-1">All registered creators</p>
           </div>
         </div>
 
@@ -630,8 +486,8 @@ export default function AdminCreatorsPage() {
           </div>
           <div>
             <p className="text-[11px] text-white/90 font-semibold mb-0.5">Active Creators</p>
-            <p className="text-3xl font-black text-[#12B76A] leading-none mb-1">376</p>
-            <p className="text-[10px] text-white flex items-center gap-1">↑ +18.2% from last month</p>
+            <p className="text-3xl font-black text-[#12B76A] leading-none mb-1">{activeCreators}</p>
+            <p className="text-[10px] text-white flex items-center gap-1">Approved profiles</p>
           </div>
         </div>
 
@@ -646,8 +502,8 @@ export default function AdminCreatorsPage() {
           </div>
           <div>
             <p className="text-[11px] text-white/90 font-semibold mb-0.5">Inactive Creators</p>
-            <p className="text-3xl font-black text-[#EF4444] leading-none mb-1">34</p>
-            <p className="text-[10px] text-white flex items-center gap-1">↑ +18.2% from last month</p>
+            <p className="text-3xl font-black text-[#EF4444] leading-none mb-1">{inactiveCreators}</p>
+            <p className="text-[10px] text-white flex items-center gap-1">Suspended or incomplete</p>
           </div>
         </div>
 
@@ -661,8 +517,8 @@ export default function AdminCreatorsPage() {
           </div>
           <div>
             <p className="text-[11px] text-white/90 font-semibold mb-0.5">Pending Approval</p>
-            <p className="text-3xl font-black text-[#F59E0B] leading-none mb-1">234</p>
-            <p className="text-[10px] text-white flex items-center gap-1">↑ +18.2% from last month</p>
+            <p className="text-3xl font-black text-[#F59E0B] leading-none mb-1">{pendingCreators}</p>
+            <p className="text-[10px] text-white flex items-center gap-1">Awaiting admin action</p>
           </div>
         </div>
       </div>

@@ -56,7 +56,9 @@ export default function AdminPaymentsPage() {
   }, []);
 
   // Calculate dynamic stats
-  const totalBalance = payments.reduce((sum, p) => sum + (p.rawAmount || 0), 0);
+  const totalRevenue = payments
+    .filter(p => p.status === 'Completed')
+    .reduce((sum, p) => sum + (p.rawAmount || 0), 0);
   const successfulPayments = payments.filter(p => p.status === 'Completed').length;
   const refundIssued = payments.filter(p => p.status === 'Refunded').reduce((sum, p) => sum + (p.rawAmount || 0), 0);
   const pendingPayments = payments.filter(p => p.status === 'Pending').length;
@@ -220,8 +222,8 @@ export default function AdminPaymentsPage() {
           {/* Bottom Row: Balance Meta + Top Up Button */}
           <div className="flex items-end justify-between gap-4 z-10">
             <div>
-              <p className="text-[11px] font-medium text-white/80 uppercase tracking-wide font-sans mb-0.5">Available Balance</p>
-              <h3 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight font-sans my-0.5">{totalBalance.toLocaleString()} PKR</h3>
+              <p className="text-[11px] font-medium text-white/80 uppercase tracking-wide font-sans mb-0.5">Total Revenue</p>
+              <h3 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight font-sans my-0.5">{totalRevenue.toLocaleString()} PKR</h3>
             </div>
 
             {/* Payout Button */}

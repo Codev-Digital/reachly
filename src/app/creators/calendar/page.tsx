@@ -351,9 +351,9 @@ export default function CreatorCalendar() {
         </div>
 
         {/* Date Filter Strip Bar */}
-        <div className="w-full bg-white rounded-2xl border border-gray-100 p-2.5 sm:p-3 mb-8 flex items-center justify-between gap-3 shadow-xs">
+        <div className="w-full bg-white rounded-2xl border border-gray-100 p-3 sm:p-4 mb-8 flex flex-wrap items-center justify-between gap-y-4 gap-x-2 shadow-xs">
           {/* Left: Month Selector Button */}
-          <div className="relative flex-shrink-0">
+          <div className="relative flex-shrink-0 order-1">
             <button
               onClick={() => { setMonthDropdownOpen(!monthDropdownOpen); setYearDropdownOpen(false); }}
               className="flex items-center gap-2 bg-gray-50 hover:bg-gray-100 border border-gray-200/80 rounded-xl px-3 py-2 text-xs font-semibold text-gray-700 transition-all cursor-pointer"
@@ -380,7 +380,7 @@ export default function CreatorCalendar() {
           </div>
 
           {/* Middle: Horizontal Days Strip */}
-          <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar py-1 px-1 flex-1">
+          <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar py-1 px-1 w-full lg:w-auto lg:flex-1 order-3 lg:order-2">
             {Array.from({ length: 31 }, (_, i) => {
               const dayNum = i + 1;
               const d = new Date(currentDate.getFullYear(), currentDate.getMonth(), dayNum);
@@ -413,7 +413,7 @@ export default function CreatorCalendar() {
           </div>
 
           {/* Right: Year Selector Button */}
-          <div className="relative flex-shrink-0">
+          <div className="relative flex-shrink-0 order-2 lg:order-3 ml-auto lg:ml-0">
             <button
               onClick={() => { setYearDropdownOpen(!yearDropdownOpen); setMonthDropdownOpen(false); }}
               className="flex items-center gap-2 bg-gray-50 hover:bg-gray-100 border border-gray-200/80 rounded-xl px-3 py-2 text-xs font-semibold text-gray-700 transition-all cursor-pointer"

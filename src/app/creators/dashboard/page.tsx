@@ -576,10 +576,10 @@ const CreatorDashboard = () => {
               className="h-full"
             >
               <Card className="rounded-[20px] border border-gray-100 bg-white p-4 sm:p-6 shadow-sm overflow-hidden h-full flex flex-col justify-between">
-                <CardHeader className="flex flex-row items-center justify-between pb-2 pt-0 px-0 space-y-0 flex-wrap gap-2">
+                <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-3 sm:pb-2 pt-0 px-0 space-y-3 sm:space-y-0 flex-wrap gap-2">
                   <CardTitle className="text-xl font-bold font-sans text-black">Earnings</CardTitle>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     {/* Weekly / Monthly timeframe toggle */}
                     <div className="flex items-center bg-gray-100 p-1 rounded-xl border border-gray-200/60">
                       <button
@@ -630,20 +630,20 @@ const CreatorDashboard = () => {
 
                 <CardContent className="px-0 pb-0 flex-1 flex flex-col justify-center">
                   {/* Floating Earnings Tooltip Callout Card as seen in design image */}
-                  <div className="flex justify-center mb-2">
-                    <div className="bg-white rounded-2xl shadow-md px-4 py-2 flex items-center gap-3">
-                      <div className="w-8 h-8 bg-[#EEF2FF] rounded-xl flex items-center justify-center text-[#0012FF] font-bold text-sm">
+                  <div className="flex justify-center mb-2 px-2">
+                    <div className="bg-white rounded-2xl shadow-md px-3 sm:px-4 py-2 flex items-center justify-center gap-2 sm:gap-3 w-fit max-w-full">
+                      <div className="w-8 h-8 bg-[#EEF2FF] rounded-xl flex shrink-0 items-center justify-center text-[#0012FF] font-bold text-sm">
                         $
                       </div>
-                      <div>
-                        <p className="text-[10px] text-gray-400 font-semibold uppercase">Total Earnings</p>
-                        <p className="text-sm font-black text-black font-sans leading-tight">
+                      <div className="min-w-0">
+                        <p className="text-[10px] text-gray-400 font-semibold uppercase truncate">Total Earnings</p>
+                        <p className="text-sm sm:text-base font-black text-black font-sans leading-tight truncate">
                           {activeBarIndex !== null && chartData[activeBarIndex]
                             ? chartData[activeBarIndex].earnings.toLocaleString()
                             : (totalEarnings || 30000).toLocaleString()} PKR
                         </p>
                       </div>
-                      <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+                      <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100 shrink-0 whitespace-nowrap">
                         ↑ +18.2%
                       </span>
                     </div>
@@ -721,9 +721,9 @@ const CreatorDashboard = () => {
         </div>
 
         {/* Date Filter Strip Bar */}
-        <div className="w-full bg-white rounded-2xl border border-gray-100 p-2.5 sm:p-3 mb-8 flex items-center justify-between gap-3 shadow-xs">
+        <div className="w-full bg-white rounded-2xl border border-gray-100 p-3 sm:p-4 mb-8 flex flex-wrap items-center justify-between gap-y-4 gap-x-2 shadow-xs">
           {/* Left: Month Selector Button */}
-          <div className="relative flex-shrink-0">
+          <div className="relative flex-shrink-0 order-1">
             <button
               onClick={() => { setMonthDropdownOpen(!monthDropdownOpen); setYearDropdownOpen(false); }}
               className="flex items-center gap-2 bg-gray-50 hover:bg-gray-100 border border-gray-200/80 rounded-xl px-3 py-2 text-xs font-semibold text-gray-700 transition-all cursor-pointer"
@@ -750,7 +750,7 @@ const CreatorDashboard = () => {
           </div>
 
           {/* Middle: Horizontal Days Strip */}
-          <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar py-1 px-1 flex-1">
+          <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar py-1 px-1 w-full lg:w-auto lg:flex-1 order-3 lg:order-2">
             {Array.from({ length: 31 }, (_, i) => {
               const dayNum = i + 1;
               const d = new Date(currentDate.getFullYear(), currentDate.getMonth(), dayNum);
@@ -783,7 +783,7 @@ const CreatorDashboard = () => {
           </div>
 
           {/* Right: Year Selector Button */}
-          <div className="relative flex-shrink-0">
+          <div className="relative flex-shrink-0 order-2 lg:order-3 ml-auto lg:ml-0">
             <button
               onClick={() => { setYearDropdownOpen(!yearDropdownOpen); setMonthDropdownOpen(false); }}
               className="flex items-center gap-2 bg-gray-50 hover:bg-gray-100 border border-gray-200/80 rounded-xl px-3 py-2 text-xs font-semibold text-gray-700 transition-all cursor-pointer"

@@ -611,18 +611,18 @@ export default function CreatorSettings() {
         </div>
 
         {/* Refined Top Navigation Segment Bar - Centered with Icons and Headings */}
-        <div className="bg-white rounded-3xl p-1.5 border border-gray-200 shadow-sm flex flex-wrap items-center justify-center gap-1.5 mb-8 max-w-2xl mx-auto">
+        <div className="bg-white rounded-3xl p-1.5 border border-gray-200 shadow-sm flex flex-wrap items-center justify-center gap-1.5 mb-8 max-w-3xl mx-auto">
           {tabs.map((tab) => (
             <button
               key={tab.name}
               onClick={() => setActiveTab(tab.name)}
-              className={`flex items-center gap-2 px-4.5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all cursor-pointer border ${activeTab === tab.name
+              className={`flex-1 basis-[130px] sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all cursor-pointer border ${activeTab === tab.name
                 ? 'bg-[#0012FF] border-[#0012FF] text-white shadow-md shadow-blue-100 scale-102'
                 : 'bg-white border-transparent text-gray-500 hover:text-black hover:bg-gray-50'
                 }`}
             >
               {tab.icon}
-              <span>{tab.name}</span>
+              <span className="truncate">{tab.name}</span>
             </button>
           ))}
         </div>
