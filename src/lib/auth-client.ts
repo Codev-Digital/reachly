@@ -116,7 +116,7 @@ export const checkPasswordStrength = (
 
 export const updateCreatorProfile = async (formData: FormData): Promise<any> => {
   const res = await fetch('/api/creator-onboarding/step-2', {
-    method: 'PUT',
+    method: 'POST',
     body: formData,
   });
   return res.json();

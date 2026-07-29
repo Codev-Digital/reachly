@@ -149,8 +149,8 @@ export default function CreatorSettings() {
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 50 * 1024 * 1024) {
-        alert('File size exceeds 5MB limit.');
+      if (file.size > 10 * 1024 * 1024) {
+        alert('File size exceeds 10MB limit.');
         return;
       }
       const reader = new FileReader();
@@ -701,7 +701,7 @@ export default function CreatorSettings() {
                   >
                     <span>Change Profile Photo</span>
                   </button>
-                  <p className="text-gray-400 text-xs font-medium">JPG or PNG, max 5MB</p>
+                  <p className="text-gray-400 text-xs font-medium">JPG or PNG, max 10MB</p>
                 </div>
               </div>
 

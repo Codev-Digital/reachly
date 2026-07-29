@@ -62,8 +62,8 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// ─── PUT — create/update profile, upload photos to Supabase ─────────────────
-export async function PUT(request: NextRequest) {
+// ─── POST — create/update profile, upload photos to Supabase ─────────────────
+export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
@@ -199,7 +199,7 @@ if (coverPhotoFile && coverPhotoFile.size > 0) {
 
     return NextResponse.json({ success: true, profile });
   } catch (error: any) {
-    console.error('PUT creator profile error:', error);
+    console.error('POST creator profile error:', error);
     return NextResponse.json(
       { error: error.message || 'Something went wrong' },
       { status: 500 }

@@ -423,15 +423,15 @@ export default function CreatorOnboardingStep5() {
           </div>
 
           {/* Profile Info */}
-          <div className="px-6 pb-8 relative">
+          <div className="px-4 sm:px-6 pb-6 sm:pb-8 relative">
             {/* Avatar */}
-            <div className="relative -mt-24 mb-4">
-              <div className="w-48 h-48 rounded-full border-4 border-white bg-gray-100 overflow-hidden relative">
+            <div className="relative -mt-16 sm:-mt-24 mb-3 sm:mb-4">
+              <div className="w-32 h-32 sm:w-48 sm:h-48 rounded-full border-4 border-white bg-gray-100 overflow-hidden relative shadow-md">
                 {profile?.profilePhoto ? (
                   <Image src={profile.profilePhoto} alt="Avatar" fill className="object-cover" />
                 ) : (
                   <div className="flex items-center justify-center h-full">
-                    <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="1.5">
+                    <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="1.5" className="sm:w-[80px] sm:h-[80px]">
                       <circle cx="12" cy="8" r="5" />
                       <path d="M4 20c0-4.418 3.582-8 8-8s8 3.582 8 8" />
                     </svg>
@@ -563,24 +563,24 @@ export default function CreatorOnboardingStep5() {
         </div>
 
         {/* Navigation */}
-        <div className="flex justify-between gap-3">
+        <div className="flex flex-col-reverse sm:flex-row justify-between gap-4 mt-6">
           <button
             type="button"
             onClick={() => router.push('/creator-onboarding/step-4')}
-            className="border border-gray-200 text-gray-700 px-5 py-2.5 rounded-full font-sans font-semibold text-sm hover:bg-gray-50 transition-all flex items-center gap-2"
+            className="w-full sm:w-auto justify-center border border-gray-200 text-gray-700 px-5 py-2.5 rounded-full font-sans font-semibold text-sm hover:bg-gray-50 transition-all flex items-center gap-2"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M19 12H5M12 19l-7-7 7-7" />
             </svg>
             Back
           </button>
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
             {/* Save as Draft — saves data only, does NOT submit to admin */}
             <button
               type="button"
               onClick={handleSaveAsDraft}
               disabled={savingDraft || draftSaved}
-              className={`px-5 py-2.5 rounded-full font-sans font-semibold text-sm transition-all flex items-center gap-2 border ${
+              className={`w-full sm:w-auto justify-center px-5 py-2.5 rounded-full font-sans font-semibold text-sm transition-all flex items-center gap-2 border ${
                 draftSaved
                   ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
                   : 'border-[#0012FF] text-[#0012FF] hover:bg-[#0012FF]/5 cursor-pointer'
@@ -613,7 +613,7 @@ export default function CreatorOnboardingStep5() {
               type="button"
               onClick={handleGoLive}
               disabled={saving}
-              className={`px-5 py-2.5 rounded-full font-sans font-semibold text-sm transition-all flex items-center gap-2 ${!saving
+              className={`w-full sm:w-auto justify-center px-5 py-2.5 rounded-full font-sans font-semibold text-sm transition-all flex items-center gap-2 ${!saving
                   ? 'bg-[#0012FF] text-white hover:bg-[#0012FF]/90'
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}

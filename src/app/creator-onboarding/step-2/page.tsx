@@ -336,9 +336,9 @@ export default function CreatorOnboardingStep2() {
         )}
 
         {/* ─── Cover and Profile Photos ───────────────────────────────────────────────── */}
-        <div className="bg-white rounded-2xl p-8 mb-6">
+        <div className="bg-white rounded-2xl p-4 sm:p-8 mb-6">
           {/* Cover Photo */}
-          <div className="relative mb-16">
+          <div className="relative mb-16 sm:mb-20">
             <label className="block">
               <div className={`w-full h-48 bg-gradient-to-r from-gray-100 to-gray-200 rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all ${coverPhotoPreview ? 'bg-transparent' : ''} ${isFieldInvalid('coverPhoto') ? 'border-2 border-red-500' : ''}`}>
                 {coverPhotoPreview ? (
@@ -361,14 +361,14 @@ export default function CreatorOnboardingStep2() {
             </label>
 
             {/* Profile Photo - Overlapping the cover photo */}
-            <div className="absolute -bottom-16 left-8 flex flex-row items-end gap-6">
+            <div className="absolute -bottom-12 sm:-bottom-16 left-4 sm:left-8 flex flex-row items-end gap-3 sm:gap-6">
               <div className="relative">
                 <label className="block">
-                  <div className={`w-36 h-36 rounded-full bg-[#FAFAFA] border-[5px] border-white shadow-md flex items-center justify-center cursor-pointer overflow-hidden ${isFieldInvalid('profilePhoto') ? 'border-red-500' : 'border-white'}`}>
+                  <div className={`w-24 h-24 sm:w-36 sm:h-36 rounded-full bg-[#FAFAFA] border-[4px] sm:border-[5px] border-white shadow-md flex items-center justify-center cursor-pointer overflow-hidden ${isFieldInvalid('profilePhoto') ? 'border-red-500' : 'border-white'}`}>
                     {profilePhotoPreview ? (
                       <img src={profilePhotoPreview} alt="Profile" className="w-full h-full object-cover" />
                     ) : (
-                      <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#9E9E9E" strokeWidth="1.5">
+                      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#9E9E9E" strokeWidth="1.5" className="sm:w-[56px] sm:h-[56px]">
                         <circle cx="12" cy="9" r="4" />
                         <path d="M4 20c0-4 4-7 8-7s8 3 8 7" />
                       </svg>
@@ -377,13 +377,14 @@ export default function CreatorOnboardingStep2() {
                   <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleProfilePhotoChange} className="hidden" />
                 </label>
               </div>
-              <div className="flex flex-col gap-1 pb-3">
-                <label className="bg-[#0012FF] text-white px-5 py-2 rounded-full text-xs sm:text-sm font-bold hover:bg-[#0010d0] transition-all shadow-md active:scale-95 w-fit flex items-center gap-2 cursor-pointer">
-                  Upload Profile Photo
+              <div className="flex flex-col gap-1 pb-1 sm:pb-3">
+                <label className="bg-[#0012FF] text-white px-3 py-1.5 sm:px-5 sm:py-2 rounded-full text-[10px] sm:text-sm font-bold hover:bg-[#0010d0] transition-all shadow-md active:scale-95 w-fit flex items-center gap-2 cursor-pointer whitespace-nowrap">
+                  <span className="hidden sm:inline">Upload Profile Photo</span>
+                  <span className="sm:hidden">Upload Photo</span>
                   <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleProfilePhotoChange} className="hidden" />
                 </label>
-                <p className="pl-2 text-gray-400 text-xs font-semibold">
-                  JPG or PNG, max 5MB
+                <p className="pl-1 sm:pl-2 text-gray-400 text-[9px] sm:text-xs font-semibold whitespace-nowrap">
+                  JPG or PNG, max 10MB
                 </p>
               </div>
             </div>
