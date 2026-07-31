@@ -191,9 +191,9 @@ const AdminDashboard = () => {
         <div className="lg:col-span-7 space-y-8">
           {/* Overlapping Stats Cards Container */}
           {/* Stats Grid */}
-          <div className="grid grid-cols-2 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             {/* Card 1 */}
-            <div className="bg-[#BAC4FF] rounded-xl p-5 sm:p-6 flex flex-col justify-between h-[170px] sm:h-[160px]">
+            <div className="bg-[#BAC4FF] rounded-xl p-4 sm:p-6 flex flex-col justify-between min-h-[160px]">
               <div className="w-10 h-10 shrink-0 self-start bg-white/70 backdrop-blur-sm rounded-lg flex items-center justify-center mb-4 sm:mb-6">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2">
                   <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -202,15 +202,15 @@ const AdminDashboard = () => {
               </div>
               <div>
                 <p className="text-[11px] text-white/90 font-semibold mb-0.5">Total Users</p>
-                <p className="text-3xl font-black text-[#0012FF] leading-none mb-1">{stats.totalUsers.toLocaleString()}</p>
-                <p className="text-[10px] text-white flex items-center gap-1">
+                <p className="text-2xl sm:text-3xl font-black text-[#0012FF] leading-none mb-1">{stats.totalUsers.toLocaleString()}</p>
+                <p className="text-[10px] text-white flex items-center gap-1 leading-tight">
                   {stats.userGrowthTrend.startsWith('-') ? '↓' : '↑'} {stats.userGrowthTrend} from last month
                 </p>
               </div>
             </div>
 
             {/* Card 2 */}
-            <div className="bg-[#A3E5A5] rounded-xl p-5 sm:p-6 flex flex-col justify-between h-[170px] sm:h-[160px]">
+            <div className="bg-[#A3E5A5] rounded-xl p-4 sm:p-6 flex flex-col justify-between min-h-[160px]">
               <div className="w-10 h-10 shrink-0 self-start bg-white/70 backdrop-blur-sm rounded-lg flex items-center justify-center mb-4 sm:mb-6">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#12B76A" strokeWidth="2">
                   <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -219,15 +219,15 @@ const AdminDashboard = () => {
               </div>
               <div>
                 <p className="text-[11px] text-white/90 font-semibold mb-0.5">Total Creators</p>
-                <p className="text-3xl font-black text-[#12B76A] leading-none mb-1">{stats.totalCreators.toLocaleString()}</p>
-                <p className="text-[10px] text-white flex items-center gap-1">
+                <p className="text-2xl sm:text-3xl font-black text-[#12B76A] leading-none mb-1">{stats.totalCreators.toLocaleString()}</p>
+                <p className="text-[10px] text-white flex items-center gap-1 leading-tight">
                   {stats.creatorGrowthTrend.startsWith('-') ? '↓' : '↑'} {stats.creatorGrowthTrend} from last month
                 </p>
               </div>
             </div>
 
             {/* Card 3 */}
-            <div className="bg-[#FFADAD] rounded-xl p-5 sm:p-6 flex flex-col justify-between h-[170px] sm:h-[160px]">
+            <div className="bg-[#FFADAD] rounded-xl p-4 sm:p-6 flex flex-col justify-between min-h-[160px]">
               <div className="w-10 h-10 shrink-0 self-start bg-white/70 backdrop-blur-sm rounded-lg flex items-center justify-center mb-4 sm:mb-6">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2">
                   <line x1="12" y1="1" x2="12" y2="23" />
@@ -236,15 +236,15 @@ const AdminDashboard = () => {
               </div>
               <div>
                 <p className="text-[11px] text-white/90 font-semibold mb-0.5">Total Revenue</p>
-                <p className="text-3xl font-black text-[#EF4444] leading-none mb-1">{stats.totalRevenue}</p>
-                <p className="text-[10px] text-white flex items-center gap-1">
+                <p className="text-2xl sm:text-3xl font-black text-[#EF4444] leading-none mb-1">{stats.totalRevenue}</p>
+                <p className="text-[10px] text-white flex items-center gap-1 leading-tight">
                   {activeBar?.trend?.startsWith('-') ? '↓' : '↑'} {activeBar?.trend || '+0%'} from last month
                 </p>
               </div>
             </div>
 
             {/* Card 4 */}
-            <div className="bg-[#FFE199] rounded-xl p-5 sm:p-6 flex flex-col justify-between h-[170px] sm:h-[160px]">
+            <div className="bg-[#FFE199] rounded-xl p-4 sm:p-6 flex flex-col justify-between min-h-[160px]">
               <div className="w-10 h-10 shrink-0 self-start bg-white/70 backdrop-blur-sm rounded-lg flex items-center justify-center mb-4 sm:mb-6">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2">
                   <circle cx="12" cy="12" r="10" />
@@ -253,7 +253,7 @@ const AdminDashboard = () => {
               </div>
               <div>
                 <p className="text-[11px] text-white/90 font-semibold mb-0.5">Pending Payouts</p>
-                <p className="text-3xl font-black text-[#F59E0B] leading-none mb-1">{stats.pendingPayouts}</p>
+                <p className="text-2xl sm:text-3xl font-black text-[#F59E0B] leading-none mb-1">{stats.pendingPayouts}</p>
               </div>
             </div>
           </div>
@@ -497,7 +497,7 @@ const AdminDashboard = () => {
                   return (
                     <div key={creator.id || index} className="group cursor-pointer">
                       {/* Top Image Container */}
-                      <div className="relative w-full h-48 sm:h-52 md:h-56 overflow-hidden rounded-t-[18px] mb-3">
+                      <div className="relative w-full aspect-[4/5] sm:aspect-square md:h-56 overflow-hidden rounded-[24px] mb-4 shadow-sm">
                         <img
                           src={creator.img}
                           alt={creator.name}
@@ -506,28 +506,28 @@ const AdminDashboard = () => {
 
                         {/* Top Left Badge */}
                         <span
-                          className={`absolute top-3 left-3 px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide ${
+                          className={`absolute top-4 left-4 px-3 py-1 rounded-full text-[11px] font-bold tracking-wide shadow-sm ${
                             creator.tag === 'Verified'
-                              ? 'bg-[#E5F7ED] text-[#12B76A]'
-                              : 'bg-[#EBF0FF] text-[#0012FF]'
+                              ? 'bg-white text-[#12B76A]'
+                              : 'bg-white text-[#0012FF]'
                           }`}
                         >
                           {creator.tag}
                         </span>
 
                         {/* Heart Icon */}
-                        <button className="absolute top-2.5 right-2.5 z-20 flex items-center justify-center hover:scale-110 transition-transform bg-transparent">
-                          <svg className="w-5 h-5 text-white drop-shadow-md hover:text-red-500 transition-colors" viewBox="0 0 24 24" fill="currentColor">
+                        <button className="absolute top-4 right-4 z-20 flex items-center justify-center hover:scale-110 transition-transform bg-transparent">
+                          <svg className="w-6 h-6 text-white drop-shadow-md hover:text-red-500 transition-colors" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
                           </svg>
                         </button>
                       </div>
 
                       {/* Content Details */}
-                      <div className="px-0.5 space-y-1 text-left">
+                      <div className="px-1 text-left space-y-1">
                         {/* Title & Rating */}
                         <div className="flex items-center justify-between gap-2">
-                          <h3 className="font-bold text-sm sm:text-base text-black font-sans flex items-center gap-1.5 leading-tight truncate">
+                          <h3 className="font-bold text-base sm:text-base text-black font-sans flex items-center gap-1.5 leading-tight truncate">
                             <span>{creator.name}</span>
                             {creator.isVerified && (
                               <svg className="w-4 h-4 text-[#12B76A] fill-current shrink-0" viewBox="0 0 24 24">
@@ -540,18 +540,16 @@ const AdminDashboard = () => {
                           </span>
                         </div>
 
-                        {/* Handle */}
-                        <p className="text-[10px] sm:text-xs text-gray-400 font-medium font-sans">{creator.handle}</p>
-
-                        {/* Short Bio */}
-                        <p className="text-[10px] sm:text-xs text-gray-400 font-sans leading-relaxed line-clamp-2 pt-0.5">
+                        {/* Handle & Bio */}
+                        <p className="text-xs text-gray-400 font-medium font-sans">{creator.handle}</p>
+                        <p className="text-xs text-gray-400 font-sans leading-relaxed line-clamp-2 pt-1">
                           {creator.description}
                         </p>
 
                         {/* Price Row */}
-                        <div className="pt-2 flex items-center gap-1 text-[10px] sm:text-xs text-gray-400 font-sans">
+                        <div className="pt-3 flex items-center gap-1 text-xs text-gray-400 font-sans">
                           <span>Starting from</span>
-                          <strong className="text-black font-black text-xs sm:text-sm ml-1">
+                          <strong className="text-black font-black text-sm ml-1">
                             {creator.price}
                           </strong>
                         </div>
@@ -560,7 +558,7 @@ const AdminDashboard = () => {
                         <div>
                           <Link
                             href="/admin/creators"
-                            className="text-[10px] sm:text-xs font-bold text-[#0012FF] underline hover:text-[#0010d0] font-sans pt-1 inline-block"
+                            className="text-xs font-bold text-[#0012FF] underline hover:text-[#0010d0] font-sans pt-1 inline-block"
                           >
                             Book Now
                           </Link>
