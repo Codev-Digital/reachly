@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import UserNavbar from '@/components/UserNavbar';
 import CreatorDashboardNav from '@/components/CreatorDashboardNav';
+import AdminNavbar from '@/components/AdminNavbar';
 
 const ITEMS_PER_PAGE = 8;
 
@@ -22,6 +23,7 @@ export default function ExploreCreatorsPage() {
   const [showFilterPanel, setShowFilterPanel] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isCreator, setIsCreator] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [displayName, setDisplayName] = useState<string>('');
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [verifiedOnly, setVerifiedOnly] = useState(false);
@@ -46,6 +48,12 @@ export default function ExploreCreatorsPage() {
         if (authRes.ok) {
           const userData = await authRes.json();
           setIsAuthenticated(true);
+          
+          const email = userData.user?.email?.toLowerCase() || '';
+          if (email === 'abdullahgotaccess@gmail.com' || email === 'admin@reachly.com') {
+            setIsAdmin(true);
+          }
+
           if (userData.creatorProfile) {
             setIsCreator(true);
             setDisplayName(userData.creatorProfile.displayName || userData.user?.name || '');
@@ -168,7 +176,9 @@ export default function ExploreCreatorsPage() {
     <div className="min-h-screen bg-[#F7F7FA] text-[#1a1a1a]">
       {/* Navbar */}
       {isAuthenticated ? (
-        isCreator ? (
+        isAdmin ? (
+          <AdminNavbar />
+        ) : isCreator ? (
           <CreatorDashboardNav displayName={displayName} profilePhoto={profilePhoto} />
         ) : (
           <UserNavbar displayName={displayName} profilePhoto={profilePhoto} />
@@ -450,8 +460,8 @@ export default function ExploreCreatorsPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.4, delay: index * 0.04 }}
-                  onClick={() => router.push(`/creators/${creator.username}/book-session`)}
-                  className="flex flex-col w-full group cursor-pointer"
+                  onClick={() => !isAdmin && router.push(`/creators/${creator.username}/book-session`)}
+                  className={`flex flex-col w-full group ${isAdmin ? 'cursor-default' : 'cursor-pointer'}`}
                 >
                   {/* Top Image Container */}
                   <div className="relative w-full aspect-[4/4.2] rounded-[20px] overflow-hidden bg-gray-100 mb-3.5 shadow-xs transition-transform duration-300 group-hover:scale-[1.01]">
@@ -527,14 +537,16 @@ export default function ExploreCreatorsPage() {
                     </div>
 
                     {/* Book Now Link */}
-                    <div>
-                      <Link
-                        href={`/creators/${creator.username}/book-session`}
-                        className="text-xs sm:text-sm font-bold text-[#0012FF] underline hover:text-[#0010d0] font-sans pt-1 inline-block"
-                      >
-                        Book Now
-                      </Link>
-                    </div>
+                    {!isAdmin && (
+                      <div>
+                        <Link
+                          href={`/creators/${creator.username}/book-session`}
+                          className="text-xs sm:text-sm font-bold text-[#0012FF] underline hover:text-[#0010d0] font-sans pt-1 inline-block"
+                        >
+                          Book Now
+                        </Link>
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               );

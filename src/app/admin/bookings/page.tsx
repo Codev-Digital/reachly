@@ -210,82 +210,68 @@ export default function AdminEventsPage() {
         </button>
       </div>
 
-      {/* Interlocking Metrics Cards (Dashboard Cards Design) */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-start w-full gap-1 sm:gap-7 mb-10 overflow-visible">
-        {/* Card 1: Total Users */}
-        <div className="relative w-full sm:w-[26%] aspect-[329/160] p-6 flex flex-col justify-between overflow-visible z-[1]">
-          <img
-            src="/assets/admin-user-rc-1.svg"
-            alt=""
-            className="absolute inset-0 w-full h-full object-fill -z-10 pointer-events-none"
-          />
-          <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[#0012FF] shadow-sm">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      {/* Metric Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 w-full gap-4 sm:gap-5 mb-8">
+        
+        {/* Card 1 - Total Creators */}
+        <div className="w-full bg-[#B6C2FF] rounded-2xl p-6 flex flex-col justify-between min-h-[160px] shadow-sm transition-transform hover:-translate-y-1">
+          <div className="w-10 h-10 bg-white/50 rounded-xl flex items-center justify-center mb-4">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2.5">
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
               <circle cx="9" cy="7" r="4" />
             </svg>
           </div>
-          <div className="mt-auto">
-            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Total Events</p>
-            <p className="text-2xl font-black text-[#0012FF]">1,410</p>
+          <div>
+            <p className="text-[11px] font-sans mb-1 text-white/90 font-bold uppercase tracking-wider">Total Creators</p>
+            <p className="text-3xl font-black text-[#0012FF] font-sans leading-none mb-1">410</p>
+            <p className="text-[10px] text-white flex items-center gap-1 leading-tight font-medium">↑ +18.2% from last month</p>
           </div>
         </div>
 
-        {/* Card 2: Active Users */}
-        <div className="relative w-full sm:w-[28.5%] aspect-[361/160] pl-10 pr-6 py-6 flex flex-col justify-between overflow-visible z-[2] mt-4 sm:mt-0 sm:-ml-[3.9%]">
-          <img
-            src="/assets/admin-user-rc-2.svg"
-            alt=""
-            className="absolute inset-0 w-full h-full object-fill -z-10 pointer-events-none"
-          />
-          <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[#10B981] shadow-sm">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-          </div>
-          <div className="mt-auto">
-            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Completed Events</p>
-            <p className="text-2xl font-black text-[#10B981]">1,376</p>
-          </div>
-        </div>
-
-        {/* Card 3: Inactive Users */}
-        <div className="relative w-full sm:w-[28.5%] aspect-[363/160] pl-10 pr-6 py-6 flex flex-col justify-between overflow-visible z-[3] mt-4 sm:mt-0 sm:-ml-[3.9%]">
-          <img
-            src="/assets/admin-user-rc-3.svg"
-            alt=""
-            className="absolute inset-0 w-full h-full object-fill -z-10 pointer-events-none"
-          />
-          <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[#EF4444] shadow-sm">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </div>
-          <div className="mt-auto">
-            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Cancelled Events</p>
-            <p className="text-2xl font-black text-[#EF4444]">34</p>
-          </div>
-        </div>
-
-        {/* Card 4: Pending Approval */}
-        <div className="relative w-full sm:w-[28.5%] aspect-[363/160] pl-10 pr-6 py-6 flex flex-col justify-between overflow-visible z-[4] mt-4 sm:mt-0 sm:-ml-[3.9%]">
-          <img
-            src="/assets/admin-user-rc-4.svg"
-            alt=""
-            className="absolute inset-0 w-full h-full object-fill -z-10 pointer-events-none"
-          />
-          <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[#F59E0B] shadow-sm">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        {/* Card 2 - Upcoming Events */}
+        <div className="w-full bg-[#FFE5A3] rounded-2xl p-6 flex flex-col justify-between min-h-[160px] shadow-sm transition-transform hover:-translate-y-1">
+          <div className="w-10 h-10 bg-white/50 rounded-xl flex items-center justify-center mb-4">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2.5">
               <circle cx="12" cy="12" r="10" />
               <polyline points="12 6 12 12 16 14" />
             </svg>
           </div>
-          <div className="mt-auto">
-            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Upcoming Events</p>
-            <p className="text-2xl font-black text-[#F59E0B]">234</p>
+          <div>
+            <p className="text-[11px] font-sans mb-1 text-white/90 font-bold uppercase tracking-wider">Upcoming Events</p>
+            <p className="text-3xl font-black text-[#D97706] font-sans leading-none mb-1">234</p>
+            <p className="text-[10px] text-white/90 flex items-center gap-1 leading-tight font-medium">↑ +18.2% from last month</p>
           </div>
         </div>
+
+        {/* Card 3 - Completed Events */}
+        <div className="w-full bg-[#A3F0B5] rounded-2xl p-6 flex flex-col justify-between min-h-[160px] shadow-sm transition-transform hover:-translate-y-1">
+          <div className="w-10 h-10 bg-white/50 rounded-xl flex items-center justify-center mb-4">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2.5">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-[11px] font-sans mb-1 text-white/90 font-bold uppercase tracking-wider">Completed Events</p>
+            <p className="text-3xl font-black text-[#16A34A] font-sans leading-none mb-1">376</p>
+            <p className="text-[10px] text-white/90 flex items-center gap-1 leading-tight font-medium">↑ +18.2% from last month</p>
+          </div>
+        </div>
+
+        {/* Card 4 - Cancelled Events */}
+        <div className="w-full bg-[#FFB5B5] rounded-2xl p-6 flex flex-col justify-between min-h-[160px] shadow-sm transition-transform hover:-translate-y-1">
+          <div className="w-10 h-10 bg-white/50 rounded-xl flex items-center justify-center mb-4">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E11D48" strokeWidth="2.5">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-[11px] font-sans mb-1 text-white/90 font-bold uppercase tracking-wider">Cancelled Events</p>
+            <p className="text-3xl font-black text-[#E11D48] font-sans leading-none mb-1">34</p>
+            <p className="text-[10px] text-white flex items-center gap-1 leading-tight font-medium">↑ +18.2% from last month</p>
+          </div>
+        </div>
+
       </div>
 
       {/* Main Categories & Search Filters Row */}
@@ -342,80 +328,69 @@ export default function AdminEventsPage() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: idx * 0.05 }}
-              className="bg-white rounded-[32px] overflow-hidden border border-gray-100/80 shadow-sm relative flex flex-col justify-between"
+              className="relative rounded-[24px] overflow-hidden shadow-sm group w-full h-64 sm:h-[280px]"
             >
-              {/* Cover Banner using SVG Clip notch */}
-              <div className="w-full aspect-[320/180] relative overflow-visible">
-                <img
-                  src={evt.image}
-                  alt={evt.title}
-                  className="absolute inset-0 w-full h-full object-cover"
-                  style={{ clipPath: 'url(#cover-clip-s1)' }}
-                />
+              {/* Background Image */}
+              <img
+                src={evt.image}
+                alt={evt.title}
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+              />
+              
+              {/* Gradient Overlays */}
+              <div className="absolute inset-0 bg-[#0012FF]/30 mix-blend-multiply pointer-events-none"></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-none"></div>
 
-                {/* Niche Badge */}
-                <span className="absolute left-4 top-4 bg-white/90 backdrop-blur-sm text-gray-800 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase shadow-sm">
-                  {evt.category}
-                </span>
+              {/* Bookmark Icon */}
+              <button className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center hover:bg-white/30 transition-colors z-10 cursor-pointer shadow-sm">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="white" stroke="white" strokeWidth="2">
+                  <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+                </svg>
+              </button>
 
-                {/* Eye Icon Circle sitting inside the bottom right notch outside the clip */}
-                <button
-                  className="absolute bottom-1 right-1.5 w-8 h-8 rounded-full bg-white border border-gray-100 flex items-center justify-center shadow-sm cursor-pointer hover:bg-gray-50 transition-all"
-                  title="View Event Details"
-                >
-                  <svg
-                    width="15"
-                    height="15"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    className="text-gray-400"
-                  >
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                    <circle cx="12" cy="12" r="3" />
-                  </svg>
-                </button>
-              </div>
+              {/* Content Bottom */}
+              <div className="absolute inset-x-0 bottom-0 p-5 sm:p-6 flex flex-col justify-end z-10">
+                <div className="flex items-end justify-between w-full">
+                  <div className="flex-1 pr-2">
+                    <h3 className="font-sans font-black text-xl sm:text-2xl text-white leading-tight mb-1">
+                      {evt.title}
+                    </h3>
+                    <p className="text-[11px] sm:text-xs text-gray-200 font-medium mb-3 sm:mb-4">
+                      {evt.description}
+                    </p>
 
-              {/* Text Information below Banner */}
-              <div className="p-6 pt-2 flex-1 flex flex-col justify-between">
-                <div>
-                  <h3 className="font-sans font-black text-xl text-black leading-tight">
-                    {evt.title}
-                  </h3>
-                  <p className="text-xs text-gray-400 font-bold mt-1 uppercase tracking-wide">
-                    {evt.description}
-                  </p>
-
-                  {/* Date & Time Row */}
-                  <div className="flex items-center gap-4 mt-4 text-xs text-gray-500">
-                    <span className="flex items-center gap-1.5 font-bold">
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-[#0012FF]">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                        <line x1="16" y1="2" x2="16" y2="6" />
-                        <line x1="8" y1="2" x2="8" y2="6" />
-                        <line x1="3" y1="10" x2="21" y2="10" />
-                      </svg>
-                      {evt.date}
-                    </span>
-                    <span className="flex items-center gap-1.5 font-bold">
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-[#0012FF]">
-                        <circle cx="12" cy="12" r="10" />
-                        <polyline points="12 6 12 12 16 14" />
-                      </svg>
-                      {evt.time}
-                    </span>
+                    {/* Icons Row */}
+                    <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-[10px] sm:text-xs text-white font-semibold">
+                      <span className="flex items-center gap-1.5">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                          <line x1="16" y1="2" x2="16" y2="6" />
+                          <line x1="8" y1="2" x2="8" y2="6" />
+                          <line x1="3" y1="10" x2="21" y2="10" />
+                        </svg>
+                        {evt.date}
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <circle cx="12" cy="12" r="10" />
+                          <polyline points="12 6 12 12 16 14" />
+                        </svg>
+                        {evt.time}
+                      </span>
+                      <span className="flex items-center gap-1.5 w-full sm:w-auto mt-1 sm:mt-0">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z" />
+                          <circle cx="12" cy="10" r="3" />
+                        </svg>
+                        <span className="truncate">{evt.venue}</span>
+                      </span>
+                    </div>
                   </div>
-                </div>
 
-                {/* Location row */}
-                <div className="flex items-center gap-1.5 text-xs text-gray-500 font-bold mt-3.5">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-[#0012FF]">
-                    <path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z" />
-                    <circle cx="12" cy="10" r="3" />
-                  </svg>
-                  {evt.venue}
+                  {/* Buy Ticket Button */}
+                  <button className="shrink-0 px-4 sm:px-5 py-2 sm:py-2.5 bg-white rounded-full text-[#0012FF] text-[11px] sm:text-xs font-bold shadow-md hover:bg-gray-50 transition-colors cursor-pointer">
+                    Buy Ticket
+                  </button>
                 </div>
               </div>
             </motion.div>

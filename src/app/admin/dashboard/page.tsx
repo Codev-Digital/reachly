@@ -497,7 +497,7 @@ const AdminDashboard = () => {
                   return (
                     <div key={creator.id || index} className="group cursor-pointer">
                       {/* Top Image Container */}
-                      <div className="relative w-full aspect-[4/5] sm:aspect-square md:h-56 overflow-hidden rounded-[24px] mb-4 shadow-sm">
+                      <div className="relative w-full aspect-[4/5] overflow-hidden rounded-[24px] mb-4 shadow-sm">
                         <img
                           src={creator.img}
                           alt={creator.name}
@@ -554,15 +554,7 @@ const AdminDashboard = () => {
                           </strong>
                         </div>
 
-                        {/* Book Now Link */}
-                        <div>
-                          <Link
-                            href="/admin/creators"
-                            className="text-xs font-bold text-[#0012FF] underline hover:text-[#0010d0] font-sans pt-1 inline-block"
-                          >
-                            Book Now
-                          </Link>
-                        </div>
+
                       </div>
                     </div>
                   );
