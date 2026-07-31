@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, type ReactNode } from 'react';
+import React, { useState, useEffect, useRef, type ReactNode } from 'react';
 import Image from 'next/image';
 import Link from 'next/navigation';
 import { useRouter } from 'next/navigation';
@@ -610,18 +610,21 @@ export default function CreatorSettings() {
           </div>
         </div>
 
-        {/* Refined Top Navigation Segment Bar - Centered with Icons and Headings */}
-        <div className="bg-white rounded-3xl p-1.5 border border-gray-200 shadow-sm flex flex-wrap items-center justify-center gap-1.5 mb-8 max-w-2xl mx-auto">
+        {/* Premium Top Navigation Segment Bar */}
+        <div className="bg-white rounded-[20px] sm:rounded-full p-1.5 border border-gray-100 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] grid grid-cols-2 sm:flex sm:flex-wrap sm:justify-center gap-1.5 mb-8 max-w-3xl mx-auto">
           {tabs.map((tab) => (
             <button
               key={tab.name}
               onClick={() => setActiveTab(tab.name)}
-              className={`flex items-center gap-2 px-4.5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all cursor-pointer border ${activeTab === tab.name
-                ? 'bg-[#0012FF] border-[#0012FF] text-white shadow-md shadow-blue-100 scale-102'
-                : 'bg-white border-transparent text-gray-500 hover:text-black hover:bg-gray-50'
-                }`}
+              className={`w-full sm:w-auto flex items-center gap-2 sm:gap-1.5 px-4 sm:px-5 py-2.5 rounded-[14px] sm:rounded-full text-xs sm:text-sm font-bold transition-all duration-300 sm:justify-center ${
+                tab.name === 'Reviews' ? 'col-span-2 sm:col-span-1 justify-center' : 'justify-start'
+              } ${
+                activeTab === tab.name
+                  ? 'bg-[#0012FF] text-white shadow-md shadow-[#0012FF]/20'
+                  : 'bg-transparent text-gray-500 hover:text-gray-900 hover:bg-gray-50'
+              }`}
             >
-              {tab.icon}
+              {React.cloneElement(tab.icon as React.ReactElement<{ className?: string }>, { className: "h-4 w-4 sm:h-5 sm:w-5" })}
               <span>{tab.name}</span>
             </button>
           ))}

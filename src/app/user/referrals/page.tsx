@@ -81,91 +81,62 @@ export default function UserReferrals() {
           </div>
 
           {/* Referral Cards */}
-          <div className="flex flex-col sm:flex-row w-full gap-3 sm:gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-row w-full gap-4 mb-8">
 
             {/* Card 1 - Total Referrals */}
-            <div className="relative sm:flex-1 h-[160px] sm:h-[170px] overflow-visible rounded-2xl sm:rounded-none">
-              <Image src="/assets/referral-Rectangle1.svg" alt="" fill className="object-fill rounded-2xl sm:rounded-none" priority />
-              <div className="absolute inset-0 pt-6 pb-4 px-4 sm:pt-8 sm:pb-5 sm:px-5 flex flex-col justify-between">
-                <div className="flex items-start justify-between w-full">
-                  <div className="flex items-center gap-3 sm:gap-4">
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/60 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2.5">
-                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                        <circle cx="8.5" cy="7" r="4" />
-                        <line x1="20" y1="8" x2="20" y2="14" />
-                        <line x1="23" y1="11" x2="17" y2="11" />
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-sans mb-0.5 text-gray-500 font-bold uppercase tracking-wide">Total Referrals</p>
-                      <p className="text-3xl font-black text-[#0012FF] font-sans">0</p>
-                    </div>
-                  </div>
-                </div>
+            <div className="flex-1 bg-[#B6C2FF] rounded-[24px] p-6 flex flex-col justify-between min-h-[160px] shadow-sm transition-transform hover:-translate-y-1">
+              <div className="w-10 h-10 bg-white/50 rounded-xl flex items-center justify-center mb-4">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2.5">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                  <circle cx="8.5" cy="7" r="4" />
+                  <line x1="20" y1="8" x2="20" y2="14" />
+                  <line x1="23" y1="11" x2="17" y2="11" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-[11px] font-sans mb-1 text-gray-700 font-bold uppercase tracking-wider">Total Referrals</p>
+                <p className="text-3xl font-black text-[#0012FF] font-sans">0</p>
               </div>
             </div>
 
             {/* Card 2 - Successful Referrals */}
-            <div className="relative sm:flex-1 h-[160px] sm:h-[170px] overflow-visible rounded-2xl sm:rounded-none sm:-ml-10 sm:z-10">
-              <Image src="/assets/referral-Rectangle2.svg" alt="" fill className="object-fill rounded-2xl sm:rounded-none" />
-              <div className="absolute inset-0 pt-10 pb-4 pr-4 pl-10 sm:pt-12 sm:pb-5 sm:pr-5 sm:pl-12 flex flex-col justify-between">
-                <div className="flex items-center gap-3 sm:gap-4">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/60 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2.5">
-                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                      <polyline points="22 4 12 14.01 9 11.01" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-sans mb-0.5 text-gray-500 font-bold uppercase tracking-wide">Successful Referrals</p>
-                    <p className="text-2xl font-black font-sans text-[#22C55E]">0</p>
-                  </div>
-                </div>
+            <div className="flex-1 bg-[#A3F0B5] rounded-[24px] p-6 flex flex-col justify-between min-h-[160px] shadow-sm transition-transform hover:-translate-y-1">
+              <div className="w-10 h-10 bg-white/50 rounded-xl flex items-center justify-center mb-4">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2.5">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                  <polyline points="22 4 12 14.01 9 11.01" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-[11px] font-sans mb-1 text-gray-700 font-bold uppercase tracking-wider">Successful Referrals</p>
+                <p className="text-3xl font-black text-[#16A34A] font-sans">0</p>
               </div>
             </div>
 
             {/* Card 3 - Total Rewards Earned */}
-            <div className="relative sm:flex-1 h-[160px] sm:h-[170px] overflow-visible rounded-2xl sm:rounded-none ml-0 sm:-ml-10 sm:z-20">
-              <Image src="/assets/referral-Rectangle3.svg" alt="" fill className="object-fill rounded-2xl sm:rounded-none" />
-              <div className="absolute inset-0 pt-10 pb-4 pr-4 pl-10 sm:pt-12 sm:pb-5 sm:pr-5 sm:pl-12 flex flex-col justify-between">
-                <div className="flex items-center gap-3 sm:gap-4">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/60 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F43F5E" strokeWidth="2.5">
-                      <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-sans mb-0.5 text-gray-500 font-bold uppercase tracking-wide">Total Rewards Earned</p>
-                    <p className="text-2xl font-black font-sans text-[#F43F5E]">0 PKR</p>
-                  </div>
-                </div>
+            <div className="flex-1 bg-[#FFB5B5] rounded-[24px] p-6 flex flex-col justify-between min-h-[160px] shadow-sm transition-transform hover:-translate-y-1">
+              <div className="w-10 h-10 bg-white/50 rounded-xl flex items-center justify-center mb-4">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E11D48" strokeWidth="2.5">
+                  <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-[11px] font-sans mb-1 text-gray-700 font-bold uppercase tracking-wider">Total Rewards Earned</p>
+                <p className="text-3xl font-black text-[#E11D48] font-sans">0 PKR</p>
               </div>
             </div>
 
             {/* Card 4 - Pending Rewards */}
-            <div className="relative sm:flex-1 h-[160px] sm:h-[170px] overflow-visible rounded-2xl sm:rounded-none ml-0 sm:-ml-10 sm:z-30">
-              <Image src="/assets/referral-Rectangle4.svg" alt="" fill className="object-fill rounded-2xl sm:rounded-none" />
-              <div className="absolute inset-0 pt-10 pb-4 pr-4 pl-10 sm:pt-12 sm:pb-5 sm:pr-5 sm:pl-12 flex flex-col justify-between">
-                <div className="flex items-center gap-3 sm:gap-4">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/60 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2.5">
-                      <circle cx="12" cy="12" r="10" />
-                      <polyline points="12 6 12 12 16 14" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-sans mb-0.5 text-gray-500 font-bold uppercase tracking-wide">Pending Rewards</p>
-                    <p className="text-2xl font-black font-sans text-[#F59E0B]">458 PKR</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1 text-[#F59E0B]">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-                    <polyline points="17 6 23 6 23 12" />
-                  </svg>
-                  <span className="text-xs font-semibold">+18.2% from last month</span>
-                </div>
+            <div className="flex-1 bg-[#FFE5A3] rounded-[24px] p-6 flex flex-col justify-between min-h-[160px] shadow-sm transition-transform hover:-translate-y-1">
+              <div className="w-10 h-10 bg-white/50 rounded-xl flex items-center justify-center mb-4">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2.5">
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-[11px] font-sans mb-1 text-gray-700 font-bold uppercase tracking-wider">Pending Rewards</p>
+                <p className="text-3xl font-black text-[#D97706] font-sans">0 PKR</p>
               </div>
             </div>
           </div>
