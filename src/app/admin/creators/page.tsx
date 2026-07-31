@@ -65,158 +65,14 @@ export default function AdminCreatorsPage() {
     'Education'
   ];
 
-  const initialCreators: Creator[] = [
-    {
-      id: 'CRT-10245',
-      name: 'Sophia Reed',
-      username: '@sophiareed',
-      email: 'sophiareed@gmail.com',
-      joinedDate: '02 July 2026',
-      time: '10:45 AM',
-      eventsCreated: 'Creator Growth',
-      status: 'Active',
-      avatar: '/ahad raza mir.png',
-      city: 'Los Angeles',
-      country: 'United States',
-      languages: 'English',
-      startingPrice: '15,000 PKR',
-      onboardingStep: '7 / 7',
-      niches: ['Fashion Tips', 'Style Guide', 'Shopping'],
-      bio: 'Fashion creator sharing timeless style, seasonal trends, and everyday outfit inspiration for every occasion.',
-      bannerName: 'Nageen Shah',
-      bannerNiche: 'Software Engineering',
-      bannerContact: '+ 123-456-7890   |   hello@reallygreatsite.com'
-    },
-    {
-      id: 'CRT-10246',
-      name: 'Sophia Reed',
-      username: '@sophiareed',
-      email: 'sophiareed@gmail.com',
-      joinedDate: '02 July 2026',
-      time: '10:45 AM',
-      eventsCreated: 'Creator Growth +2',
-      status: 'Pending',
-      avatar: '/ahad raza mir.png',
-      city: 'London',
-      country: 'United Kingdom',
-      languages: 'English',
-      startingPrice: '20,000 PKR',
-      onboardingStep: '5 / 7',
-      niches: ['Travel', 'Food'],
-      bio: 'Sophia explores local cuisines and hidden travel spots around Europe.',
-      bannerName: 'Nageen Shah',
-      bannerNiche: 'Travel Vlogging',
-      bannerContact: '+ 123-456-7890   |   hello@reallygreatsite.com'
-    },
-    {
-      id: 'CRT-10247',
-      name: 'Sophia Reed',
-      username: '@sophiareed',
-      email: 'sophiareed@gmail.com',
-      joinedDate: '02 July 2026',
-      time: '10:45 AM',
-      eventsCreated: 'None',
-      status: 'Active',
-      avatar: '/ahad raza mir.png',
-      city: 'Lahore',
-      country: 'Pakistan',
-      languages: 'Urdu, English',
-      startingPrice: '10,000 PKR',
-      onboardingStep: '6 / 7',
-      niches: ['Tech', 'Gadgets'],
-      bio: 'Unboxing and reviewing the latest tech products and smart home devices.',
-      bannerName: 'Nageen Shah',
-      bannerNiche: 'Tech Reviewing',
-      bannerContact: '+ 123-456-7890   |   hello@reallygreatsite.com'
-    },
-    {
-      id: 'CRT-10248',
-      name: 'Sophia Reed',
-      username: '@sophiareed',
-      email: 'sophiareed@gmail.com',
-      joinedDate: '02 July 2026',
-      time: '10:45 AM',
-      eventsCreated: 'Creator Growth +1',
-      status: 'Inactive',
-      avatar: '/ahad raza mir.png',
-      city: 'Dubai',
-      country: 'UAE',
-      languages: 'English, Arabic',
-      startingPrice: '30,000 PKR',
-      onboardingStep: '7 / 7',
-      niches: ['Business', 'Finance'],
-      bio: 'Helping young entrepreneurs scale their brands using digital platforms.',
-      bannerName: 'Nageen Shah',
-      bannerNiche: 'Business Growth',
-      bannerContact: '+ 123-456-7890   |   hello@reallygreatsite.com'
-    },
-    {
-      id: 'CRT-10249',
-      name: 'Sophia Reed',
-      username: '@sophiareed',
-      email: 'sophiareed@gmail.com',
-      joinedDate: '02 July 2026',
-      time: '10:45 AM',
-      eventsCreated: 'Creator Growth',
-      status: 'Pending',
-      avatar: '/ahad raza mir.png',
-      city: 'Karachi',
-      country: 'Pakistan',
-      languages: 'Urdu, English',
-      startingPrice: '12,000 PKR',
-      onboardingStep: '7 / 7',
-      niches: ['Education', 'Skill Development'],
-      bio: 'Sharing tutorials and courses on UI/UX design and development.',
-      bannerName: 'Nageen Shah',
-      bannerNiche: 'UI/UX Design',
-      bannerContact: '+ 123-456-7890   |   hello@reallygreatsite.com'
-    },
-    {
-      id: 'CRT-10250',
-      name: 'Sophia Reed',
-      username: '@sophiareed',
-      email: 'sophiareed@gmail.com',
-      joinedDate: '02 July 2026',
-      time: '10:45 AM',
-      eventsCreated: 'Creator Growth',
-      status: 'Suspended',
-      avatar: '/ahad raza mir.png',
-      city: 'New York',
-      country: 'United States',
-      languages: 'English',
-      startingPrice: '25,000 PKR',
-      onboardingStep: '4 / 7',
-      niches: ['Fitness', 'Wellness'],
-      bio: 'Sophia is a certified trainer sharing workout routines and meal plans.',
-      bannerName: 'Nageen Shah',
-      bannerNiche: 'Fitness Training',
-      bannerContact: '+ 123-456-7890   |   hello@reallygreatsite.com'
-    },
-    {
-      id: 'CRT-10251',
-      name: 'Sophia Reed',
-      username: '@sophiareed',
-      email: 'sophiareed@gmail.com',
-      joinedDate: '02 July 2026',
-      time: '10:45 AM',
-      eventsCreated: 'None',
-      status: 'Active',
-      avatar: '/ahad raza mir.png',
-      city: 'Sydney',
-      country: 'Australia',
-      languages: 'English',
-      startingPrice: '18,000 PKR',
-      onboardingStep: '7 / 7',
-      niches: ['Art', 'Design'],
-      bio: 'Digital artist showcasing illustration processes and design tutorials.',
-      bannerName: 'Nageen Shah',
-      bannerNiche: 'Digital Art',
-      bannerContact: '+ 123-456-7890   |   hello@reallygreatsite.com'
-    }
-  ];
-
   const [creators, setCreators] = useState<Creator[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Dynamic stats
+  const totalCreators = creators.length;
+  const activeCreators = creators.filter(c => c.status === 'Active').length;
+  const inactiveCreators = creators.filter(c => c.status === 'Inactive' || c.status === 'Suspended').length;
+  const pendingCreators = creators.filter(c => c.status === 'Pending').length;
 
   const loadCreators = async () => {
     try {
@@ -587,7 +443,7 @@ export default function AdminCreatorsPage() {
       {/* Greetings & Title Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <p className="text-gray-500 font-sans text-sm sm:text-base mb-1">Hello Anna Chris!</p>
+          <p className="text-gray-500 font-sans text-sm sm:text-base mb-1">Hello Admin Abdullah!</p>
           <h1 className="text-3xl sm:text-4xl font-bold font-sans text-black">
             <span className="text-[#0012FF] font-black">Creator</span> Management{' '}
             <span className="text-gray-400 font-normal text-sm sm:text-base">Overview & Control</span>
@@ -603,80 +459,66 @@ export default function AdminCreatorsPage() {
         </button>
       </div>
 
-      {/* Interlocking Metrics Cards */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-start w-full gap-1 sm:gap-7 mb-10 overflow-visible">
-        {/* Card 1: Total Users */}
-        <div className="relative w-full sm:w-[26%] aspect-[329/160] p-6 flex flex-col justify-between overflow-visible z-[1]">
-          <img
-            src="/assets/admin-user-rc-1.svg"
-            alt=""
-            className="absolute inset-0 w-full h-full object-fill -z-10 pointer-events-none"
-          />
-          <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[#0012FF] shadow-sm">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-10">
+        {/* Card 1: Total Creators */}
+        <div className="bg-[#BAC4FF] rounded-xl p-5 sm:p-6 flex flex-col justify-between h-[170px] sm:h-[160px]">
+          <div className="w-10 h-10 shrink-0 self-start bg-white/70 backdrop-blur-sm rounded-lg flex items-center justify-center mb-4 sm:mb-6">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2">
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
               <circle cx="9" cy="7" r="4" />
             </svg>
           </div>
-          <div className="mt-auto">
-            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Total Users</p>
-            <p className="text-2xl font-black text-[#0012FF]">1,410</p>
+          <div>
+            <p className="text-[11px] text-white/90 font-semibold mb-0.5">Total Creators</p>
+            <p className="text-3xl font-black text-[#0012FF] leading-none mb-1">{totalCreators}</p>
+            <p className="text-[10px] text-white flex items-center gap-1">All registered creators</p>
           </div>
         </div>
 
-        {/* Card 2: Active Users */}
-        <div className="relative w-full sm:w-[28.5%] aspect-[361/160] pl-10 pr-6 py-6 flex flex-col justify-between overflow-visible z-[2] mt-4 sm:mt-0 sm:-ml-[3.9%]">
-          <img
-            src="/assets/admin-user-rc-2.svg"
-            alt=""
-            className="absolute inset-0 w-full h-full object-fill -z-10 pointer-events-none"
-          />
-          <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[#10B981] shadow-sm">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <polyline points="20 6 9 17 4 12" />
+        {/* Card 2: Active Creators */}
+        <div className="bg-[#A3E5A5] rounded-xl p-5 sm:p-6 flex flex-col justify-between h-[170px] sm:h-[160px]">
+          <div className="w-10 h-10 shrink-0 self-start bg-white/70 backdrop-blur-sm rounded-lg flex items-center justify-center mb-4 sm:mb-6">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#12B76A" strokeWidth="2">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+              <polyline points="22 4 12 14.01 9 11.01" />
             </svg>
           </div>
-          <div className="mt-auto">
-            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Active Users</p>
-            <p className="text-2xl font-black text-[#10B981]">1,376</p>
+          <div>
+            <p className="text-[11px] text-white/90 font-semibold mb-0.5">Active Creators</p>
+            <p className="text-3xl font-black text-[#12B76A] leading-none mb-1">{activeCreators}</p>
+            <p className="text-[10px] text-white flex items-center gap-1">Approved profiles</p>
           </div>
         </div>
 
-        {/* Card 3: Inactive Users */}
-        <div className="relative w-full sm:w-[28.5%] aspect-[363/160] pl-10 pr-6 py-6 flex flex-col justify-between overflow-visible z-[3] mt-4 sm:mt-0 sm:-ml-[3.9%]">
-          <img
-            src="/assets/admin-user-rc-3.svg"
-            alt=""
-            className="absolute inset-0 w-full h-full object-fill -z-10 pointer-events-none"
-          />
-          <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[#EF4444] shadow-sm">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
+        {/* Card 3: Inactive Creators */}
+        <div className="bg-[#FFADAD] rounded-xl p-5 sm:p-6 flex flex-col justify-between h-[170px] sm:h-[160px]">
+          <div className="w-10 h-10 shrink-0 self-start bg-white/70 backdrop-blur-sm rounded-lg flex items-center justify-center mb-4 sm:mb-6">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="15" y1="9" x2="9" y2="15" />
+              <line x1="9" y1="9" x2="15" y2="15" />
             </svg>
           </div>
-          <div className="mt-auto">
-            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Inactive Users</p>
-            <p className="text-2xl font-black text-[#EF4444]">34</p>
+          <div>
+            <p className="text-[11px] text-white/90 font-semibold mb-0.5">Inactive Creators</p>
+            <p className="text-3xl font-black text-[#EF4444] leading-none mb-1">{inactiveCreators}</p>
+            <p className="text-[10px] text-white flex items-center gap-1">Suspended or incomplete</p>
           </div>
         </div>
 
         {/* Card 4: Pending Approval */}
-        <div className="relative w-full sm:w-[28.5%] aspect-[363/160] pl-10 pr-6 py-6 flex flex-col justify-between overflow-visible z-[4] mt-4 sm:mt-0 sm:-ml-[3.9%]">
-          <img
-            src="/assets/admin-user-rc-4.svg"
-            alt=""
-            className="absolute inset-0 w-full h-full object-fill -z-10 pointer-events-none"
-          />
-          <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[#F59E0B] shadow-sm">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <div className="bg-[#FFE199] rounded-xl p-5 sm:p-6 flex flex-col justify-between h-[170px] sm:h-[160px]">
+          <div className="w-10 h-10 shrink-0 self-start bg-white/70 backdrop-blur-sm rounded-lg flex items-center justify-center mb-4 sm:mb-6">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2">
               <circle cx="12" cy="12" r="10" />
               <polyline points="12 6 12 12 16 14" />
             </svg>
           </div>
-          <div className="mt-auto">
-            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Pending Approval</p>
-            <p className="text-2xl font-black text-[#F59E0B]">234</p>
+          <div>
+            <p className="text-[11px] text-white/90 font-semibold mb-0.5">Pending Approval</p>
+            <p className="text-3xl font-black text-[#F59E0B] leading-none mb-1">{pendingCreators}</p>
+            <p className="text-[10px] text-white flex items-center gap-1">Awaiting admin action</p>
           </div>
         </div>
       </div>
@@ -779,7 +621,7 @@ export default function AdminCreatorsPage() {
                 <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Time</th>
                 <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Events Created</th>
                 <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Status</th>
-                <th className="py-4 px-4 text-xs font-bold text-gray-400 text-center uppercase tracking-wider">Actions</th>
+                <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -827,13 +669,13 @@ export default function AdminCreatorsPage() {
                     {/* Status Badge */}
                     <td className="py-4 px-4">
                       <span
-                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${creator.status === 'Active'
-                          ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide ${creator.status === 'Active'
+                          ? 'bg-[#E5F7ED] text-[#12B76A]'
                           : creator.status === 'Pending'
-                            ? 'bg-amber-50 text-amber-600 border border-amber-200'
+                            ? 'bg-[#FFF3E0] text-[#F59E0B]'
                             : creator.status === 'Inactive'
-                              ? 'bg-rose-50 text-rose-600 border border-rose-200'
-                              : 'bg-gray-100 text-gray-600 border border-gray-200'
+                              ? 'bg-[#FFEBEB] text-[#EF4444]'
+                              : 'bg-gray-100 text-gray-500'
                           }`}
                       >
                         {creator.status}
@@ -842,22 +684,22 @@ export default function AdminCreatorsPage() {
 
                     {/* Actions */}
                     <td className="py-4 px-4" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center justify-center gap-2">
+                      <div className="flex items-center gap-2">
                         <button
                           onClick={() => handleAcceptClick(creator)}
-                          className="px-4 py-1.5 border border-emerald-100 rounded-full text-xs font-bold text-emerald-600 hover:bg-emerald-50 transition-colors"
+                          className="px-3.5 py-1.5 border border-[#12B76A]/30 bg-[#12B76A]/5 rounded-full text-[10px] font-bold text-[#12B76A] hover:bg-[#12B76A]/10 transition-colors"
                         >
                           Accept
                         </button>
                         <button
                           onClick={() => handleRejectClick(creator)}
-                          className="px-4 py-1.5 border border-rose-100 rounded-full text-xs font-bold text-rose-600 hover:bg-rose-50 hover:border-rose-200 transition-colors"
+                          className="px-3.5 py-1.5 border border-[#EF4444]/30 bg-[#EF4444]/5 rounded-full text-[10px] font-bold text-[#EF4444] hover:bg-[#EF4444]/10 transition-colors"
                         >
                           Reject
                         </button>
                         <button
                           onClick={() => setActiveDetailCreator(creator)}
-                          className="px-4 py-1.5 bg-gray-100 rounded-full text-xs font-bold text-gray-400 hover:bg-gray-200 hover:text-gray-500 transition-colors"
+                          className="px-3.5 py-1.5 border border-gray-200 bg-gray-50 rounded-full text-[10px] font-bold text-gray-500 hover:bg-gray-100 transition-colors"
                         >
                           View Details
                         </button>
@@ -931,19 +773,12 @@ export default function AdminCreatorsPage() {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="relative overflow-visible w-full max-w-lg flex flex-col items-center p-8 pt-12 pb-8 z-10 bg-transparent"
+              className="relative w-full max-w-sm flex flex-col items-center p-8 z-10 bg-white rounded-[24px] shadow-xl"
             >
-              {/* SVG Background */}
-              <img
-                src="/assets/cancel-card.svg"
-                alt=""
-                className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10"
-              />
-
               {/* Close Button */}
               <button
                 onClick={() => setShowRejectModal(false)}
-                className="absolute -mt-20 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center border border-gray-100/50 text-gray-500 hover:bg-gray-50 transition-all z-20"
+                className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-500 hover:bg-gray-100 transition-all z-20"
               >
                 <svg
                   width="14"
@@ -983,7 +818,7 @@ export default function AdminCreatorsPage() {
                       setCreatorToReject(null);
                       setRejectSuccess(false);
                     }}
-                    className="w-80 py-2.5 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700 transition-all"
+                    className="w-full py-2.5 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700 transition-all"
                   >
                     OK
                   </button>
@@ -1035,19 +870,12 @@ export default function AdminCreatorsPage() {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="relative overflow-visible w-full max-w-lg flex flex-col items-center p-8 pt-12 pb-8 z-10 bg-transparent"
+              className="relative w-full max-w-sm flex flex-col items-center p-8 z-10 bg-white rounded-[24px] shadow-xl"
             >
-              {/* SVG Background */}
-              <img
-                src="/assets/cancel-card.svg"
-                alt=""
-                className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10"
-              />
-
               {/* Close Button */}
               <button
                 onClick={() => setShowAcceptModal(false)}
-                className="absolute -mt-20 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center border border-gray-100/50 text-gray-500 hover:bg-gray-50 transition-all z-20"
+                className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-500 hover:bg-gray-100 transition-all z-20"
               >
                 <svg
                   width="14"
@@ -1087,7 +915,7 @@ export default function AdminCreatorsPage() {
                       setCreatorToAccept(null);
                       setAcceptSuccess(false);
                     }}
-                    className="w-80 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 transition-all"
+                    className="w-full py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 transition-all"
                   >
                     OK
                   </button>
@@ -1139,19 +967,12 @@ export default function AdminCreatorsPage() {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="relative overflow-visible w-full max-w-lg flex flex-col items-center p-8 pt-12 pb-8 z-10 bg-transparent animate-fade-in"
+              className="relative w-full max-w-sm flex flex-col items-center p-8 z-10 bg-white rounded-[24px] shadow-xl animate-fade-in"
             >
-              {/* SVG Background */}
-              <img
-                src="/assets/cancel-card.svg"
-                alt=""
-                className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10"
-              />
-
               {/* Close Button */}
               <button
                 onClick={() => setShowAddCategoryModal(false)}
-                className="absolute -mt-20 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center border border-gray-100/50 text-gray-500 hover:bg-gray-50 transition-all z-20"
+                className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-500 hover:bg-gray-100 transition-all z-20"
               >
                 <svg
                   width="14"

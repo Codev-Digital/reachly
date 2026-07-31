@@ -47,6 +47,50 @@ export default function Home() {
   const featuredScrollRef = useRef<HTMLDivElement>(null);
   const categoryScrollRef = useRef<HTMLDivElement>(null);
 
+  // Refs for How It Works swipe/scroll
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
+  const lastScrollTime = useRef<number>(0);
+
+  const handleHowItWorksTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleHowItWorksTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null || touchStartY.current === null) return;
+    const touchEndX = e.changedTouches[0].clientX;
+    const touchEndY = e.changedTouches[0].clientY;
+    const deltaX = touchStartX.current - touchEndX;
+    const deltaY = touchStartY.current - touchEndY;
+    
+    // Horizontal swipe threshold
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 40) {
+      if (deltaX > 0) {
+        setActiveStep(prev => (prev < 2 ? prev + 1 : 0));
+      } else {
+        setActiveStep(prev => (prev > 0 ? prev - 1 : 2));
+      }
+    }
+    touchStartX.current = null;
+    touchStartY.current = null;
+  };
+
+  const handleHowItWorksWheel = (e: React.WheelEvent) => {
+    // Only intercept horizontal scrolls to prevent trapping vertical scroll on laptops
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY) && Math.abs(e.deltaX) > 10) {
+      const now = Date.now();
+      if (now - lastScrollTime.current < 400) return; // Debounce
+      
+      if (e.deltaX > 0) {
+        setActiveStep(prev => (prev < 2 ? prev + 1 : 0));
+      } else {
+        setActiveStep(prev => (prev > 0 ? prev - 1 : 2));
+      }
+      lastScrollTime.current = now;
+    }
+  };
+
   const scrollFeatured = (direction: 'left' | 'right') => {
     if (featuredScrollRef.current) {
       const scrollAmount = 320;
@@ -178,7 +222,9 @@ export default function Home() {
   ];
 
   // Explore By Category uses the same real-time DB creators (already priority-sorted)
-  const filteredCategoryCreators = dbCreators;
+  const filteredCategoryCreators = activeCategory === 'All Categories'
+    ? dbCreators
+    : dbCreators.filter(creator => (creator.niches || []).includes(activeCategory) || creator.category === activeCategory);
 
   return (
     <div className="min-h-screen">
@@ -502,7 +548,12 @@ export default function Home() {
       {/* ════════════════════════════════════════
             HOW IT WORKS
         ════════════════════════════════════════ */}
-      <section className="py-24 bg-[#F7F7FA] text-[#0C0C0C] border-t border-gray-100">
+      <section 
+        className="py-24 bg-[#F7F7FA] text-[#0C0C0C] border-t border-gray-100"
+        onTouchStart={handleHowItWorksTouchStart}
+        onTouchEnd={handleHowItWorksTouchEnd}
+        onWheel={handleHowItWorksWheel}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="grid md:grid-cols-2 gap-12 lg:gap-16 items-center">
             {/* Left: animated card stack */}
@@ -736,7 +787,11 @@ export default function Home() {
                       </motion.div>
                     );
                   })
-                ) : null}
+                ) : (
+                  <div className="w-full flex items-center justify-center py-10">
+                    <img src="/no-creators.webp" alt="No creators found" className="w-48 sm:w-64 h-auto object-contain opacity-80" />
+                  </div>
+                )}
 
               </div>
             </div>
@@ -982,13 +1037,13 @@ export default function Home() {
               className="flex gap-5 w-max"
             >
               {marqueeTestimonials1.map((t, i) => (
-                <div key={i} className="w-[300px] sm:w-[330px] shrink-0 bg-white rounded-2xl p-6 shadow-sm border border-gray-100 relative">
+                <div key={i} className="w-[270px] sm:w-[330px] shrink-0 bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-gray-100 relative">
                   {/* Big quote mark top-right */}
-                  <div className="absolute -mt-10 right-5">
+                  <div className="absolute -mt-8 sm:-mt-10 right-4 sm:right-5">
                     <img
                       src={commaSvgs[t.commaIndex]}
                       alt="quote"
-                      className="w-16 h-16 -translate-y-2"
+                      className="w-12 h-12 sm:w-16 sm:h-16 -translate-y-2"
                     />
                   </div>
                   {/* Avatar + name */}
@@ -1024,10 +1079,10 @@ export default function Home() {
               className="flex gap-5 w-max"
             >
               {marqueeTestimonials2.map((t, i) => (
-                <div key={i} className="w-[300px] sm:w-[330px] shrink-0 bg-white rounded-2xl p-6 shadow-sm border border-gray-100 relative">
+                <div key={i} className="w-[270px] sm:w-[330px] shrink-0 bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-gray-100 relative">
                   {/* Big quote mark top-right */}
-                  <div className="absolute -mt-12 right-5">
-                    <img src={commaSvgs[t.commaIndex]} alt="quote" className="w-16 h-16" />
+                  <div className="absolute -mt-10 sm:-mt-12 right-4 sm:right-5">
+                    <img src={commaSvgs[t.commaIndex]} alt="quote" className="w-12 h-12 sm:w-16 sm:h-16" />
                   </div>
                   {/* Avatar + name */}
                   <div className="flex items-center gap-3 mb-4">

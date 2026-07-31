@@ -23,6 +23,9 @@ const anton = Anton({
 export const metadata: Metadata = {
   title: "Reachly",
   description: "Connect with amazing creators",
+  icons: {
+    icon: "/favicon1.png",
+  },
 };
 
 export default function RootLayout({

@@ -61,7 +61,7 @@ const AdminDashboard = () => {
 
   // Pagination state for Top Creators
   const [creatorPage, setCreatorPage] = useState<number>(1);
-  const creatorsPerPage = 3;
+  const creatorsPerPage = 2;
 
   const [stats, setStats] = useState<DashboardStats>({
     totalUsers: 0,
@@ -77,6 +77,44 @@ const AdminDashboard = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [topCreators, setTopCreators] = useState<Creator[]>([]);
 
+  // Earnings chart state
+  const [chartData, setChartData] = useState<any[]>([]);
+  const [chartYear, setChartYear] = useState<number>(new Date().getFullYear());
+  const [chartTimeframe, setChartTimeframe] = useState<'weekly' | 'monthly'>('monthly');
+  const [totalEarnings, setTotalEarnings] = useState<number>(0);
+  const [loadingChart, setLoadingChart] = useState(true);
+  const [chartYearDropdownOpen, setChartYearDropdownOpen] = useState(false);
+
+  const loadEarningsChart = async (year: number, timeframe: 'weekly' | 'monthly') => {
+    setLoadingChart(true);
+    try {
+      const res = await fetch(`/api/admin/earnings?year=${year}&timeframe=${timeframe}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          setChartData(data.chartData);
+          setTotalEarnings(data.totalEarnings);
+          const now = new Date();
+          if (timeframe === 'weekly') {
+            const dayIdx = (now.getDay() + 6) % 7;
+            setActiveBarIndex(dayIdx);
+          } else if (year === now.getFullYear()) {
+            setActiveBarIndex(now.getMonth());
+          } else {
+            const lastNonZero = [...data.chartData].reverse().findIndex((d: any) => d.rawEarnings > 0);
+            setActiveBarIndex(lastNonZero === -1 ? 11 : 11 - lastNonZero);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load earnings chart:', err);
+    } finally {
+      setLoadingChart(false);
+    }
+  };
+
+  useEffect(() => { loadEarningsChart(chartYear, chartTimeframe); }, [chartYear, chartTimeframe]);
+
   useEffect(() => {
     fetchDashboardData();
   }, []);
@@ -89,13 +127,9 @@ const AdminDashboard = () => {
 
       if (res.ok && data.success) {
         setStats(data.stats);
-        setMonthlyData(data.monthlyData || []);
         setCategories(data.categories || []);
         setTopCreators(data.topCreators || []);
         setAdminName(data.adminName || 'Admin');
-
-        const currentMonthIndex = new Date().getMonth();
-        setActiveBarIndex(currentMonthIndex < (data.monthlyData?.length || 0) ? currentMonthIndex : 0);
       } else {
         setError(data.error || 'Failed to load dashboard data');
       }
@@ -134,7 +168,7 @@ const AdminDashboard = () => {
   const startIndex = (creatorPage - 1) * creatorsPerPage;
   const paginatedCreators = topCreators.slice(startIndex, startIndex + creatorsPerPage);
 
-  const activeBar = activeBarIndex !== null && monthlyData[activeBarIndex] ? monthlyData[activeBarIndex] : null;
+  const activeBar = activeBarIndex !== null && chartData[activeBarIndex] ? chartData[activeBarIndex] : null;
 
   return (
     <motion.div
@@ -152,96 +186,74 @@ const AdminDashboard = () => {
         </h1>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left Column: Stats & Earnings Graph */}
-        <div className="space-y-8">
+        <div className="lg:col-span-7 space-y-8">
           {/* Overlapping Stats Cards Container */}
-          <div className="space-y-4">
-            {/* Row 1: Total Users & Total Creators */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-start w-full">
-              {/* Card 1: Total Users */}
-              <div className="relative w-full sm:w-[48%] aspect-[329/160] p-6 flex flex-col justify-between overflow-visible z-[1]">
-                <img
-                  src="/assets/admin-rc-1.svg"
-                  alt=""
-                  className="absolute inset-0 w-full h-full object-fill -z-10 pointer-events-none"
-                />
-                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[#0012FF] shadow-sm">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                    <circle cx="9" cy="7" r="4" />
-                  </svg>
-                </div>
-                <div className="mt-auto">
-                  <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Total Users</p>
-                  <p className="text-2xl font-black text-[#0012FF]">{stats.totalUsers.toLocaleString()}</p>
-                </div>
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 gap-4 sm:gap-6">
+            {/* Card 1 */}
+            <div className="bg-[#BAC4FF] rounded-xl p-5 sm:p-6 flex flex-col justify-between h-[170px] sm:h-[160px]">
+              <div className="w-10 h-10 shrink-0 self-start bg-white/70 backdrop-blur-sm rounded-lg flex items-center justify-center mb-4 sm:mb-6">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                </svg>
               </div>
-
-              {/* Card 2: Total Creators */}
-              <div className="relative w-full sm:w-[53%] aspect-[361/160] pl-10 pr-6 py-6 flex flex-col justify-between overflow-visible z-[2] mt-4 sm:mt-0 sm:-ml-[3%]">
-                <img
-                  src="/assets/admin-rc-2.svg"
-                  alt=""
-                  className="absolute inset-0 w-full h-full object-fill -z-10 pointer-events-none"
-                />
-
-                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[#10B981] shadow-sm">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                    <circle cx="8.5" cy="7" r="4" />
-                  </svg>
-                </div>
-
-                <div className="mt-auto">
-                  <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">
-                    Total Creators
-                  </p>
-                  <p className="text-2xl font-black text-[#10B981]">{stats.totalCreators.toLocaleString()}</p>
-                </div>
+              <div>
+                <p className="text-[11px] text-white/90 font-semibold mb-0.5">Total Users</p>
+                <p className="text-3xl font-black text-[#0012FF] leading-none mb-1">{stats.totalUsers.toLocaleString()}</p>
+                <p className="text-[10px] text-white flex items-center gap-1">
+                  {stats.userGrowthTrend.startsWith('-') ? '↓' : '↑'} {stats.userGrowthTrend} from last month
+                </p>
               </div>
             </div>
 
-            {/* Row 2: Total Revenue & Pending Payouts */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-start w-full">
-              {/* Card 3: Total Revenue */}
-              <div className="relative w-full sm:w-[48%] aspect-[329/160] p-6 flex flex-col justify-between overflow-visible z-[1]">
-                <img
-                  src="/assets/admin-rc-3.svg"
-                  alt=""
-                  className="absolute inset-0 w-full h-full object-fill -z-10 pointer-events-none"
-                />
-                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[#EF4444] shadow-sm">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                    <line x1="12" y1="1" x2="12" y2="23" />
-                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                  </svg>
-                </div>
-                <div className="mt-auto">
-                  <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Total Revenue</p>
-                  <p className="text-2xl font-black text-[#EF4444]">{stats.totalRevenue}</p>
-                  <p className="text-[10px] text-gray-400">Real-time revenue</p>
-                </div>
+            {/* Card 2 */}
+            <div className="bg-[#A3E5A5] rounded-xl p-5 sm:p-6 flex flex-col justify-between h-[170px] sm:h-[160px]">
+              <div className="w-10 h-10 shrink-0 self-start bg-white/70 backdrop-blur-sm rounded-lg flex items-center justify-center mb-4 sm:mb-6">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#12B76A" strokeWidth="2">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                  <circle cx="8.5" cy="7" r="4" />
+                </svg>
               </div>
+              <div>
+                <p className="text-[11px] text-white/90 font-semibold mb-0.5">Total Creators</p>
+                <p className="text-3xl font-black text-[#12B76A] leading-none mb-1">{stats.totalCreators.toLocaleString()}</p>
+                <p className="text-[10px] text-white flex items-center gap-1">
+                  {stats.creatorGrowthTrend.startsWith('-') ? '↓' : '↑'} {stats.creatorGrowthTrend} from last month
+                </p>
+              </div>
+            </div>
 
-              {/* Card 4: Pending Payouts */}
-              <div className="relative w-full sm:w-[53%] aspect-[361/160] pl-10 pr-6 py-6 flex flex-col justify-between overflow-visible z-[2] mt-4 sm:mt-0 sm:-ml-[3%]">
-                <img
-                  src="/assets/admin-rc-4.svg"
-                  alt=""
-                  className="absolute inset-0 w-full h-full object-fill -z-10 pointer-events-none"
-                />
-                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[#F59E0B] shadow-sm">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="10" />
-                    <polyline points="12 6 12 12 16 14" />
-                  </svg>
-                </div>
-                <div className="mt-auto">
-                  <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Pending Payouts</p>
-                  <p className="text-2xl font-black text-[#F59E0B]">{stats.pendingPayouts}</p>
-                  <p className="text-[10px] text-gray-400">Completed sessions</p>
-                </div>
+            {/* Card 3 */}
+            <div className="bg-[#FFADAD] rounded-xl p-5 sm:p-6 flex flex-col justify-between h-[170px] sm:h-[160px]">
+              <div className="w-10 h-10 shrink-0 self-start bg-white/70 backdrop-blur-sm rounded-lg flex items-center justify-center mb-4 sm:mb-6">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2">
+                  <line x1="12" y1="1" x2="12" y2="23" />
+                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-[11px] text-white/90 font-semibold mb-0.5">Total Revenue</p>
+                <p className="text-3xl font-black text-[#EF4444] leading-none mb-1">{stats.totalRevenue}</p>
+                <p className="text-[10px] text-white flex items-center gap-1">
+                  {activeBar?.trend?.startsWith('-') ? '↓' : '↑'} {activeBar?.trend || '+0%'} from last month
+                </p>
+              </div>
+            </div>
+
+            {/* Card 4 */}
+            <div className="bg-[#FFE199] rounded-xl p-5 sm:p-6 flex flex-col justify-between h-[170px] sm:h-[160px]">
+              <div className="w-10 h-10 shrink-0 self-start bg-white/70 backdrop-blur-sm rounded-lg flex items-center justify-center mb-4 sm:mb-6">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-[11px] text-white/90 font-semibold mb-0.5">Pending Payouts</p>
+                <p className="text-3xl font-black text-[#F59E0B] leading-none mb-1">{stats.pendingPayouts}</p>
               </div>
             </div>
           </div>
@@ -259,107 +271,151 @@ const AdminDashboard = () => {
                   <CardDescription className="text-gray-500 font-sans mt-1">
                     {activeBar
                       ? `${activeBar.month} · ${activeBar.earnings}`
-                      : `Full year ${new Date().getFullYear()}`}
+                      : `Full year ${chartYear}`}
                   </CardDescription>
                 </div>
 
-                {/* Active Month Earnings Pill */}
-                {activeBar && (
-                  <div className="bg-[#EEF2FF] rounded-2xl px-4 py-2 flex items-center gap-2 self-start sm:self-center">
-                    <div className="w-6 h-6 bg-[#0012FF] rounded-lg flex items-center justify-center">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
-                        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-[#0012FF]/70 font-semibold uppercase tracking-wider leading-none">Earnings</p>
-                      <p className="text-sm font-bold text-[#0012FF] font-sans leading-tight">{activeBar.earnings}</p>
-                    </div>
-                  </div>
-                )}
-              </CardHeader>
-
-              <CardContent className="px-2 sm:px-4 pb-2">
-                <ResponsiveContainer width="100%" height={288}>
-                  <BarChart
-                    data={monthlyData}
-                    margin={{ top: 16, right: 8, left: 0, bottom: 0 }}
-                    barCategoryGap="18%"
-                    onClick={(data) => {
-                      if (data?.activeTooltipIndex !== undefined) {
-                        setActiveBarIndex(Number(data.activeTooltipIndex));
-                      }
-                    }}
-                  >
-                    <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#F1F5F9" />
-                    <XAxis
-                      dataKey="month"
-                      tickLine={false}
-                      tickMargin={10}
-                      axisLine={false}
-                      tick={{ fill: '#94A3B8', fontSize: 12, fontWeight: 500 }}
-                    />
-                    <YAxis
-                      tickLine={false}
-                      axisLine={false}
-                      tickMargin={8}
-                      tick={{ fill: '#94A3B8', fontSize: 11 }}
-                      tickFormatter={(v) => (v === 0 ? '0' : `${(v / 1000).toFixed(0)}k`)}
-                      width={36}
-                    />
-                    <Tooltip
-                      cursor={false}
-                      content={({ active, payload, label }) => {
-                        if (!active || !payload?.length) return null;
-                        const d = payload[0].payload;
-                        return (
-                          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-3 flex items-center gap-3 min-w-[180px]">
-                            <div className="w-8 h-8 bg-[#EEF2FF] rounded-xl flex items-center justify-center flex-shrink-0">
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2.5">
-                                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                              </svg>
-                            </div>
-                            <div className="flex-1">
-                              <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">{label} Earnings</p>
-                              <p className="text-sm font-bold text-black font-sans">{d.earnings}</p>
-                            </div>
-                            {d.rawEarnings > 0 && (
-                              <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
-                                {d.trend}
-                              </span>
-                            )}
-                          </div>
-                        );
-                      }}
-                    />
-                    <Bar
-                      dataKey="rawEarnings"
-                      radius={[6, 6, 0, 0]}
-                      maxBarSize={52}
-                      cursor="pointer"
+                <div className="flex flex-wrap items-center gap-2 self-start sm:self-center">
+                  {/* Weekly / Monthly timeframe toggle */}
+                  <div className="flex items-center bg-gray-100 p-1 rounded-xl border border-gray-200/60">
+                    <button
+                      onClick={() => setChartTimeframe('weekly')}
+                      className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${chartTimeframe === 'weekly'
+                        ? 'bg-[#0012FF] text-white shadow-xs'
+                        : 'text-gray-500 hover:text-gray-800'
+                        }`}
                     >
-                      {monthlyData.map((entry, index) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={
-                            activeBarIndex === null
-                              ? '#0012FF'
-                              : index === activeBarIndex
-                              ? '#0012FF'
-                              : '#E5E7EB'
-                          }
-                          fillOpacity={
-                            activeBarIndex === null
-                              ? 1
-                              : index === activeBarIndex
-                              ? 1
-                              : 0.6
-                          }
-                        />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+                      Weekly
+                    </button>
+                    <button
+                      onClick={() => setChartTimeframe('monthly')}
+                      className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${chartTimeframe === 'monthly'
+                        ? 'bg-[#0012FF] text-white shadow-xs'
+                        : 'text-gray-500 hover:text-gray-800'
+                        }`}
+                    >
+                      Monthly
+                    </button>
+                  </div>
+
+                  {/* Year dropdown */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setChartYearDropdownOpen(!chartYearDropdownOpen)}
+                      className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
+                    >
+                      <span>{chartYear}</span>
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9" /></svg>
+                    </button>
+                    {chartYearDropdownOpen && (
+                      <div className="absolute right-0 top-[calc(100%+6px)] w-24 bg-white rounded-xl shadow-xl border border-gray-100 py-1.5 z-50">
+                        {[2024, 2025, 2026, 2027].map((y) => (
+                          <button
+                            key={y}
+                            onClick={() => { setChartYear(y); setChartYearDropdownOpen(false); }}
+                            className={`w-full text-left px-3 py-1.5 text-xs font-semibold hover:bg-[#0012FF]/5 transition-colors cursor-pointer ${chartYear === y ? 'text-[#0012FF] bg-[#0012FF]/5' : 'text-gray-600'}`}
+                          >
+                            {y}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Active Month Earnings Pill */}
+                  {activeBar && (
+                    <div className="bg-[#EEF2FF] rounded-2xl px-4 py-2 flex items-center gap-2 ml-auto">
+                      <div className="w-6 h-6 bg-[#0012FF] rounded-lg flex items-center justify-center">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
+                          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-[#0012FF]/70 font-semibold uppercase tracking-wider leading-none">Earnings</p>
+                        <p className="text-sm font-bold text-[#0012FF] font-sans leading-tight">{activeBar.earnings}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent className="px-0 pb-0">
+                {loadingChart ? (
+                  <div className="w-full h-48 flex items-center justify-center">
+                    <div className="w-6 h-6 border-2 border-[#0012FF] border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height={260}>
+                    <BarChart
+                      data={chartData}
+                      margin={{ top: 20, right: 12, left: -20, bottom: 0 }}
+                      onClick={(data) => {
+                        if (data?.activeTooltipIndex !== undefined) {
+                          setActiveBarIndex(Number(data.activeTooltipIndex));
+                        }
+                      }}
+                    >
+                      <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#F1F5F9" />
+                      <XAxis
+                        dataKey="month"
+                        tickLine={false}
+                        tickMargin={12}
+                        axisLine={false}
+                        tick={{ fill: '#64748B', fontSize: 12, fontWeight: 500 }}
+                      />
+                      <YAxis
+                        tickLine={false}
+                        axisLine={false}
+                        tickMargin={12}
+                        tick={{ fill: '#64748B', fontSize: 11, fontWeight: 600 }}
+                        tickFormatter={(v) => v === 0 ? '0' : `${(v / 1000).toFixed(0)}k`}
+                      />
+                      <Tooltip
+                        cursor={false}
+                        content={({ active, payload, label }) => {
+                          if (!active || !payload?.length) return null;
+                          const d = payload[0].payload;
+                          return (
+                            <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-3 text-xs z-50">
+                              <p className="font-bold text-gray-800 mb-1">{label}</p>
+                              <p className="text-[#0012FF] font-bold text-sm">{d.earnings}</p>
+                              {d.trend && (
+                                <span className="inline-block mt-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+                                  {d.trend}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        }}
+                      />
+                      <Bar
+                        dataKey="rawEarnings"
+                        radius={[6, 6, 0, 0]}
+                        maxBarSize={52}
+                        cursor="pointer"
+                      >
+                        {chartData.map((entry, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={
+                              activeBarIndex === null
+                                ? '#0012FF'
+                                : index === activeBarIndex
+                                ? '#0012FF'
+                                : '#E5E7EB'
+                            }
+                            fillOpacity={
+                              activeBarIndex === null
+                                ? 1
+                                : index === activeBarIndex
+                                ? 1
+                                : 0.6
+                            }
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
               </CardContent>
 
               <CardFooter className="flex-row items-center justify-between border-t border-gray-100 pt-4 px-6 text-sm">
@@ -374,7 +430,7 @@ const AdminDashboard = () => {
         </div>
 
         {/* Right Column: Top Categories & Top Creators */}
-        <div className="space-y-8">
+        <div className="lg:col-span-5 space-y-8">
           {/* Top Categories Card */}
           <div className="bg-white rounded-[32px] p-6 border border-gray-100 shadow-sm">
             <h2 className="text-xl font-bold text-black mb-6 font-sans">Top Categories</h2>
@@ -435,96 +491,78 @@ const AdminDashboard = () => {
             {topCreators.length === 0 ? (
               <p className="text-gray-400 text-xs py-4 text-center">No creators found yet.</p>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {paginatedCreators.map((creator, index) => {
                   const clipId = `cardClip-admin-${creator.id || index}`;
                   return (
-                    <div key={creator.id || index}>
-                      {/* Image with SVG clip notch */}
-                      <div className="relative w-full h-48 sm:h-52 md:h-56 overflow-hidden rounded-t-[18px]">
-                        <svg width="0" height="0" className="absolute">
-                          <defs>
-                            <clipPath id={clipId} clipPathUnits="objectBoundingBox">
-                              <path
-                                d="
-  M0 .06
-  C0 .025 .025 0 .06 0
-  H0.80
-  C0.855 0 .865 .01 .865 .03
-  V.10
-  C.865 .12 .885 .14 .91 .14
-  H.95
-  C.985 .14 1 .15 1 .175
-  V.91
-  C1 .975 .975 1 .94 1
-  H.06
-  C.025 1 0 .975 0 .94
-  V.06
-  C0 .025 0 .025 0 .06
-  Z
-  "
-                              />
-                            </clipPath>
-                          </defs>
-                        </svg>
-
+                    <div key={creator.id || index} className="group cursor-pointer">
+                      {/* Top Image Container */}
+                      <div className="relative w-full h-48 sm:h-52 md:h-56 overflow-hidden rounded-t-[18px] mb-3">
                         <img
                           src={creator.img}
                           alt={creator.name}
-                          className="w-full h-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.02]"
-                          style={{ clipPath: `url(#${clipId})` }}
+                          className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
                         />
 
-                        {/* Tag */}
+                        {/* Top Left Badge */}
                         <span
-                          className={`absolute top-2.5 left-3.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                          className={`absolute top-3 left-3 px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide ${
                             creator.tag === 'Verified'
-                              ? 'bg-white text-emerald-600'
-                              : 'bg-white text-blue-600'
+                              ? 'bg-[#E5F7ED] text-[#12B76A]'
+                              : 'bg-[#EBF0FF] text-[#0012FF]'
                           }`}
                         >
                           {creator.tag}
                         </span>
 
                         {/* Heart Icon */}
-                        <button className="absolute top-2 right-0.25 z-20 flex items-center justify-center hover:scale-110 transition-transform">
-                          <svg className="w-5 h-5 text-gray-300 hover:text-red-500 transition-colors" viewBox="0 0 24 24" fill="currentColor">
+                        <button className="absolute top-2.5 right-2.5 z-20 flex items-center justify-center hover:scale-110 transition-transform bg-transparent">
+                          <svg className="w-5 h-5 text-white drop-shadow-md hover:text-red-500 transition-colors" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
                           </svg>
                         </button>
                       </div>
 
                       {/* Content Details */}
-                      <div className="pt-3 pb-1 px-1">
-                        <div className="flex items-center justify-between">
-                          <h3 className="font-sans font-bold text-sm text-black flex items-center gap-1 truncate">
-                            {creator.name}
+                      <div className="px-0.5 space-y-1 text-left">
+                        {/* Title & Rating */}
+                        <div className="flex items-center justify-between gap-2">
+                          <h3 className="font-bold text-sm sm:text-base text-black font-sans flex items-center gap-1.5 leading-tight truncate">
+                            <span>{creator.name}</span>
                             {creator.isVerified && (
-                              <svg className="w-4 h-4 text-emerald-500 fill-current flex-shrink-0" viewBox="0 0 24 24">
-                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                              <svg className="w-4 h-4 text-[#12B76A] fill-current shrink-0" viewBox="0 0 24 24">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
                               </svg>
                             )}
                           </h3>
-                          <span className="flex items-center gap-0.5 text-xs font-bold text-black">
-                            <svg className="w-3.5 h-3.5 text-amber-500 fill-current" viewBox="0 0 20 20">
-                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                            </svg>
-                            {creator.rating}
+                          <span className="flex items-center gap-1 text-xs font-bold text-amber-500 shrink-0">
+                            ★ {creator.rating}
                           </span>
                         </div>
-                        <p className="text-[10px] text-gray-400 font-sans mt-0.5">{creator.handle}</p>
-                        <p className="text-[10px] text-gray-500 font-sans mt-2 line-clamp-2 leading-relaxed">
+
+                        {/* Handle */}
+                        <p className="text-[10px] sm:text-xs text-gray-400 font-medium font-sans">{creator.handle}</p>
+
+                        {/* Short Bio */}
+                        <p className="text-[10px] sm:text-xs text-gray-400 font-sans leading-relaxed line-clamp-2 pt-0.5">
                           {creator.description}
                         </p>
-                        <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-50">
-                          <span className="text-[10px] font-sans text-gray-400">
-                            Starting from <strong className="text-black font-extrabold">{creator.price}</strong>
-                          </span>
+
+                        {/* Price Row */}
+                        <div className="pt-2 flex items-center gap-1 text-[10px] sm:text-xs text-gray-400 font-sans">
+                          <span>Starting from</span>
+                          <strong className="text-black font-black text-xs sm:text-sm ml-1">
+                            {creator.price}
+                          </strong>
+                        </div>
+
+                        {/* Book Now Link */}
+                        <div>
                           <Link
                             href="/admin/creators"
-                            className="text-[10px] font-sans font-bold text-blue-600 underline hover:text-blue-800 transition-colors"
+                            className="text-[10px] sm:text-xs font-bold text-[#0012FF] underline hover:text-[#0010d0] font-sans pt-1 inline-block"
                           >
-                            View Profile
+                            Book Now
                           </Link>
                         </div>
                       </div>

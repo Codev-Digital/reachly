@@ -149,8 +149,8 @@ export default function CreatorSettings() {
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 50 * 1024 * 1024) {
-        alert('File size exceeds 5MB limit.');
+      if (file.size > 10 * 1024 * 1024) {
+        alert('File size exceeds 10MB limit.');
         return;
       }
       const reader = new FileReader();
@@ -610,12 +610,18 @@ export default function CreatorSettings() {
           </div>
         </div>
 
+<<<<<<< HEAD
         {/* Premium Top Navigation Segment Bar */}
         <div className="bg-white rounded-[20px] sm:rounded-full p-1.5 border border-gray-100 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] grid grid-cols-2 sm:flex sm:flex-wrap sm:justify-center gap-1.5 mb-8 max-w-3xl mx-auto">
+=======
+        {/* Refined Top Navigation Segment Bar - Centered with Icons and Headings */}
+        <div className="bg-white rounded-3xl p-1.5 border border-gray-200 shadow-sm flex flex-wrap items-center justify-center gap-1.5 mb-8 max-w-3xl mx-auto">
+>>>>>>> aefc1fd8337008bf5fcbbd22c11f6c90f980b114
           {tabs.map((tab) => (
             <button
               key={tab.name}
               onClick={() => setActiveTab(tab.name)}
+<<<<<<< HEAD
               className={`w-full sm:w-auto flex items-center gap-2 sm:gap-1.5 px-4 sm:px-5 py-2.5 rounded-[14px] sm:rounded-full text-xs sm:text-sm font-bold transition-all duration-300 sm:justify-center ${
                 tab.name === 'Reviews' ? 'col-span-2 sm:col-span-1 justify-center' : 'justify-start'
               } ${
@@ -626,6 +632,15 @@ export default function CreatorSettings() {
             >
               {React.cloneElement(tab.icon as React.ReactElement<{ className?: string }>, { className: "h-4 w-4 sm:h-5 sm:w-5" })}
               <span>{tab.name}</span>
+=======
+              className={`flex-1 basis-[130px] sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all cursor-pointer border ${activeTab === tab.name
+                ? 'bg-[#0012FF] border-[#0012FF] text-white shadow-md shadow-blue-100 scale-102'
+                : 'bg-white border-transparent text-gray-500 hover:text-black hover:bg-gray-50'
+                }`}
+            >
+              {tab.icon}
+              <span className="truncate">{tab.name}</span>
+>>>>>>> aefc1fd8337008bf5fcbbd22c11f6c90f980b114
             </button>
           ))}
         </div>
@@ -691,7 +706,7 @@ export default function CreatorSettings() {
               <div className="flex flex-col sm:flex-row sm:items-end gap-5 -mt-20 sm:-mt-24 px-4 mb-8 relative z-10">
                 <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-full overflow-hidden border-4 border-white bg-gray-200 shadow-xl flex-shrink-0">
                   <img
-                    src={profilePhoto || '/merium.png'}
+                    src={profilePhoto || '/avatar.png'}
                     alt="Profile"
                     className="w-full h-full object-cover"
                   />
@@ -704,7 +719,7 @@ export default function CreatorSettings() {
                   >
                     <span>Change Profile Photo</span>
                   </button>
-                  <p className="text-gray-400 text-xs font-medium">JPG or PNG, max 5MB</p>
+                  <p className="text-gray-400 text-xs font-medium">JPG or PNG, max 10MB</p>
                 </div>
               </div>
 

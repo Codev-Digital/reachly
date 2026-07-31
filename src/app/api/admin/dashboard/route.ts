@@ -30,19 +30,21 @@ export async function GET() {
 
     const userIdsSet = new Set(allUsers.map((u: any) => u._id.toString()));
     const profiles = rawProfiles.filter((p: any) => userIdsSet.has(p.userId.toString()));
-    const creatorUserIds = profiles.map((p: any) => p.userId.toString());
+    const creatorUserIds = new Set(profiles.map((p: any) => p.userId.toString()));
+
+    const normalUsers = allUsers.filter((u: any) => !creatorUserIds.has(u._id.toString()));
 
     const totalCreatorsCount = profiles.length;
-    const totalNormalUsersCount = allUsers.length - totalCreatorsCount;
-    const totalUsersCount = allUsers.length;
+    const totalNormalUsersCount = normalUsers.length;
+    const totalUsersCount = normalUsers.length; // Ensure dashboard "Total Users" matches only normal users
 
     // Calculate percentage change from last month for users & creators
     const now = new Date();
     const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
-    const usersThisMonth = allUsers.filter((u: any) => new Date(u.createdAt) >= startOfCurrentMonth).length;
-    const usersLastMonth = allUsers.filter(
+    const usersThisMonth = normalUsers.filter((u: any) => new Date(u.createdAt) >= startOfCurrentMonth).length;
+    const usersLastMonth = normalUsers.filter(
       (u: any) => new Date(u.createdAt) >= startOfLastMonth && new Date(u.createdAt) < startOfCurrentMonth
     ).length;
 
@@ -62,14 +64,25 @@ export async function GET() {
       ? (creatorsThisMonth > 0 ? '+100%' : '+0%') 
       : `${(((creatorsThisMonth - creatorsLastMonth) / creatorsLastMonth) * 100).toFixed(1)}%`;
 
-    // Revenue calculations (paid bookings)
+    // Helper to safely parse amounts
+    const parseAmount = (val: any) => {
+      if (typeof val === 'string') {
+        return parseFloat(val.replace(/[^0-9.]/g, '')) || 0;
+      }
+      if (typeof val === 'number') {
+        return val;
+      }
+      return 0;
+    };
+
+    // Revenue calculations (paid bookings or completed/confirmed)
     const totalRevenue = bookings
-      .filter((b: any) => b.paymentStatus === 'paid')
-      .reduce((sum: number, b: any) => sum + (b.finalPrice || b.price || 0), 0);
+      .filter((b: any) => b.paymentStatus === 'paid' || b.status === 'completed' || b.status === 'confirmed')
+      .reduce((sum: number, b: any) => sum + parseAmount(b.finalPrice || b.price), 0);
 
     const pendingPayouts = bookings
-      .filter((b: any) => b.status === 'completed' && b.paymentStatus === 'paid')
-      .reduce((sum: number, b: any) => sum + (b.finalPrice || b.price || 0), 0);
+      .filter((b: any) => !['completed', 'confirmed', 'refunded', 'cancelled'].includes(b.status))
+      .reduce((sum: number, b: any) => sum + parseAmount(b.finalPrice || b.price), 0);
 
     // Monthly Earnings Data (Jan - Dec of current year)
     const currentYear = now.getFullYear();
@@ -81,7 +94,7 @@ export async function GET() {
         return d.getFullYear() === currentYear && d.getMonth() === index && b.paymentStatus === 'paid';
       });
 
-      const earningsVal = monthBookings.reduce((sum: number, b: any) => sum + (b.finalPrice || b.price || 0), 0);
+      const earningsVal = monthBookings.reduce((sum: number, b: any) => sum + parseAmount(b.finalPrice || b.price), 0);
 
       // Compare with previous month for trend
       const prevMonthBookings = bookings.filter((b: any) => {
@@ -90,7 +103,7 @@ export async function GET() {
         const prevYear = index === 0 ? currentYear - 1 : currentYear;
         return d.getFullYear() === prevYear && d.getMonth() === prevMonthIndex && b.paymentStatus === 'paid';
       });
-      const prevEarningsVal = prevMonthBookings.reduce((sum: number, b: any) => sum + (b.finalPrice || b.price || 0), 0);
+      const prevEarningsVal = prevMonthBookings.reduce((sum: number, b: any) => sum + parseAmount(b.finalPrice || b.price), 0);
 
       let trendStr = '+0%';
       if (prevEarningsVal === 0 && earningsVal > 0) trendStr = '+100%';
@@ -119,7 +132,7 @@ export async function GET() {
 
     profiles.forEach((profile: any) => {
       const creatorBookings = bookings.filter((b: any) => b.creatorId.toString() === profile.userId.toString() && b.paymentStatus === 'paid');
-      const creatorRev = creatorBookings.reduce((sum: number, b: any) => sum + (b.finalPrice || b.price || 0), 0);
+      const creatorRev = creatorBookings.reduce((sum: number, b: any) => sum + parseAmount(b.finalPrice || b.price), 0);
 
       const niches = profile.niches && profile.niches.length > 0 ? profile.niches : ['General'];
       niches.forEach((niche: string) => {
@@ -154,7 +167,7 @@ export async function GET() {
         const completedCount = creatorBookings.filter((b: any) => b.status === 'completed').length;
         const totalRevenue = creatorBookings
           .filter((b: any) => b.paymentStatus === 'paid')
-          .reduce((sum: number, b: any) => sum + (b.finalPrice || b.price || 0), 0);
+          .reduce((sum: number, b: any) => sum + parseAmount(b.finalPrice || b.price), 0);
 
         return {
           id: p.userId.toString(),

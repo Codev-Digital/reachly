@@ -81,10 +81,10 @@ export default function UserReferrals() {
           </div>
 
           {/* Referral Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-row w-full gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 w-full gap-4 sm:gap-5 mb-8">
 
             {/* Card 1 - Total Referrals */}
-            <div className="flex-1 bg-[#B6C2FF] rounded-[24px] p-6 flex flex-col justify-between min-h-[160px] shadow-sm transition-transform hover:-translate-y-1">
+            <div className="w-full bg-[#B6C2FF] rounded-2xl p-6 flex flex-col justify-between min-h-[160px] shadow-sm transition-transform hover:-translate-y-1">
               <div className="w-10 h-10 bg-white/50 rounded-xl flex items-center justify-center mb-4">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2.5">
                   <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -95,12 +95,12 @@ export default function UserReferrals() {
               </div>
               <div>
                 <p className="text-[11px] font-sans mb-1 text-gray-700 font-bold uppercase tracking-wider">Total Referrals</p>
-                <p className="text-3xl font-black text-[#0012FF] font-sans">0</p>
+                <p className="text-3xl font-black text-[#0012FF] font-sans leading-none">0</p>
               </div>
             </div>
 
             {/* Card 2 - Successful Referrals */}
-            <div className="flex-1 bg-[#A3F0B5] rounded-[24px] p-6 flex flex-col justify-between min-h-[160px] shadow-sm transition-transform hover:-translate-y-1">
+            <div className="w-full bg-[#A3F0B5] rounded-2xl p-6 flex flex-col justify-between min-h-[160px] shadow-sm transition-transform hover:-translate-y-1">
               <div className="w-10 h-10 bg-white/50 rounded-xl flex items-center justify-center mb-4">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2.5">
                   <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
@@ -109,12 +109,12 @@ export default function UserReferrals() {
               </div>
               <div>
                 <p className="text-[11px] font-sans mb-1 text-gray-700 font-bold uppercase tracking-wider">Successful Referrals</p>
-                <p className="text-3xl font-black text-[#16A34A] font-sans">0</p>
+                <p className="text-3xl font-black text-[#16A34A] font-sans leading-none">0</p>
               </div>
             </div>
 
             {/* Card 3 - Total Rewards Earned */}
-            <div className="flex-1 bg-[#FFB5B5] rounded-[24px] p-6 flex flex-col justify-between min-h-[160px] shadow-sm transition-transform hover:-translate-y-1">
+            <div className="w-full bg-[#FFB5B5] rounded-2xl p-6 flex flex-col justify-between min-h-[160px] shadow-sm transition-transform hover:-translate-y-1">
               <div className="w-10 h-10 bg-white/50 rounded-xl flex items-center justify-center mb-4">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E11D48" strokeWidth="2.5">
                   <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
@@ -122,12 +122,12 @@ export default function UserReferrals() {
               </div>
               <div>
                 <p className="text-[11px] font-sans mb-1 text-gray-700 font-bold uppercase tracking-wider">Total Rewards Earned</p>
-                <p className="text-3xl font-black text-[#E11D48] font-sans">0 PKR</p>
+                <p className="text-3xl font-black text-[#E11D48] font-sans leading-none">0 PKR</p>
               </div>
             </div>
 
             {/* Card 4 - Pending Rewards */}
-            <div className="flex-1 bg-[#FFE5A3] rounded-[24px] p-6 flex flex-col justify-between min-h-[160px] shadow-sm transition-transform hover:-translate-y-1">
+            <div className="w-full bg-[#FFE5A3] rounded-2xl p-6 flex flex-col justify-between min-h-[160px] shadow-sm transition-transform hover:-translate-y-1">
               <div className="w-10 h-10 bg-white/50 rounded-xl flex items-center justify-center mb-4">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2.5">
                   <circle cx="12" cy="12" r="10" />
@@ -136,7 +136,7 @@ export default function UserReferrals() {
               </div>
               <div>
                 <p className="text-[11px] font-sans mb-1 text-gray-700 font-bold uppercase tracking-wider">Pending Rewards</p>
-                <p className="text-3xl font-black text-[#D97706] font-sans">0 PKR</p>
+                <p className="text-3xl font-black text-[#D97706] font-sans leading-none">0 PKR</p>
               </div>
             </div>
           </div>

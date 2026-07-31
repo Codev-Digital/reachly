@@ -124,7 +124,7 @@ export default function CreatorProfileCard({ creator }: CreatorProfileCardProps)
 
         {/* Profile Avatar overlapping bottom-left of cover photo */}
         <div className="-mt-14 ml-3 relative z-10 w-[115px] h-[115px] rounded-full border-4 border-white shadow-xl overflow-hidden bg-white">
-          <img src={creator?.profilePhoto || '/merium.png'} alt={creator?.displayName} className="w-full h-full object-cover" />
+          <img src={creator?.profilePhoto || '/avatar.png'} alt={creator?.displayName} className="w-full h-full object-cover" />
         </div>
 
         {/* Name & Handle */}
