@@ -458,23 +458,16 @@ export default function AdminEventsPage() {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="relative overflow-visible w-full max-w-lg flex flex-col items-center p-8 pt-12 pb-8 z-10 bg-transparent animate-fade-in"
+              className="relative w-full max-w-lg bg-white rounded-3xl shadow-xl flex flex-col items-center p-6 sm:p-8 z-10"
             >
-              {/* SVG Background */}
-              <img
-                src="/assets/cancel-card.svg"
-                alt=""
-                className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10"
-              />
-
               {/* Close Button */}
               <button
                 onClick={() => setShowAddModal(false)}
-                className="absolute -mt-20 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center border border-gray-100/50 text-gray-500 hover:bg-gray-50 transition-all z-20"
+                className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-all z-20 cursor-pointer"
               >
                 <svg
-                  width="14"
-                  height="14"
+                  width="18"
+                  height="18"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"

@@ -344,10 +344,10 @@ const AdminDashboard = () => {
                     <div className="w-6 h-6 border-2 border-[#0012FF] border-t-transparent rounded-full animate-spin" />
                   </div>
                 ) : (
-                  <ResponsiveContainer width="100%" height={260}>
+                  <ResponsiveContainer width="100%" height={220}>
                     <BarChart
                       data={chartData}
-                      margin={{ top: 20, right: 12, left: -20, bottom: 0 }}
+                      margin={{ top: 20, right: 10, left: -15, bottom: 0 }}
                       onClick={(data) => {
                         if (data?.activeTooltipIndex !== undefined) {
                           setActiveBarIndex(Number(data.activeTooltipIndex));
@@ -360,7 +360,9 @@ const AdminDashboard = () => {
                         tickLine={false}
                         tickMargin={12}
                         axisLine={false}
-                        tick={{ fill: '#64748B', fontSize: 12, fontWeight: 500 }}
+                        interval={0}
+                        padding={{ left: 10, right: 10 }}
+                        tick={{ fill: '#64748B', fontSize: 10, fontWeight: 500 }}
                       />
                       <YAxis
                         tickLine={false}
@@ -418,12 +420,12 @@ const AdminDashboard = () => {
                 )}
               </CardContent>
 
-              <CardFooter className="flex-row items-center justify-between border-t border-gray-100 pt-4 px-6 text-sm">
-                <div className="flex items-center gap-2 font-semibold text-black leading-none font-sans text-xs">
-                  <TrendingUp className="h-4 w-4 text-emerald-500" />
-                  <span>Total Revenue: <span className="text-[#0012FF]">{stats.totalRevenue}</span></span>
+              <CardFooter className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 border-t border-gray-100 pt-4 px-4 sm:px-6 text-sm">
+                <div className="flex items-center gap-2 font-semibold text-black leading-none font-sans text-xs sm:text-sm">
+                  <TrendingUp className="h-4 w-4 shrink-0 text-emerald-500" />
+                  <span className="truncate">Total Revenue: <span className="text-[#0012FF]">{stats.totalRevenue}</span></span>
                 </div>
-                <p className="text-[11px] text-gray-400 font-sans">Click any bar to see details</p>
+                <p className="text-[10px] sm:text-[11px] text-gray-400 font-sans mt-1 sm:mt-0">Click any bar to see details</p>
               </CardFooter>
             </Card>
           </motion.div>
