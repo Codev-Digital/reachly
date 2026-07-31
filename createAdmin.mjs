@@ -5,6 +5,7 @@ const MONGODB_URI = "mongodb://pyrohassan786_db_user:4YYYN5ARKCKqF5N3@ac-3wbnxkp
 
 mongoose.connect(MONGODB_URI);
 
+
 const UserSchema = new mongoose.Schema({
     name: String,
     email: String,
