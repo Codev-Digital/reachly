@@ -7,6 +7,7 @@ import SessionType from '@/models/SessionType';
 import { sendEmail, generateBookingConfirmationEmail } from '@/lib/utils';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { createMeetingRoom } from '@/lib/daily';
 
 // Helper to generate booking reference
 function generateBookingRef(): string {
@@ -88,6 +89,17 @@ export async function POST(request: NextRequest) {
         const [dateYear, dateMonth, dateDay] = date.split('-').map(Number);
         const scheduledDateUTC = new Date(Date.UTC(dateYear, dateMonth - 1, dateDay, 12, 0, 0));
 
+        // Generate Daily.co meeting room
+        let meetingUrl = '';
+        let meetingRoomName = '';
+        try {
+            const meetingDetails = await createMeetingRoom(bookingRef, scheduledDateUTC, sessionType.duration);
+            meetingUrl = meetingDetails.url;
+            meetingRoomName = meetingDetails.name;
+        } catch (err) {
+            console.error('Error generating meeting room:', err);
+        }
+
         const booking = new Booking({
             bookingRef,
             creatorId: creatorProfile.userId,
@@ -110,6 +122,8 @@ export async function POST(request: NextRequest) {
             promoApplied,
             discountAmount: originalPrice - finalPrice,
             finalPrice: finalPrice,
+            meetingUrl,
+            meetingRoomName,
         });
 
         await booking.save();
@@ -143,7 +157,7 @@ export async function POST(request: NextRequest) {
             userEmail: userDetails.email.toLowerCase(),
             whatsapp: userDetails.whatsapp,
             whatToDiscuss: userDetails.whatToDiscuss,
-            meetLink: 'https://meet.google.com/iqj-bsq-bze',
+            meetLink: meetingUrl,
         });
 
         await sendEmail(

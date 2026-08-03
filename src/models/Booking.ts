@@ -29,6 +29,9 @@ export interface IBooking extends Document {
 
     isRescheduled?: boolean;
 
+    meetingUrl?: string; // Daily.co room URL
+    meetingRoomName?: string; // Daily.co room name
+
     createdAt: Date;
     updatedAt: Date;
 }
@@ -104,6 +107,12 @@ const BookingSchema = new Schema<IBooking>(
         isRescheduled: {
             type: Boolean,
             default: false,
+        },
+        meetingUrl: {
+            type: String,
+        },
+        meetingRoomName: {
+            type: String,
         },
     },
     { timestamps: true }

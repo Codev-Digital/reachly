@@ -9,6 +9,7 @@ import CreatorDashboardNav from '@/components/CreatorDashboardNav';
 import LoadingAnimation from '@/components/LoadingAnimation';
 import { TrendingUp, BookOpen, Calendar, Eye, Users, Copy, Check, Bookmark, Target, Presentation } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Cell, Tooltip } from 'recharts';
+import DailyCall from '@/components/DailyCall';
 
 import {
   Card,
@@ -86,6 +87,10 @@ const CreatorDashboard = () => {
   // Success Modal States
   const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false);
   const [successModalType, setSuccessModalType] = useState<'cancelled' | 'rescheduled'>('cancelled');
+
+  // Meeting Modal States
+  const [meetingToJoin, setMeetingToJoin] = useState<{ url: string; ref: string } | null>(null);
+  const [activeCallUrl, setActiveCallUrl] = useState<string | null>(null);
 
   const handleCopyLink = () => {
     const linkStr = window.location.origin + `/creators/${username || displayName.toLowerCase().replace(/\s+/g, '-')}`;
@@ -449,19 +454,33 @@ const CreatorDashboard = () => {
             Cancelled
           </div>
         ) : (
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col gap-3">
             <button
-              onClick={() => handleRescheduleClick(booking)}
-              className="flex-1 py-2 sm:py-2.5 border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-full text-xs font-semibold text-center transition-all cursor-pointer"
+              onClick={() => {
+                if (booking.meetingUrl && booking.bookingRef) {
+                  setMeetingToJoin({ url: booking.meetingUrl, ref: booking.bookingRef });
+                } else {
+                  alert('Meeting link is not available yet.');
+                }
+              }}
+              className="w-full py-2.5 bg-[#0012FF] hover:bg-[#0012FF]/90 text-white rounded-full text-xs font-bold text-center transition-all cursor-pointer shadow-md shadow-[#0012FF]/20"
             >
-              Reschedule
+              Join Meeting
             </button>
-            <button
-              onClick={() => handleCancelClick(booking)}
-              className="flex-1 py-2 sm:py-2.5 bg-[#FFF0F0] border border-red-100 hover:bg-red-100 text-[#FF3B3B] rounded-full text-xs font-semibold text-center transition-all cursor-pointer"
-            >
-              Cancel Appointment
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => handleRescheduleClick(booking)}
+                className="flex-1 py-2 sm:py-2.5 border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-full text-xs font-semibold text-center transition-all cursor-pointer"
+              >
+                Reschedule
+              </button>
+              <button
+                onClick={() => handleCancelClick(booking)}
+                className="flex-1 py-2 sm:py-2.5 bg-[#FFF0F0] border border-red-100 hover:bg-red-100 text-[#FF3B3B] rounded-full text-xs font-semibold text-center transition-all cursor-pointer"
+              >
+                Cancel Appointment
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -1118,6 +1137,48 @@ const CreatorDashboard = () => {
             </button>
           </div>
         </div>
+      )}
+      {/* Meeting Details Modal */}
+      {meetingToJoin && !activeCallUrl && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+          <div className="relative bg-white rounded-[28px] shadow-2xl border border-gray-100 w-full max-w-md p-6 sm:p-8 flex flex-col items-center text-center overflow-hidden">
+            <button
+              onClick={() => setMeetingToJoin(null)}
+              className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 transition-colors p-1.5 rounded-full hover:bg-gray-100 cursor-pointer"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+            
+            <div className="w-24 h-24 mb-6">
+              <img src="/assets/meeting.png" alt="Meeting" className="w-full h-full object-contain" />
+            </div>
+            
+            <h3 className="text-2xl font-extrabold text-black mb-2 tracking-tight">Ready to join?</h3>
+            <p className="text-gray-500 text-sm mb-4">
+              Your meeting is ready. Make sure your camera and microphone are connected before joining.
+            </p>
+            
+            <div className="w-full bg-gray-50 border border-gray-100 rounded-xl p-3 mb-6">
+              <p className="text-xs text-gray-400 font-semibold mb-1 uppercase tracking-wider">Meeting Link</p>
+              <p className="text-sm font-medium text-gray-700 truncate">{window.location.origin}/meeting/{meetingToJoin.ref}</p>
+            </div>
+
+            <button
+              onClick={() => setActiveCallUrl(meetingToJoin.url)}
+              className="w-full bg-[#0012FF] text-white px-8 py-3.5 rounded-full font-bold text-sm hover:opacity-90 transition-all shadow-lg shadow-[#0012FF]/20 cursor-pointer"
+            >
+              Start Meeting
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Active Daily Call Modal */}
+      {activeCallUrl && (
+        <DailyCall url={activeCallUrl} onLeave={() => setActiveCallUrl(null)} />
       )}
     </div>
   );

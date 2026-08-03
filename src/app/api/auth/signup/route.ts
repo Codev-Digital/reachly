@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
-import { generateOTP, sendEmail } from '@/lib/utils';
+import { generateOTP, sendEmail, generateOTPEmail } from '@/lib/utils';
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,15 +35,7 @@ export async function POST(request: NextRequest) {
       await sendEmail(
         normalizedEmail,
         'Verify your Reachly account',
-        `
-          <div style="font-family:sans-serif;max-width:480px;margin:auto">
-            <h2 style="color:#C8A97E">Verify your email</h2>
-            <p>Hi ${existingUser.name},</p>
-            <p>Your verification code is:</p>
-            <div style="font-size:32px;font-weight:bold;letter-spacing:8px;color:#C8A97E;margin:20px 0">${otp}</div>
-            <p style="color:#888">This code expires in 10 minutes.</p>
-          </div>
-        `
+        generateOTPEmail(existingUser.name, otp, 'Verify your email')
       );
 
       return NextResponse.json({
@@ -69,15 +61,7 @@ export async function POST(request: NextRequest) {
     await sendEmail(
       normalizedEmail,
       'Verify your Reachly account',
-      `
-        <div style="font-family:sans-serif;max-width:480px;margin:auto">
-          <h2 style="color:#C8A97E">Welcome to Reachly!</h2>
-          <p>Hi ${name},</p>
-          <p>Your verification code is:</p>
-          <div style="font-size:32px;font-weight:bold;letter-spacing:8px;color:#C8A97E;margin:20px 0">${otp}</div>
-          <p style="color:#888">This code expires in 10 minutes.</p>
-        </div>
-      `
+      generateOTPEmail(name, otp, 'Welcome to Reachly!')
     );
 
     return NextResponse.json({

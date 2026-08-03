@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
-import { generateOTP, sendEmail } from '@/lib/utils';
+import { generateOTP, sendEmail, generateOTPEmail } from '@/lib/utils';
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,15 +30,7 @@ export async function POST(request: NextRequest) {
     await sendEmail(
       email,
       'Reset your Reachly password',
-      `
-        <div style="font-family:sans-serif;max-width:480px;margin:auto">
-          <h2 style="color:#C8A97E">Password Reset</h2>
-          <p>Hi ${user.name},</p>
-          <p>Your password reset code is:</p>
-          <div style="font-size:32px;font-weight:bold;letter-spacing:8px;color:#C8A97E;margin:20px 0">${otp}</div>
-          <p style="color:#888">This code expires in 10 minutes. If you didn't request this, ignore this email.</p>
-        </div>
-      `
+      generateOTPEmail(user.name || 'User', otp, 'Password Reset')
     );
 
     return NextResponse.json({

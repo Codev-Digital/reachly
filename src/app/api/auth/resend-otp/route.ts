@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
-import { generateOTP, sendEmail } from '@/lib/utils';
+import { generateOTP, sendEmail, generateOTPEmail } from '@/lib/utils';
 
 export async function POST(request: NextRequest) {
   try {
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     await sendEmail(
       email,
       'Verify your email',
-      `<p>Your new OTP for email verification is: <strong>${otp}</strong></p>`
+      generateOTPEmail(user.name || 'User', otp, 'Verify your email')
     );
 
     return NextResponse.json({

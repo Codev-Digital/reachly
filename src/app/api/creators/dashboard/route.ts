@@ -98,6 +98,8 @@ export async function GET(req: NextRequest) {
         amount: `${b.finalPrice} PKR`,
         status: b.status,
         scheduledDate: b.scheduledDate,
+        meetingUrl: b.meetingUrl,
+        bookingRef: b.bookingRef,
       };
     });
 

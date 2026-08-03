@@ -3,13 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "NODE_OPTIONS='--dns-result-order=ipv4first' next dev",
+    "dev": "cross-env NODE_OPTIONS='--dns-result-order=ipv4first' next dev",
     "build": "next build",
-    "start": "NODE_OPTIONS='--dns-result-order=ipv4first' next start",
+    "start": "cross-env NODE_OPTIONS='--dns-result-order=ipv4first' next start",
     "lint": "eslint",
     "approve-step7-creators": "node approveStep7Users.mjs"
   },
   "dependencies": {
+    "@daily-co/daily-js": "^0.91.0",
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.108.1",
     "bcryptjs": "^3.0.3",
@@ -35,6 +36,7 @@
     "@types/nodemailer": "^8.0.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "cross-env": "^10.1.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
     "tailwindcss": "^4",

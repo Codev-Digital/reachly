@@ -138,6 +138,7 @@ export async function GET(request: NextRequest) {
                     bookedOn: bookedOn,
                     scheduledDate: booking.scheduledDate,
                     isRescheduled: booking.isRescheduled || false,
+                    meetingUrl: booking.meetingUrl,
                 };
             })
         );
