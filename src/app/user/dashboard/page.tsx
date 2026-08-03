@@ -892,16 +892,16 @@ export default function UserDashboard() {
                 <line x1="6" y1="6" x2="18" y2="18" />
               </svg>
             </button>
-            
-            <div className="w-24 h-24 mb-6">
+
+            <div className="w-34 h-34 mb-6">
               <img src="/assets/meeting.png" alt="Meeting" className="w-full h-full object-contain" />
             </div>
-            
+
             <h3 className="text-2xl font-extrabold text-black mb-2 tracking-tight">Ready to join?</h3>
             <p className="text-gray-500 text-sm mb-4">
               Your meeting is ready. Make sure your camera and microphone are connected before joining.
             </p>
-            
+
             <div className="w-full bg-gray-50 border border-gray-100 rounded-xl p-3 mb-6">
               <p className="text-xs text-gray-400 font-semibold mb-1 uppercase tracking-wider">Meeting Link</p>
               <p className="text-sm font-medium text-gray-700 truncate">{window.location.origin}/meeting/{meetingToJoin.ref}</p>

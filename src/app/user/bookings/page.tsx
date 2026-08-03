@@ -301,195 +301,195 @@ export default function UserBookingsPage() {
               </h1>
             </FadeUp>
 
-        {/* Guest banner — shown when viewing without login */}
-        {isGuest && (
-          <div className="mb-6 flex items-center justify-between gap-4 bg-[#EEF2FF] border border-[#0012FF]/20 rounded-2xl px-5 py-3.5 shadow-2xs">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-[#0012FF]/10 flex items-center justify-center shrink-0">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="12" y1="8" x2="12" y2="12" />
-                  <line x1="12" y1="16" x2="12.01" y2="16" />
-                </svg>
-              </div>
-              <p className="text-xs font-semibold text-[#0012FF]">
-                You&apos;re viewing as a guest. <span className="text-gray-600 font-normal">Log in to manage all your bookings and access your dashboard.</span>
-              </p>
-            </div>
-            <a
-              href="/login"
-              className="shrink-0 bg-[#0012FF] text-white text-xs font-bold px-4 py-2 rounded-full hover:bg-[#0010d0] transition-colors"
-            >
-              Log In
-            </a>
-          </div>
-        )}
-
-        {/* Tabs and Search Bar Row */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between mb-8 gap-4">
-          {/* Pill Tabs */}
-          <div className="flex items-center gap-3">
-            {(['Upcoming', 'Past', 'Cancelled'] as const).map((tab) => {
-              const count = tab === 'Upcoming' ? countUpcoming : tab === 'Past' ? countPast : countCancelled;
-              const isActive = activeTab === tab;
-              return (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer ${isActive
-                    ? 'bg-[#0012FF] text-white shadow-sm'
-                    : 'bg-white border border-gray-200/80 text-gray-600 hover:bg-gray-50 shadow-2xs'
-                    }`}
-                >
-                  {tab} ({count})
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Search Input Field */}
-          <div className="relative w-full sm:w-72">
-            <svg
-              className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.2"
-              viewBox="0 0 24 24"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-            <input
-              type="text"
-              placeholder="Search bookings"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2.5 bg-white border border-gray-200/80 rounded-2xl text-xs font-medium text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#0012FF] transition-all shadow-2xs"
-            />
-          </div>
-        </div>
-
-        {/* Bookings Grid (3 Columns) */}
-        {filteredBookings.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredBookings.map((booking, index) => (
-              <motion.div
-                key={booking.id}
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.05 + index * 0.04 }}
-                className="w-full bg-white border border-gray-200/80 rounded-[20px] p-5 flex flex-col justify-between shadow-2xs hover:shadow-xs transition-all relative group"
-              >
-                <div>
-                  {/* Header: Avatar, Name, Verified Badge, Accepted Status Badge, Amount */}
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-11 h-11 rounded-full overflow-hidden shrink-0 border border-gray-100">
-                        <img
-                          src={booking.avatar || '/avatar.png'}
-                          alt={booking.creator}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <h3 className="font-extrabold text-base text-black font-sans leading-tight">{booking.creator}</h3>
-                          <svg className="w-4 h-4 text-[#12B76A] fill-current shrink-0" viewBox="0 0 24 24">
-                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
-                          </svg>
-                          <span className="bg-[#E6F9EE] text-[#12B76A] font-bold text-[11px] px-2.5 py-0.5 rounded-full shadow-2xs">
-                            Accepted
-                          </span>
-                        </div>
-                        <p className="text-xs text-gray-400 font-medium font-sans mt-0.5">{booking.username}</p>
-                      </div>
-                    </div>
-                    <span className="font-extrabold text-lg sm:text-xl text-[#0012FF] font-sans tracking-tight shrink-0 ml-2">
-                      {booking.price}
-                    </span>
+            {/* Guest banner — shown when viewing without login */}
+            {isGuest && (
+              <div className="mb-6 flex items-center justify-between gap-4 bg-[#EEF2FF] border border-[#0012FF]/20 rounded-2xl px-5 py-3.5 shadow-2xs">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-[#0012FF]/10 flex items-center justify-center shrink-0">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="12" y1="8" x2="12" y2="12" />
+                      <line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
                   </div>
-
-                  {/* Time & Location Row */}
-                  <div className="space-y-1.5 text-xs text-gray-500 font-sans font-medium my-3">
-                    <div className="flex items-center gap-2">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
-                        <circle cx="12" cy="12" r="10" />
-                        <polyline points="12 6 12 12 16 14" />
-                      </svg>
-                      <span>{booking.date} at {booking.time}</span>
-                      {booking.isRescheduled && (
-                        <span className="text-[10px] font-bold text-[#0012FF] bg-[#EEF2FF] px-2 py-0.5 rounded-full shrink-0 leading-none">
-                          Rescheduled
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
-                        {booking.location.toLowerCase().includes('online') ? (
-                          <>
-                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
-                            <line x1="8" y1="21" x2="16" y2="21" />
-                            <line x1="12" y1="17" x2="12" y2="21" />
-                          </>
-                        ) : (
-                          <>
-                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                            <circle cx="12" cy="10" r="3" />
-                          </>
-                        )}
-                      </svg>
-                      <span>{booking.location}</span>
-                    </div>
-                  </div>
-
-                  {/* Bio Note Description */}
-                  <p className="text-xs text-gray-400 font-sans leading-relaxed line-clamp-2">
-                    {booking.bio}
-                    <span className="text-[#0012FF] font-bold text-xs ml-1 hover:underline cursor-pointer">Read more</span>
+                  <p className="text-xs font-semibold text-[#0012FF]">
+                    You&apos;re viewing as a guest. <span className="text-gray-600 font-normal">Log in to manage all your bookings and access your dashboard.</span>
                   </p>
                 </div>
+                <a
+                  href="/login"
+                  className="shrink-0 bg-[#0012FF] text-white text-xs font-bold px-4 py-2 rounded-full hover:bg-[#0010d0] transition-colors"
+                >
+                  Log In
+                </a>
+              </div>
+            )}
 
-                {/* Action Buttons (for Upcoming) */}
-                {activeTab === 'Upcoming' && (
-                  <div className="mt-4 pt-3 border-t border-gray-100 flex flex-col gap-3">
+            {/* Tabs and Search Bar Row */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between mb-8 gap-4">
+              {/* Pill Tabs */}
+              <div className="flex items-center gap-3">
+                {(['Upcoming', 'Past', 'Cancelled'] as const).map((tab) => {
+                  const count = tab === 'Upcoming' ? countUpcoming : tab === 'Past' ? countPast : countCancelled;
+                  const isActive = activeTab === tab;
+                  return (
                     <button
-                      onClick={() => {
-                        if (booking.meetingUrl && booking.bookingRef) {
-                          setMeetingToJoin({ url: booking.meetingUrl, ref: booking.bookingRef });
-                        } else {
-                          alert('Meeting link is not available yet.');
-                        }
-                      }}
-                      className="w-full py-2.5 bg-[#0012FF] hover:bg-[#0012FF]/90 text-white rounded-full text-xs font-bold text-center transition-all cursor-pointer shadow-md shadow-[#0012FF]/20"
+                      key={tab}
+                      onClick={() => setActiveTab(tab)}
+                      className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer ${isActive
+                        ? 'bg-[#0012FF] text-white shadow-sm'
+                        : 'bg-white border border-gray-200/80 text-gray-600 hover:bg-gray-50 shadow-2xs'
+                        }`}
                     >
-                      Join Meeting
+                      {tab} ({count})
                     </button>
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => handleRescheduleClick(booking)}
-                        className="flex-1 py-2 border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-full text-xs font-semibold text-center transition-all cursor-pointer"
-                      >
-                        Reschedule
-                      </button>
-                      <button
-                        onClick={() => handleCancelClick(booking.id)}
-                        className="flex-1 py-2 bg-[#FFF0F0] border border-red-100 hover:bg-red-100 text-[#FF3B3B] rounded-full text-xs font-semibold text-center transition-all cursor-pointer"
-                      >
-                        Cancel Appointment
-                      </button>
+                  );
+                })}
+              </div>
+
+              {/* Search Input Field */}
+              <div className="relative w-full sm:w-72">
+                <svg
+                  className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  viewBox="0 0 24 24"
+                >
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Search bookings"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2.5 bg-white border border-gray-200/80 rounded-2xl text-xs font-medium text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#0012FF] transition-all shadow-2xs"
+                />
+              </div>
+            </div>
+
+            {/* Bookings Grid (3 Columns) */}
+            {filteredBookings.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredBookings.map((booking, index) => (
+                  <motion.div
+                    key={booking.id}
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.05 + index * 0.04 }}
+                    className="w-full bg-white border border-gray-200/80 rounded-[20px] p-5 flex flex-col justify-between shadow-2xs hover:shadow-xs transition-all relative group"
+                  >
+                    <div>
+                      {/* Header: Avatar, Name, Verified Badge, Accepted Status Badge, Amount */}
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-11 h-11 rounded-full overflow-hidden shrink-0 border border-gray-100">
+                            <img
+                              src={booking.avatar || '/avatar.png'}
+                              alt={booking.creator}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <h3 className="font-extrabold text-base text-black font-sans leading-tight">{booking.creator}</h3>
+                              <svg className="w-4 h-4 text-[#12B76A] fill-current shrink-0" viewBox="0 0 24 24">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                              </svg>
+                              <span className="bg-[#E6F9EE] text-[#12B76A] font-bold text-[11px] px-2.5 py-0.5 rounded-full shadow-2xs">
+                                Accepted
+                              </span>
+                            </div>
+                            <p className="text-xs text-gray-400 font-medium font-sans mt-0.5">{booking.username}</p>
+                          </div>
+                        </div>
+                        <span className="font-extrabold text-lg sm:text-xl text-[#0012FF] font-sans tracking-tight shrink-0 ml-2">
+                          {booking.price}
+                        </span>
+                      </div>
+
+                      {/* Time & Location Row */}
+                      <div className="space-y-1.5 text-xs text-gray-500 font-sans font-medium my-3">
+                        <div className="flex items-center gap-2">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                            <circle cx="12" cy="12" r="10" />
+                            <polyline points="12 6 12 12 16 14" />
+                          </svg>
+                          <span>{booking.date} at {booking.time}</span>
+                          {booking.isRescheduled && (
+                            <span className="text-[10px] font-bold text-[#0012FF] bg-[#EEF2FF] px-2 py-0.5 rounded-full shrink-0 leading-none">
+                              Rescheduled
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                            {booking.location.toLowerCase().includes('online') ? (
+                              <>
+                                <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+                                <line x1="8" y1="21" x2="16" y2="21" />
+                                <line x1="12" y1="17" x2="12" y2="21" />
+                              </>
+                            ) : (
+                              <>
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                                <circle cx="12" cy="10" r="3" />
+                              </>
+                            )}
+                          </svg>
+                          <span>{booking.location}</span>
+                        </div>
+                      </div>
+
+                      {/* Bio Note Description */}
+                      <p className="text-xs text-gray-400 font-sans leading-relaxed line-clamp-2">
+                        {booking.bio}
+                        <span className="text-[#0012FF] font-bold text-xs ml-1 hover:underline cursor-pointer">Read more</span>
+                      </p>
                     </div>
-                  </div>
-                )}
-              </motion.div>
-            ))}
-          </div>
-        ) : (
-          <div className="bg-white rounded-3xl border border-gray-200/80 p-12 text-center text-gray-500 text-sm font-medium shadow-2xs">
-            No {activeTab.toLowerCase()} bookings found.
-          </div>
+
+                    {/* Action Buttons (for Upcoming) */}
+                    {activeTab === 'Upcoming' && (
+                      <div className="mt-4 pt-3 border-t border-gray-100 flex flex-col gap-3">
+                        <button
+                          onClick={() => {
+                            if (booking.meetingUrl && booking.bookingRef) {
+                              setMeetingToJoin({ url: booking.meetingUrl, ref: booking.bookingRef });
+                            } else {
+                              alert('Meeting link is not available yet.');
+                            }
+                          }}
+                          className="w-full py-2.5 bg-[#0012FF] hover:bg-[#0012FF]/90 text-white rounded-full text-xs font-bold text-center transition-all cursor-pointer shadow-md shadow-[#0012FF]/20"
+                        >
+                          Join Meeting
+                        </button>
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() => handleRescheduleClick(booking)}
+                            className="flex-1 py-2 border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-full text-xs font-semibold text-center transition-all cursor-pointer"
+                          >
+                            Reschedule
+                          </button>
+                          <button
+                            onClick={() => handleCancelClick(booking.id)}
+                            className="flex-1 py-2 bg-[#FFF0F0] border border-red-100 hover:bg-red-100 text-[#FF3B3B] rounded-full text-xs font-semibold text-center transition-all cursor-pointer"
+                          >
+                            Cancel Appointment
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-white rounded-3xl border border-gray-200/80 p-12 text-center text-gray-500 text-sm font-medium shadow-2xs">
+                No {activeTab.toLowerCase()} bookings found.
+              </div>
+            )}
+          </>
         )}
-      </>
-      )}
       </main>
 
       {/* Reschedule Appointment Modal */}
@@ -736,16 +736,16 @@ export default function UserBookingsPage() {
                 <line x1="6" y1="6" x2="18" y2="18" />
               </svg>
             </button>
-            
-            <div className="w-24 h-24 mb-6">
+
+            <div className="w-34 h-34 mb-6">
               <img src="/assets/meeting.png" alt="Meeting" className="w-full h-full object-contain" />
             </div>
-            
+
             <h3 className="text-2xl font-extrabold text-black mb-2 tracking-tight">Ready to join?</h3>
             <p className="text-gray-500 text-sm mb-4">
               Your meeting is ready. Make sure your camera and microphone are connected before joining.
             </p>
-            
+
             <div className="w-full bg-gray-50 border border-gray-100 rounded-xl p-3 mb-6">
               <p className="text-xs text-gray-400 font-semibold mb-1 uppercase tracking-wider">Meeting Link</p>
               <p className="text-sm font-medium text-gray-700 truncate">{window.location.origin}/meeting/{meetingToJoin.ref}</p>
