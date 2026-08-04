@@ -6,9 +6,11 @@ import { CreatorInfo } from '@/app/creators/[username]/book-session/layout';
 
 interface CreatorProfileCardProps {
   creator: CreatorInfo | null;
+  mobileMode?: 'full' | 'compact';
+  onMobileBookClick?: () => void;
 }
 
-export default function CreatorProfileCard({ creator }: CreatorProfileCardProps) {
+export default function CreatorProfileCard({ creator, mobileMode = 'compact', onMobileBookClick }: CreatorProfileCardProps) {
   const [isSaved, setIsSaved] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -87,7 +89,7 @@ export default function CreatorProfileCard({ creator }: CreatorProfileCardProps)
     <>
       <div className="w-full max-w-[450px] rounded-[32px] border border-gray-200/80 bg-white p-3 sm:p-3 shadow-sm sticky top-[96px] isolate">
         {/* Cover Photo Container (Clean - No Text Overlay) */}
-        <div className="relative h-[140px] w-full rounded-[15px] overflow-hidden bg-gray-100">
+        <div className={`relative w-full rounded-[15px] overflow-hidden bg-gray-100 ${mobileMode === 'compact' ? 'h-[90px] lg:h-[140px]' : 'h-[140px]'}`}>
           {creator?.coverPhoto ? (
             <img src={creator.coverPhoto} alt="cover" className="w-full h-full object-cover" />
           ) : (
@@ -123,12 +125,12 @@ export default function CreatorProfileCard({ creator }: CreatorProfileCardProps)
         </div>
 
         {/* Profile Avatar overlapping bottom-left of cover photo */}
-        <div className="-mt-14 ml-3 relative z-10 w-[115px] h-[115px] rounded-full border-4 border-white shadow-xl overflow-hidden bg-white">
+        <div className={`relative z-10 rounded-full border-4 border-white shadow-xl overflow-hidden bg-white ml-3 ${mobileMode === 'compact' ? '-mt-10 w-[80px] h-[80px] lg:-mt-14 lg:w-[115px] lg:h-[115px]' : '-mt-14 w-[115px] h-[115px]'}`}>
           <img src={creator?.profilePhoto || '/avatar.png'} alt={creator?.displayName} className="w-full h-full object-cover" />
         </div>
 
         {/* Name & Handle */}
-        <div className="mt-3 px-2">
+        <div className={`px-2 ${mobileMode === 'compact' ? 'mt-1.5 lg:mt-3' : 'mt-3'}`}>
           <h3 className="font-extrabold text-2xl text-black font-sans leading-tight">
             {creator?.displayName || 'Sophia Reed'}
           </h3>
@@ -138,7 +140,7 @@ export default function CreatorProfileCard({ creator }: CreatorProfileCardProps)
         </div>
 
         {/* Location & Languages Row */}
-        <div className="flex items-center justify-center gap-5 mt-5 text-sm font-medium text-gray-500 font-sans">
+        <div className={`flex items-center justify-center gap-5 text-sm font-medium text-gray-500 font-sans ${mobileMode === 'compact' ? 'mt-3 lg:mt-5' : 'mt-5'}`}>
           <span className="flex items-center gap-1.5">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
@@ -158,37 +160,47 @@ export default function CreatorProfileCard({ creator }: CreatorProfileCardProps)
         </div>
 
         {/* 3 Stats Columns */}
-        <div className="grid grid-cols-3 gap-2 mt-6 py-4 border-y border-gray-100 text-center">
+        <div className={`grid grid-cols-3 gap-2 border-y border-gray-100 text-center ${mobileMode === 'compact' ? 'mt-4 py-2.5 lg:mt-6 lg:py-4' : 'mt-6 py-4'}`}>
           <div className="flex flex-col items-center justify-center">
-            <span className="font-black text-2xl text-black font-sans leading-tight">
+            <span className={`font-black text-black font-sans leading-tight ${mobileMode === 'compact' ? 'text-xl lg:text-2xl' : 'text-2xl'}`}>
               {formatNumber(creator?.stats?.sessionsCompleted ?? 12000)}
             </span>
-            <span className="text-xs text-gray-400 font-medium font-sans leading-snug mt-1">
+            <span className={`text-xs text-gray-400 font-medium font-sans leading-snug ${mobileMode === 'compact' ? 'mt-0.5 lg:mt-1' : 'mt-1'}`}>
               Sessions completed
             </span>
           </div>
 
           <div className="flex flex-col items-center justify-center border-x border-gray-100 px-1">
-            <span className="font-black text-2xl text-black font-sans leading-tight">
+            <span className={`font-black text-black font-sans leading-tight ${mobileMode === 'compact' ? 'text-xl lg:text-2xl' : 'text-2xl'}`}>
               {formatNumber(creator?.stats?.happyCustomers ?? 50000)}
             </span>
-            <span className="text-xs text-gray-400 font-medium font-sans leading-snug mt-1">
+            <span className={`text-xs text-gray-400 font-medium font-sans leading-snug ${mobileMode === 'compact' ? 'mt-0.5 lg:mt-1' : 'mt-1'}`}>
               Happy Users
             </span>
           </div>
 
           <div className="flex flex-col items-center justify-center">
-            <span className="font-black text-2xl text-black font-sans leading-tight">
+            <span className={`font-black text-black font-sans leading-tight ${mobileMode === 'compact' ? 'text-xl lg:text-2xl' : 'text-2xl'}`}>
               {creator?.stats?.totalCategories ?? 8}
             </span>
-            <span className="text-xs text-gray-400 font-medium font-sans leading-snug mt-1">
+            <span className={`text-xs text-gray-400 font-medium font-sans leading-snug ${mobileMode === 'compact' ? 'mt-0.5 lg:mt-1' : 'mt-1'}`}>
               Total Categories
             </span>
           </div>
         </div>
 
+        {/* Book a Session Button (Mobile Only, Full Mode Only) */}
+        <div className={`mt-6 px-1 ${mobileMode === 'full' ? 'block lg:hidden' : 'hidden'}`}>
+          <button
+            onClick={onMobileBookClick}
+            className="w-full py-3.5 bg-[#0012FF] text-white rounded-full font-bold text-sm shadow-md active:scale-95 transition-all"
+          >
+            Book a Session
+          </button>
+        </div>
+
         {/* About Section */}
-        <div className="mt-5 px-1">
+        <div className={`mt-5 px-1 ${mobileMode === 'compact' ? 'hidden lg:block' : 'block'}`}>
           <h4 className="font-bold text-base text-black font-sans mb-1.5">About</h4>
           <p className={`text-xs sm:text-sm text-gray-400 font-sans leading-relaxed ${isBioExpanded ? '' : 'line-clamp-3'}`}>
             {creator?.shortBio || 'Ayesha Khan is one of Pakistan’s leading fashion and lifestyle content creators. With over 500K followers across Instagram and TikTok...'}
@@ -203,7 +215,7 @@ export default function CreatorProfileCard({ creator }: CreatorProfileCardProps)
 
         {/* Niche Tag Badges */}
         {creator?.niches && creator.niches.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-4 px-1">
+          <div className={`flex flex-wrap gap-2 px-1 ${mobileMode === 'compact' ? 'mt-2 lg:mt-4' : 'mt-4'}`}>
             {creator.niches.map((tag, idx) => (
               <span key={tag} className={`${tagColors[idx % tagColors.length]} text-xs font-semibold px-3.5 py-1.5 rounded-full`}>
                 {tag}
@@ -213,7 +225,7 @@ export default function CreatorProfileCard({ creator }: CreatorProfileCardProps)
         )}
 
         {/* Social Media Icons */}
-        <div className="flex items-center gap-2.5 mt-6 px-1">
+        <div className={`items-center gap-2.5 mt-6 px-1 ${mobileMode === 'compact' ? 'hidden lg:flex' : 'flex'}`}>
           {[
             { href: creator?.socialLinks?.facebook, icon: <path d="M9 8h-3v4h3v12h5v-12h3.642l.358-4h-4v-1.667c0-.955.192-1.333 1.115-1.333h2.885v-5h-3.808c-3.596 0-5.192 1.583-5.192 4.615v3.385z" /> },
             { href: creator?.socialLinks?.instagram, icon: <><rect x="2" y="2" width="20" height="20" rx="5" ry="5" fill="none" stroke="currentColor" strokeWidth="2.5" /><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" fill="none" stroke="currentColor" strokeWidth="2.5" /><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" stroke="currentColor" strokeWidth="2.5" /></> },

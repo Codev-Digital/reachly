@@ -107,9 +107,7 @@ export default function BookSessionStep2() {
     setFetchedDate(null);
   };
 
-  const handleSelectSession = (session: SessionType) => {
-    setBooking(b => ({ ...b, selectedSession: session }));
-  };
+
 
   const handleContinue = () => {
     if (booking.selectedDate && booking.selectedTime) {
@@ -131,13 +129,6 @@ export default function BookSessionStep2() {
 
   const creator = booking.creator;
 
-  // Svg cards templates rotated
-  const cardColors = ['#B7C0FF', '#FFEDB5', '#FFB3B3'];
-  const cardThemes = [
-    { text: 'text-[#0012FF]', stroke: 'stroke-[#0012FF]', bg: 'bg-[#BAC5FF]', title: 'text-white', desc: 'text-white/90', feature: 'text-white/95', divider: 'bg-white/35' }, // Card 1: Blue
-    { text: 'text-[#B86B00]', stroke: 'stroke-[#B86B00]', bg: 'bg-[#FFEDB5]', title: 'text-[#4A3B18]', desc: 'text-[#5C4D26]', feature: 'text-[#4A3B18]', divider: 'bg-[#4A3B18]/20' }, // Card 2: Yellow (Clear dark grayish text)
-    { text: 'text-[#E32A2A]', stroke: 'stroke-[#E32A2A]', bg: 'bg-[#FFB3B3]', title: 'text-white', desc: 'text-white/90', feature: 'text-white/95', divider: 'bg-white/35' }, // Card 3: Pink
-  ];
 
   const scrollDays = (direction: 'left' | 'right') => {
     if (scrollRef.current) {
@@ -154,21 +145,7 @@ export default function BookSessionStep2() {
       d1.getFullYear() === d2.getFullYear();
   };
 
-  const [sessions, setSessions] = useState<SessionType[]>([]);
-  useEffect(() => {
-    async function fetchCreatorSessions() {
-      try {
-        const res = await fetch(`/api/creators/${params.username}`);
-        const data = await res.json();
-        if (data.success) {
-          setSessions(data.sessions || []);
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    }
-    fetchCreatorSessions();
-  }, [params.username]);
+
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-20 pt-2">
@@ -178,87 +155,26 @@ export default function BookSessionStep2() {
       <div className="grid grid-cols-1 lg:grid-cols-[410px_1fr] gap-8 items-start justify-items-center">
         <CreatorProfileCard creator={creator} />
 
-        {/* ============ RIGHT COLUMN: SELECT SESSIONS AND PICK DATE/TIME ============ */}
-        <div className="flex flex-col w-full">
-          {/* Sessions Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 justify-items-center mb-6">
-            {sessions.map((session, index) => {
-              const themeIdx = index % 3;
-              const theme = cardThemes[themeIdx];
-              const isSelected = booking.selectedSession?.id === session.id;
-
-              return (
-                <div
-                  key={session.id}
-                  onClick={() => handleSelectSession(session)}
-                  className={`w-full max-w-[285px] min-h-[380px] sm:min-h-[400px] h-[400px] ${theme.bg} rounded-[13px] p-6 flex flex-col justify-between select-none cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md hover:-translate-y-1 ${isSelected ? 'border-4 border-[#0012FF] scale-[1.03] shadow-lg' : 'border-4 border-transparent'
-                    }`}
-                >
-                  <div>
-                    {/* Top row: Briefcase Icon + Duration */}
-                    <div className="flex items-center justify-between mb-5">
-                      {/* Icon Badge */}
-                      <div className="w-9 h-9 rounded-xl bg-white/90 shadow-2xs flex items-center justify-center shrink-0">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={theme.text}>
-                          <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
-                          <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
-                        </svg>
-                      </div>
-
-                      {/* Duration */}
-                      <span className={`text-xs font-bold font-sans flex items-center gap-1.5 ${theme.text}`}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={theme.stroke}>
-                          <circle cx="12" cy="12" r="10" />
-                          <polyline points="12 6 12 16 14" />
-                        </svg>
-                        {session.duration}
-                      </span>
-                    </div>
-
-                    {/* Title */}
-                    <h4 className={`text-lg font-bold font-sans leading-tight mb-2 line-clamp-1 ${theme.title}`}>
-                      {session.title}
-                    </h4>
-
-                    {/* Description */}
-                    <p className={`text-xs font-medium font-sans leading-relaxed line-clamp-3 ${theme.desc}`}>
-                      {session.description}
-                    </p>
-
-                    {/* Divider */}
-                    <div className={`w-full h-px my-4 ${theme.divider}`} />
-
-                    {/* Features List */}
-                    <ul className="space-y-2">
-                      {session.features.slice(0, 4).map((feature: string, idx: number) => (
-                        <li key={idx} className={`flex items-center gap-2 text-xs font-semibold font-sans leading-tight ${theme.feature}`}>
-                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={`${theme.text} shrink-0`}>
-                            <circle cx="12" cy="12" r="9" />
-                            <path d="M8 12l3 3 5-5" />
-                          </svg>
-                          <span className="truncate">{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  {/* Price */}
-                  <div className={`text-2xl sm:text-3xl font-black font-sans uppercase tracking-tight mt-6 leading-none ${theme.text}`}>
-                    {session.price.toLocaleString()} PKR
-                  </div>
-                </div>
-              );
-            })}
+        {/* ============ RIGHT COLUMN: SELECT DATE/TIME ============ */}
+        <div className="flex flex-col w-full max-w-[790px]">
+          {/* Header */}
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-1">Select Date & Time</h2>
+            {booking.selectedSession && (
+              <p className="text-gray-500 font-medium text-sm">
+                Booking: <span className="text-gray-900 font-bold">{booking.selectedSession.title}</span> ({booking.selectedSession.duration})
+              </p>
+            )}
           </div>
 
           {/* ============ DATE SELECTOR STRIP ============ */}
-          <div className="bg-white border border-gray-200/80 rounded-2xl p-3 flex items-center justify-between shadow-sm w-full max-w-[790px] mx-auto select-none">
+          <div className="bg-white border border-gray-200/80 rounded-2xl p-3 flex items-center justify-between shadow-sm w-full select-none">
             {/* Left Scroll Button */}
             <button
               onClick={() => scrollDays('left')}
-              className="w-7 h-7 flex items-center justify-center rounded-full text-gray-400 hover:text-[#0012FF] hover:bg-gray-50 transition-colors shrink-0"
+              className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-[#0012FF] hover:bg-[#EEF2FF] transition-all shrink-0 active:scale-95"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <path d="M15 18l-6-6 6-6" />
               </svg>
             </button>
@@ -266,7 +182,7 @@ export default function BookSessionStep2() {
             {/* Days Scroll Area */}
             <div
               ref={scrollRef}
-              className="flex items-center gap-2 overflow-x-auto mx-1 flex-grow scroll-smooth no-scrollbar"
+              className="flex items-center gap-2 overflow-x-auto mx-1 flex-grow scroll-smooth no-scrollbar px-1"
               style={{ scrollbarWidth: 'none' }}
             >
               {datesList.map((d, i) => {
@@ -280,17 +196,17 @@ export default function BookSessionStep2() {
                     key={i}
                     onClick={() => enabled && handleDateSelect(d)}
                     disabled={!enabled}
-                    className={`flex-shrink-0 w-11 py-1.5 flex flex-col items-center justify-center rounded-xl transition-all border ${isSelected
-                      ? 'bg-[#EEF2FF] border-[#0012FF] text-[#0012FF]'
+                    className={`flex-shrink-0 w-12 py-2 flex flex-col items-center justify-center rounded-xl transition-all border-2 ${isSelected
+                      ? 'bg-[#EEF2FF] border-[#0012FF] text-[#0012FF] shadow-sm'
                       : enabled
-                        ? 'bg-white border-transparent text-gray-500 hover:border-gray-100 hover:bg-gray-50'
+                        ? 'bg-white border-transparent text-gray-500 hover:border-gray-200 hover:bg-gray-50'
                         : 'bg-gray-50 border-transparent text-gray-300 cursor-not-allowed'
                       }`}
                   >
-                    <span className="text-[8px] uppercase tracking-wider font-bold block leading-none mb-0.5">
+                    <span className="text-[9px] uppercase tracking-wider font-bold block leading-none mb-1">
                       {dayName}
                     </span>
-                    <span className="text-xs font-black block leading-none">
+                    <span className="text-lg font-black block leading-none">
                       {dayNum}
                     </span>
                   </button>
@@ -301,16 +217,16 @@ export default function BookSessionStep2() {
             {/* Right Scroll Button */}
             <button
               onClick={() => scrollDays('right')}
-              className="w-7 h-7 flex items-center justify-center rounded-full text-gray-400 hover:text-[#0012FF] hover:bg-gray-50 transition-colors shrink-0"
+              className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-[#0012FF] hover:bg-[#EEF2FF] transition-all shrink-0 active:scale-95"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <path d="M9 18l6-6-6-6" />
               </svg>
             </button>
           </div>
 
           {/* ============ TIME SLOTS GRID ============ */}
-          <div className="w-full max-w-[790px] mx-auto mt-6">
+          <div className="w-full mt-8">
             {loadingSlots ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {[1, 2, 3, 4, 5, 6].map(i => (
@@ -318,15 +234,10 @@ export default function BookSessionStep2() {
                 ))}
               </div>
             ) : slots.length === 0 ? (
-              <div className="bg-white border border-gray-200 rounded-2xl p-8 text-center">
-                <svg className="mx-auto mb-3 text-gray-300" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <rect x="3" y="4" width="18" height="18" rx="2" />
-                  <line x1="16" y1="2" x2="16" y2="6" />
-                  <line x1="8" y1="2" x2="8" y2="6" />
-                  <line x1="3" y1="10" x2="21" y2="10" />
-                </svg>
-                <p className="text-gray-500 text-sm font-semibold">No sessions available</p>
-                <p className="text-gray-400 text-xs mt-1">The creator isn't available on this day. Please select another date.</p>
+              <div className="bg-white border border-gray-200/80 rounded-2xl p-8 text-center shadow-sm">
+                <img src="/assets/no-appointment.webp" alt="No appointments" className="w-40 h-40 mx-auto object-contain mb-4" />
+                <p className="text-gray-900 text-lg font-bold mb-1">No sessions available</p>
+                <p className="text-gray-500 text-sm font-medium">The creator isn't available on this day. Please select another date.</p>
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -337,9 +248,9 @@ export default function BookSessionStep2() {
                     <button
                       key={i}
                       onClick={() => handleTimeSelect(time)}
-                      className={`py-3 px-4 rounded-xl text-[11px] font-bold transition-all text-center border shadow-xs ${isSelected
+                      className={`py-3 px-4 rounded-xl text-[13px] font-bold transition-all text-center border-2 shadow-sm hover:shadow-md active:scale-95 ${isSelected
                         ? 'bg-[#EEF2FF] border-[#0012FF] text-[#0012FF]'
-                        : 'bg-white border-gray-200 hover:border-gray-300 text-gray-600'
+                        : 'bg-white border-gray-200 hover:border-gray-300 text-gray-700'
                         }`}
                     >
                       {time}
@@ -351,18 +262,18 @@ export default function BookSessionStep2() {
           </div>
 
           {/* ============ NAVIGATION & ACTIONS ROW ============ */}
-          <div className="flex flex-wrap gap-2 mt-8 justify-end w-full px-1">
+          <div className="flex flex-wrap gap-2 mt-10 justify-end w-full border-t border-gray-100 pt-6">
             <button
               onClick={handleSaveDraft}
               disabled={isDraftSaved}
-              className={`font-bold py-2.5 px-4 sm:px-6 rounded-full text-xs transition-colors shadow-sm mr-auto flex items-center justify-center gap-1.5 border ${isDraftSaved
+              className={`font-bold py-2.5 px-6 rounded-full text-xs transition-all shadow-sm mr-auto flex items-center justify-center gap-1.5 border ${isDraftSaved
                 ? 'bg-green-50 border-green-200 text-green-600 cursor-default'
-                : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50 hover:shadow-md active:scale-95'
                 }`}
             >
               {isDraftSaved ? (
                 <>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                     <polyline points="20 6 9 17 4 12" />
                   </svg>
                   Saved
@@ -375,7 +286,7 @@ export default function BookSessionStep2() {
             <button
               onClick={handleBack}
               disabled={isLoadingBack}
-              className="bg-white border border-gray-200 text-gray-700 font-bold py-2.5 px-4 sm:px-6 rounded-full text-xs hover:bg-gray-50 transition-colors shadow-sm flex items-center justify-center"
+              className="bg-white border border-gray-200 text-gray-700 font-bold py-2.5 px-6 rounded-full text-xs hover:bg-gray-50 hover:shadow-md active:scale-95 transition-all shadow-sm flex items-center justify-center"
             >
               {isLoadingBack ? (
                 <div className="w-4 h-4 rounded-full border-2 border-gray-300 border-t-gray-700 animate-spin"></div>
@@ -387,8 +298,8 @@ export default function BookSessionStep2() {
             <button
               onClick={handleContinue}
               disabled={!booking.selectedDate || !booking.selectedTime || isLoadingContinue}
-              className={`py-2.5 px-5 sm:px-8 rounded-full text-xs font-bold transition-all shadow-sm flex items-center justify-center ${booking.selectedDate && booking.selectedTime
-                ? 'bg-[#0012FF] text-white hover:bg-[#0010d0]'
+              className={`py-2.5 px-8 rounded-full text-xs font-bold transition-all shadow-sm flex items-center justify-center active:scale-95 ${booking.selectedDate && booking.selectedTime
+                ? 'bg-[#0012FF] text-white hover:bg-[#0010d0] hover:shadow-md'
                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                 }`}
             >

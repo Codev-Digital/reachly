@@ -106,6 +106,32 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, [notificationsOpen, profileDropdownOpen]);
 
+  // Close dropdowns on page scroll (with threshold to prevent accidental closes on mobile)
+  useEffect(() => {
+    let initialScrollY = window.scrollY;
+
+    const handleScroll = (e: Event) => {
+      // If the scroll event came from an internal element, ignore it.
+      if (e.target !== document && e.target !== document.documentElement && e.target !== window) {
+        return;
+      }
+
+      const currentScrollY = window.scrollY;
+      if (Math.abs(currentScrollY - initialScrollY) > 10) {
+        if (notificationsOpen) setNotificationsOpen(false);
+        if (profileDropdownOpen) setProfileDropdownOpen(false);
+      }
+    };
+
+    if (notificationsOpen || profileDropdownOpen) {
+      initialScrollY = window.scrollY;
+      // capture: true ensures we can reliably filter out internal scroll events
+      window.addEventListener('scroll', handleScroll, { passive: true, capture: true });
+    }
+
+    return () => window.removeEventListener('scroll', handleScroll, { capture: true } as any);
+  }, [notificationsOpen, profileDropdownOpen]);
+
   // Close dropdown on route change
   useEffect(() => {
     setProfileDropdownOpen(false);
@@ -309,7 +335,7 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
                   <div className="border-b border-gray-100 mb-4" />
 
                   {/* Notifications Scrollable List */}
-                  <div className="max-h-[400px] sm:max-h-[440px] overflow-y-auto pr-1 select-text no-scrollbar">
+                  <div className="max-h-[400px] sm:max-h-[440px] overflow-y-auto overscroll-contain pr-1 select-text no-scrollbar">
                     {notifications.length > 0 ? (
                       <div className="flex flex-col">
                         {/* New / Unread Notifications */}
