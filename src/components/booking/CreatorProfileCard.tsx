@@ -85,6 +85,60 @@ export default function CreatorProfileCard({ creator, mobileMode = 'compact', on
     'bg-[#EEF2FF] text-[#0012FF]',
   ];
 
+  if (!creator) {
+    return (
+      <div className="w-full max-w-[450px] rounded-[32px] border border-gray-200/80 bg-white p-3 sm:p-3 shadow-sm sticky top-[96px] isolate animate-pulse">
+        {/* Cover Photo Skeleton */}
+        <div className={`relative w-full rounded-[15px] bg-gray-200 ${mobileMode === 'compact' ? 'h-[90px] lg:h-[140px]' : 'h-[140px]'}`}></div>
+        
+        {/* Profile Avatar Skeleton */}
+        <div className={`relative z-10 rounded-full border-4 border-white bg-gray-200 ml-3 ${mobileMode === 'compact' ? '-mt-10 w-[80px] h-[80px] lg:-mt-14 lg:w-[115px] lg:h-[115px]' : '-mt-14 w-[115px] h-[115px]'}`}></div>
+        
+        {/* Name & Handle Skeleton */}
+        <div className={`px-2 ${mobileMode === 'compact' ? 'mt-1.5 lg:mt-3' : 'mt-3'}`}>
+          <div className="h-6 bg-gray-200 rounded w-1/2 mb-2"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+        </div>
+        
+        {/* Location & Languages Skeleton */}
+        <div className={`flex items-center justify-center gap-5 ${mobileMode === 'compact' ? 'mt-3 lg:mt-5' : 'mt-5'}`}>
+          <div className="h-4 bg-gray-200 rounded w-20"></div>
+          <div className="h-4 bg-gray-200 rounded w-24"></div>
+        </div>
+        
+        {/* Stats Skeleton */}
+        <div className={`grid grid-cols-3 gap-2 border-y border-gray-100 ${mobileMode === 'compact' ? 'mt-4 py-2.5 lg:mt-6 lg:py-4' : 'mt-6 py-4'}`}>
+          <div className="flex flex-col items-center justify-center">
+            <div className="h-6 bg-gray-200 rounded w-12 mb-1"></div>
+            <div className="h-3 bg-gray-200 rounded w-20"></div>
+          </div>
+          <div className="flex flex-col items-center justify-center border-x border-gray-100 px-1">
+            <div className="h-6 bg-gray-200 rounded w-12 mb-1"></div>
+            <div className="h-3 bg-gray-200 rounded w-20"></div>
+          </div>
+          <div className="flex flex-col items-center justify-center">
+            <div className="h-6 bg-gray-200 rounded w-12 mb-1"></div>
+            <div className="h-3 bg-gray-200 rounded w-20"></div>
+          </div>
+        </div>
+        
+        {/* About Section Skeleton */}
+        <div className={`mt-5 px-1 ${mobileMode === 'compact' ? 'hidden lg:block' : 'block'}`}>
+          <div className="h-5 bg-gray-200 rounded w-16 mb-2"></div>
+          <div className="h-4 bg-gray-200 rounded w-full mb-1"></div>
+          <div className="h-4 bg-gray-200 rounded w-full mb-1"></div>
+          <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+        </div>
+        
+        {/* Niche Tags Skeleton */}
+        <div className={`flex flex-wrap gap-2 px-1 ${mobileMode === 'compact' ? 'mt-2 lg:mt-4' : 'mt-4'}`}>
+          <div className="h-6 bg-gray-200 rounded-full w-20"></div>
+          <div className="h-6 bg-gray-200 rounded-full w-24"></div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="w-full max-w-[450px] rounded-[32px] border border-gray-200/80 bg-white p-3 sm:p-3 shadow-sm sticky top-[96px] isolate">
