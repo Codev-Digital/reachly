@@ -47,6 +47,8 @@ export default function UserDashboard() {
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeBookingTab, setActiveBookingTab] = useState<'Upcoming' | 'Past' | 'Cancelled'>('Upcoming');
+  const [bookingsPage, setBookingsPage] = useState(0);
+  const BOOKINGS_PER_PAGE = 3;
   const [favorites, setFavorites] = useState<string[]>([]); // creator usernames
 
   // User details
@@ -652,16 +654,19 @@ export default function UserDashboard() {
           </div>
 
           {/* Right Column (takes 4 cols) - Bookings Tabs & List */}
-          <div className="lg:col-span-4 bg-white rounded-[24px] p-5 border border-gray-100 shadow-2xs space-y-5">
+          <div className="lg:col-span-4 bg-white rounded-[24px] p-5 border border-gray-100 shadow-2xs">
             {/* Bookings Tabs */}
-            <div className="flex bg-gray-100/80 p-1 rounded-2xl justify-between border border-gray-200/50">
+            <div className="flex bg-gray-100/80 p-1 rounded-2xl justify-between border border-gray-200/50 mb-5">
               {(['Upcoming', 'Past', 'Cancelled'] as const).map((tab) => {
                 const count = currentBookings[tab].length;
                 const isActive = activeBookingTab === tab;
                 return (
                   <button
                     key={tab}
-                    onClick={() => setActiveBookingTab(tab)}
+                    onClick={() => {
+                      setActiveBookingTab(tab);
+                      setBookingsPage(0);
+                    }}
                     className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${isActive
                       ? 'bg-[#0012FF] text-white shadow-sm'
                       : 'text-gray-500 hover:text-gray-900'
@@ -674,7 +679,7 @@ export default function UserDashboard() {
             </div>
 
             {/* List of bookings */}
-            <div className="space-y-4">
+            <div>
               {currentBookings[activeBookingTab].length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-10 w-full h-full min-h-[200px]">
                   <Image
@@ -687,97 +692,150 @@ export default function UserDashboard() {
                   <p className="text-gray-500 font-semibold text-sm">No {activeBookingTab.toLowerCase()} bookings</p>
                 </div>
               ) : (
-                currentBookings[activeBookingTab].map((booking) => (
-                  <div
-                    key={booking.id}
-                    className="w-full bg-white border border-gray-200/70 rounded-2xl p-4 flex flex-col justify-between shadow-2xs hover:shadow-xs transition-all group"
-                  >
-                    <div>
-                      {/* Header */}
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 border border-gray-100">
-                            <img
-                              src={booking.avatar || '/avatar.png'}
-                              alt={booking.name}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <h4 className="font-extrabold text-sm text-gray-900 font-sans leading-tight">{booking.name}</h4>
-                              <svg className="w-3.5 h-3.5 text-[#12B76A] fill-current shrink-0" viewBox="0 0 24 24">
-                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
-                              </svg>
-                              <span className="bg-[#E6F9EE] text-[#12B76A] font-bold text-[10px] px-2 py-0.5 rounded-full">
-                                {booking.status || 'Accepted'}
-                              </span>
+                <div className="space-y-4">
+                  <div className="space-y-4">
+                    {currentBookings[activeBookingTab].slice(bookingsPage * BOOKINGS_PER_PAGE, (bookingsPage + 1) * BOOKINGS_PER_PAGE).map((booking) => (
+                      <div
+                        key={booking.id}
+                        className="w-full bg-white border border-gray-200/70 rounded-2xl p-4 flex flex-col justify-between shadow-2xs hover:shadow-xs transition-all group"
+                      >
+                        <div>
+                          {/* Header */}
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 border border-gray-100">
+                                <img
+                                  src={booking.avatar || '/avatar.png'}
+                                  alt={booking.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <h4 className="font-extrabold text-sm text-gray-900 font-sans leading-tight">{booking.name}</h4>
+                                  <svg className="w-3.5 h-3.5 text-[#12B76A] fill-current shrink-0" viewBox="0 0 24 24">
+                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                                  </svg>
+                                  <span className="bg-[#E6F9EE] text-[#12B76A] font-bold text-[10px] px-2 py-0.5 rounded-full">
+                                    {booking.status || 'Accepted'}
+                                  </span>
+                                </div>
+                                <p className="text-[11px] text-gray-400 font-medium font-sans mt-0.5">{booking.handle}</p>
+                              </div>
                             </div>
-                            <p className="text-[11px] text-gray-400 font-medium font-sans mt-0.5">{booking.handle}</p>
+                            <span className="font-bold text-sm text-[#0012FF] font-sans tracking-tight shrink-0 ml-2 mt-1">
+                              {booking.amount}
+                            </span>
                           </div>
+
+                          {/* Time & Meeting Type Row */}
+                          <div className="flex items-center gap-4 text-[11px] text-gray-500 font-sans font-medium my-2.5">
+                            <div className="flex items-center gap-1.5">
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                                <circle cx="12" cy="12" r="10" />
+                                <polyline points="12 6 12 12 16 14" />
+                              </svg>
+                              <span>{booking.time}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                                <circle cx="12" cy="10" r="3" />
+                              </svg>
+                              <span>{booking.type}</span>
+                            </div>
+                          </div>
+
+                          {/* Note Description */}
+                          <p className="text-[11px] text-gray-400 font-sans leading-relaxed line-clamp-1">
+                            {booking.note}
+                          </p>
                         </div>
-                        <span className="font-bold text-sm text-[#0012FF] font-sans tracking-tight shrink-0 ml-2 mt-1">
-                          {booking.amount}
-                        </span>
+
+                        {/* Action Buttons (for Upcoming) */}
+                        {activeBookingTab === 'Upcoming' && (
+                          <div className="mt-3 pt-3 border-t border-gray-100 flex flex-col gap-2">
+                            <button
+                              onClick={() => {
+                                if (booking.meetingUrl && booking.bookingRef) {
+                                  setMeetingToJoin({ url: booking.meetingUrl, ref: booking.bookingRef });
+                                } else {
+                                  alert('Meeting link is not available yet.');
+                                }
+                              }}
+                              className="w-full py-2 bg-[#0012FF] hover:bg-[#0012FF]/90 text-white rounded-lg text-[11px] font-bold text-center transition-all cursor-pointer shadow-sm"
+                            >
+                              Join Meeting
+                            </button>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => router.push('/user/bookings')}
+                                className="flex-1 py-1.5 border border-gray-200 hover:bg-gray-50 text-gray-600 rounded-lg text-[11px] font-semibold text-center transition-all cursor-pointer"
+                              >
+                                Reschedule
+                              </button>
+                              <button
+                                onClick={() => handleCancelClick(booking.id)}
+                                className="flex-1 py-1.5 bg-[#FFF0F0] border border-red-100 hover:bg-red-100 text-[#FF3B3B] rounded-lg text-[11px] font-semibold text-center transition-all cursor-pointer"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
+                    ))}
+                  </div>
 
-                      {/* Time & Meeting Type Row */}
-                      <div className="flex items-center gap-4 text-[11px] text-gray-500 font-sans font-medium my-2.5">
-                        <div className="flex items-center gap-1.5">
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
-                            <circle cx="12" cy="12" r="10" />
-                            <polyline points="12 6 12 12 16 14" />
-                          </svg>
-                          <span>{booking.time}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
-                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                            <circle cx="12" cy="10" r="3" />
-                          </svg>
-                          <span>{booking.type}</span>
-                        </div>
-                      </div>
-
-                      {/* Note Description */}
-                      <p className="text-[11px] text-gray-400 font-sans leading-relaxed line-clamp-1">
-                        {booking.note}
-                      </p>
-                    </div>
-
-                    {/* Action Buttons (for Upcoming) */}
-                    {activeBookingTab === 'Upcoming' && (
-                      <div className="mt-3 pt-3 border-t border-gray-100 flex flex-col gap-2">
+                  <div className="mt-4 pt-4 border-t border-gray-100">
+                    {/* Pagination arrows */}
+                    {currentBookings[activeBookingTab].length > BOOKINGS_PER_PAGE && (
+                      <div className="flex items-center justify-center gap-3 mb-4">
                         <button
-                          onClick={() => {
-                            if (booking.meetingUrl && booking.bookingRef) {
-                              setMeetingToJoin({ url: booking.meetingUrl, ref: booking.bookingRef });
-                            } else {
-                              alert('Meeting link is not available yet.');
-                            }
-                          }}
-                          className="w-full py-2 bg-[#0012FF] hover:bg-[#0012FF]/90 text-white rounded-lg text-[11px] font-bold text-center transition-all cursor-pointer shadow-sm"
+                          onClick={() => setBookingsPage(p => Math.max(0, p - 1))}
+                          disabled={bookingsPage === 0}
+                          className={`w-9 h-9 rounded-full flex items-center justify-center border transition-all ${bookingsPage === 0
+                            ? 'border-gray-200 text-gray-300 cursor-not-allowed'
+                            : 'border-gray-300 text-gray-700 hover:border-[#0012FF] hover:text-[#0012FF] hover:bg-[#EEF2FF]'
+                            }`}
                         >
-                          Join Meeting
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <path d="M15 18l-6-6 6-6" />
+                          </svg>
                         </button>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => router.push('/user/bookings')}
-                            className="flex-1 py-1.5 border border-gray-200 hover:bg-gray-50 text-gray-600 rounded-lg text-[11px] font-semibold text-center transition-all cursor-pointer"
-                          >
-                            Reschedule
-                          </button>
-                          <button
-                            onClick={() => handleCancelClick(booking.id)}
-                            className="flex-1 py-1.5 bg-[#FFF0F0] border border-red-100 hover:bg-red-100 text-[#FF3B3B] rounded-lg text-[11px] font-semibold text-center transition-all cursor-pointer"
-                          >
-                            Cancel
-                          </button>
-                        </div>
+
+                        <span className="text-xs font-bold text-gray-500">
+                          {bookingsPage + 1} / {Math.ceil(currentBookings[activeBookingTab].length / BOOKINGS_PER_PAGE)}
+                        </span>
+
+                        <button
+                          onClick={() => setBookingsPage(p => Math.min(Math.ceil(currentBookings[activeBookingTab].length / BOOKINGS_PER_PAGE) - 1, p + 1))}
+                          disabled={bookingsPage >= Math.ceil(currentBookings[activeBookingTab].length / BOOKINGS_PER_PAGE) - 1}
+                          className={`w-9 h-9 rounded-full flex items-center justify-center border transition-all ${bookingsPage >= Math.ceil(currentBookings[activeBookingTab].length / BOOKINGS_PER_PAGE) - 1
+                            ? 'border-gray-200 text-gray-300 cursor-not-allowed'
+                            : 'border-gray-300 text-gray-700 hover:border-[#0012FF] hover:text-[#0012FF] hover:bg-[#EEF2FF]'
+                            }`}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <path d="M9 18l6-6-6-6" />
+                          </svg>
+                        </button>
                       </div>
                     )}
+
+                    {/* Show All Bookings Button */}
+                    <button
+                      onClick={() => router.push('/user/bookings')}
+                      className="w-full py-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 rounded-xl text-xs font-bold text-center transition-all cursor-pointer flex items-center justify-center gap-2"
+                    >
+                      Show All {activeBookingTab} Bookings
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                        <polyline points="12 5 19 12 12 19" />
+                      </svg>
+                    </button>
                   </div>
-                ))
+                </div>
               )}
             </div>
           </div>
