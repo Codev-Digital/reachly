@@ -2,6 +2,7 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 import BookingProgress from '@/components/booking/BookingProgress';
 import CreatorProfileCard from '@/components/booking/CreatorProfileCard';
 import { useBooking, SessionType } from '../layout';
@@ -17,6 +18,17 @@ export default function BookSessionStep1() {
   const [hasScrolled, setHasScrolled] = useState(false);
   const [isMobileBookingStarted, setIsMobileBookingStarted] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  const [mobileActiveIndex, setMobileActiveIndex] = useState(0);
+
+  const handleDragEnd = (event: any, info: PanInfo) => {
+    const SWIPE_THRESHOLD = 30;
+    if (info.offset.y < -SWIPE_THRESHOLD) {
+      setMobileActiveIndex((prev) => (prev + 1) % sessions.length);
+    } else if (info.offset.y > SWIPE_THRESHOLD) {
+      setMobileActiveIndex((prev) => (prev - 1 + sessions.length) % sessions.length);
+    }
+  };
 
   const scrollLeft = () => {
     if (scrollContainerRef.current) {
@@ -162,7 +174,87 @@ export default function BookSessionStep1() {
                 `}</style>
 
                 <div className="w-full flex justify-center lg:block">
-                  <div ref={scrollContainerRef} onScroll={handleScroll} className="flex flex-col lg:flex-row overflow-y-auto lg:overflow-y-visible lg:overflow-x-auto snap-y lg:snap-x snap-mandatory hide-scrollbar h-[460px] lg:h-auto w-full max-w-[360px] lg:max-w-none mx-auto lg:mx-0 lg:pt-4 lg:pb-6 lg:gap-[20px]">
+
+                  {/* MOBILE STACKED SWIPER */}
+                  <div className="lg:hidden relative w-full h-[460px] flex justify-center items-start mt-2">
+                    <AnimatePresence mode="popLayout">
+                      {sessions.map((session, index) => {
+                        const themeIdx = index % 3;
+                        const theme = cardThemes[themeIdx];
+                        const isSelected = booking.selectedSession?.id === session.id;
+
+                        let relativeIndex = (index - mobileActiveIndex) % sessions.length;
+                        if (relativeIndex < 0) {
+                          relativeIndex += sessions.length;
+                        }
+                        if (relativeIndex > 2) return null;
+
+                        const xOffset = relativeIndex * -18;
+                        const yOffset = relativeIndex * 5;
+                        const scale = 1 - (relativeIndex * 0.04);
+                        const rotateZ = relativeIndex * -5;
+                        const zIndex = sessions.length - relativeIndex;
+
+                        return (
+                          <motion.div
+                            key={session.id}
+                            drag="y"
+                            dragConstraints={{ top: 0, bottom: 0 }}
+                            onDragEnd={handleDragEnd}
+                            initial={{ opacity: 0, y: 50, x: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, y: yOffset, x: xOffset, scale: scale, rotate: rotateZ }}
+                            exit={{ opacity: 0, y: -200, scale: 0.8 }}
+                            transition={{ duration: 0.4, type: "spring", bounce: 0.2 }}
+                            className="absolute top-0 w-full max-w-[280px] cursor-grab active:cursor-grabbing"
+                            style={{ zIndex }}
+                          >
+                            <div
+                              onClick={() => handleSelectSession(session)}
+                              className={`w-full h-[400px] ${theme.bg} rounded-[28px] p-6 flex flex-col justify-between select-none shadow-xl ${isSelected ? 'border-4 border-[#0012FF]' : 'border-4 border-transparent'}`}
+                            >
+                              <div>
+                                <div className="flex items-center justify-between mb-5">
+                                  <div className="w-9 h-9 rounded-xl bg-white/90 shadow-2xs flex items-center justify-center shrink-0">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={theme.text}>
+                                      <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+                                      <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+                                    </svg>
+                                  </div>
+                                  <span className={`text-xs font-bold font-sans flex items-center gap-1.5 ${theme.text}`}>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={theme.stroke}>
+                                      <circle cx="12" cy="12" r="10" />
+                                      <polyline points="12 6 12 16 14" />
+                                    </svg>
+                                    {session.duration}
+                                  </span>
+                                </div>
+                                <h4 className={`text-lg font-bold font-sans leading-tight mb-2 line-clamp-1 ${theme.title}`}>{session.title}</h4>
+                                <p className={`text-xs font-medium font-sans leading-relaxed line-clamp-3 ${theme.desc}`}>{session.description}</p>
+                                <div className={`w-full h-px my-4 ${theme.divider}`} />
+                                <ul className="space-y-2">
+                                  {session.features.slice(0, 4).map((feature: string, idx: number) => (
+                                    <li key={idx} className={`flex items-center gap-2 text-xs font-semibold font-sans leading-tight ${theme.feature}`}>
+                                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={`${theme.text} shrink-0`}>
+                                        <circle cx="12" cy="12" r="9" />
+                                        <path d="M8 12l3 3 5-5" />
+                                      </svg>
+                                      <span className="truncate">{feature}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                              <div className={`text-2xl sm:text-3xl font-black font-sans uppercase tracking-tight mt-6 leading-none ${theme.text}`}>
+                                {session.price.toLocaleString()} PKR
+                              </div>
+                            </div>
+                          </motion.div>
+                        );
+                      })}
+                    </AnimatePresence>
+                  </div>
+
+                  {/* DESKTOP CAROUSEL */}
+                  <div ref={scrollContainerRef} onScroll={handleScroll} className="hidden lg:flex flex-row overflow-x-auto snap-x snap-mandatory hide-scrollbar lg:h-auto w-full lg:max-w-none lg:mx-0 lg:pt-4 lg:pb-6 lg:gap-[20px]">
                   {sessions.map((session, index) => {
                     const themeIdx = index % 3;
                     const theme = cardThemes[themeIdx];
@@ -171,12 +263,12 @@ export default function BookSessionStep1() {
                     return (
                       <div
                         key={session.id}
-                        className="w-full lg:w-[250px] shrink-0 snap-center h-[460px] lg:h-auto flex lg:block items-center justify-center p-2 lg:p-0"
+                        className="w-[250px] shrink-0 snap-center h-[460px] lg:h-auto flex lg:block items-center justify-center p-0"
                       >
                         <div
                           onClick={() => handleSelectSession(session)}
-                          className={`w-full max-w-[340px] lg:w-[250px] min-h-[400px] h-[400px] ${theme.bg} rounded-[28px] lg:rounded-[13px] p-6 flex flex-col justify-between select-none cursor-pointer transition-all duration-300 shadow-sm hover:shadow-md hover:-translate-y-1 ${isSelected ? 'border-4 border-[#0012FF] scale-[1.03] shadow-lg' : 'border-4 border-transparent'
-                            } ${!hasScrolled && index >= 3 ? 'max-lg:opacity-100 lg:opacity-0 lg:pointer-events-none' : 'opacity-100'}`}
+                          className={`w-[250px] min-h-[400px] h-[400px] ${theme.bg} rounded-[13px] p-6 flex flex-col justify-between select-none cursor-pointer transition-all duration-300 shadow-sm hover:shadow-md hover:-translate-y-1 ${isSelected ? 'border-4 border-[#0012FF] scale-[1.03] shadow-lg' : 'border-4 border-transparent'
+                            } ${!hasScrolled && index >= 3 ? 'opacity-0 lg:pointer-events-none' : 'opacity-100'}`}
                         >
                         <div>
                           {/* Top row: Briefcase Icon + Duration */}
