@@ -387,14 +387,14 @@ export default function CreatorDashboardNav({
 
                 {/* Profile Dropdown Menu in settings theme */}
                 {profileDropdownOpen && (
-                  <div className="absolute right-0 top-[48px] sm:top-[52px] w-56 bg-white rounded-2xl shadow-xl border border-gray-100 py-2.5 z-[100] text-left animate-in fade-in slide-in-from-top-2 duration-150">
+                  <div className="hidden md:block absolute right-0 top-[48px] sm:top-[52px] w-56 bg-white rounded-2xl shadow-xl border border-gray-100 py-2.5 z-[100] text-left animate-in fade-in slide-in-from-top-2 duration-150">
 
                     <button
                       onClick={() => {
                         setProfileDropdownOpen(false);
                         setShowLogoutModal(true);
                       }}
-                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50/70 font-semibold transition-colors text-left cursor-pointer"
+                      className="hidden md:flex w-full items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50/70 font-semibold transition-colors text-left cursor-pointer"
                     >
                       Log Out
                     </button>
@@ -452,6 +452,22 @@ export default function CreatorDashboardNav({
                     </Link>
                   );
                 })}
+                
+                {/* Logout Button (Mobile Only) */}
+                <button
+                  onClick={() => {
+                    setMobileOpen(false);
+                    setShowLogoutModal(true);
+                  }}
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all text-red-500 hover:bg-red-50"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                  </svg>
+                  <span>Log Out</span>
+                </button>
               </div>
             </motion.div>
           )}

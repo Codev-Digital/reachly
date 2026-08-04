@@ -272,13 +272,13 @@ export default function AdminNavbar() {
 
               {/* Profile Dropdown */}
               {profileDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-2xl shadow-lg py-2 z-50">
+                <div className="hidden md:block absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-2xl shadow-lg py-2 z-50">
                   <button
                     onClick={() => {
                       setProfileDropdownOpen(false);
                       setShowLogoutModal(true);
                     }}
-                    className="w-full text-left px-4 py-2.5 text-sm font-semibold text-rose-600 hover:bg-rose-50/55 transition-colors flex items-center gap-2 cursor-pointer"
+                    className="hidden md:flex w-full text-left px-4 py-2.5 text-sm font-semibold text-rose-600 hover:bg-rose-50/55 transition-colors items-center gap-2 cursor-pointer"
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
@@ -331,6 +331,22 @@ export default function AdminNavbar() {
                   </Link>
                 );
               })}
+              
+              {/* Logout Button (Mobile Only) */}
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  setShowLogoutModal(true);
+                }}
+                className="flex items-center gap-3 p-3 rounded-2xl text-sm font-semibold transition-all text-rose-600 hover:bg-rose-50"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+                <span>Log Out</span>
+              </button>
             </motion.div>
           )}
         </AnimatePresence>
