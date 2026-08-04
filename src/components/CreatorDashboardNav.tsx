@@ -192,8 +192,27 @@ export default function CreatorDashboardNav({
       }
     };
 
+    const handleOutsideScroll = (e: Event) => {
+      const target = e.target as HTMLElement;
+
+      if (notificationsOpen && !target.closest('.notification-panel-container') && !target.closest('.notification-bell-btn')) {
+        setNotificationsOpen(false);
+      }
+
+      if (profileDropdownOpen && !target.closest('.profile-dropdown-container')) {
+        setProfileDropdownOpen(false);
+      }
+    };
+
     document.addEventListener('mousedown', handleOutsideClick);
-    return () => document.removeEventListener('mousedown', handleOutsideClick);
+    document.addEventListener('wheel', handleOutsideScroll, { passive: true });
+    document.addEventListener('touchmove', handleOutsideScroll, { passive: true });
+    
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('wheel', handleOutsideScroll);
+      document.removeEventListener('touchmove', handleOutsideScroll);
+    };
   }, [notificationsOpen, profileDropdownOpen]);
 
   const isBookSession = pathname.includes('/book-session');
@@ -285,7 +304,7 @@ export default function CreatorDashboardNav({
                     <div className="border-b border-gray-100 mb-4" />
 
                     {/* Notifications Scrollable List */}
-                    <div className="max-h-[400px] sm:max-h-[440px] overflow-y-auto pr-1 select-text no-scrollbar">
+                    <div className="max-h-[400px] sm:max-h-[440px] overflow-y-auto overscroll-contain pr-1 select-text no-scrollbar">
                       {notifications.length > 0 ? (
                         <div className="flex flex-col">
                           {/* New / Unread Notifications */}

@@ -60,8 +60,25 @@ export default function AdminNavbar() {
         setNotificationsDropdownOpen(false);
       }
     };
+
+    const handleOutsideScroll = (e: Event) => {
+      const target = e.target as HTMLElement;
+      if (profileDropdownOpen && !target.closest('.profile-dropdown-container')) {
+        setProfileDropdownOpen(false);
+      }
+      if (notificationsDropdownOpen && !target.closest('.notifications-dropdown-container')) {
+        setNotificationsDropdownOpen(false);
+      }
+    };
+
     document.addEventListener('mousedown', handleOutsideClick);
-    return () => document.removeEventListener('mousedown', handleOutsideClick);
+    document.addEventListener('wheel', handleOutsideScroll, { passive: true });
+    document.addEventListener('touchmove', handleOutsideScroll, { passive: true });
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('wheel', handleOutsideScroll);
+      document.removeEventListener('touchmove', handleOutsideScroll);
+    };
   }, [profileDropdownOpen, notificationsDropdownOpen]);
 
   // Close dropdown on route change
@@ -248,7 +265,7 @@ export default function AdminNavbar() {
                     <p className="text-xs text-gray-400 font-medium mb-4">Never miss an update from your account</p>
                     <div className="border-b border-gray-100 mb-4" />
 
-                    <div className="max-h-[400px] sm:max-h-[440px] overflow-y-auto pr-1 select-text no-scrollbar">
+                    <div className="max-h-[400px] sm:max-h-[440px] overflow-y-auto overscroll-contain pr-1 select-text no-scrollbar">
                       {notifications.length > 0 ? (
                         <div className="flex flex-col">
                           {notifications.map((notif, idx) => (
