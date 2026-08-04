@@ -167,8 +167,10 @@ export default function CreatorDashboardNav({
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, [notificationsOpen, profileDropdownOpen]);
 
+  const isBookSession = pathname.includes('/book-session');
+
   return (
-    <div className="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-10 pt-3 sm:pt-4">
+    <div className={`mx-auto pt-3 sm:pt-4 w-full ${isBookSession ? 'max-w-7xl px-4 sm:px-6' : 'max-w-[1536px] px-4 sm:px-6 lg:px-10'}`}>
       <nav className="bg-white shadow-sm border border-gray-100 sticky top-0 z-50 rounded-2xl sm:rounded-3xl">
         <div className="px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between gap-4">

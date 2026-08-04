@@ -69,8 +69,10 @@ export default function OnboardingNavbar({ showAuthButtons = false }: { showAuth
     router.push(`/creator-onboarding/step-${onboardingStep}`);
   };
 
+  const isBookSession = pathname.includes('/book-session');
+
   return (
-    <div className="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-10 pt-3 sm:pt-4 w-full">
+    <div className={`mx-auto pt-3 sm:pt-4 w-full ${isBookSession ? 'max-w-7xl px-4 sm:px-6' : 'max-w-[1536px] px-4 sm:px-6 lg:px-10'}`}>
       {/* Top Navbar */}
       <nav className="bg-white shadow-sm border border-gray-100 rounded-2xl sm:rounded-3xl mb-4">
         <div className="px-4 sm:px-6 py-3 sm:py-4">

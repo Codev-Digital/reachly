@@ -121,8 +121,10 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
     { name: 'Settings', href: '/user/settings', icon: 'settings' },
   ];
 
+  const isBookSession = pathname.includes('/book-session');
+
   return (
-    <div className="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-10 pt-4">
+    <div className={`mx-auto pt-4 w-full ${isBookSession ? 'max-w-7xl px-4 sm:px-6' : 'max-w-[1536px] px-4 sm:px-6 lg:px-10'}`}>
       <nav className="bg-white shadow-sm border border-gray-100 sticky top-0 z-50 rounded-3xl px-6 sm:px-8 py-3 flex flex-col">
         <div className="flex w-full items-center justify-between">
           {/* Logo */}
