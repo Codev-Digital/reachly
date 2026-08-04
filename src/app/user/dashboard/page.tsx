@@ -161,7 +161,7 @@ export default function UserDashboard() {
             return;
           }
           setDisplayName(data.user.name || 'James Richard');
-          setProfilePhoto(data.creatorProfile?.profilePhoto || data.user.image || null);
+          setProfilePhoto(data.creatorProfile?.profilePhoto || data.user.profilePhoto || null);
         }
       } else {
         setIsAuthenticated(false);

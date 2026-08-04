@@ -3,8 +3,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
+import { getRelativeTime } from '@/lib/time';
 import { signOut } from 'next-auth/react';
 
 const NAV_ITEMS = [
@@ -85,6 +86,17 @@ export default function CreatorDashboardNav({
     setProfileDropdownOpen(false);
   }, [pathname]);
 
+  // Handle bfcache: if user hits back button after logout, force reload
+  useEffect(() => {
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        window.location.reload();
+      }
+    };
+    window.addEventListener('pageshow', handlePageShow);
+    return () => window.removeEventListener('pageshow', handlePageShow);
+  }, []);
+
   // Lock body scroll when mobile menu open
   useEffect(() => {
     document.body.style.overflow = mobileOpen ? 'hidden' : '';
@@ -111,8 +123,25 @@ export default function CreatorDashboardNav({
 
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 10000);
-    return () => clearInterval(interval);
+
+    const eventSource = new EventSource('/api/creators/notifications/stream');
+
+    eventSource.onmessage = (event) => {
+      try {
+        const newNotification = JSON.parse(event.data);
+        setNotifications((prev) => [newNotification, ...prev]);
+      } catch (err) {
+        console.error('Error parsing SSE notification:', err);
+      }
+    };
+
+    eventSource.onerror = (error) => {
+      console.error('SSE connection error:', error);
+    };
+
+    return () => {
+      eventSource.close();
+    };
   }, [fetchNotifications]);
 
   const handleClearAll = async () => {
@@ -297,7 +326,7 @@ export default function CreatorDashboardNav({
                                     <circle cx="12" cy="12" r="10" />
                                     <polyline points="12 6 12 12 16 14" />
                                   </svg>
-                                  <span>{n.time || n.formattedTime || '6h ago'}</span>
+                                  <span>{getRelativeTime(n.createdAt || n.date)}</span>
                                 </div>
                               </div>
                             );

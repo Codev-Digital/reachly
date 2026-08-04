@@ -61,7 +61,7 @@ export default function ExploreCreatorsPage() {
           } else if (userData.user) {
             setIsCreator(false);
             setDisplayName(userData.user.name || '');
-            setProfilePhoto(userData.user.image || null);
+            setProfilePhoto(userData.user.profilePhoto || null);
           }
           // Fetch both saved and favourite creators in parallel
           const [savedRes, favRes] = await Promise.all([

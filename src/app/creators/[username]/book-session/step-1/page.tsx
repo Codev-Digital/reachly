@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 import BookingProgress from '@/components/booking/BookingProgress';
@@ -10,6 +10,9 @@ import { useBooking, SessionType } from '../layout';
 export default function BookSessionStep1() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const fallbackUrl = searchParams.get('fallbackUrl');
+  const queryStr = fallbackUrl ? `?fallbackUrl=${encodeURIComponent(fallbackUrl)}` : '';
   const { booking, setBooking, nextStep } = useBooking();
   const [sessions, setSessions] = useState<SessionType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -99,13 +102,17 @@ export default function BookSessionStep1() {
     if (booking.selectedSession) {
       setIsLoadingContinue(true);
       nextStep();
-      router.push(`/creators/${params.username}/book-session/step-2`);
+      router.push(`/creators/${params.username}/book-session/step-2${queryStr}`);
     }
   };
 
   const handleBack = () => {
     setIsLoadingBack(true);
-    router.push(`/creators/${params.username}`);
+    if (fallbackUrl) {
+      window.location.href = fallbackUrl;
+    } else {
+      router.push(`/creators/${params.username}`);
+    }
   };
 
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import BookingProgress from '@/components/booking/BookingProgress';
 import CreatorProfileCard from '@/components/booking/CreatorProfileCard';
@@ -16,6 +16,9 @@ const toISO = (date: Date) => {
 export default function BookSessionStep2() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const fallbackUrl = searchParams.get('fallbackUrl');
+  const queryStr = fallbackUrl ? `?fallbackUrl=${encodeURIComponent(fallbackUrl)}` : '';
   const { booking, setBooking, nextStep, prevStep, saveDraft, isDraftSaved } = useBooking();
 
   const [slots, setSlots] = useState<string[]>([]);
@@ -113,14 +116,14 @@ export default function BookSessionStep2() {
     if (booking.selectedDate && booking.selectedTime) {
       setIsLoadingContinue(true);
       nextStep();
-      router.push(`/creators/${params.username}/book-session/step-3`);
+      router.push(`/creators/${params.username}/book-session/step-3${queryStr}`);
     }
   };
 
   const handleBack = () => {
     setIsLoadingBack(true);
     prevStep();
-    router.push(`/creators/${params.username}/book-session/step-1`);
+    router.push(`/creators/${params.username}/book-session/step-1${queryStr}`);
   };
 
   const handleSaveDraft = () => {

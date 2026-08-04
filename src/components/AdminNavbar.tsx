@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getRelativeTime } from '@/lib/time';
 import { signOut } from 'next-auth/react';
 
 export default function AdminNavbar() {
@@ -28,8 +29,24 @@ export default function AdminNavbar() {
       }
     }
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 15000);
-    return () => clearInterval(interval);
+    const eventSource = new EventSource('/api/admin/notifications/stream');
+
+    eventSource.onmessage = (event) => {
+      try {
+        const allNotifications = JSON.parse(event.data);
+        setNotifications(allNotifications);
+      } catch (err) {
+        console.error('Error parsing SSE admin notifications:', err);
+      }
+    };
+
+    eventSource.onerror = (error) => {
+      console.error('Admin SSE connection error:', error);
+    };
+
+    return () => {
+      eventSource.close();
+    };
   }, []);
 
   // Close dropdown on click outside
@@ -53,6 +70,17 @@ export default function AdminNavbar() {
     setNotificationsDropdownOpen(false);
     setIsMobileMenuOpen(false);
   }, [pathname]);
+
+  // Handle bfcache: if user hits back button after logout, force reload
+  useEffect(() => {
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        window.location.reload();
+      }
+    };
+    window.addEventListener('pageshow', handlePageShow);
+    return () => window.removeEventListener('pageshow', handlePageShow);
+  }, []);
 
   const navItems = [
     {

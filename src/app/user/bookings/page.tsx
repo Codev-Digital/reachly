@@ -88,7 +88,7 @@ export default function UserBookingsPage() {
         const userData = await authRes.json();
         if (userData.user) {
           setDisplayName(userData.user.name || 'Guest');
-          setProfilePhoto(userData.creatorProfile?.profilePhoto || userData.user.image || null);
+          setProfilePhoto(userData.creatorProfile?.profilePhoto || userData.user.profilePhoto || null);
           setIsGuest(false);
         }
       }

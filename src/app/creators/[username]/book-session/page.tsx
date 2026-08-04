@@ -1,16 +1,19 @@
 'use client';
 
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
 import LoadingAnimation from '@/components/LoadingAnimation';
 
 export default function BookSessionRedirect() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   
   useEffect(() => {
-    router.push(`/creators/${params.username}/book-session/step-1`);
-  }, [router, params.username]);
+    const fallbackUrl = searchParams.get('fallbackUrl');
+    const queryStr = fallbackUrl ? `?fallbackUrl=${encodeURIComponent(fallbackUrl)}` : '';
+    router.replace(`/creators/${params.username}/book-session/step-1${queryStr}`);
+  }, [router, params.username, searchParams]);
 
   return <LoadingAnimation />;
 }

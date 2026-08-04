@@ -1,6 +1,6 @@
 'use client';
 import { useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import BookingProgress from '@/components/booking/BookingProgress';
 import CreatorProfileCard from '@/components/booking/CreatorProfileCard';
 import { useBooking } from '../layout';
@@ -12,6 +12,8 @@ const formatDateLong = (date: Date) => {
 export default function BookSessionStep5() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const fallbackUrl = searchParams.get('fallbackUrl');
   const { booking, userData } = useBooking();
   const creator = booking.creator;
 
@@ -23,14 +25,22 @@ export default function BookSessionStep5() {
   const handleGoToBookings = () => {
     const isLoggedIn = !!userData?.user?.id;
     if (isLoggedIn) {
-      router.push('/user/bookings');
+      if (fallbackUrl) {
+        window.location.href = fallbackUrl;
+      } else {
+        router.push('/user/bookings');
+      }
     } else {
       // Guest — pass their email so the bookings page can fetch without login
       const guestEmail = booking.userDetails.email;
-      if (guestEmail) {
-        router.push(`/user/bookings?guestEmail=${encodeURIComponent(guestEmail)}`);
+      if (fallbackUrl) {
+        window.location.href = fallbackUrl;
       } else {
-        router.push('/user/bookings');
+        if (guestEmail) {
+          router.push(`/user/bookings?guestEmail=${encodeURIComponent(guestEmail)}`);
+        } else {
+          router.push('/user/bookings');
+        }
       }
     }
   };

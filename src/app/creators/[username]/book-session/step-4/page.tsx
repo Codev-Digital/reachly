@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import BookingProgress from '@/components/booking/BookingProgress';
 import CreatorProfileCard from '@/components/booking/CreatorProfileCard';
@@ -9,6 +9,9 @@ import { useBooking } from '../layout';
 export default function BookSessionStep4() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const fallbackUrl = searchParams.get('fallbackUrl');
+  const queryStr = fallbackUrl ? `?fallbackUrl=${encodeURIComponent(fallbackUrl)}` : '';
   const { booking, nextStep, setBooking, saveDraft, isDraftSaved } = useBooking();
   const creator = booking.creator;
   const [paymentMethod, setPaymentMethod] = useState<'jazzcash' | 'easypaisa'>('jazzcash');
@@ -65,7 +68,7 @@ export default function BookSessionStep4() {
         // Clear draft — booking is confirmed, no longer needed
         try { localStorage.removeItem('reachly_booking_draft'); } catch { }
         nextStep();
-        router.push(`/creators/${params.username}/book-session/step-5`);
+        router.push(`/creators/${params.username}/book-session/step-5${queryStr}`);
       } else {
         setErrorModalMsg(data.error || 'Failed to place booking');
         setErrorModalOpen(true);
@@ -283,7 +286,7 @@ export default function BookSessionStep4() {
                   <button
                     onClick={() => {
                       setIsLoadingBack(true);
-                      router.push(`/creators/${params.username}/book-session/step-3`);
+                      router.push(`/creators/${params.username}/book-session/step-3${queryStr}`);
                     }}
                     disabled={isLoadingBack}
                     className="bg-white border border-gray-200 text-gray-700 font-bold py-2.5 px-4 sm:px-6 rounded-full text-xs hover:bg-gray-50 transition-colors shadow-sm flex items-center justify-center"

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getRelativeTime } from '@/lib/time';
 import { signOut } from 'next-auth/react';
 
 interface UserNavbarProps {
@@ -53,10 +54,31 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
     }
   }, []);
 
+  // 2) Initial fetch + Setup SSE Connection
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 10000);
-    return () => clearInterval(interval);
+
+    // Setup Server-Sent Events for real-time notifications
+    const eventSource = new EventSource('/api/user/notifications/stream');
+
+    eventSource.onmessage = (event) => {
+      try {
+        const newNotification = JSON.parse(event.data);
+        // Prepend the new real-time notification
+        setNotifications((prev) => [newNotification, ...prev]);
+      } catch (err) {
+        console.error('Error parsing SSE notification:', err);
+      }
+    };
+
+    eventSource.onerror = (error) => {
+      console.error('SSE connection error:', error);
+      // EventSource automatically attempts to reconnect on error.
+    };
+
+    return () => {
+      eventSource.close();
+    };
   }, [fetchNotifications]);
 
   const handleClearAll = async () => {
@@ -135,8 +157,20 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
   // Close dropdown on route change
   useEffect(() => {
     setProfileDropdownOpen(false);
+    setNotificationsOpen(false);
     setMobileOpen(false);
   }, [pathname]);
+
+  // Handle bfcache: if user hits back button after logout, force reload
+  useEffect(() => {
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        window.location.reload();
+      }
+    };
+    window.addEventListener('pageshow', handlePageShow);
+    return () => window.removeEventListener('pageshow', handlePageShow);
+  }, []);
 
   const navItems = [
     { name: 'Dashboard', href: '/user/dashboard', icon: 'dashboard' },
@@ -376,7 +410,7 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
                                   <circle cx="12" cy="12" r="10" />
                                   <polyline points="12 6 12 12 16 14" />
                                 </svg>
-                                <span>{n.time || n.formattedTime || '6h ago'}</span>
+                                <span>{getRelativeTime(n.createdAt || n.date)}</span>
                               </div>
                             </div>
                           );

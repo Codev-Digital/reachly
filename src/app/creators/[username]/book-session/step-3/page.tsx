@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import BookingProgress from '@/components/booking/BookingProgress';
 import CreatorProfileCard from '@/components/booking/CreatorProfileCard';
@@ -9,6 +9,9 @@ import { useBooking } from '../layout';
 export default function BookSessionStep3() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const fallbackUrl = searchParams.get('fallbackUrl');
+  const queryStr = fallbackUrl ? `?fallbackUrl=${encodeURIComponent(fallbackUrl)}` : '';
   const { booking, setBooking, nextStep, saveToStorage, userData, saveDraft, isDraftSaved } = useBooking();
   const [authError, setAuthError] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
@@ -30,7 +33,7 @@ export default function BookSessionStep3() {
     booking.userDetails.email &&
     booking.userDetails.whatsapp;
 
-  const step4Url = `/creators/${params.username}/book-session/step-4`;
+  const step4Url = `/creators/${params.username}/book-session/step-4${queryStr}`;
 
   const handleContinue = async () => {
     if (!canProceed) return;
@@ -104,7 +107,7 @@ export default function BookSessionStep3() {
               <button
                 onClick={() => {
                   setIsLoadingBack(true);
-                  router.push(`/creators/${params.username}/book-session/step-2`);
+                  router.push(`/creators/${params.username}/book-session/step-2${queryStr}`);
                 }}
                 disabled={isLoadingBack}
                 className="mt-6 text-xs font-semibold text-gray-400 hover:text-gray-600 transition-colors"
@@ -228,7 +231,7 @@ export default function BookSessionStep3() {
                   <button
                     onClick={() => {
                       setIsLoadingBack(true);
-                      router.push(`/creators/${params.username}/book-session/step-2`);
+                      router.push(`/creators/${params.username}/book-session/step-2${queryStr}`);
                     }}
                     disabled={isLoadingBack}
                     className="bg-white border border-gray-200 text-gray-700 font-bold py-2.5 px-4 sm:px-5 rounded-full text-xs hover:bg-gray-50 transition-colors shadow-sm flex items-center justify-center"
