@@ -254,7 +254,7 @@ export default function BookSessionStep1() {
                   </div>
 
                   {/* DESKTOP CAROUSEL */}
-                  <div ref={scrollContainerRef} onScroll={handleScroll} className="hidden lg:flex flex-row overflow-x-auto snap-x snap-mandatory hide-scrollbar lg:h-auto w-full lg:max-w-none lg:mx-0 lg:pt-4 lg:pb-6 lg:gap-[20px]">
+                  <div ref={scrollContainerRef} onScroll={handleScroll} className="hidden lg:flex flex-row overflow-x-auto snap-x snap-mandatory hide-scrollbar lg:h-auto lg:w-[810px] lg:-ml-[10px] lg:px-[10px] lg:pt-4 lg:pb-6 lg:gap-[20px]">
                   {sessions.map((session, index) => {
                     const themeIdx = index % 3;
                     const theme = cardThemes[themeIdx];
