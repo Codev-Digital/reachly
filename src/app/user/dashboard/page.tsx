@@ -690,13 +690,13 @@ export default function UserDashboard() {
                 currentBookings[activeBookingTab].map((booking) => (
                   <div
                     key={booking.id}
-                    className="w-full bg-white border border-gray-200/80 rounded-[20px] p-5 flex flex-col justify-between shadow-2xs hover:shadow-xs transition-all relative group"
+                    className="w-full bg-white border border-gray-200/70 rounded-2xl p-4 flex flex-col justify-between shadow-2xs hover:shadow-xs transition-all group"
                   >
                     <div>
-                      {/* Header: Avatar, Name, Verified Badge, Accepted Badge, Amount */}
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-11 h-11 rounded-full overflow-hidden shrink-0 border border-gray-100">
+                      {/* Header */}
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 border border-gray-100">
                             <img
                               src={booking.avatar || '/avatar.png'}
                               alt={booking.name}
@@ -705,33 +705,33 @@ export default function UserDashboard() {
                           </div>
                           <div>
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <h4 className="font-extrabold text-base text-black font-sans leading-tight">{booking.name}</h4>
-                              <svg className="w-4 h-4 text-[#12B76A] fill-current shrink-0" viewBox="0 0 24 24">
+                              <h4 className="font-extrabold text-sm text-gray-900 font-sans leading-tight">{booking.name}</h4>
+                              <svg className="w-3.5 h-3.5 text-[#12B76A] fill-current shrink-0" viewBox="0 0 24 24">
                                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
                               </svg>
-                              <span className="bg-[#E6F9EE] text-[#12B76A] font-bold text-[11px] px-2.5 py-0.5 rounded-full shadow-2xs">
+                              <span className="bg-[#E6F9EE] text-[#12B76A] font-bold text-[10px] px-2 py-0.5 rounded-full">
                                 {booking.status || 'Accepted'}
                               </span>
                             </div>
-                            <p className="text-xs text-gray-400 font-medium font-sans mt-0.5">{booking.handle}</p>
+                            <p className="text-[11px] text-gray-400 font-medium font-sans mt-0.5">{booking.handle}</p>
                           </div>
                         </div>
-                        <span className="font-extrabold text-lg sm:text-xl text-[#0012FF] font-sans tracking-tight shrink-0 ml-2">
+                        <span className="font-bold text-sm text-[#0012FF] font-sans tracking-tight shrink-0 ml-2 mt-1">
                           {booking.amount}
                         </span>
                       </div>
 
                       {/* Time & Meeting Type Row */}
-                      <div className="space-y-1.5 text-xs text-gray-500 font-sans font-medium my-3">
-                        <div className="flex items-center gap-2">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                      <div className="flex items-center gap-4 text-[11px] text-gray-500 font-sans font-medium my-2.5">
+                        <div className="flex items-center gap-1.5">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
                             <circle cx="12" cy="12" r="10" />
                             <polyline points="12 6 12 12 16 14" />
                           </svg>
                           <span>{booking.time}</span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                        <div className="flex items-center gap-1.5">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
                             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                             <circle cx="12" cy="10" r="3" />
                           </svg>
@@ -740,15 +740,14 @@ export default function UserDashboard() {
                       </div>
 
                       {/* Note Description */}
-                      <p className="text-xs text-gray-400 font-sans leading-relaxed line-clamp-2">
+                      <p className="text-[11px] text-gray-400 font-sans leading-relaxed line-clamp-1">
                         {booking.note}
-                        <span className="text-[#0012FF] font-bold text-xs ml-1 hover:underline cursor-pointer">Read more</span>
                       </p>
                     </div>
 
                     {/* Action Buttons (for Upcoming) */}
                     {activeBookingTab === 'Upcoming' && (
-                      <div className="mt-4 pt-3 border-t border-gray-100 flex flex-col gap-3">
+                      <div className="mt-3 pt-3 border-t border-gray-100 flex flex-col gap-2">
                         <button
                           onClick={() => {
                             if (booking.meetingUrl && booking.bookingRef) {
@@ -757,22 +756,22 @@ export default function UserDashboard() {
                               alert('Meeting link is not available yet.');
                             }
                           }}
-                          className="w-full py-2.5 bg-[#0012FF] hover:bg-[#0012FF]/90 text-white rounded-full text-xs font-bold text-center transition-all cursor-pointer shadow-md shadow-[#0012FF]/20"
+                          className="w-full py-2 bg-[#0012FF] hover:bg-[#0012FF]/90 text-white rounded-lg text-[11px] font-bold text-center transition-all cursor-pointer shadow-sm"
                         >
                           Join Meeting
                         </button>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
                           <button
                             onClick={() => router.push('/user/bookings')}
-                            className="flex-1 py-2 border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-full text-xs font-semibold text-center transition-all cursor-pointer"
+                            className="flex-1 py-1.5 border border-gray-200 hover:bg-gray-50 text-gray-600 rounded-lg text-[11px] font-semibold text-center transition-all cursor-pointer"
                           >
                             Reschedule
                           </button>
                           <button
                             onClick={() => handleCancelClick(booking.id)}
-                            className="flex-1 py-2 bg-[#FFF0F0] border border-red-100 hover:bg-red-100 text-[#FF3B3B] rounded-full text-xs font-semibold text-center transition-all cursor-pointer"
+                            className="flex-1 py-1.5 bg-[#FFF0F0] border border-red-100 hover:bg-red-100 text-[#FF3B3B] rounded-lg text-[11px] font-semibold text-center transition-all cursor-pointer"
                           >
-                            Cancel Appointment
+                            Cancel
                           </button>
                         </div>
                       </div>

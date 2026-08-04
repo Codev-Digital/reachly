@@ -1,15 +1,31 @@
 'use client';
 
+import { useParams, useRouter } from 'next/navigation';
+import { useBooking } from '@/app/creators/[username]/book-session/layout';
+
 export default function BookingProgress({ currentStep }: { currentStep: number }) {
   const steps = [1, 2, 3, 4, 5];
+  const params = useParams();
+  const router = useRouter();
+  const { setBooking } = useBooking();
   
+  const handleStepClick = (step: number) => {
+    if (step < currentStep) {
+      setBooking(b => ({ ...b, step }));
+      router.push(`/creators/${params.username}/book-session/step-${step}`);
+    }
+  };
+
   return (
     <div className="flex items-center justify-center py-6 sm:py-10 max-w-2xl mx-auto w-full select-none px-4">
       {steps.map((step, idx) => (
         <div key={step} className="flex items-center flex-1 justify-center last:flex-initial">
           {/* Step Box */}
           <div
+            onClick={() => handleStepClick(step)}
             className={`w-9 h-10 rounded-xl flex items-center justify-center text-sm font-bold transition-all border shrink-0 ${
+              step < currentStep ? 'cursor-pointer hover:opacity-80 active:scale-95' : ''
+            } ${
               step === currentStep
                 ? 'bg-[#EEF2FF] border-[#0012FF] text-[#0012FF]'
                 : step < currentStep
