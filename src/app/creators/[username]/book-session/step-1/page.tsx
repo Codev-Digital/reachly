@@ -161,7 +161,7 @@ export default function BookSessionStep1() {
                   }
                 `}</style>
 
-                <div ref={scrollContainerRef} onScroll={handleScroll} className="flex overflow-x-auto gap-[16px] sm:gap-[24px] pt-4 pb-6 px-[16px] -mx-[16px] snap-x snap-mandatory hide-scrollbar">
+                <div ref={scrollContainerRef} onScroll={handleScroll} className="flex overflow-x-auto gap-[16px] sm:gap-[24px] pt-4 pb-6 px-[9vw] sm:px-[16px] -mx-[16px] snap-x snap-mandatory hide-scrollbar">
                   {sessions.map((session, index) => {
                     const themeIdx = index % 3;
                     const theme = cardThemes[themeIdx];
