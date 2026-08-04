@@ -20,14 +20,14 @@ export default function BookSessionStep1() {
 
   const scrollLeft = () => {
     if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollBy({ left: -309, behavior: 'smooth' });
+      scrollContainerRef.current.scrollBy({ left: -270, behavior: 'smooth' });
     }
   };
 
   const scrollRight = () => {
     setHasScrolled(true);
     if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollBy({ left: 309, behavior: 'smooth' });
+      scrollContainerRef.current.scrollBy({ left: 270, behavior: 'smooth' });
     }
   };
 
@@ -132,7 +132,7 @@ export default function BookSessionStep1() {
               <p className="text-gray-500 italic font-medium">No sessions found for this creator.</p>
             </div>
           ) : (
-            <div className="flex flex-col w-full max-w-[903px]">
+            <div className="flex flex-col w-full max-w-[790px]">
               {sessions.length > 3 && (
                 <div className="hidden lg:flex justify-end gap-3 mb-2 px-2">
                   <button
@@ -161,7 +161,8 @@ export default function BookSessionStep1() {
                   }
                 `}</style>
 
-                <div ref={scrollContainerRef} onScroll={handleScroll} className="flex overflow-x-auto gap-[16px] sm:gap-[24px] pt-4 pb-6 px-[9vw] sm:px-[16px] -mx-[16px] snap-x snap-mandatory hide-scrollbar">
+                <div className="w-full flex justify-center lg:block">
+                  <div ref={scrollContainerRef} onScroll={handleScroll} className="flex flex-col lg:flex-row overflow-y-auto lg:overflow-y-visible lg:overflow-x-auto snap-y lg:snap-x snap-mandatory hide-scrollbar h-[460px] lg:h-auto w-full max-w-[360px] lg:max-w-none mx-auto lg:mx-0 lg:pt-4 lg:pb-6 lg:gap-[20px]">
                   {sessions.map((session, index) => {
                     const themeIdx = index % 3;
                     const theme = cardThemes[themeIdx];
@@ -170,10 +171,13 @@ export default function BookSessionStep1() {
                     return (
                       <div
                         key={session.id}
-                        onClick={() => handleSelectSession(session)}
-                        className={`shrink-0 snap-center w-[82vw] sm:w-[285px] min-h-[380px] sm:min-h-[400px] h-[400px] ${theme.bg} rounded-[20px] sm:rounded-[13px] p-6 flex flex-col justify-between select-none cursor-pointer transition-all duration-300 shadow-sm hover:shadow-md hover:-translate-y-1 ${isSelected ? 'border-4 border-[#0012FF] scale-[1.03] shadow-lg' : 'border-4 border-transparent'
-                          } ${!hasScrolled && index >= 3 ? 'max-lg:opacity-100 lg:opacity-0 lg:pointer-events-none' : 'opacity-100'}`}
+                        className="w-full lg:w-[250px] shrink-0 snap-center h-[460px] lg:h-auto flex lg:block items-center justify-center p-2 lg:p-0"
                       >
+                        <div
+                          onClick={() => handleSelectSession(session)}
+                          className={`w-full max-w-[340px] lg:w-[250px] min-h-[400px] h-[400px] ${theme.bg} rounded-[28px] lg:rounded-[13px] p-6 flex flex-col justify-between select-none cursor-pointer transition-all duration-300 shadow-sm hover:shadow-md hover:-translate-y-1 ${isSelected ? 'border-4 border-[#0012FF] scale-[1.03] shadow-lg' : 'border-4 border-transparent'
+                            } ${!hasScrolled && index >= 3 ? 'max-lg:opacity-100 lg:opacity-0 lg:pointer-events-none' : 'opacity-100'}`}
+                        >
                         <div>
                           {/* Top row: Briefcase Icon + Duration */}
                           <div className="flex items-center justify-between mb-5">
@@ -226,13 +230,15 @@ export default function BookSessionStep1() {
                         <div className={`text-2xl sm:text-3xl font-black font-sans uppercase tracking-tight mt-6 leading-none ${theme.text}`}>
                           {session.price.toLocaleString()} PKR
                         </div>
+                        </div>
                       </div>
                     );
                   })}
+                  </div>
                 </div>
 
                 {/* Navigation Action Buttons */}
-                <div className="flex flex-wrap gap-2 mt-12 justify-end w-full max-w-[790px] mx-auto px-4">
+                <div className="flex flex-wrap gap-2 mt-6 mb-12 justify-end w-full max-w-[790px] mx-auto px-4 relative z-[100]">
                   <button
                     onClick={handleBack}
                     disabled={isLoadingBack}
