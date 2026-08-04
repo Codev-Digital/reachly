@@ -174,7 +174,7 @@ export default function BookSessionStep1() {
                 <div className="w-full flex justify-center lg:block">
 
                   {/* SESSIONS CAROUSEL (Mobile & Desktop) */}
-                  <div ref={scrollContainerRef} onScroll={handleScroll} className="flex flex-row overflow-x-auto snap-x snap-mandatory hide-scrollbar w-full h-[460px] lg:h-auto lg:w-[810px] lg:-ml-[10px] px-6 lg:px-[10px] lg:pt-4 lg:pb-6 gap-6 lg:gap-[20px] py-4 items-center lg:items-stretch">
+                  <div ref={scrollContainerRef} onScroll={handleScroll} className="flex flex-row overflow-x-auto snap-x snap-mandatory hide-scrollbar w-full h-[460px] lg:h-auto lg:w-[810px] lg:-ml-[10px] px-[calc(50%-140px)] lg:px-[10px] lg:pt-4 lg:pb-6 gap-4 lg:gap-[20px] py-4 items-center lg:items-stretch">
                   {sessions.map((session, index) => {
                     const themeIdx = index % 3;
                     const theme = cardThemes[themeIdx];
