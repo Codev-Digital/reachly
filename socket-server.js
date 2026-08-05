@@ -189,6 +189,20 @@ wss.on('connection', (ws) => {
           });
         }
       }
+
+      // ── TYPING STATUS ──────────────────────────────────────────────────────
+      else if (data.type === 'typing') {
+        const { conversationId, senderRole, isTyping } = data;
+        const roomClients = rooms.get(conversationId);
+        if (roomClients) {
+          roomClients.forEach(client => {
+            // Send typing notification to everyone in the room except the sender
+            if (client !== ws && client.readyState === WebSocket.OPEN) {
+              client.send(JSON.stringify({ type: 'typing', conversationId, senderRole, isTyping }));
+            }
+          });
+        }
+      }
     } catch (err) {
       console.error('Error handling websocket message:', err);
     }

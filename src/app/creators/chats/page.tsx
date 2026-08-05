@@ -74,6 +74,7 @@ export default function ChatsPage() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isRecordingCancelledRef = useRef<boolean>(false);
 
   const [loadingConversations, setLoadingConversations] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
@@ -84,6 +85,9 @@ export default function ChatsPage() {
   const [isChatLocked, setIsChatLocked] = useState(false);
   const [showLockModal, setShowLockModal] = useState(false);
   const [isLockingLoading, setIsLockingLoading] = useState(false);
+  const [isOtherUserTyping, setIsOtherUserTyping] = useState(false);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastTypingSentRef = useRef<boolean>(false);
 
   const wsRef = useRef<WebSocket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -218,6 +222,8 @@ export default function ChatsPage() {
           );
         } else if (data.type === 'presence' && data.conversationId === activeChat) {
           setIsOtherUserOnline(data.count > 1);
+        } else if (data.type === 'typing' && data.conversationId === activeChat) {
+          setIsOtherUserTyping(data.isTyping);
         } else if (data.type === 'read_receipt' && data.conversationId === activeChat) {
           setMessages(prev => prev.map(m => ({ ...m, read: true })));
         } else if (data.type === 'lock_status' && data.conversationId === activeChat) {
@@ -237,6 +243,13 @@ export default function ChatsPage() {
 
   const handleSendMessage = () => {
     if (!message.trim() || !activeChat || !creatorId) return;
+
+    // Immediately stop typing status when message is sent
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    sendTypingStatus(false);
+
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({
         type: 'message',
@@ -249,9 +262,48 @@ export default function ChatsPage() {
     }
   };
 
+  const sendTypingStatus = (typingState: boolean) => {
+    if (!activeChat || !wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+    if (lastTypingSentRef.current === typingState) return;
+
+    wsRef.current.send(JSON.stringify({
+      type: 'typing',
+      conversationId: activeChat,
+      senderRole: 'creator',
+      isTyping: typingState
+    }));
+    lastTypingSentRef.current = typingState;
+  };
+
+  const handleInputChange = (val: string) => {
+    setMessage(val);
+    if (!activeChat) return;
+
+    // Send typing: true immediately on first keystroke
+    sendTypingStatus(true);
+
+    // Debounce the typing: false status by 3 seconds
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    typingTimeoutRef.current = setTimeout(() => {
+      sendTypingStatus(false);
+    }, 3000);
+  };
+
+  // Clean up typing timeouts on unmount or active chat switch
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      lastTypingSentRef.current = false;
+    };
+  }, [activeChat]);
+
   // Audio voice recording helper functions
   const startRecording = async () => {
     try {
+      isRecordingCancelledRef.current = false;
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       audioChunksRef.current = [];
       const mediaRecorder = new MediaRecorder(stream);
@@ -264,6 +316,10 @@ export default function ChatsPage() {
       };
 
       mediaRecorder.onstop = async () => {
+        if (isRecordingCancelledRef.current) {
+          console.log('Recording cancelled, skipping upload');
+          return;
+        }
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         const formData = new FormData();
         formData.append('audio', audioBlob, 'voice-note.webm');
@@ -316,6 +372,7 @@ export default function ChatsPage() {
 
   const cancelRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
+      isRecordingCancelledRef.current = true;
       mediaRecorderRef.current.stop();
       mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
       setIsRecording(false);
@@ -648,6 +705,21 @@ export default function ChatsPage() {
                           <p className="text-sm">No messages yet. Send a message to start the conversation!</p>
                         </div>
                       )}
+
+                      {/* Real-time Typing Indicator Bubble */}
+                      {isOtherUserTyping && (
+                        <div className="flex items-end gap-3 max-w-[85%] self-start animate-fade-in select-none">
+                          <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 shrink-0 mb-1">
+                            <img src={activeConv.avatar} alt="Avatar" className="object-cover w-full h-full" />
+                          </div>
+                          <div className="bg-white border border-gray-100 py-3.5 px-5 rounded-[20px] rounded-bl-sm shadow-xs flex items-center gap-1.5 min-w-[70px]">
+                            <span className="w-1.5 h-1.5 bg-[#0012FF] rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                            <span className="w-1.5 h-1.5 bg-[#0012FF] rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                            <span className="w-1.5 h-1.5 bg-[#0012FF] rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                          </div>
+                        </div>
+                      )}
+
                       <div ref={messagesEndRef} />
                     </div>
 
@@ -686,7 +758,7 @@ export default function ChatsPage() {
                               <input
                                 type="text"
                                 value={message}
-                                onChange={(e) => setMessage(e.target.value)}
+                                onChange={(e) => handleInputChange(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                                 placeholder="Type something..."
                                 className="w-full bg-[#F3F4F6] border-0 rounded-full py-4 pl-6 pr-12 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0012FF]/10 transition-all"

@@ -199,7 +199,7 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
           </Link>
 
           {/* Centered Navigation Items */}
-          <div className="hidden md:flex items-center gap-2">
+          <div className="hidden lg:flex items-center gap-2">
             {navItems.map((item) => {
               const isActive = activeNavItem === item.name || (item.name === 'Dashboard' && (pathname === '/user/dashboard' || pathname === '/explore-creators' || pathname.includes('/book-session'))) || (item.name === 'Bookings' && pathname === '/user/bookings') || (item.name === 'Chats' && pathname === '/user/chats');
               return (
@@ -517,15 +517,13 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
 
               {/* Profile Dropdown Menu */}
               {profileDropdownOpen && (
-                <div className="hidden md:block absolute right-0 top-[48px] sm:top-[52px] w-56 bg-white rounded-2xl shadow-xl border border-gray-100 py-2.5 z-[100] text-left animate-in fade-in slide-in-from-top-2 duration-150">
-
-
+                <div className="hidden lg:block absolute right-0 top-[48px] sm:top-[52px] w-56 bg-white rounded-2xl shadow-xl border border-gray-100 py-2.5 z-[100] text-left animate-in fade-in slide-in-from-top-2 duration-150">
                   <button
                     onClick={() => {
                       setProfileDropdownOpen(false);
                       setShowLogoutModal(true);
                     }}
-                    className="hidden md:flex w-full items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50/70 font-semibold transition-colors text-left cursor-pointer"
+                    className="hidden lg:flex w-full items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50/70 font-semibold transition-colors text-left cursor-pointer"
                   >
                     Log Out
                   </button>
@@ -536,7 +534,7 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
             {/* Mobile Hamburger Button */}
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
-              className="md:hidden w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 focus:outline-none transition-all flex-shrink-0 cursor-pointer"
+              className="lg:hidden w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 focus:outline-none transition-all flex-shrink-0 cursor-pointer"
               aria-label="Toggle menu"
             >
               {mobileOpen ? (
@@ -563,7 +561,7 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="md:hidden overflow-hidden border-t border-gray-100 mt-3"
+              className="lg:hidden overflow-hidden border-t border-gray-100 mt-3"
             >
               <div className="px-4 py-3 flex flex-col gap-1">
                 {navItems.map((item) => {
