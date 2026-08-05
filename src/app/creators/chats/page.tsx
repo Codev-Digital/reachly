@@ -621,7 +621,7 @@ export default function ChatsPage() {
                 {(isChatLocked && messages.length === 0 && !loadingMessages) ? (
                   <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-[#FAFAFA]">
                     <div className="mb-6 mt-4 w-[240px] h-[180px] relative">
-                      <Image src="/assets/lock-chat.png" alt="Lock Chat" fill className="object-contain" />
+                      <Image src="/assets/lock-chat.webp" alt="Lock Chat" fill className="object-contain" />
                     </div>
                     <h3 className="text-xl font-bold text-gray-800 mb-1">This Chat is Locked</h3>
                     <p className="text-sm text-gray-400 max-w-[320px] mb-6">
@@ -822,7 +822,7 @@ export default function ChatsPage() {
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
             </button>
             <div className="mb-6 mt-4 w-[200px] h-[150px] relative">
-              <Image src="/assets/lock-chat.png" alt="Lock Chat" fill className="object-contain" />
+              <Image src="/assets/lock-chat.webp" alt="Lock Chat" fill className="object-contain" />
             </div>
             <h3 className="text-xl font-bold text-gray-900 mb-2">Are You Sure?</h3>
             <p className="text-sm text-gray-400 leading-relaxed mb-6 max-w-[280px]">

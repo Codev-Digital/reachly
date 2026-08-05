@@ -556,7 +556,7 @@ export default function UserChatsPage() {
                 {(isChatLocked && messages.length === 0 && !loadingMessages) ? (
                   <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-[#FAFAFA]">
                     <div className="mb-6 mt-4 w-[240px] h-[180px] relative">
-                      <Image src="/assets/lock-chat.png" alt="Lock Chat" fill className="object-contain" />
+                      <Image src="/assets/lock-chat.webp" alt="Lock Chat" fill className="object-contain" />
                     </div>
                     <h3 className="text-xl font-bold text-gray-800 mb-1">Creator has locked this chat</h3>
                     <p className="text-sm text-gray-400 max-w-[340px] mb-6">
