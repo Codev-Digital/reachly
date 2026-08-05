@@ -287,7 +287,7 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
                       <img
                         src="/assets/chat.svg"
                         alt="Chats"
-                        className="w-[38px] h-[38px] object-contain"
+                        className="w-[28px] h-[38px] object-contain"
                       />
                     ) : (
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -682,7 +682,7 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
                     </Link>
                   );
                 })}
-                
+
                 {/* Logout Button (Mobile Only) */}
                 <button
                   onClick={() => {
