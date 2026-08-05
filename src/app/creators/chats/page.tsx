@@ -207,6 +207,9 @@ export default function ChatsPage() {
           setIsOtherUserOnline(data.count > 1);
         } else if (data.type === 'read_receipt' && data.bookingId === activeChat) {
           setMessages(prev => prev.map(m => ({ ...m, read: true })));
+        } else if (data.type === 'lock_status' && data.bookingId === activeChat) {
+          setIsChatLocked(data.isLocked);
+          setBookings(prev => prev.map(b => b.id === data.bookingId ? { ...b, isLocked: data.isLocked } : b));
         }
       } catch (err) {
         console.error('Error parsing WebSocket message:', err);
@@ -269,6 +272,40 @@ export default function ChatsPage() {
       setMessage('');
     } else {
       console.error('WebSocket server is offline.');
+    }
+  };
+
+  const handleLockToggleClick = () => {
+    if (isChatLocked) {
+      handleLockAction(false);
+    } else {
+      setShowLockModal(true);
+    }
+  };
+
+  const handleLockAction = async (lockState: boolean) => {
+    if (!activeChat) return;
+    try {
+      const res = await fetch(`/api/creators/bookings/${activeChat}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isLocked: lockState }),
+      });
+      if (res.ok) {
+        setIsChatLocked(lockState);
+        setBookings(prev => prev.map(b => b.id === activeChat ? { ...b, isLocked: lockState } : b));
+        if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+          wsRef.current.send(JSON.stringify({
+            type: 'lock_status',
+            bookingId: activeChat,
+            isLocked: lockState
+          }));
+        }
+      }
+    } catch (err) {
+      console.error('Error locking/unlocking booking:', err);
+    } finally {
+      setShowLockModal(false);
     }
   };
 
@@ -422,8 +459,16 @@ export default function ChatsPage() {
                   </div>
                   
                   <div className="flex items-center gap-5 text-gray-400">
-                    <button className="hover:text-gray-600 transition-colors">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                    <button 
+                      onClick={handleLockToggleClick} 
+                      className={`transition-colors ${isChatLocked ? 'text-[#0012FF] hover:text-[#0010d0]' : 'text-gray-400 hover:text-gray-600'}`}
+                      title={isChatLocked ? "Unlock Chat" : "Lock Chat"}
+                    >
+                      {isChatLocked ? (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                      ) : (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                      )}
                     </button>
                     <button className="hover:text-gray-600 transition-colors">
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" /></svg>
@@ -491,28 +536,35 @@ export default function ChatsPage() {
                 </div>
 
                 {/* Input Area */}
-                <div className="p-4 sm:p-6 bg-white border-t border-gray-100 shrink-0">
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1 relative">
-                      <input
-                        type="text"
-                        value={message}
-                        onChange={(e) => setMessage(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                        placeholder="Type something..."
-                        className="w-full bg-[#F3F4F6] border-0 rounded-full py-4 pl-6 pr-12 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0012FF]/10 transition-all"
-                      />
-                      <button className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" y1="19" x2="12" y2="23" /><line x1="8" y1="23" x2="16" y2="23" /></svg>
+                {isChatLocked ? (
+                  <div className="p-5 sm:p-6 bg-gray-50 border-t border-gray-100 flex items-center justify-center text-sm text-gray-400 font-medium select-none shrink-0 gap-2">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                    <span>This chat is locked. Click the lock icon in the header to unlock.</span>
+                  </div>
+                ) : (
+                  <div className="p-4 sm:p-6 bg-white border-t border-gray-100 shrink-0">
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 relative">
+                        <input
+                          type="text"
+                          value={message}
+                          onChange={(e) => setMessage(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                          placeholder="Type something..."
+                          className="w-full bg-[#F3F4F6] border-0 rounded-full py-4 pl-6 pr-12 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0012FF]/10 transition-all"
+                        />
+                        <button className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" y1="19" x2="12" y2="23" /><line x1="8" y1="23" x2="16" y2="23" /></svg>
+                        </button>
+                      </div>
+                      <button onClick={handleSendMessage} className="w-14 h-14 rounded-full bg-[#0012FF] hover:bg-[#0010d0] flex items-center justify-center text-white shrink-0 shadow-md transition-transform active:scale-95">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginLeft: '-2px' }}>
+                          <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
+                        </svg>
                       </button>
                     </div>
-                    <button onClick={handleSendMessage} className="w-14 h-14 rounded-full bg-[#0012FF] hover:bg-[#0010d0] flex items-center justify-center text-white shrink-0 shadow-md transition-transform active:scale-95">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginLeft: '-2px' }}>
-                        <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
-                      </svg>
-                    </button>
                   </div>
-                </div>
+                )}
               </>
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-[#FAFAFA]">
@@ -530,6 +582,46 @@ export default function ChatsPage() {
           </div>
         </div>
       </main>
+
+      {showLockModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] transition-opacity">
+          <div className="bg-white rounded-[32px] p-8 max-w-[420px] w-full mx-4 relative flex flex-col items-center text-center shadow-2xl">
+            
+            {/* Close Button */}
+            <button 
+              onClick={() => setShowLockModal(false)}
+              className="absolute right-6 top-6 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+            </button>
+
+            {/* Lock Illustration */}
+            <div className="mb-6 mt-4 w-[200px] h-[150px] relative">
+              <Image 
+                src="/assets/lock-chat.png" 
+                alt="Lock Chat" 
+                fill 
+                className="object-contain" 
+              />
+            </div>
+
+            {/* Content */}
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Are You Sure?</h3>
+            <p className="text-sm text-gray-400 leading-relaxed mb-6 max-w-[280px]">
+              Are you sure you want to lock this chat? <br />
+              You can unlock this anytime.
+            </p>
+
+            {/* Lock Action Button */}
+            <button 
+              onClick={() => handleLockAction(true)}
+              className="w-full bg-[#0012FF] hover:bg-[#0010d0] text-white font-semibold py-4 rounded-full shadow-lg shadow-[#0012FF]/20 transition-all active:scale-[0.98]"
+            >
+              Lock Chat
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
