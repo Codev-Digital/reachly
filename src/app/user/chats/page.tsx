@@ -388,7 +388,7 @@ export default function UserChatsPage() {
   );
 
   return (
-    <div className="flex flex-col h-[100dvh] bg-[#F8F8FA] overflow-hidden">
+    <div className="fixed inset-0 flex flex-col bg-[#F8F8FA] overflow-hidden">
       <div className="shrink-0">
         <UserNavbar displayName={displayName} profilePhoto={profilePhoto} />
       </div>

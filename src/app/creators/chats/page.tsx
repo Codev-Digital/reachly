@@ -437,7 +437,7 @@ export default function ChatsPage() {
   const activeConv = conversations.find(c => c.id === activeChat);
 
   return (
-    <div className="h-[100dvh] flex flex-col bg-[#F8F8FA] overflow-hidden">
+    <div className="fixed inset-0 flex flex-col bg-[#F8F8FA] overflow-hidden">
       <CreatorDashboardNav profilePhoto={profilePhoto} displayName={displayName} />
 
       <main className="flex-1 max-w-[1536px] w-full mx-auto px-4 sm:px-6 lg:px-10 py-4 lg:py-6 flex flex-col min-h-0">

@@ -40,11 +40,21 @@ export default function CreatorLayout({
     checkApproval();
   }, [pathname, router]);
 
+  const isDashboardRoute = 
+    pathname.startsWith('/creators/dashboard') ||
+    pathname.startsWith('/creators/chats') ||
+    pathname.startsWith('/creators/calendar') ||
+    pathname.startsWith('/creators/wallet') ||
+    pathname.startsWith('/creators/settings');
+
   if (loading) return <LoadingAnimation />;
 
   return (
     <>
-      {pathname !== '/creators/pending-approval' && !pathname.includes('/book-session') && <CreatorNavbar />}
+      {pathname !== '/creators/pending-approval' && 
+       !pathname.includes('/book-session') && 
+       !isDashboardRoute && 
+       <CreatorNavbar />}
       {children}
     </>
   );
