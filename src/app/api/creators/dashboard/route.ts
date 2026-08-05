@@ -26,7 +26,6 @@ export async function GET(req: NextRequest) {
     // Fetch all bookings for this creator
     const bookings = await Booking.find({ creatorId: user._id })
       .populate({ path: 'sessionTypeId', model: SessionType })
-      .populate({ path: 'userId', model: User, select: 'profilePhoto' })
       .sort({ createdAt: -1 });
 
     const now = new Date();
@@ -59,17 +58,37 @@ export async function GET(req: NextRequest) {
     });
     const totalCustomers = uniqueCustomerEmails.size;
 
-    // Batch fetch CreatorProfiles for users who don't have direct profilePhoto to avoid N+1 bottleneck
-    const userIdsNeedingProfile = Array.from(new Set(
-      bookings
-        .filter((b) => b.userId && !(b.userId as any).profilePhoto)
-        .map((b) => (b.userId as any)._id?.toString())
-        .filter(Boolean)
-    ));
-    const cpDocs = userIdsNeedingProfile.length > 0
-      ? await CreatorProfile.find({ userId: { $in: userIdsNeedingProfile } }).select('userId profilePhoto').lean()
+    // Extract all guest emails and form-filler user IDs to fetch photos
+    const guestEmails = Array.from(new Set(
+      bookings.map((b) => b.guestDetails?.email?.toLowerCase()).filter(Boolean)
+    )) as string[];
+
+    const formFillerUserIds = Array.from(new Set(
+      bookings.map((b) => b.userId?.toString()).filter(Boolean)
+    )) as string[];
+
+    // Fetch users registered with the guest emails
+    const guestUsers = guestEmails.length > 0
+      ? await User.find({ email: { $in: guestEmails } }).select('email profilePhoto').lean() as any[]
       : [];
-    const cpMap = new Map(cpDocs.map((cp: any) => [cp.userId.toString(), cp.profilePhoto]));
+    const guestUsersMap = new Map<string, any>(guestUsers.map((u) => [u.email.toLowerCase(), u]));
+
+    // Fetch users who filled the form (fallback)
+    const formFillerUsers = formFillerUserIds.length > 0
+      ? await User.find({ _id: { $in: formFillerUserIds } }).select('profilePhoto').lean() as any[]
+      : [];
+    const formFillersMap = new Map<string, any>(formFillerUsers.map((u) => [u._id.toString(), u]));
+
+    // Collect all user IDs we might check CreatorProfiles for
+    const allUserIdsToCheck = Array.from(new Set([
+      ...guestUsers.map((u) => u._id.toString()),
+      ...formFillerUserIds
+    ]));
+
+    const cpDocs = allUserIdsToCheck.length > 0
+      ? await CreatorProfile.find({ userId: { $in: allUserIdsToCheck } }).select('userId profilePhoto').lean() as any[]
+      : [];
+    const cpMap = new Map<string, string>(cpDocs.map((cp) => [cp.userId.toString(), cp.profilePhoto]));
 
     // Format recent bookings list
     const formattedBookings = bookings.map((b) => {
@@ -81,10 +100,18 @@ export async function GET(req: NextRequest) {
       
       const duration = (b.sessionTypeId as any)?.duration || 30;
       
-      let avatarUrl = '/avatar.png'; // Default
-      if (b.userId) {
-        const u = b.userId as any;
-        avatarUrl = u.profilePhoto || cpMap.get(u._id?.toString()) || '/avatar.png';
+      // Determine avatar photo
+      let avatarUrl = '/avatar.png';
+      const guestEmail = b.guestDetails?.email?.toLowerCase();
+      
+      if (guestEmail && guestUsersMap.has(guestEmail)) {
+        const guestUserObj = guestUsersMap.get(guestEmail);
+        avatarUrl = guestUserObj.profilePhoto || cpMap.get(guestUserObj._id.toString()) || '/avatar.png';
+      } else if (b.userId) {
+        const fillerUserObj = formFillersMap.get(b.userId.toString());
+        if (fillerUserObj) {
+          avatarUrl = fillerUserObj.profilePhoto || cpMap.get(b.userId.toString()) || '/avatar.png';
+        }
       }
       
       return {

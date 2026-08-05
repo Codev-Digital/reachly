@@ -6,8 +6,8 @@ import Booking from '@/models/Booking';
 import User from '@/models/User';
 import CreatorProfile from '@/models/CreatorProfile';
 import SessionType from '@/models/SessionType';
+import Message from '@/models/Message';
 
-// Helper to safely convert 12h to 24h for comparison
 function convertTo24Hour(time12h: string): string {
     const [time, modifier] = time12h.split(' ');
     let [hours, minutes] = time.split(':');
@@ -24,8 +24,6 @@ function convertTo24Hour(time12h: string): string {
     let hoursStr = hoursInt.toString().padStart(2, '0');
     return `${hoursStr}:${minutes}:00`;
 }
-
-import Message from '@/models/Message';
 
 export async function GET(request: NextRequest) {
     try {
@@ -87,29 +85,51 @@ export async function GET(request: NextRequest) {
                     })
                 ]);
                 
-                let userInfo: any = null;
-                let avatar = '/avatar.png'; // Default
-                if (booking.userId) {
-                    const user = await User.findById(booking.userId);
-                    if (user) {
-                        userInfo = {
-                            name: user.name,
-                            email: user.email
-                        };
-                        
-                        // Check if user has profilePhoto on User model first
-                        if (user.profilePhoto) {
-                            avatar = user.profilePhoto;
+                // Prioritize guest details for name/email
+                let followerName = 'Guest';
+                let email = '';
+                if (booking.guestDetails?.fullName) {
+                    followerName = booking.guestDetails.fullName;
+                    email = booking.guestDetails.email || '';
+                } else if (booking.userId) {
+                    const u = await User.findById(booking.userId).lean() as any;
+                    if (u) {
+                        followerName = u.name || 'Guest';
+                        email = u.email || '';
+                    }
+                }
+
+                // Determine avatar: lookup registered user by guest email first
+                let avatar = '/avatar.png';
+                const guestEmail = booking.guestDetails?.email?.toLowerCase();
+                
+                if (guestEmail) {
+                    const guestUser = await User.findOne({ email: guestEmail }).lean() as any;
+                    if (guestUser) {
+                        if (guestUser.profilePhoto) {
+                            avatar = guestUser.profilePhoto;
                         } else {
-                            // Check if user has CreatorProfile for avatar
-                            const creatorProfile = await CreatorProfile.findOne({ userId: user._id });
-                            if (creatorProfile?.profilePhoto) {
-                                avatar = creatorProfile.profilePhoto;
+                            const cp = await CreatorProfile.findOne({ userId: guestUser._id }).lean() as any;
+                            if (cp?.profilePhoto) {
+                                avatar = cp.profilePhoto;
                             }
                         }
                     }
-                } else if (booking.guestDetails) {
-                    userInfo = booking.guestDetails;
+                }
+                
+                // Fallback to form-filler user avatar if guest lookup yielded nothing
+                if (avatar === '/avatar.png' && booking.userId) {
+                    const u = await User.findById(booking.userId).lean() as any;
+                    if (u) {
+                        if (u.profilePhoto) {
+                            avatar = u.profilePhoto;
+                        } else {
+                            const cp = await CreatorProfile.findOne({ userId: u._id }).lean() as any;
+                            if (cp?.profilePhoto) {
+                                avatar = cp.profilePhoto;
+                            }
+                        }
+                    }
                 }
 
                 const d = new Date(booking.scheduledDate);
@@ -146,8 +166,8 @@ export async function GET(request: NextRequest) {
                 return {
                     id: booking._id.toString(),
                     bookingRef: booking.bookingRef,
-                    follower: userInfo?.fullName || userInfo?.name || 'Guest',
-                    email: userInfo?.email,
+                    follower: followerName,
+                    email: email,
                     avatar: avatar,
                     session: booking.sessionTypeId?.title || 'Session',
                     date: `${formattedShortDate} at ${booking.scheduledTime}`,

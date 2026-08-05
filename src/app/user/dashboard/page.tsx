@@ -9,6 +9,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import DailyCall from '@/components/DailyCall';
+import { isMeetingPassed } from '@/lib/time';
 
 function LoginToExplore() {
   const router = useRouter();
@@ -755,18 +756,28 @@ export default function UserDashboard() {
                         {/* Action Buttons (for Upcoming) */}
                         {activeBookingTab === 'Upcoming' && (
                           <div className="mt-3 pt-3 border-t border-gray-100 flex flex-col gap-2">
-                            <button
-                              onClick={() => {
-                                if (booking.meetingUrl && booking.bookingRef) {
-                                  setMeetingToJoin({ url: booking.meetingUrl, ref: booking.bookingRef });
-                                } else {
-                                  alert('Meeting link is not available yet.');
-                                }
-                              }}
-                              className="w-full py-2 bg-[#0012FF] hover:bg-[#0012FF]/90 text-white rounded-lg text-[11px] font-bold text-center transition-all cursor-pointer shadow-sm"
-                            >
-                              Join Meeting
-                            </button>
+                            {(() => {
+                              const passed = booking.scheduledDate ? isMeetingPassed(booking.scheduledDate, booking.time) : false;
+                              return (
+                                <button
+                                  disabled={passed}
+                                  onClick={() => {
+                                    if (booking.meetingUrl && booking.bookingRef) {
+                                      setMeetingToJoin({ url: booking.meetingUrl, ref: booking.bookingRef });
+                                    } else {
+                                      alert('Meeting link is not available yet.');
+                                    }
+                                  }}
+                                  className={`w-full py-2 rounded-lg text-[11px] font-bold text-center transition-all shadow-sm ${
+                                    passed
+                                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
+                                      : 'bg-[#0012FF] hover:bg-[#0012FF]/90 text-white cursor-pointer'
+                                  }`}
+                                >
+                                  {passed ? 'Meeting Ended' : 'Join Meeting'}
+                                </button>
+                              );
+                            })()}
                             <div className="flex items-center gap-2">
                               <button
                                 onClick={() => router.push('/user/bookings')}

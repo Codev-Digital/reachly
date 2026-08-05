@@ -10,6 +10,7 @@ import LoadingAnimation from '@/components/LoadingAnimation';
 import { TrendingUp, BookOpen, Calendar, Eye, Users, Copy, Check, Bookmark, Target, Presentation } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Cell, Tooltip } from 'recharts';
 import DailyCall from '@/components/DailyCall';
+import { isMeetingPassed } from '@/lib/time';
 
 import {
   Card,
@@ -455,18 +456,28 @@ const CreatorDashboard = () => {
           </div>
         ) : (
           <div className="flex flex-col gap-3">
-            <button
-              onClick={() => {
-                if (booking.meetingUrl && booking.bookingRef) {
-                  setMeetingToJoin({ url: booking.meetingUrl, ref: booking.bookingRef });
-                } else {
-                  alert('Meeting link is not available yet.');
-                }
-              }}
-              className="w-full py-2.5 bg-[#0012FF] hover:bg-[#0012FF]/90 text-white rounded-full text-xs font-bold text-center transition-all cursor-pointer shadow-md shadow-[#0012FF]/20"
-            >
-              Join Meeting
-            </button>
+            {(() => {
+              const passed = booking.scheduledDate ? isMeetingPassed(booking.scheduledDate, booking.time) : false;
+              return (
+                <button
+                  disabled={passed}
+                  onClick={() => {
+                    if (booking.meetingUrl && booking.bookingRef) {
+                      setMeetingToJoin({ url: booking.meetingUrl, ref: booking.bookingRef });
+                    } else {
+                      alert('Meeting link is not available yet.');
+                    }
+                  }}
+                  className={`w-full py-2.5 rounded-full text-xs font-bold text-center transition-all shadow-md ${
+                    passed
+                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
+                      : 'bg-[#0012FF] hover:bg-[#0012FF]/90 text-white shadow-[#0012FF]/20 cursor-pointer'
+                  }`}
+                >
+                  {passed ? 'Meeting Ended' : 'Join Meeting'}
+                </button>
+              );
+            })()}
             <div className="flex items-center gap-3">
               <button
                 onClick={() => handleRescheduleClick(booking)}
