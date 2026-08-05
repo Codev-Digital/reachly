@@ -6,6 +6,7 @@ import Booking from '@/models/Booking';
 import User from '@/models/User';
 import CreatorProfile from '@/models/CreatorProfile';
 import SessionType from '@/models/SessionType';
+import Message from '@/models/Message';
 import { verifyToken } from '@/lib/jwt';
 
 export async function GET(request: NextRequest) {
@@ -62,8 +63,12 @@ export async function GET(request: NextRequest) {
             : [];
         const profileMap = new Map(creatorProfiles.map((cp: any) => [cp.userId.toString(), cp]));
 
-        const enrichedBookings = bookings.map((booking: any) => {
-            const creatorProfile = profileMap.get(booking.creatorId?.toString());
+        const enrichedBookings = await Promise.all(
+            bookings.map(async (booking: any) => {
+                const creatorProfile = profileMap.get(booking.creatorId?.toString());
+                const lastMsgDoc = await Message.findOne({ bookingId: booking._id })
+                    .sort({ createdAt: -1 })
+                    .lean();
 
                 const d = new Date(booking.scheduledDate);
                 const formattedShortDate = d.toLocaleDateString('en-GB', {
@@ -122,10 +127,14 @@ export async function GET(request: NextRequest) {
                     originalStatus: booking.status,
                     scheduledDate: booking.scheduledDate,
                     isRescheduled: booking.isRescheduled || false,
+                    isLocked: booking.isLocked !== undefined ? booking.isLocked : !lastMsgDoc,
                     meetingUrl: booking.meetingUrl,
                     bookingRef: booking.bookingRef,
+                    lastMessage: lastMsgDoc ? lastMsgDoc.content : "",
+                    lastMessageTime: lastMsgDoc ? lastMsgDoc.createdAt : null,
                 };
-            });
+            })
+        );
 
         return NextResponse.json({ bookings: enrichedBookings });
     } catch (error: any) {

@@ -22,6 +22,7 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
   // Determine active nav item from pathname
   const getActiveNavItem = () => {
     if (pathname === '/user/bookings') return 'Bookings';
+    if (pathname === '/user/chats') return 'Chats';
     if (pathname === '/user/dashboard' || pathname === '/explore-creators') return 'Dashboard';
     if (pathname === '/user/payments') return 'Wallet';
     if (pathname === '/user/settings') return 'Settings';
@@ -176,6 +177,7 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
     { name: 'Dashboard', href: '/user/dashboard', icon: 'dashboard' },
     // { name: 'Events', href: '/explore-creators', icon: 'events' },
     { name: 'Bookings', href: '/user/bookings', icon: 'bookings' },
+    { name: 'Chats', href: '/user/chats', icon: 'chats' },
     { name: 'Referrals', href: '/user/referrals', icon: 'referrals' },
     { name: 'Wallet', href: '/user/payments', icon: 'wallet' },
     { name: 'Settings', href: '/user/settings', icon: 'settings' },
@@ -199,7 +201,7 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
           {/* Centered Navigation Items */}
           <div className="hidden md:flex items-center gap-2">
             {navItems.map((item) => {
-              const isActive = activeNavItem === item.name || (item.name === 'Dashboard' && (pathname === '/user/dashboard' || pathname === '/explore-creators' || pathname.includes('/book-session'))) || (item.name === 'Bookings' && pathname === '/user/bookings');
+              const isActive = activeNavItem === item.name || (item.name === 'Dashboard' && (pathname === '/user/dashboard' || pathname === '/explore-creators' || pathname.includes('/book-session'))) || (item.name === 'Bookings' && pathname === '/user/bookings') || (item.name === 'Chats' && pathname === '/user/chats');
               return (
                 <Link
                   key={item.name}
@@ -275,6 +277,21 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
                         <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
                         <polyline points="16 6 12 2 8 6" />
                         <line x1="12" y1="2" x2="12" y2="15" />
+                      </svg>
+                    )
+                  )}
+
+                  {/* Chats Icon */}
+                  {item.icon === 'chats' && (
+                    isActive ? (
+                      <img
+                        src="/assets/chat.svg"
+                        alt="Chats"
+                        className="w-[38px] h-[38px] object-contain"
+                      />
+                    ) : (
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                       </svg>
                     )
                   )}
@@ -550,7 +567,7 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
             >
               <div className="px-4 py-3 flex flex-col gap-1">
                 {navItems.map((item) => {
-                  const isActive = activeNavItem === item.name || (item.name === 'Dashboard' && (pathname === '/user/dashboard' || pathname === '/explore-creators' || pathname.includes('/book-session'))) || (item.name === 'Bookings' && pathname === '/user/bookings');
+                  const isActive = activeNavItem === item.name || (item.name === 'Dashboard' && (pathname === '/user/dashboard' || pathname === '/explore-creators' || pathname.includes('/book-session'))) || (item.name === 'Bookings' && pathname === '/user/bookings') || (item.name === 'Chats' && pathname === '/user/chats');
                   return (
                     <Link
                       key={item.name}
@@ -596,6 +613,21 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
                             <line x1="16" y1="2" x2="16" y2="6" />
                             <line x1="8" y1="2" x2="8" y2="6" />
                             <line x1="3" y1="10" x2="21" y2="10" />
+                          </svg>
+                        )
+                      )}
+
+                      {/* Chats Icon */}
+                      {item.icon === 'chats' && (
+                        isActive ? (
+                          <img
+                            src="/assets/chat.svg"
+                            alt="Chats"
+                            className="w-6 h-6 object-contain"
+                          />
+                        ) : (
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                           </svg>
                         )
                       )}

@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
         }
 
-        if (booking.creatorId.toString() !== user._id.toString()) {
+        if (booking.creatorId.toString() !== user._id.toString() && booking.userId?.toString() !== user._id.toString()) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 

@@ -20,6 +20,7 @@ interface BookingInfo {
   statusRaw: string;
   paymentStatus: string;
   meetingUrl?: string;
+  isLocked: boolean;
   lastMessage: string;
   lastMessageTime: string | null;
 }
@@ -30,6 +31,7 @@ interface ChatMessage {
   senderId: string;
   senderRole: 'creator' | 'user';
   content: string;
+  read?: boolean;
   createdAt: string;
 }
 
