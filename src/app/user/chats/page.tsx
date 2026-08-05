@@ -46,6 +46,29 @@ const formatMsgTime = (dateStr: string | null): string => {
   return `${hours}:${minutes}${ampm}`;
 };
 
+// Format scheduled time range e.g. "Sat at 03:00 PM to 05:00 PM"
+const formatTimeRange = (scheduledDate: string, timeStr: string, durationStr: string): string => {
+  if (!scheduledDate || !timeStr) return timeStr || '';
+  try {
+    const base = new Date(scheduledDate);
+    const dayName = base.toLocaleDateString('en-US', { weekday: 'short' });
+    // Parse the time string (e.g. "03:00 PM")
+    const [timePart, meridiem] = timeStr.split(' ');
+    let [h, m] = timePart.split(':').map(Number);
+    if (meridiem === 'PM' && h !== 12) h += 12;
+    if (meridiem === 'AM' && h === 12) h = 0;
+    const startDate = new Date(base);
+    startDate.setHours(h, m, 0, 0);
+    const durMin = parseInt(durationStr || '0', 10);
+    const endDate = new Date(startDate.getTime() + durMin * 60000);
+    const fmt = (d: Date) => d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    if (durMin > 0) return `${dayName} at ${fmt(startDate)} to ${fmt(endDate)}`;
+    return `${dayName} at ${fmt(startDate)}`;
+  } catch {
+    return timeStr;
+  }
+};
+
 export default function UserChatsPage() {
   const [conversations, setConversations] = useState<ConversationInfo[]>([]);
   const [activeChat, setActiveChat] = useState<string | null>(null);
@@ -405,7 +428,7 @@ export default function UserChatsPage() {
         <div className="flex-grow flex flex-col lg:flex-row gap-6 min-h-0 mb-0 lg:mb-6 h-[calc(100dvh-120px)] lg:h-[calc(100dvh-180px)]">
 
           {/* Left Sidebar */}
-          <div className={`w-full lg:w-[380px] bg-white rounded-[24px] p-4 flex flex-col gap-4 h-full lg:h-full shrink-0 overflow-hidden shadow-sm border border-gray-100 ${activeChat ? 'hidden lg:flex' : 'flex'}`}>
+          <div className={`w-full lg:w-[380px] flex flex-col gap-4 h-full lg:h-full shrink-0 overflow-hidden ${activeChat ? 'hidden lg:flex' : 'flex'}`}>
 
             {/* Search Box */}
             <div className="relative shrink-0">
@@ -414,9 +437,9 @@ export default function UserChatsPage() {
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
                 placeholder="Search"
-                className="w-full bg-[#F3F4F6] border-0 rounded-full py-3 pl-10 pr-4 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0012FF]/10 transition-all"
+                className="w-full bg-white border border-gray-200 shadow-sm rounded-full py-3 pl-10 pr-4 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0012FF]/20 focus:border-[#0012FF]/30 transition-all"
               />
-              <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#0012FF]" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
               </svg>
             </div>
@@ -456,11 +479,13 @@ export default function UserChatsPage() {
                           <div>
                             <div className="flex items-center gap-1">
                               <h4 className="text-sm font-bold text-gray-900">{chat.creator}</h4>
-                              <svg className="text-[#12B76A]" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="12" cy="12" r="12" fill="#12B76A" />
+                                <polyline points="7 12.5 10.5 16 17 9" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
                             </div>
-
                             {chat.isLocked ? (
-                              <span className="inline-flex items-center text-[10px] font-semibold bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded mt-1">
+                              <span className="inline-flex items-center text-[12px] font-semibold text-gray-800 px-1.5 py-0.5 rounded mt-1">
                                 Chat is locked
                               </span>
                             ) : chat.lastMessage ? (
@@ -487,17 +512,21 @@ export default function UserChatsPage() {
                       <div className="flex items-center gap-4 text-[10px] text-gray-400 font-medium mt-3 border-t border-gray-50 pt-3">
                         <div className="flex items-center gap-1">
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
-                          <span>{chat.time}</span>
+                          <span>{formatTimeRange(chat.scheduledDate, chat.time, chat.duration)}</span>
                         </div>
                         <div className="flex items-center gap-1">
                           {chat.meetingUrl ? (
                             <>
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#12B76A" strokeWidth="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" /></svg>
-                              <span>Online</span>
+                              <img
+                                src="https://static.vecteezy.com/system/resources/thumbnails/022/484/498/small/google-meet-gmeet-icon-logo-symbol-free-png.png"
+                                alt="Google Meet"
+                                className="w-4 h-4 object-contain shrink-0"
+                              />
+                              <span className="text-gray font-semibold">Online</span>
                             </>
                           ) : (
                             <>
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#667085" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
                               <span>In-person</span>
                             </>
                           )}
@@ -535,24 +564,27 @@ export default function UserChatsPage() {
                       </div>
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1 min-w-0">
+                      <div className="flex items-center gap-1 overflow-visible">
                         <h3 className="text-sm sm:text-base font-bold text-gray-900 truncate whitespace-nowrap max-w-[110px] sm:max-w-none">
                           {activeConv.creator}
                         </h3>
-                        <svg className="text-[#12B76A] shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="shrink-0">
+                          <circle cx="12" cy="12" r="12" fill="#12B76A" />
+                          <polyline points="7 12.5 10.5 16 17 9" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
                       </div>
                       <span className="text-xs text-gray-400 block mt-0.5 truncate">@{activeConv.username}</span>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-5 text-gray-400">
+                  {/* <div className="flex items-center gap-5 text-gray-400">
                     <button className="hover:text-gray-600 transition-colors">
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" /></svg>
                     </button>
                     <button className="hover:text-gray-600 transition-colors">
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="1.5" /><circle cx="12" cy="5" r="1.5" /><circle cx="12" cy="19" r="1.5" /></svg>
                     </button>
-                  </div>
+                  </div> */}
                 </div>
 
                 {/* Conditional View: lock screen ONLY if empty */}

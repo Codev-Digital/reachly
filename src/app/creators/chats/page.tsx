@@ -86,6 +86,9 @@ export default function ChatsPage() {
   const [showLockModal, setShowLockModal] = useState(false);
   const [isLockingLoading, setIsLockingLoading] = useState(false);
   const [isOtherUserTyping, setIsOtherUserTyping] = useState(false);
+  const [showDotsMenu, setShowDotsMenu] = useState(false);
+  const [showClearModal, setShowClearModal] = useState(false);
+  const [isClearingChat, setIsClearingChat] = useState(false);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastTypingSentRef = useRef<boolean>(false);
 
@@ -423,6 +426,29 @@ export default function ChatsPage() {
     }
   };
 
+  const handleClearChat = async () => {
+    if (!activeChat) return;
+    setIsClearingChat(true);
+    try {
+      const res = await fetch('/api/conversations/clear', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conversationId: activeChat }),
+      });
+      if (res.ok) {
+        setMessages([]);
+        setConversations(prev =>
+          prev.map(c => (c.id === activeChat ? { ...c, lastMessage: '', lastMessageTime: null } : c))
+        );
+      }
+    } catch (err) {
+      console.error('Error clearing chat:', err);
+    } finally {
+      setIsClearingChat(false);
+      setShowClearModal(false);
+    }
+  };
+
   const handlePrevWeek = () => {
     const prev = new Date(baseDate);
     prev.setDate(baseDate.getDate() - 7);
@@ -539,7 +565,11 @@ export default function ChatsPage() {
                         <div className="flex items-center gap-1">
                           {chat.meetingUrl ? (
                             <>
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#12B76A" strokeWidth="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" /></svg>
+                              <img
+                                src="https://static.vecteezy.com/system/resources/thumbnails/022/484/498/small/google-meet-gmeet-icon-logo-symbol-free-png.png"
+                                alt="Google Meet"
+                                className="w-4 h-4 object-contain shrink-0"
+                              />
                               <span>Online</span>
                             </>
                           ) : (
@@ -609,12 +639,32 @@ export default function ChatsPage() {
                         </svg>
                       )}
                     </button>
-                    <button className="hover:text-gray-600 transition-colors">
+                    {/* <button className="hover:text-gray-600 transition-colors">
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" /></svg>
-                    </button>
-                    <button className="hover:text-gray-600 transition-colors">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="1.5" /><circle cx="12" cy="5" r="1.5" /><circle cx="12" cy="19" r="1.5" /></svg>
-                    </button>
+                    </button> */}
+                    {/* 3-dot menu with dropdown */}
+                    <div className="relative">
+                      <button
+                        onClick={() => setShowDotsMenu(prev => !prev)}
+                        className="hover:text-gray-600 hover:bg-gray-100 w-9 h-9 rounded-full flex items-center justify-center transition-colors"
+                      >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="1.5" /><circle cx="12" cy="5" r="1.5" /><circle cx="12" cy="19" r="1.5" /></svg>
+                      </button>
+                      {showDotsMenu && (
+                        <>
+                          <div className="fixed inset-0 z-10" onClick={() => setShowDotsMenu(false)} />
+                          <div className="absolute right-0 top-10 z-20 bg-white rounded-2xl shadow-xl border border-gray-100 py-1.5 min-w-[160px] overflow-hidden">
+                            <button
+                              onClick={() => { setShowDotsMenu(false); setShowClearModal(true); }}
+                              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                            >
+                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4h6v2" /></svg>
+                              Clear Chat
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -837,6 +887,35 @@ export default function ChatsPage() {
             >
               {isLockingLoading && <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>}
               <span>Lock Chat</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Clear Chat Confirmation Modal */}
+      {showClearModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] transition-opacity">
+          <div className="bg-white rounded-[32px] p-8 max-w-[420px] w-full mx-4 relative flex flex-col items-center text-center shadow-2xl">
+            <button
+              onClick={() => setShowClearModal(false)}
+              className="absolute right-6 top-6 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+            </button>
+            <div className="mb-6 mt-4 w-[200px] h-[150px] relative">
+              <Image src="/assets/lock-chat.webp" alt="Clear Chat" fill className="object-contain" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Clear Chat?</h3>
+            <p className="text-sm text-gray-400 leading-relaxed mb-6 max-w-[280px]">
+              This will permanently delete all messages for both you and the user. This action cannot be undone.
+            </p>
+            <button
+              onClick={handleClearChat}
+              disabled={isClearingChat}
+              className="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-4 rounded-full shadow-lg shadow-red-500/20 transition-all flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50"
+            >
+              {isClearingChat && <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>}
+              <span>{isClearingChat ? 'Clearing...' : 'Clear Chat'}</span>
             </button>
           </div>
         </div>

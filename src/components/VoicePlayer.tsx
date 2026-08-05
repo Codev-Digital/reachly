@@ -70,11 +70,10 @@ export default function VoicePlayer({ url, isMe, timeStr, readStatus }: VoicePla
   };
 
   return (
-    <div className={`flex flex-col gap-1 p-3.5 pb-2 rounded-[24px] shadow-sm select-none border min-w-[250px] max-w-[280px] ${
-      isMe 
-        ? 'bg-[#E6E8FF] border-[#E6E8FF] rounded-br-sm' 
+    <div className={`flex flex-col gap-1 p-3.5 pb-2 rounded-[24px] shadow-sm select-none border min-w-[250px] max-w-[280px] ${isMe
+        ? 'bg-[#E6E8FF] border-[#E6E8FF] rounded-br-sm'
         : 'bg-white border-gray-100 rounded-bl-sm'
-    }`}>
+      }`}>
       {/* Player controls */}
       <div className="flex items-center gap-3">
         <button
@@ -82,9 +81,9 @@ export default function VoicePlayer({ url, isMe, timeStr, readStatus }: VoicePla
           className="w-9 h-9 rounded-full bg-[#0012FF] hover:bg-[#0010d0] text-white flex items-center justify-center transition-all active:scale-95 shrink-0 shadow-sm"
         >
           {isPlaying ? (
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1" /><rect x="14" y="4" width="4" height="16" rx="1" /></svg>
           ) : (
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="translate-x-[1px]"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="translate-x-[1px]"><polygon points="5 3 19 12 5 21 5 3" /></svg>
           )}
         </button>
 
@@ -96,6 +95,7 @@ export default function VoicePlayer({ url, isMe, timeStr, readStatus }: VoicePla
             value={currentTime}
             onChange={handleTimelineChange}
             className="w-full accent-[#0012FF] h-1 bg-gray-200/70 rounded-lg appearance-none cursor-pointer"
+            style={{ accentColor: '#0012FF' }}
           />
           <div className="flex justify-between text-[9px] text-gray-400 font-medium">
             <span>{formatTime(currentTime)}</span>
