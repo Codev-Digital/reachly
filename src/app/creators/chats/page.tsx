@@ -389,7 +389,8 @@ export default function ChatsPage() {
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
 
-  const isAudioMsg = (content: string) => {
+  const isAudioMsg = (content: any) => {
+    if (typeof content !== 'string') return false;
     return content.startsWith('http') && (content.includes('.webm') || content.includes('.mp3') || content.includes('.ogg') || content.includes('voice-notes'));
   };
 

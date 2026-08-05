@@ -375,7 +375,8 @@ export default function UserChatsPage() {
   };
 
   // Check if message is a voice note URL
-  const isAudioMsg = (content: string) => {
+  const isAudioMsg = (content: any) => {
+    if (typeof content !== 'string') return false;
     return content.startsWith('http') && (content.includes('.webm') || content.includes('.mp3') || content.includes('.ogg') || content.includes('voice-notes'));
   };
 
@@ -383,8 +384,8 @@ export default function UserChatsPage() {
   const isChatLocked = activeConv?.isLocked ?? false;
 
   const filteredConversations = conversations.filter(c =>
-    c.creator.toLowerCase().includes(searchText.toLowerCase()) ||
-    c.session.toLowerCase().includes(searchText.toLowerCase())
+    (c.creator || '').toLowerCase().includes((searchText || '').toLowerCase()) ||
+    (c.session || '').toLowerCase().includes((searchText || '').toLowerCase())
   );
 
   return (
@@ -518,7 +519,7 @@ export default function UserChatsPage() {
               <>
                 {/* Header */}
                 <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between shrink-0">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
                     <button
                       onClick={() => setActiveChat(null)}
                       className="lg:hidden p-1 mr-1 text-gray-500 hover:text-gray-900 transition-colors"
@@ -528,17 +529,19 @@ export default function UserChatsPage() {
                       </svg>
                     </button>
 
-                    <div className="relative">
+                    <div className="relative shrink-0">
                       <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200">
                         <img src={activeConv.image} alt={activeConv.creator} className="object-cover w-full h-full" />
                       </div>
                     </div>
-                    <div>
-                      <div className="flex items-center gap-1">
-                        <h3 className="text-base font-bold text-gray-900">{activeConv.creator}</h3>
-                        <svg className="text-[#12B76A]" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1 min-w-0">
+                        <h3 className="text-sm sm:text-base font-bold text-gray-900 truncate whitespace-nowrap max-w-[110px] sm:max-w-none">
+                          {activeConv.creator}
+                        </h3>
+                        <svg className="text-[#12B76A] shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
                       </div>
-                      <span className="text-xs text-gray-400 block mt-0.5">@{activeConv.username}</span>
+                      <span className="text-xs text-gray-400 block mt-0.5 truncate">@{activeConv.username}</span>
                     </div>
                   </div>
 
