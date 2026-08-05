@@ -31,7 +31,7 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }
 
-        const { status, selectedDate, selectedTime } = await request.json();
+        const { status, selectedDate, selectedTime, isLocked } = await request.json();
         
         if (status && !['confirmed', 'cancelled', 'completed'].includes(status)) {
             return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
@@ -69,6 +69,9 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
         if (selectedTime) {
             updatePayload.scheduledTime = selectedTime;
             updatePayload.isRescheduled = true;
+        }
+        if (typeof isLocked === 'boolean') {
+            updatePayload.isLocked = isLocked;
         }
 
         const updatedBooking = await Booking.findByIdAndUpdate(

@@ -28,6 +28,7 @@ export interface IBooking extends Document {
     finalPrice: number;
 
     isRescheduled?: boolean;
+    isLocked?: boolean;
 
     meetingUrl?: string; // Daily.co room URL
     meetingRoomName?: string; // Daily.co room name
@@ -105,6 +106,10 @@ const BookingSchema = new Schema<IBooking>(
             required: true,
         },
         isRescheduled: {
+            type: Boolean,
+            default: false,
+        },
+        isLocked: {
             type: Boolean,
             default: false,
         },

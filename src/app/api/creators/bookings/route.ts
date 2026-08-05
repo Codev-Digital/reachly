@@ -25,6 +25,8 @@ function convertTo24Hour(time12h: string): string {
     return `${hoursStr}:${minutes}:00`;
 }
 
+import Message from '@/models/Message';
+
 export async function GET(request: NextRequest) {
     try {
         console.log('=== /api/creators/bookings called ===');
@@ -45,9 +47,22 @@ export async function GET(request: NextRequest) {
         }
         console.log('Found user:', user._id);
 
-        // Get all bookings for this creator
-        console.log('Querying bookings for creatorId:', user._id);
-        const bookings = await Booking.find({ creatorId: user._id })
+        // Get date parameter
+        const dateParam = request.nextUrl.searchParams.get('date'); // e.g. "2026-08-05"
+        const query: any = { creatorId: user._id };
+        if (dateParam) {
+            const targetDate = new Date(dateParam);
+            const startOfDay = new Date(targetDate.setUTCHours(0, 0, 0, 0));
+            const endOfDay = new Date(targetDate.setUTCHours(23, 59, 59, 999));
+            query.scheduledDate = {
+                $gte: startOfDay,
+                $lte: endOfDay
+            };
+        }
+
+        // Get all bookings for this creator matching query
+        console.log('Querying bookings with:', query);
+        const bookings = await Booking.find(query)
             .sort({ scheduledDate: -1, createdAt: -1 })
             .populate({
                 path: 'sessionTypeId',
@@ -57,9 +72,14 @@ export async function GET(request: NextRequest) {
             .lean();
         console.log('Found', bookings.length, 'bookings');
 
-        // Enrich with user/guest info
+        // Enrich with user/guest info and last message
         const enrichedBookings = await Promise.all(
             bookings.map(async (booking: any) => {
+                // Get last message
+                const lastMsgDoc = await Message.findOne({ bookingId: booking._id })
+                    .sort({ createdAt: -1 })
+                    .lean();
+                
                 let userInfo: any = null;
                 let avatar = '/avatar.png'; // Default
                 if (booking.userId) {
@@ -138,7 +158,10 @@ export async function GET(request: NextRequest) {
                     bookedOn: bookedOn,
                     scheduledDate: booking.scheduledDate,
                     isRescheduled: booking.isRescheduled || false,
+                    isLocked: booking.isLocked || false,
                     meetingUrl: booking.meetingUrl,
+                    lastMessage: lastMsgDoc ? lastMsgDoc.content : "",
+                    lastMessageTime: lastMsgDoc ? lastMsgDoc.createdAt : null,
                 };
             })
         );
