@@ -66,9 +66,16 @@ export async function GET(request: NextRequest) {
         const enrichedBookings = await Promise.all(
             bookings.map(async (booking: any) => {
                 const creatorProfile = profileMap.get(booking.creatorId?.toString());
-                const lastMsgDoc = await Message.findOne({ bookingId: booking._id })
-                    .sort({ createdAt: -1 })
-                    .lean();
+                const [lastMsgDoc, unreadCount] = await Promise.all([
+                    Message.findOne({ bookingId: booking._id })
+                        .sort({ createdAt: -1 })
+                        .lean(),
+                    Message.countDocuments({
+                        bookingId: booking._id,
+                        senderRole: 'creator',
+                        read: false
+                    })
+                ]);
 
                 const d = new Date(booking.scheduledDate);
                 const formattedShortDate = d.toLocaleDateString('en-GB', {
@@ -132,6 +139,7 @@ export async function GET(request: NextRequest) {
                     bookingRef: booking.bookingRef,
                     lastMessage: lastMsgDoc ? lastMsgDoc.content : "",
                     lastMessageTime: lastMsgDoc ? lastMsgDoc.createdAt : null,
+                    unreadCount: unreadCount,
                 };
             })
         );

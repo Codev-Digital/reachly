@@ -75,10 +75,17 @@ export async function GET(request: NextRequest) {
         // Enrich with user/guest info and last message
         const enrichedBookings = await Promise.all(
             bookings.map(async (booking: any) => {
-                // Get last message
-                const lastMsgDoc = await Message.findOne({ bookingId: booking._id })
-                    .sort({ createdAt: -1 })
-                    .lean();
+                // Get last message and unread count
+                const [lastMsgDoc, unreadCount] = await Promise.all([
+                    Message.findOne({ bookingId: booking._id })
+                        .sort({ createdAt: -1 })
+                        .lean(),
+                    Message.countDocuments({
+                        bookingId: booking._id,
+                        senderRole: 'user',
+                        read: false
+                    })
+                ]);
                 
                 let userInfo: any = null;
                 let avatar = '/avatar.png'; // Default
@@ -162,6 +169,7 @@ export async function GET(request: NextRequest) {
                     meetingUrl: booking.meetingUrl,
                     lastMessage: lastMsgDoc ? lastMsgDoc.content : "",
                     lastMessageTime: lastMsgDoc ? lastMsgDoc.createdAt : null,
+                    unreadCount: unreadCount,
                 };
             })
         );

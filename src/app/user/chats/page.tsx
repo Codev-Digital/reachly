@@ -20,6 +20,8 @@ interface BookingInfo {
   lastMessage: string;
   lastMessageTime: string | null;
   ref: string;
+  unreadCount: number;
+  scheduledDate: string;
 }
 
 interface ChatMessage {
@@ -108,11 +110,21 @@ export default function UserChatsPage() {
         if (res.ok) {
           const data = await res.json();
           const list: BookingInfo[] = data.bookings || [];
-          
-          // Filter to show only one conversation card per Creator
+          const sortedList = [...list].sort((a, b) => {
+            const hasMsgA = !!a.lastMessageTime;
+            const hasMsgB = !!b.lastMessageTime;
+            if (hasMsgA && !hasMsgB) return -1;
+            if (!hasMsgA && hasMsgB) return 1;
+            if (hasMsgA && hasMsgB) {
+              return new Date(b.lastMessageTime!).getTime() - new Date(a.lastMessageTime!).getTime();
+            }
+            return new Date(b.scheduledDate).getTime() - new Date(a.scheduledDate).getTime();
+          });
+
+          setBookings([]); // Temporary reset to clear state cleanly
           const uniqueList: BookingInfo[] = [];
           const seenCreators = new Set<string>();
-          for (const booking of list) {
+          for (const booking of sortedList) {
             if (!seenCreators.has(booking.creator)) {
               seenCreators.add(booking.creator);
               uniqueList.push(booking);
@@ -120,11 +132,7 @@ export default function UserChatsPage() {
           }
 
           setBookings(uniqueList);
-          if (uniqueList.length > 0) {
-            setActiveChat(uniqueList[0].id);
-          } else {
-            setActiveChat(null);
-          }
+          setActiveChat(null);
         }
       } catch (err) {
         console.error('Error fetching bookings:', err);
@@ -142,6 +150,9 @@ export default function UserChatsPage() {
       setMessages([]);
       return;
     }
+
+    // Reset unread count locally
+    setBookings(prev => prev.map(b => b.id === activeChat ? { ...b, unreadCount: 0 } : b));
 
     setLoadingMessages(true);
     fetch(`/api/creators/chats/messages?bookingId=${activeChat}`)
@@ -217,9 +228,20 @@ export default function UserChatsPage() {
         .then(data => {
           if (data.bookings) {
             const list: BookingInfo[] = data.bookings;
+            const sortedList = [...list].sort((a, b) => {
+              const hasMsgA = !!a.lastMessageTime;
+              const hasMsgB = !!b.lastMessageTime;
+              if (hasMsgA && !hasMsgB) return -1;
+              if (!hasMsgA && hasMsgB) return 1;
+              if (hasMsgA && hasMsgB) {
+                return new Date(b.lastMessageTime!).getTime() - new Date(a.lastMessageTime!).getTime();
+              }
+              return new Date(b.scheduledDate).getTime() - new Date(a.scheduledDate).getTime();
+            });
+
             const uniqueList: BookingInfo[] = [];
             const seenCreators = new Set<string>();
-            for (const booking of list) {
+            for (const booking of sortedList) {
               if (!seenCreators.has(booking.creator)) {
                 seenCreators.add(booking.creator);
                 uniqueList.push(booking);
@@ -305,64 +327,85 @@ export default function UserChatsPage() {
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#0012FF]"></div>
                 </div>
               ) : filteredBookings.length > 0 ? (
-                filteredBookings.map((chat) => (
-                  <div 
-                    key={chat.id} 
-                    onClick={() => setActiveChat(chat.id)}
-                    className={`rounded-2xl p-4 cursor-pointer transition-all border ${activeChat === chat.id ? 'border-[#0012FF]/20 shadow-md bg-white ring-1 ring-[#0012FF]/5' : 'border-gray-100 hover:border-gray-200 bg-white shadow-xs'}`}
-                  >
-                    <div className="flex justify-between items-start mb-3">
-                      <div className="flex gap-3">
-                        <div className="relative">
-                          <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200">
-                            <img src={chat.image} alt={chat.creator} className="object-cover w-full h-full" />
-                          </div>
-                          <div className="absolute bottom-0 right-0 w-3 h-3 bg-[#12B76A] border-2 border-white rounded-full"></div>
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-1">
-                            <h4 className="text-sm font-bold text-gray-900">{chat.creator}</h4>
-                            <svg className="text-[#12B76A]" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
-                          </div>
-                          
-                          {chat.isLocked ? (
-                            <span className="inline-flex items-center text-[10px] font-semibold bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded mt-1">
-                              Chat is locked
-                            </span>
-                          ) : chat.lastMessage ? (
-                            <div className="flex items-center gap-1 mt-0.5">
-                              <p className="text-xs text-gray-500 truncate max-w-[150px]">{chat.lastMessage}</p>
+                [...filteredBookings]
+                  .sort((a, b) => {
+                    const hasMsgA = !!a.lastMessageTime;
+                    const hasMsgB = !!b.lastMessageTime;
+                    if (hasMsgA && !hasMsgB) return -1;
+                    if (!hasMsgA && hasMsgB) return 1;
+                    if (hasMsgA && hasMsgB) {
+                      const timeA = new Date(a.lastMessageTime!).getTime();
+                      const timeB = new Date(b.lastMessageTime!).getTime();
+                      return timeB - timeA;
+                    }
+                    const timeA = new Date(a.scheduledDate).getTime();
+                    const timeB = new Date(b.scheduledDate).getTime();
+                    return timeB - timeA;
+                  })
+                  .map((chat) => (
+                    <div 
+                      key={chat.id} 
+                      onClick={() => setActiveChat(chat.id)}
+                      className={`rounded-2xl p-4 cursor-pointer transition-all border ${activeChat === chat.id ? 'border-[#0012FF]/20 shadow-md bg-white ring-1 ring-[#0012FF]/5' : 'border-gray-100 hover:border-gray-200 bg-white shadow-xs'}`}
+                    >
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex gap-3">
+                          <div className="relative">
+                            <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200">
+                              <img src={chat.image} alt={chat.creator} className="object-cover w-full h-full" />
                             </div>
-                          ) : null}
+                            <div className="absolute bottom-0 right-0 w-3 h-3 bg-[#12B76A] border-2 border-white rounded-full"></div>
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-1">
+                              <h4 className="text-sm font-bold text-gray-900">{chat.creator}</h4>
+                              <svg className="text-[#12B76A]" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
+                            </div>
+                            
+                            {chat.isLocked ? (
+                              <span className="inline-flex items-center text-[10px] font-semibold bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded mt-1">
+                                Chat is locked
+                              </span>
+                            ) : chat.lastMessage ? (
+                              <div className="flex items-center gap-1 mt-0.5">
+                                <p className="text-xs text-gray-500 truncate max-w-[150px]">{chat.lastMessage}</p>
+                              </div>
+                            ) : null}
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end gap-1.5 shrink-0">
+                          <span className="text-[10px] text-gray-400 font-medium">
+                            {chat.lastMessageTime ? formatMsgTime(chat.lastMessageTime) : chat.time}
+                          </span>
+                          {chat.unreadCount > 0 && chat.id !== activeChat && (
+                            <span className="w-5 h-5 bg-[#0012FF] text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-md">
+                              {chat.unreadCount}
+                            </span>
+                          )}
                         </div>
                       </div>
-                      <span className="text-[10px] text-gray-400 font-medium">
-                        {chat.lastMessageTime ? formatMsgTime(chat.lastMessageTime) : chat.time}
-                      </span>
-                    </div>
-                    
-                    <div className="flex items-center gap-4 text-[10px] text-gray-400 font-medium mt-3 border-t border-gray-50 pt-3">
-                      <div className="flex items-center gap-1">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
-                        <span>{chat.time}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        {chat.meetingUrl ? (
-                          <>
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#12B76A" strokeWidth="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" /></svg>
-                            <span>Online</span>
-                          </>
-                        ) : (
-                          <>
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#667085" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
-                            <span>In-person</span>
-                          </>
-                        )}
+                      
+                      <div className="flex items-center gap-4 text-[10px] text-gray-400 font-medium mt-3 border-t border-gray-50 pt-3">
+                        <div className="flex items-center gap-1">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                          <span>{chat.time}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          {chat.meetingUrl ? (
+                            <>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#12B76A" strokeWidth="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" /></svg>
+                              <span>Online</span>
+                            </>
+                          ) : (
+                            <>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#667085" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
+                              <span>In-person</span>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
-
-                  </div>
-                ))
+                  ))
               ) : (
                 <div className="flex flex-col items-center justify-center py-10 text-center">
                   <p className="text-sm text-gray-400">No chats found.</p>
@@ -526,13 +569,22 @@ export default function UserChatsPage() {
               <div className="flex-grow flex flex-col items-center justify-center text-center p-8 bg-[#FAFAFA]">
                 <Image 
                   src="/assets/no-appointment.webp" 
-                  alt="No Appointments" 
+                  alt="Select Chat" 
                   width={240} 
                   height={240} 
                   className="object-contain mb-4 opacity-80" 
                 />
-                <h3 className="text-lg font-bold text-gray-800 mb-1">No Bookings Today</h3>
-                <p className="text-sm text-gray-400 max-w-[280px]">There are no sessions booked for the selected date.</p>
+                {bookings.length > 0 ? (
+                  <>
+                    <h3 className="text-lg font-bold text-gray-800 mb-1">Select a Conversation</h3>
+                    <p className="text-sm text-gray-400 max-w-[280px]">Choose a chat from the list on the left to start messaging.</p>
+                  </>
+                ) : (
+                  <>
+                    <h3 className="text-lg font-bold text-gray-800 mb-1">No Bookings Today</h3>
+                    <p className="text-sm text-gray-400 max-w-[280px]">There are no sessions booked for the selected date.</p>
+                  </>
+                )}
               </div>
             )}
           </div>
