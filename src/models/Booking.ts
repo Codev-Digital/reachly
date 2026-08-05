@@ -111,7 +111,7 @@ const BookingSchema = new Schema<IBooking>(
         },
         isLocked: {
             type: Boolean,
-            default: false,
+            default: true,
         },
         meetingUrl: {
             type: String,

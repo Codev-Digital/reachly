@@ -158,7 +158,7 @@ export async function GET(request: NextRequest) {
                     bookedOn: bookedOn,
                     scheduledDate: booking.scheduledDate,
                     isRescheduled: booking.isRescheduled || false,
-                    isLocked: booking.isLocked || false,
+                    isLocked: booking.isLocked !== undefined ? booking.isLocked : !lastMsgDoc,
                     meetingUrl: booking.meetingUrl,
                     lastMessage: lastMsgDoc ? lastMsgDoc.content : "",
                     lastMessageTime: lastMsgDoc ? lastMsgDoc.createdAt : null,

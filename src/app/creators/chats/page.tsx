@@ -78,6 +78,7 @@ export default function ChatsPage() {
   const [isOtherUserOnline, setIsOtherUserOnline] = useState(false);
   const [isChatLocked, setIsChatLocked] = useState(false);
   const [showLockModal, setShowLockModal] = useState(false);
+  const [isLockingLoading, setIsLockingLoading] = useState(false);
 
   const wsRef = useRef<WebSocket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -285,6 +286,7 @@ export default function ChatsPage() {
 
   const handleLockAction = async (lockState: boolean) => {
     if (!activeChat) return;
+    setIsLockingLoading(true);
     try {
       const res = await fetch(`/api/creators/bookings/${activeChat}`, {
         method: 'PUT',
@@ -305,6 +307,7 @@ export default function ChatsPage() {
     } catch (err) {
       console.error('Error locking/unlocking booking:', err);
     } finally {
+      setIsLockingLoading(false);
       setShowLockModal(false);
     }
   };
@@ -461,13 +464,13 @@ export default function ChatsPage() {
                   <div className="flex items-center gap-5 text-gray-400">
                     <button 
                       onClick={handleLockToggleClick} 
-                      className={`transition-colors ${isChatLocked ? 'text-[#0012FF] hover:text-[#0010d0]' : 'text-gray-400 hover:text-gray-600'}`}
+                      className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${isChatLocked ? 'bg-[#EEF0FF] text-[#0012FF]' : 'hover:bg-gray-100 text-gray-400 hover:text-gray-600'}`}
                       title={isChatLocked ? "Unlock Chat" : "Lock Chat"}
                     >
                       {isChatLocked ? (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="16" r="1"/><rect width="18" height="12" x="3" y="10" rx="2"/><path d="M7 10V7a5 5 0 1 1 10 0v3"/></svg>
                       ) : (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="16" r="1"/><rect width="18" height="12" x="3" y="10" rx="2"/><path d="M7 10V7a5 5 0 0 1 9.9-1"/></svg>
                       )}
                     </button>
                     <button className="hover:text-gray-600 transition-colors">
@@ -479,91 +482,120 @@ export default function ChatsPage() {
                   </div>
                 </div>
 
-                {/* Chat Messages */}
-                <div className="flex-1 overflow-y-auto p-6 sm:p-8 flex flex-col gap-6 bg-[#FAFAFA]">
-                  
-                  <div className="relative flex items-center justify-center py-4 shrink-0">
-                    <div className="absolute inset-x-0 h-px bg-gray-200/60"></div>
-                    <span className="relative bg-[#FAFAFA] px-4 text-[11px] font-medium text-gray-400">
-                      {activeBooking.shortDate}
-                    </span>
-                  </div>
-
-                  {loadingMessages ? (
-                    <div className="flex-grow flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0012FF]"></div>
+                {/* Conditional Chat View: locked screen ONLY if chat is empty, else show messages list */}
+                {(isChatLocked && messages.length === 0 && !loadingMessages) ? (
+                  <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-[#FAFAFA]">
+                    <div className="mb-6 mt-4 w-[240px] h-[180px] relative">
+                      <Image 
+                        src="/assets/lock-chat.png" 
+                        alt="Lock Chat" 
+                        fill 
+                        className="object-contain" 
+                      />
                     </div>
-                  ) : messages.length > 0 ? (
-                    messages.map((msg) => {
-                      const isMe = msg.senderRole === 'creator';
-                      return (
-                        <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} gap-1 w-full`}>
-                          <div className={`flex gap-3 max-w-[85%] items-end ${isMe ? 'flex-row-reverse' : ''}`}>
-                            <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 shrink-0 mb-1">
-                              <img src={isMe ? (profilePhoto || '/avatar.png') : activeBooking.avatar} alt="Avatar" className="object-cover w-full h-full" />
-                            </div>
-                            <div className={`${isMe ? 'bg-[#E6E8FF] text-gray-800' : 'bg-white border border-gray-100 text-gray-800'} text-[13px] pt-3 pb-2 px-4 rounded-[20px] ${isMe ? 'rounded-br-sm' : 'rounded-bl-sm'} shadow-xs leading-relaxed break-all min-w-[80px]`}>
-                              <span>{msg.content}</span>
-                              <span className="float-right mt-3 ml-2.5 text-[10px] text-gray-400 font-medium inline-flex items-center gap-1 select-none shrink-0 translate-y-[2px]">
-                                {formatMsgTime(msg.createdAt)}
-                                {isMe && (
-                                  <span className="inline-flex shrink-0">
-                                    {msg.read ? (
-                                      // Blue double check
-                                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0057ff" strokeWidth="2.5"><path d="M17 5L9.5 12.5L6 9" /><path d="M22 5l-7.5 7.5" /></svg>
-                                    ) : isOtherUserOnline ? (
-                                      // Gray double check
-                                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A8A8A" strokeWidth="2.5"><path d="M17 5L9.5 12.5L6 9" /><path d="M22 5l-7.5 7.5" /></svg>
-                                    ) : (
-                                      // Gray single check
-                                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A8A8A" strokeWidth="2.5"><path d="M17 5L9.5 12.5L6 9" /></svg>
-                                    )}
-                                  </span>
-                                )}
-                              </span>
-                              <div className="clear-both"></div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <div className="flex-grow flex flex-col items-center justify-center text-center text-gray-400">
-                      <p className="text-sm">No messages yet. Send a message to start the conversation!</p>
-                    </div>
-                  )}
-                  <div ref={messagesEndRef} />
-                </div>
-
-                {/* Input Area */}
-                {isChatLocked ? (
-                  <div className="p-5 sm:p-6 bg-gray-50 border-t border-gray-100 flex items-center justify-center text-sm text-gray-400 font-medium select-none shrink-0 gap-2">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
-                    <span>This chat is locked. Click the lock icon in the header to unlock.</span>
+                    <h3 className="text-xl font-bold text-gray-800 mb-1">This Chat is Locked</h3>
+                    <p className="text-sm text-gray-400 max-w-[320px] mb-6">
+                      Unlock this chat to start or resume your conversation with the client.
+                    </p>
+                    <button 
+                      onClick={() => handleLockAction(false)} 
+                      disabled={isLockingLoading}
+                      className="bg-[#0012FF] hover:bg-[#0010d0] text-white font-semibold py-3.5 px-8 rounded-full shadow-lg shadow-[#0012FF]/20 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50"
+                    >
+                      {isLockingLoading ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                      ) : null}
+                      <span>Unlock Chat</span>
+                    </button>
                   </div>
                 ) : (
-                  <div className="p-4 sm:p-6 bg-white border-t border-gray-100 shrink-0">
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1 relative">
-                        <input
-                          type="text"
-                          value={message}
-                          onChange={(e) => setMessage(e.target.value)}
-                          onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                          placeholder="Type something..."
-                          className="w-full bg-[#F3F4F6] border-0 rounded-full py-4 pl-6 pr-12 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0012FF]/10 transition-all"
-                        />
-                        <button className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" y1="19" x2="12" y2="23" /><line x1="8" y1="23" x2="16" y2="23" /></svg>
-                        </button>
+                  <>
+                    {/* Chat Messages */}
+                    <div className="flex-1 overflow-y-auto p-6 sm:p-8 flex flex-col gap-6 bg-[#FAFAFA]">
+                      <div className="relative flex items-center justify-center py-4 shrink-0">
+                        <div className="absolute inset-x-0 h-px bg-gray-200/60"></div>
+                        <span className="relative bg-[#FAFAFA] px-4 text-[11px] font-medium text-gray-400">
+                          {activeBooking.shortDate}
+                        </span>
                       </div>
-                      <button onClick={handleSendMessage} className="w-14 h-14 rounded-full bg-[#0012FF] hover:bg-[#0010d0] flex items-center justify-center text-white shrink-0 shadow-md transition-transform active:scale-95">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginLeft: '-2px' }}>
-                          <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
-                        </svg>
-                      </button>
+
+                      {loadingMessages ? (
+                        <div className="flex-grow flex items-center justify-center">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0012FF]"></div>
+                        </div>
+                      ) : messages.length > 0 ? (
+                        messages.map((msg) => {
+                          const isMe = msg.senderRole === 'creator';
+                          return (
+                            <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} gap-1 w-full`}>
+                              <div className={`flex gap-3 max-w-[85%] items-end ${isMe ? 'flex-row-reverse' : ''}`}>
+                                <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 shrink-0 mb-1">
+                                  <img src={isMe ? (profilePhoto || '/avatar.png') : activeBooking.avatar} alt="Avatar" className="object-cover w-full h-full" />
+                                </div>
+                                <div className={`${isMe ? 'bg-[#E6E8FF] text-gray-800' : 'bg-white border border-gray-100 text-gray-800'} text-[13px] pt-3 pb-2 px-4 rounded-[20px] ${isMe ? 'rounded-br-sm' : 'rounded-bl-sm'} shadow-xs leading-relaxed break-all min-w-[80px]`}>
+                                  <span>{msg.content}</span>
+                                  <span className="float-right mt-3 ml-2.5 text-[10px] text-gray-400 font-medium inline-flex items-center gap-1 select-none shrink-0 translate-y-[2px]">
+                                    {formatMsgTime(msg.createdAt)}
+                                    {isMe && (
+                                      <span className="inline-flex shrink-0">
+                                        {msg.read ? (
+                                          // Blue double check
+                                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0057ff" strokeWidth="2.5"><path d="M17 5L9.5 12.5L6 9" /><path d="M22 5l-7.5 7.5" /></svg>
+                                        ) : isOtherUserOnline ? (
+                                          // Gray double check
+                                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A8A8A" strokeWidth="2.5"><path d="M17 5L9.5 12.5L6 9" /><path d="M22 5l-7.5 7.5" /></svg>
+                                        ) : (
+                                          // Gray single check
+                                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A8A8A" strokeWidth="2.5"><path d="M17 5L9.5 12.5L6 9" /></svg>
+                                        )}
+                                      </span>
+                                    )}
+                                  </span>
+                                  <div className="clear-both"></div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <div className="flex-grow flex flex-col items-center justify-center text-center text-gray-400">
+                          <p className="text-sm">No messages yet. Send a message to start the conversation!</p>
+                        </div>
+                      )}
+                      <div ref={messagesEndRef} />
                     </div>
-                  </div>
+
+                    {/* Input Area or Locked input notification */}
+                    {isChatLocked ? (
+                      <div className="p-5 sm:p-6 bg-gray-50 border-t border-gray-100 flex items-center justify-center text-sm text-gray-400 font-medium select-none shrink-0 gap-2">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                        <span>This chat is locked. Click the lock icon in the header to unlock.</span>
+                      </div>
+                    ) : (
+                      <div className="p-4 sm:p-6 bg-white border-t border-gray-100 shrink-0">
+                        <div className="flex items-center gap-3">
+                          <div className="flex-1 relative">
+                            <input
+                              type="text"
+                              value={message}
+                              onChange={(e) => setMessage(e.target.value)}
+                              onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                              placeholder="Type something..."
+                              className="w-full bg-[#F3F4F6] border-0 rounded-full py-4 pl-6 pr-12 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0012FF]/10 transition-all"
+                            />
+                            <button className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" y1="19" x2="12" y2="23" /><line x1="8" y1="23" x2="16" y2="23" /></svg>
+                            </button>
+                          </div>
+                          <button onClick={handleSendMessage} className="w-14 h-14 rounded-full bg-[#0012FF] hover:bg-[#0010d0] flex items-center justify-center text-white shrink-0 shadow-md transition-transform active:scale-95">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginLeft: '-2px' }}>
+                              <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </>
             ) : (
@@ -615,9 +647,13 @@ export default function ChatsPage() {
             {/* Lock Action Button */}
             <button 
               onClick={() => handleLockAction(true)}
-              className="w-full bg-[#0012FF] hover:bg-[#0010d0] text-white font-semibold py-4 rounded-full shadow-lg shadow-[#0012FF]/20 transition-all active:scale-[0.98]"
+              disabled={isLockingLoading}
+              className="w-full bg-[#0012FF] hover:bg-[#0010d0] text-white font-semibold py-4 rounded-full shadow-lg shadow-[#0012FF]/20 transition-all flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50"
             >
-              Lock Chat
+              {isLockingLoading ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+              ) : null}
+              <span>Lock Chat</span>
             </button>
           </div>
         </div>

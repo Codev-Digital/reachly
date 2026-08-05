@@ -145,9 +145,13 @@ wss.on('connection', (ws) => {
         // Database-level check: block users from messaging if booking is locked
         try {
           const booking = await mongoose.models.Booking.findById(bookingId).exec();
-          if (booking && booking.isLocked && senderRole === 'user') {
-            console.log(`Message blocked: Chat room ${bookingId} is locked.`);
-            return;
+          if (booking && senderRole === 'user') {
+            const hasMessages = await Message.exists({ bookingId: new mongoose.Types.ObjectId(bookingId) });
+            const isLocked = booking.isLocked !== undefined ? booking.isLocked : !hasMessages;
+            if (isLocked) {
+              console.log(`Message blocked: Chat room ${bookingId} is locked.`);
+              return;
+            }
           }
         } catch (dbErr) {
           console.error('Error verifying booking lock status in DB:', dbErr);
