@@ -13,12 +13,8 @@ try {
       if (parts.length >= 2) {
         const key = parts[0].trim();
         let value = parts.slice(1).join('=').trim();
-        // Remove quotes if present
-        if (value.startsWith('"') && value.endsWith('"')) {
-          value = value.slice(1, -1);
-        } else if (value.startsWith("'") && value.endsWith("'")) {
-          value = value.slice(1, -1);
-        }
+        if (value.startsWith('"') && value.endsWith('"')) value = value.slice(1, -1);
+        else if (value.startsWith("'") && value.endsWith("'")) value = value.slice(1, -1);
         process.env[key] = value;
       }
     });
@@ -42,38 +38,30 @@ mongoose.connect(MONGODB_URI)
     process.exit(1);
   });
 
-// Define Message Schema
-const MessageSchema = new mongoose.Schema(
+// --- Schemas ---
+
+const ConversationSchema = new mongoose.Schema(
   {
-    bookingId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Booking',
-      required: true,
-      index: true,
-    },
-    senderId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
-    },
-    senderRole: {
-      type: String,
-      enum: ['creator', 'user'],
-      required: true,
-    },
-    content: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    read: {
-      type: Boolean,
-      default: false,
-    },
+    creatorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    isLocked: { type: Boolean, default: true },
   },
   { timestamps: true }
 );
+ConversationSchema.index({ creatorId: 1, userId: 1 }, { unique: true });
+const Conversation = mongoose.models.Conversation || mongoose.model('Conversation', ConversationSchema);
 
+const MessageSchema = new mongoose.Schema(
+  {
+    conversationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Conversation', index: true },
+    bookingId: { type: mongoose.Schema.Types.ObjectId, ref: 'Booking', index: true },
+    senderId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    senderRole: { type: String, enum: ['creator', 'user'], required: true },
+    content: { type: String, required: true, trim: true },
+    read: { type: Boolean, default: false },
+  },
+  { timestamps: true }
+);
 const Message = mongoose.models.Message || mongoose.model('Message', MessageSchema);
 
 // 3. Start WebSocket Server
@@ -81,11 +69,11 @@ const PORT = 3001;
 const wss = new WebSocket.Server({ port: PORT });
 console.log(`WebSocket server starting on port ${PORT}...`);
 
-// Keep track of active connections grouped by bookingId
-const rooms = new Map(); // bookingId -> Set of sockets
+// Rooms keyed by conversationId
+const rooms = new Map(); // conversationId -> Set of sockets
 
 wss.on('connection', (ws) => {
-  let currentBookingId = null;
+  let currentConversationId = null;
   console.log('New client connected');
 
   ws.on('message', async (messageData) => {
@@ -93,114 +81,110 @@ wss.on('connection', (ws) => {
       const data = JSON.parse(messageData);
       console.log('Received message:', data);
 
+      // ── JOIN ──────────────────────────────────────────────────────────────
       if (data.type === 'join') {
-        const { bookingId, senderRole } = data;
-        if (!bookingId) return;
-        
-        currentBookingId = bookingId;
-        if (!rooms.has(bookingId)) {
-          rooms.set(bookingId, new Set());
-        }
-        const roomClients = rooms.get(bookingId);
-        roomClients.add(ws);
-        console.log(`Client joined room: ${bookingId}`);
-        
-        // Confirm join
-        ws.send(JSON.stringify({ type: 'joined', bookingId }));
+        const { conversationId, senderRole } = data;
+        if (!conversationId) return;
 
-        // Mark messages as read in DB if the sender of those messages is different
+        currentConversationId = conversationId;
+        if (!rooms.has(conversationId)) rooms.set(conversationId, new Set());
+        const roomClients = rooms.get(conversationId);
+        roomClients.add(ws);
+        console.log(`Client joined room: ${conversationId}`);
+
+        ws.send(JSON.stringify({ type: 'joined', conversationId }));
+
+        // Mark messages as read
         if (senderRole) {
           const senderRoleToMarkRead = senderRole === 'creator' ? 'user' : 'creator';
           try {
             await Message.updateMany(
-              { bookingId: new mongoose.Types.ObjectId(bookingId), senderRole: senderRoleToMarkRead, read: false },
+              { conversationId: new mongoose.Types.ObjectId(conversationId), senderRole: senderRoleToMarkRead, read: false },
               { $set: { read: true } }
             );
-            console.log(`Marked messages as read for room: ${bookingId}`);
+            console.log(`Marked messages as read for conversation: ${conversationId}`);
           } catch (e) {
             console.error('Error marking messages as read:', e);
           }
         }
 
-        // Broadcast room size (presence) to everyone in the room
+        // Broadcast presence
         const count = roomClients.size;
         roomClients.forEach(client => {
           if (client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify({ type: 'presence', bookingId, count }));
-            // If they are both in the room, send a read receipt event to mark ticks as blue
+            client.send(JSON.stringify({ type: 'presence', conversationId, count }));
             if (count > 1) {
-              client.send(JSON.stringify({ type: 'read_receipt', bookingId }));
+              client.send(JSON.stringify({ type: 'read_receipt', conversationId }));
             }
           }
         });
-      } 
-      
+      }
+
+      // ── MESSAGE ───────────────────────────────────────────────────────────
       else if (data.type === 'message') {
-        const { bookingId, senderId, senderRole, content } = data;
-        if (!bookingId || !senderId || !senderRole || !content) {
+        const { conversationId, senderId, senderRole, content } = data;
+        if (!conversationId || !senderId || !senderRole || !content) {
           console.warn('Invalid message structure:', data);
           return;
         }
 
-        // Database-level check: block users from messaging if booking is locked
+        // Check conversation lock status
         try {
-          const booking = await mongoose.models.Booking.findById(bookingId).exec();
-          if (booking && senderRole === 'user') {
-            const hasMessages = await Message.exists({ bookingId: new mongoose.Types.ObjectId(bookingId) });
-            const isLocked = booking.isLocked !== undefined ? booking.isLocked : !hasMessages;
-            if (isLocked) {
-              console.log(`Message blocked: Chat room ${bookingId} is locked.`);
-              return;
-            }
+          const conv = await Conversation.findById(conversationId).exec();
+          if (conv && senderRole === 'user' && conv.isLocked) {
+            console.log(`Message blocked: Conversation ${conversationId} is locked.`);
+            return;
           }
         } catch (dbErr) {
-          console.error('Error verifying booking lock status in DB:', dbErr);
+          console.error('Error verifying conversation lock status:', dbErr);
         }
 
-        const roomClients = rooms.get(bookingId);
+        const roomClients = rooms.get(conversationId);
         const isRead = roomClients && roomClients.size > 1;
 
-        // 1. Save to Database
+        // Save to DB
         const newMsg = new Message({
-          bookingId: new mongoose.Types.ObjectId(bookingId),
+          conversationId: new mongoose.Types.ObjectId(conversationId),
           senderId: new mongoose.Types.ObjectId(senderId),
           senderRole,
           content,
-          read: isRead
+          read: isRead,
         });
         await newMsg.save();
+
+        // Update conversation updatedAt so it bubbles to top
+        await Conversation.findByIdAndUpdate(conversationId, { updatedAt: new Date() });
+
         console.log('Message saved to DB:', newMsg._id);
 
-        // 2. Broadcast to everyone in the room
+        // Broadcast
         if (roomClients) {
           const payload = JSON.stringify({
             type: 'message',
             message: {
               id: newMsg._id.toString(),
-              bookingId,
+              conversationId,
               senderId,
               senderRole,
               content,
               read: isRead,
-              createdAt: newMsg.createdAt
-            }
+              createdAt: newMsg.createdAt,
+            },
           });
-
           roomClients.forEach(client => {
-            if (client.readyState === WebSocket.OPEN) {
-              client.send(payload);
-            }
+            if (client.readyState === WebSocket.OPEN) client.send(payload);
           });
         }
       }
-      
+
+      // ── LOCK STATUS ───────────────────────────────────────────────────────
       else if (data.type === 'lock_status') {
-        const { bookingId, isLocked } = data;
-        const roomClients = rooms.get(bookingId);
+        const { conversationId, isLocked } = data;
+        const roomClients = rooms.get(conversationId);
         if (roomClients) {
           roomClients.forEach(client => {
             if (client.readyState === WebSocket.OPEN) {
-              client.send(JSON.stringify({ type: 'lock_status', bookingId, isLocked }));
+              client.send(JSON.stringify({ type: 'lock_status', conversationId, isLocked }));
             }
           });
         }
@@ -212,21 +196,20 @@ wss.on('connection', (ws) => {
 
   ws.on('close', () => {
     console.log('Client disconnected');
-    if (currentBookingId && rooms.has(currentBookingId)) {
-      const roomClients = rooms.get(currentBookingId);
+    if (currentConversationId && rooms.has(currentConversationId)) {
+      const roomClients = rooms.get(currentConversationId);
       roomClients.delete(ws);
       const count = roomClients.size;
       if (count === 0) {
-        rooms.delete(currentBookingId);
+        rooms.delete(currentConversationId);
       } else {
-        // Broadcast new size to remaining clients
         roomClients.forEach(client => {
           if (client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify({ type: 'presence', bookingId: currentBookingId, count }));
+            client.send(JSON.stringify({ type: 'presence', conversationId: currentConversationId, count }));
           }
         });
       }
-      console.log(`Client left room: ${currentBookingId}`);
+      console.log(`Client left room: ${currentConversationId}`);
     }
   });
 });

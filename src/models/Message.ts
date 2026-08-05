@@ -1,7 +1,8 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
 export interface IMessage extends Document {
-  bookingId: mongoose.Types.ObjectId;
+  conversationId: mongoose.Types.ObjectId;
+  bookingId?: mongoose.Types.ObjectId; // kept for backward compat
   senderId: mongoose.Types.ObjectId;
   senderRole: 'creator' | 'user';
   content: string;
@@ -12,10 +13,14 @@ export interface IMessage extends Document {
 
 const MessageSchema = new Schema<IMessage>(
   {
+    conversationId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Conversation',
+      index: true,
+    },
     bookingId: {
       type: Schema.Types.ObjectId,
       ref: 'Booking',
-      required: true,
       index: true,
     },
     senderId: {
