@@ -283,20 +283,20 @@ export default function UserChatsPage() {
   );
 
   return (
-    <div className="flex flex-col h-screen bg-[#F8F8FA] overflow-hidden">
+    <div className="flex flex-col h-[100dvh] bg-[#F8F8FA] overflow-hidden">
       {/* Navbar wrapper */}
       <div className="shrink-0">
         <UserNavbar displayName={displayName} profilePhoto={profilePhoto} />
       </div>
 
       {/* Main Content Pane */}
-      <main className="flex-grow min-h-0 px-4 sm:px-6 lg:px-10 py-6">
-        <h1 className="text-3xl font-black text-black font-sans tracking-tight mb-6 shrink-0">Chats</h1>
+      <main className="flex-grow min-h-0 px-4 sm:px-6 lg:px-10 py-4 lg:py-6">
+        <h1 className="text-3xl font-black text-black font-sans tracking-tight mb-3 lg:mb-6 shrink-0">Chats</h1>
 
-        <div className="flex-grow flex flex-col lg:flex-row gap-6 min-h-0 mb-6 h-[calc(100vh-180px)]">
+        <div className="flex-grow flex flex-col lg:flex-row gap-6 min-h-0 mb-0 lg:mb-6 h-[calc(100dvh-120px)] lg:h-[calc(100dvh-180px)]">
           
           {/* Left Sidebar */}
-          <div className="w-full lg:w-[380px] bg-white rounded-[24px] p-4 flex flex-col gap-4 h-[350px] lg:h-full shrink-0 overflow-hidden shadow-sm border border-gray-100">
+          <div className={`w-full lg:w-[380px] bg-white rounded-[24px] p-4 flex flex-col gap-4 h-full lg:h-full shrink-0 overflow-hidden shadow-sm border border-gray-100 ${activeChat ? 'hidden lg:flex' : 'flex'}`}>
             
             {/* Search Box */}
             <div className="relative shrink-0">
@@ -415,14 +415,27 @@ export default function UserChatsPage() {
           </div>
 
           {/* Right Main Chat Area */}
-          <div className="flex-1 bg-white rounded-[24px] shadow-sm border border-gray-100 flex flex-col overflow-hidden h-full min-h-0">
+          <div className={`flex-1 bg-white rounded-[24px] shadow-sm border border-gray-100 flex flex-col overflow-hidden h-full min-h-0 ${activeChat ? 'flex' : 'hidden lg:flex'}`}>
             {activeBooking ? (
               <>
                 {/* Header */}
                 <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200">
-                      <img src={activeBooking.image} alt={activeBooking.creator} className="object-cover w-full h-full" />
+                    {/* Back button for mobile */}
+                    <button 
+                      onClick={() => setActiveChat(null)}
+                      className="lg:hidden p-1 mr-1 text-gray-500 hover:text-gray-900 transition-colors"
+                    >
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <line x1="19" y1="12" x2="5" y2="12" />
+                        <polyline points="12 19 5 12 12 5" />
+                      </svg>
+                    </button>
+
+                    <div className="relative">
+                      <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200">
+                        <img src={activeBooking.image} alt={activeBooking.creator} className="object-cover w-full h-full" />
+                      </div>
                     </div>
                     <div>
                       <div className="flex items-center gap-1">

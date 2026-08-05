@@ -351,21 +351,21 @@ export default function ChatsPage() {
   const activeBooking = bookings.find(b => b.id === activeChat);
 
   return (
-    <div className="h-screen flex flex-col bg-[#F8F8FA] overflow-hidden">
+    <div className="h-[100dvh] flex flex-col bg-[#F8F8FA] overflow-hidden">
       <CreatorDashboardNav profilePhoto={profilePhoto} displayName={displayName} />
       
-      <main className="flex-1 max-w-[1536px] w-full mx-auto px-4 sm:px-6 lg:px-10 py-6 flex flex-col min-h-0">
+      <main className="flex-1 max-w-[1536px] w-full mx-auto px-4 sm:px-6 lg:px-10 py-4 lg:py-6 flex flex-col min-h-0">
         <h1
-          className="font-normal text-[34px] leading-[34px] tracking-[0] text-black mb-5 shrink-0"
+          className="font-normal text-[34px] leading-[34px] tracking-[0] text-black mb-3 lg:mb-5 shrink-0"
           style={{ fontFamily: "Anton, sans-serif" }}
         >
           Chats
         </h1>
 
-        <div className="flex-1 flex flex-col lg:flex-row gap-6 min-h-0 mb-6">
+        <div className="flex-grow flex flex-col lg:flex-row gap-6 min-h-0 mb-0 lg:mb-6 h-[calc(100dvh-120px)] lg:h-full">
           
           {/* Left Sidebar */}
-          <div className="w-full lg:w-[380px] bg-white rounded-[24px] p-4 flex flex-col gap-4 h-[350px] lg:h-full shrink-0 overflow-hidden shadow-sm border border-gray-100">
+          <div className={`w-full lg:w-[380px] bg-white rounded-[24px] p-4 flex flex-col gap-4 h-full lg:h-full shrink-0 overflow-hidden shadow-sm border border-gray-100 ${activeChat ? 'hidden lg:flex' : 'flex'}`}>
             
             {/* Date Picker Ribbon */}
             <div className="bg-white rounded-xl border border-gray-100 p-3 flex items-center justify-between shrink-0">
@@ -487,14 +487,28 @@ export default function ChatsPage() {
           </div>
 
           {/* Right Main Chat Area */}
-          <div className="flex-1 bg-white rounded-[24px] shadow-sm border border-gray-100 flex flex-col overflow-hidden h-full min-h-0">
+          <div className={`flex-1 bg-white rounded-[24px] shadow-sm border border-gray-100 flex flex-col overflow-hidden h-full min-h-0 ${activeChat ? 'flex' : 'hidden lg:flex'}`}>
             {activeBooking ? (
               <>
                 {/* Header */}
                 <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200">
-                      <img src={activeBooking.avatar} alt={activeBooking.follower} className="object-cover w-full h-full" />
+                    {/* Back button for mobile */}
+                    <button 
+                      onClick={() => setActiveChat(null)}
+                      className="lg:hidden p-1 mr-1 text-gray-500 hover:text-gray-900 transition-colors"
+                    >
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <line x1="19" y1="12" x2="5" y2="12" />
+                        <polyline points="12 19 5 12 12 5" />
+                      </svg>
+                    </button>
+
+                    <div className="relative">
+                      <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200">
+                        <img src={activeBooking.avatar} alt={activeBooking.follower} className="object-cover w-full h-full" />
+                      </div>
+                      <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-[#12B76A] border-3 border-white rounded-full"></div>
                     </div>
                     <div>
                       <h3 className="text-base font-bold text-gray-900">{activeBooking.follower}</h3>
