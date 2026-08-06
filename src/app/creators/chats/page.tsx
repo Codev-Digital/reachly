@@ -433,7 +433,11 @@ export default function ChatsPage() {
 
               if (matchedIndex !== -1) {
                 const copy = [...prev];
-                copy[matchedIndex] = data.message;
+                copy[matchedIndex] = {
+                  ...copy[matchedIndex],
+                  ...data.message,
+                  attachment: data.message.attachment || copy[matchedIndex].attachment
+                };
                 return copy;
               }
               
