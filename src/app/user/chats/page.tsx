@@ -418,9 +418,28 @@ export default function UserChatsPage() {
           if (data.message.conversationId === activeChat) {
             setMessages(prev => {
               if (prev.some(m => m.id === data.message.id)) return prev;
-              if (data.message.tempId && prev.some(m => m.tempId === data.message.tempId)) {
-                return prev.map(m => m.tempId === data.message.tempId ? data.message : m);
+              
+              let matchedIndex = -1;
+              if (data.message.tempId) {
+                matchedIndex = prev.findIndex(m => m.tempId === data.message.tempId);
               }
+              
+              if (matchedIndex === -1) {
+                const incomingTime = new Date(data.message.createdAt).getTime();
+                matchedIndex = prev.findIndex(m => 
+                  m.id.startsWith('temp-') && 
+                  m.content === data.message.content &&
+                  m.senderId === data.message.senderId &&
+                  Math.abs(new Date(m.createdAt).getTime() - incomingTime) < 15000
+                );
+              }
+
+              if (matchedIndex !== -1) {
+                const copy = [...prev];
+                copy[matchedIndex] = data.message;
+                return copy;
+              }
+              
               return [...prev, data.message];
             });
           }
