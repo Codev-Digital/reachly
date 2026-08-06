@@ -33,6 +33,13 @@ interface ChatMessage {
   content: string;
   read: boolean;
   createdAt: string;
+  attachment?: {
+    url: string;
+    fileType: string;
+    fileName: string;
+    fileSize: number;
+  };
+  tempId?: string;
 }
 
 const formatMsgTime = (dateStr: string | null): string => {
@@ -96,6 +103,154 @@ export default function UserChatsPage() {
 
   const wsRef = useRef<WebSocket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  // Attachment states
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [uploadError, setUploadError] = useState<boolean>(false);
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [previewFile, setPreviewFile] = useState<File | null>(null);
+  const [lightboxMedia, setLightboxMedia] = useState<{url: string, type: 'image' | 'video'} | null>(null);
+  const uploadAbortController = useRef<AbortController | null>(null);
+
+  const triggerFileInput = () => {
+    if (fileInputRef.current) fileInputRef.current.click();
+  };
+
+  const cancelUpload = () => {
+    if (uploadAbortController.current) {
+      uploadAbortController.current.abort();
+    }
+  };
+
+  const retryUpload = () => {
+    if (uploadFile) {
+      startUpload(uploadFile);
+    }
+  };
+
+  const clearUpload = () => {
+    setUploadError(false);
+    setUploadFile(null);
+    setUploadProgress(0);
+  };
+
+  const handleFileInput = (event: any) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setPreviewFile(file);
+    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const startUpload = async (file: File) => {
+    if (!file || !activeChat) return;
+
+    setUploadFile(file);
+    setIsUploading(true);
+    setUploadProgress(0);
+    setUploadError(false);
+
+    const abortController = new AbortController();
+    uploadAbortController.current = abortController;
+
+    try {
+      const tokenRes = await fetch('/api/messages/upload/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileName: file.name, fileType: file.type }),
+        signal: abortController.signal
+      });
+
+      if (!tokenRes.ok) throw new Error('Failed to get upload token');
+      const { signedUrl, publicUrl } = await tokenRes.json();
+
+      const xhr = new XMLHttpRequest();
+
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const percent = Math.round((event.loaded / event.total) * 100);
+          setUploadProgress(percent);
+        }
+      };
+
+      await new Promise((resolve, reject) => {
+        xhr.open('PUT', signedUrl, true);
+        
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve(xhr.responseText);
+          } else {
+            reject(new Error(`Upload failed: ${xhr.statusText}`));
+          }
+        };
+
+        xhr.onerror = () => reject(new Error('Upload failed'));
+        xhr.onabort = () => reject(new Error('Upload canceled'));
+        xhr.setRequestHeader('Content-Type', file.type);
+        xhr.send(file);
+        
+        abortController.signal.addEventListener('abort', () => xhr.abort());
+      });
+
+      let msgType = 'document';
+      if (file.type.startsWith('image/')) msgType = 'image';
+      else if (file.type.startsWith('video/')) msgType = 'video';
+      else if (file.type === 'application/pdf') msgType = 'pdf';
+
+      const tempId = `temp-${Date.now()}`;
+      const tempUrl = URL.createObjectURL(file);
+      const optimisticMsg: ChatMessage = {
+        id: tempId,
+        tempId,
+        conversationId: activeChat,
+        senderId: userId,
+        senderRole: 'user',
+        content: `[Attached ${msgType}]`,
+        createdAt: new Date().toISOString(),
+        read: false,
+        attachment: {
+          url: tempUrl,
+          fileType: msgType,
+          fileName: file.name,
+          fileSize: file.size
+        }
+      };
+      setMessages(prev => [...prev, optimisticMsg]);
+      scrollToBottom();
+
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({
+          type: 'message',
+          conversationId: activeChat,
+          senderId: userId,
+          senderRole: 'user',
+          content: `[Attached ${msgType}]`,
+          tempId,
+          attachment: {
+            url: publicUrl,
+            fileType: msgType,
+            fileName: file.name,
+            fileSize: file.size
+          }
+        }));
+      }
+
+      setUploadFile(null);
+    } catch (err: any) {
+      if (err.message === 'Upload canceled' || err.name === 'AbortError') {
+        setUploadError(true);
+      } else {
+        console.error('File upload error:', err);
+        setUploadError(true);
+      }
+      setMessages(prev => prev.filter(m => !m.tempId || !m.attachment?.url.startsWith('blob:')));
+    } finally {
+      setIsUploading(false);
+      uploadAbortController.current = null;
+    }
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -166,10 +321,19 @@ export default function UserChatsPage() {
     fetchConversations();
   }, []);
 
-  // Poll every 5 seconds
+  // Poll every 15 seconds
   useEffect(() => {
-    const id = setInterval(fetchConversations, 5000);
-    return () => clearInterval(id);
+    const id = setInterval(fetchConversations, 15000);
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchConversations();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   // WebSocket + message history
@@ -208,6 +372,9 @@ export default function UserChatsPage() {
           if (data.message.conversationId === activeChat) {
             setMessages(prev => {
               if (prev.some(m => m.id === data.message.id)) return prev;
+              if (data.message.tempId && prev.some(m => m.tempId === data.message.tempId)) {
+                return prev.map(m => m.tempId === data.message.tempId ? data.message : m);
+              }
               return [...prev, data.message];
             });
           }
@@ -238,6 +405,11 @@ export default function UserChatsPage() {
           setConversations(prev =>
             prev.map(c => (c.id === data.conversationId ? { ...c, isLocked: data.isLocked } : c))
           );
+        } else if (data.type === 'chat_cleared' && data.conversationId === activeChat) {
+          setMessages([]);
+          setConversations(prev =>
+            prev.map(c => (c.id === data.conversationId ? { ...c, lastMessage: '', lastMessageTime: null } : c))
+          );
         }
       } catch (err) {
         console.error('Error parsing WebSocket message:', err);
@@ -256,13 +428,29 @@ export default function UserChatsPage() {
     }
     sendTypingStatus(false);
 
+    const tempId = `temp-${Date.now()}`;
+    const optimisticMsg: ChatMessage = {
+      id: tempId,
+      tempId,
+      conversationId: activeChat,
+      senderId: userId,
+      senderRole: 'user',
+      content: message.trim(),
+      createdAt: new Date().toISOString(),
+      read: false
+    };
+
+    setMessages(prev => [...prev, optimisticMsg]);
+    scrollToBottom();
+
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({
         type: 'message',
         conversationId: activeChat,
         senderId: userId,
         senderRole: 'user',
-        content: message.trim()
+        content: message.trim(),
+        tempId
       }));
       setMessage('');
     } else {
@@ -428,7 +616,7 @@ export default function UserChatsPage() {
         <div className="flex-grow flex flex-col lg:flex-row gap-6 min-h-0 mb-0 lg:mb-6 h-[calc(100dvh-120px)] lg:h-[calc(100dvh-180px)]">
 
           {/* Left Sidebar */}
-          <div className={`w-full lg:w-[380px] flex flex-col gap-4 h-full lg:h-full shrink-0 overflow-hidden ${activeChat ? 'hidden lg:flex' : 'flex'}`}>
+          <div className={`w-full lg:w-[380px] flex flex-col gap-4 h-full lg:h-full shrink-0 ${activeChat ? 'hidden lg:flex' : 'flex'}`}>
 
             {/* Search Box */}
             <div className="relative shrink-0">
@@ -639,42 +827,88 @@ export default function UserChatsPage() {
                                 <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 shrink-0 mb-1">
                                   <img src={isMe ? (profilePhoto || '/avatar.png') : activeConv.image} alt="Avatar" className="object-cover w-full h-full" />
                                 </div>
-
-                                {isAudio ? (
-                                  <VoicePlayer
-                                    url={msg.content}
-                                    isMe={isMe}
-                                    timeStr={formatMsgTime(msg.createdAt)}
-                                    readStatus={
-                                      msg.read ? (
-                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0057ff" strokeWidth="2.5"><path d="M17 5L9.5 12.5L6 9" /><path d="M22 5l-7.5 7.5" /></svg>
-                                      ) : isOtherUserOnline ? (
-                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A8A8A" strokeWidth="2.5"><path d="M17 5L9.5 12.5L6 9" /><path d="M22 5l-7.5 7.5" /></svg>
-                                      ) : (
-                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A8A8A" strokeWidth="2.5"><path d="M17 5L9.5 12.5L6 9" /></svg>
-                                      )
-                                    }
-                                  />
-                                ) : (
-                                  <div className={`${isMe ? 'bg-[#E6E8FF] text-gray-800' : 'bg-white border border-gray-100 text-gray-800'} text-[13px] pt-3 pb-2 px-4 rounded-[20px] ${isMe ? 'rounded-br-sm' : 'rounded-bl-sm'} shadow-xs leading-relaxed break-all min-w-[80px]`}>
-                                    <span>{msg.content}</span>
-                                    <span className="float-right mt-3 ml-2.5 text-[10px] text-gray-400 font-medium inline-flex items-center gap-1 select-none shrink-0 translate-y-[2px]">
-                                      {formatMsgTime(msg.createdAt)}
-                                      {isMe && (
-                                        <span className="inline-flex shrink-0">
-                                          {msg.read ? (
+                                <div className="relative">
+                                  {msg.attachment ? (
+                                      <div className={`p-4 shadow-sm relative flex flex-col gap-2 ${isMe ? 'bg-[#E6E8FF] text-gray-800 rounded-[20px] rounded-br-sm' : 'bg-white border border-gray-100 text-gray-800 rounded-[20px] rounded-bl-sm'}`}>
+                                        {msg.attachment.fileType === 'image' && (
+                                          <div onClick={() => setLightboxMedia({ url: msg.attachment!.url, type: 'image' })}>
+                                            <img src={msg.attachment.url} alt="Attachment" className="max-w-[240px] max-h-[240px] min-w-[160px] min-h-[120px] bg-black/10 rounded-lg object-cover cursor-pointer hover:opacity-90 transition-opacity" />
+                                          </div>
+                                        )}
+                                        {msg.attachment.fileType === 'video' && (
+                                          <div className="relative cursor-pointer group" onClick={() => setLightboxMedia({ url: msg.attachment!.url, type: 'video' })}>
+                                            <video src={msg.attachment.url} className="max-w-[240px] max-h-[240px] min-w-[160px] min-h-[120px] bg-black/10 rounded-lg object-cover pointer-events-none" />
+                                            <div className="absolute inset-0 flex items-center justify-center bg-black/10 group-hover:bg-black/20 transition-colors rounded-lg">
+                                              <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center shadow-md">
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="text-gray-900 ml-1"><polygon points="5 3 19 12 5 21 5 3" /></svg>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        )}
+                                        {(msg.attachment.fileType === 'document' || msg.attachment.fileType === 'pdf') && (
+                                          <a href={msg.attachment.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 bg-black/10 rounded-xl hover:bg-black/20 transition-colors">
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                                            <div className="flex flex-col min-w-0">
+                                              <span className="text-sm font-semibold truncate max-w-[160px]">{msg.attachment.fileName}</span>
+                                              <span className="text-xs opacity-70">{(msg.attachment.fileSize / 1024 / 1024).toFixed(2)} MB</span>
+                                            </div>
+                                          </a>
+                                        )}
+                                        <div className="flex justify-end items-center gap-1 mt-1">
+                                          <span className={`text-[10px] font-medium select-none text-gray-400`}>
+                                            {formatMsgTime(msg.createdAt)}
+                                          </span>
+                                          {isMe && (
+                                            <span className="inline-flex shrink-0">
+                                              {msg.read ? (
+                                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0057ff" strokeWidth="2.5"><path d="M17 5L9.5 12.5L6 9" /><path d="M22 5l-7.5 7.5" /></svg>
+                                              ) : isOtherUserOnline ? (
+                                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A8A8A" strokeWidth="2.5"><path d="M17 5L9.5 12.5L6 9" /><path d="M22 5l-7.5 7.5" /></svg>
+                                              ) : (
+                                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A8A8A" strokeWidth="2.5"><path d="M17 5L9.5 12.5L6 9" /></svg>
+                                              )}
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
+                                  ) : (
+                                    isAudio ? (
+                                      <VoicePlayer
+                                        url={msg.content}
+                                        isMe={isMe}
+                                        timeStr={formatMsgTime(msg.createdAt)}
+                                        readStatus={
+                                          msg.read ? (
                                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0057ff" strokeWidth="2.5"><path d="M17 5L9.5 12.5L6 9" /><path d="M22 5l-7.5 7.5" /></svg>
                                           ) : isOtherUserOnline ? (
                                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A8A8A" strokeWidth="2.5"><path d="M17 5L9.5 12.5L6 9" /><path d="M22 5l-7.5 7.5" /></svg>
                                           ) : (
                                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A8A8A" strokeWidth="2.5"><path d="M17 5L9.5 12.5L6 9" /></svg>
+                                          )
+                                        }
+                                      />
+                                    ) : (
+                                      <div className={`${isMe ? 'bg-[#E6E8FF] text-gray-800' : 'bg-white border border-gray-100 text-gray-800'} text-[13px] pt-3 pb-2 px-4 rounded-[20px] ${isMe ? 'rounded-br-sm' : 'rounded-bl-sm'} shadow-xs leading-relaxed break-all min-w-[80px]`}>
+                                        <span>{msg.content}</span>
+                                        <span className="float-right mt-3 ml-2.5 text-[10px] text-gray-400 font-medium inline-flex items-center gap-1 select-none shrink-0 translate-y-[2px]">
+                                          {formatMsgTime(msg.createdAt)}
+                                          {isMe && (
+                                            <span className="inline-flex shrink-0">
+                                              {msg.read ? (
+                                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0057ff" strokeWidth="2.5"><path d="M17 5L9.5 12.5L6 9" /><path d="M22 5l-7.5 7.5" /></svg>
+                                              ) : isOtherUserOnline ? (
+                                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A8A8A" strokeWidth="2.5"><path d="M17 5L9.5 12.5L6 9" /><path d="M22 5l-7.5 7.5" /></svg>
+                                              ) : (
+                                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A8A8A" strokeWidth="2.5"><path d="M17 5L9.5 12.5L6 9" /></svg>
+                                              )}
+                                            </span>
                                           )}
                                         </span>
-                                      )}
-                                    </span>
-                                    <div className="clear-both"></div>
-                                  </div>
-                                )}
+                                        <div className="clear-both"></div>
+                                      </div>
+                                    )
+                                  )}
+                                </div>
                               </div>
                             </div>
                           );
@@ -710,6 +944,80 @@ export default function UserChatsPage() {
                       </div>
                     ) : (
                       <div className="p-4 sm:p-6 bg-white border-t border-gray-100 shrink-0">
+                        {/* Upload UI */}
+                        {isUploading && (
+                          <div className="mb-4 flex flex-col items-end w-full">
+                            <div className="bg-[#0012FF] text-white rounded-l-2xl rounded-tr-2xl p-4 shadow-sm relative flex items-center gap-4 min-w-[200px]">
+                              <div className="relative w-10 h-10 shrink-0 flex items-center justify-center">
+                                <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                                  <path className="text-white/20" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" />
+                                  <path className="text-white transition-all duration-300" strokeDasharray={`${uploadProgress}, 100`} d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" />
+                                </svg>
+                                <button onClick={cancelUpload} className="absolute inset-0 flex items-center justify-center hover:bg-white/10 rounded-full transition-colors">
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                                </button>
+                              </div>
+                              <div className="flex flex-col min-w-0">
+                                <span className="text-sm font-semibold truncate max-w-[120px]">{uploadFile?.name}</span>
+                                <span className="text-xs opacity-80">{uploadProgress}% uploaded</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        {uploadError && uploadFile && !isUploading && (
+                          <div className="mb-4 flex flex-col items-end w-full">
+                            <div className="bg-red-50 text-red-600 rounded-l-2xl rounded-tr-2xl p-4 shadow-sm relative flex items-center gap-4 min-w-[200px] border border-red-100 pr-10">
+                              <button onClick={clearUpload} className="absolute top-2 right-2 p-1 text-red-400 hover:text-red-600 transition-colors hover:bg-red-100 rounded-full">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                              </button>
+                              <div className="flex flex-col min-w-0">
+                                <span className="text-sm font-semibold truncate max-w-[150px]">{uploadFile.name}</span>
+                                <span className="text-xs">Upload failed or canceled</span>
+                              </div>
+                              <button onClick={retryUpload} className="w-10 h-10 shrink-0 bg-red-100 hover:bg-red-200 rounded-full flex items-center justify-center transition-colors">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M2.5 2v6h6M2.66 15.57a10 10 0 1 0 .57-8.38l-5.67-5.67"/></svg>
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                        {previewFile && !isUploading && (
+                          <div className="mb-4 flex flex-col items-end w-full">
+                            <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm relative flex flex-col gap-3 min-w-[240px]">
+                              <div className="flex justify-between items-center w-full pb-2 border-b border-gray-100">
+                                <span className="text-sm font-semibold text-gray-700">Preview Attachment</span>
+                                <button onClick={() => setPreviewFile(null)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                                </button>
+                              </div>
+                              
+                              <div className="flex items-center justify-center bg-gray-50 rounded-xl overflow-hidden min-h-[120px] max-h-[240px]">
+                                {previewFile.type.startsWith('image/') ? (
+                                  <img src={URL.createObjectURL(previewFile)} alt="Preview" className="max-w-full max-h-[240px] object-contain" />
+                                ) : previewFile.type.startsWith('video/') ? (
+                                  <video src={URL.createObjectURL(previewFile)} className="max-w-full max-h-[240px] object-contain" controls />
+                                ) : (
+                                  <div className="flex flex-col items-center gap-2 p-6 text-gray-500">
+                                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                                    <span className="text-sm font-medium text-center truncate max-w-[200px]">{previewFile.name}</span>
+                                    <span className="text-xs">{(previewFile.size / 1024 / 1024).toFixed(2)} MB</span>
+                                  </div>
+                                )}
+                              </div>
+                              
+                              <div className="flex justify-end gap-2 mt-1">
+                                <button onClick={() => setPreviewFile(null)} className="px-4 py-2 text-sm font-medium text-gray-500 hover:bg-gray-100 rounded-full transition-colors">
+                                  Cancel
+                                </button>
+                                <button onClick={() => { startUpload(previewFile); setPreviewFile(null); }} className="px-5 py-2 text-sm font-semibold text-white bg-[#0012FF] hover:bg-[#0010d0] rounded-full transition-colors shadow-sm flex items-center gap-2">
+                                  <span>Send</span>
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        <input type="file" ref={fileInputRef} hidden accept="image/*,video/*,application/pdf,.doc,.docx,.xls,.xlsx" onChange={handleFileInput} />
+                        
                         <div className="flex items-center gap-3">
                           {isRecording ? (
                             // Recording audio state banner
@@ -742,8 +1050,15 @@ export default function UserChatsPage() {
                                 onChange={(e) => handleInputChange(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                                 placeholder="Type something..."
-                                className="w-full bg-[#F3F4F6] border-0 rounded-full py-4 pl-6 pr-12 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0012FF]/10 transition-all"
+                                className="w-full bg-[#F3F4F6] border-0 rounded-full py-4 pl-6 pr-20 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0012FF]/10 transition-all"
                               />
+                              <button
+                                onClick={triggerFileInput}
+                                className="absolute right-12 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                                title="Attach File"
+                              >
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+                              </button>
                               <button
                                 onClick={startRecording}
                                 className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
@@ -791,6 +1106,23 @@ export default function UserChatsPage() {
           </div>
         </div>
       </main>
+      
+      {/* Lightbox Modal */}
+      {lightboxMedia && (
+        <div className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity animate-fade-in" onClick={() => setLightboxMedia(null)}>
+          <button className="absolute top-6 right-6 text-white/70 hover:text-white transition-colors bg-white/10 hover:bg-white/20 p-2.5 rounded-full z-[110]" onClick={() => setLightboxMedia(null)}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+          </button>
+          
+          <div className="relative max-w-6xl max-h-[90vh] flex items-center justify-center w-full h-full" onClick={(e) => e.stopPropagation()}>
+            {lightboxMedia.type === 'image' ? (
+              <img src={lightboxMedia.url} alt="Fullscreen Attachment" className="max-w-full max-h-full object-contain select-none drop-shadow-2xl rounded-sm" />
+            ) : (
+              <video controls autoPlay src={lightboxMedia.url} className="max-w-full max-h-full outline-none drop-shadow-2xl rounded-sm" />
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -7,6 +7,12 @@ export interface IMessage extends Document {
   senderRole: 'creator' | 'user';
   content: string;
   read: boolean;
+  attachment?: {
+    url: string;
+    fileType: string;
+    fileName: string;
+    fileSize: number;
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -41,6 +47,12 @@ const MessageSchema = new Schema<IMessage>(
     read: {
       type: Boolean,
       default: false,
+    },
+    attachment: {
+      url: String,
+      fileType: String,
+      fileName: String,
+      fileSize: Number
     },
   },
   { timestamps: true }

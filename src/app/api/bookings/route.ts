@@ -128,6 +128,26 @@ export async function POST(request: NextRequest) {
 
         await booking.save();
 
+        // Automatically create a conversation if the user is logged in
+        if (userToAttachId) {
+            try {
+                const Conversation = (await import('@/models/Conversation')).default;
+                const existingConv = await Conversation.findOne({
+                    creatorId: creatorProfile.userId,
+                    userId: userToAttachId,
+                });
+                if (!existingConv) {
+                    await Conversation.create({
+                        creatorId: creatorProfile.userId,
+                        userId: userToAttachId,
+                        isLocked: true,
+                    });
+                }
+            } catch (convErr) {
+                console.error('Error creating conversation on booking:', convErr);
+            }
+        }
+
         // Create a real Notification for the creator
         try {
             const Notification = (await import('@/models/Notification')).default;

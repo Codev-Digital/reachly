@@ -126,7 +126,7 @@ export default function AdminNavbar() {
         <img
           src="/assets/users.svg"
           alt="Users Active"
-          className="w-[36px] h-[36px] object-contain flex-shrink-0"
+          className="w-[38px] h-[38px] object-contain flex-shrink-0"
         />
       ),
       iconInactive: (
@@ -143,7 +143,7 @@ export default function AdminNavbar() {
         <img
           src="/assets/creator.svg"
           alt="Creators Active"
-          className="w-[36px] h-[36px] object-contain flex-shrink-0"
+          className="w-[38px] h-[38px] object-contain flex-shrink-0"
         />
       ),
       iconInactive: (
@@ -182,7 +182,7 @@ export default function AdminNavbar() {
         <img
           src="/assets/wallet.svg"
           alt="Payments Active"
-          className="w-[36px] h-[36px] object-contain flex-shrink-0"
+          className="w-[38px] h-[38px] object-contain flex-shrink-0"
         />
       ),
       iconInactive: (
@@ -330,7 +330,7 @@ export default function AdminNavbar() {
                       <polyline points="16 17 21 12 16 7" />
                       <line x1="21" y1="12" x2="9" y2="12" />
                     </svg>
-                    Log Out
+                    Logout
                   </button>
                 </div>
               )}
@@ -376,7 +376,7 @@ export default function AdminNavbar() {
                   </Link>
                 );
               })}
-              
+
               {/* Logout Button (Mobile Only) */}
               <button
                 onClick={() => {
@@ -390,7 +390,7 @@ export default function AdminNavbar() {
                   <polyline points="16 17 21 12 16 7" />
                   <line x1="21" y1="12" x2="9" y2="12" />
                 </svg>
-                <span>Log Out</span>
+                <span>Logout</span>
               </button>
             </motion.div>
           )}
@@ -430,7 +430,7 @@ export default function AdminNavbar() {
 
             {/* Description */}
             <p className="text-xs sm:text-sm text-gray-400 font-medium leading-relaxed mb-6 max-w-[260px] sm:max-w-[280px]">
-              Are you sure you want to log out of your account?
+              Are you sure you want to logout of your account?
             </p>
 
             {/* Action Buttons Row */}

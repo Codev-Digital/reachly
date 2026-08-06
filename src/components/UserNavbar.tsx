@@ -218,7 +218,7 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
                       <img
                         src="/assets/dashboard.png"
                         alt="Dashboard"
-                        className="w-[38px] h-[38px] object-contain"
+                        className="w-[39px] h-[39px] object-contain"
                       />
                     ) : (
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -252,7 +252,7 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
                       <img
                         src="/assets/bookings.svg"
                         alt="Bookings"
-                        className="w-[33px] h-[38px] object-contain"
+                        className="w-[32px] h-[32px] object-contain"
                       />
                     ) : (
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -270,7 +270,7 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
                       <img
                         src="/assets/referrals.svg"
                         alt="Referrals"
-                        className="w-[36px] h-[36px] object-contain"
+                        className="w-[32px] h-[32px] object-contain"
                       />
                     ) : (
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -287,7 +287,7 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
                       <img
                         src="/assets/chat.svg"
                         alt="Chats"
-                        className="w-[28px] h-[38px] object-contain"
+                        className="w-[32px] h-[32px] object-contain"
                       />
                     ) : (
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -302,7 +302,7 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
                       <img
                         src="/assets/wallet.svg"
                         alt="Wallet"
-                        className="w-5 h-5 object-contain"
+                        className="w-[32px] h-[32px] object-contain"
                       />
                     ) : (
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -318,7 +318,7 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
                       <img
                         src="/assets/settings.svg.png"
                         alt="Settings"
-                        className="w-[38px] h-[38px] object-contain"
+                        className="w-[43px] h-[43px] object-contain"
                       />
                     ) : (
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -525,7 +525,7 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
                     }}
                     className="hidden lg:flex w-full items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50/70 font-semibold transition-colors text-left cursor-pointer"
                   >
-                    Log Out
+                    Logout
                   </button>
                 </div>
               )}
@@ -653,7 +653,7 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
                           <img
                             src="/assets/wallet.svg"
                             alt="Wallet"
-                            className="w-5 h-5 object-contain"
+                            className="w-6 h-6 object-contain"
                           />
                         ) : (
                           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -737,7 +737,7 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
 
             {/* Description */}
             <p className="text-xs sm:text-sm text-gray-400 font-medium leading-relaxed mb-6 max-w-[260px] sm:max-w-[280px]">
-              Are you sure you want to log out of your account?
+              Are you sure you want to logout of your account?
             </p>
 
             {/* Action Buttons Row */}

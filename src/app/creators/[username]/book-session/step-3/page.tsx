@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import BookingProgress from '@/components/booking/BookingProgress';
 import CreatorProfileCard from '@/components/booking/CreatorProfileCard';
 import { useBooking } from '../layout';
@@ -20,6 +20,28 @@ export default function BookSessionStep3() {
 
   // Determine if user is logged in from userData
   const isLoggedIn = !!(userData?.user?.id);
+
+  // Auto-fill user details if logged in and fields are empty
+  useEffect(() => {
+    if (isLoggedIn && userData?.user) {
+      setBooking((prev) => {
+        let updated = { ...prev.userDetails };
+        let changed = false;
+        if (!updated.fullName && userData.user.name) {
+          updated.fullName = userData.user.name;
+          changed = true;
+        }
+        if (!updated.email && userData.user.email) {
+          updated.email = userData.user.email;
+          changed = true;
+        }
+        if (changed) {
+          return { ...prev, userDetails: updated };
+        }
+        return prev;
+      });
+    }
+  }, [isLoggedIn, userData, setBooking]);
 
   const updateUserDetails = (field: string, value: string) => {
     setBooking(b => ({

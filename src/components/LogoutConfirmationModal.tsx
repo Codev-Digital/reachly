@@ -44,7 +44,7 @@ export default function LogoutConfirmationModal({
 
         {/* Description */}
         <p className="text-xs sm:text-sm text-gray-400 font-medium leading-relaxed mb-6 max-w-[260px] sm:max-w-[280px]">
-          Are you sure you want to log out of your account?
+          Are you sure you want to logout of your account?
         </p>
 
         {/* Action Buttons Row */}

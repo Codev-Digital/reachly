@@ -36,7 +36,15 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 
-        const messages = await Message.find({ conversationId })
+        let query: any = { conversationId };
+
+        if (conversation.creatorId.toString() === uid && conversation.creatorClearedAt) {
+            query.createdAt = { $gt: conversation.creatorClearedAt };
+        } else if (conversation.userId.toString() === uid && conversation.userClearedAt) {
+            query.createdAt = { $gt: conversation.userClearedAt };
+        }
+
+        const messages = await Message.find(query)
             .sort({ createdAt: 1 })
             .lean();
 
@@ -49,6 +57,7 @@ export async function GET(request: NextRequest) {
             content: msg.content,
             read: msg.read || false,
             createdAt: msg.createdAt,
+            attachment: msg.attachment,
         }));
 
         return NextResponse.json({ success: true, messages: formatted });

@@ -4,6 +4,8 @@ export interface IConversation extends Document {
   creatorId: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
   isLocked: boolean;
+  creatorClearedAt?: Date;
+  userClearedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -25,6 +27,14 @@ const ConversationSchema = new Schema<IConversation>(
     isLocked: {
       type: Boolean,
       default: true,
+    },
+    creatorClearedAt: {
+      type: Date,
+      default: null,
+    },
+    userClearedAt: {
+      type: Date,
+      default: null,
     },
   },
   { timestamps: true }

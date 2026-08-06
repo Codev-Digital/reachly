@@ -19,7 +19,7 @@ const NAV_ITEMS = [
 
 function NavIcon({ icon, active }: { icon: string; active: boolean }) {
   if (icon === 'dashboard') {
-    if (active) return <Image src="/assets/dashboard.png" alt="Dashboard" width={28} height={22} className="object-contain flex-shrink-0" />;
+    if (active) return <Image src="/assets/dashboard.png" alt="Dashboard" width={38} height={38} className="object-contain flex-shrink-0" />;
     return (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="flex-shrink-0">
         <rect x="3" y="3" width="7" height="9" rx="1" />
@@ -38,7 +38,7 @@ function NavIcon({ icon, active }: { icon: string; active: boolean }) {
   //   );
   // }
   if (icon === 'chats') {
-    if (active) return <Image src="/assets/chat.svg" alt="Chats" width={28} height={22} className="object-contain flex-shrink-0" />;
+    if (active) return <Image src="/assets/chat.svg" alt="Chats" width={33} height={33} className="object-contain flex-shrink-0" />;
     return (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="flex-shrink-0">
         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
@@ -46,7 +46,7 @@ function NavIcon({ icon, active }: { icon: string; active: boolean }) {
     );
   }
   if (icon === 'calendar') {
-    if (active) return <Image src="/assets/calendar.svg" alt="Calendar" width={20} height={20} className="object-contain flex-shrink-0" />;
+    if (active) return <Image src="/assets/calendar.svg" alt="Calendar" width={33} height={33} className="object-contain flex-shrink-0" />;
     return (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="flex-shrink-0">
         <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
@@ -57,7 +57,7 @@ function NavIcon({ icon, active }: { icon: string; active: boolean }) {
     );
   }
   if (icon === 'wallet') {
-    if (active) return <Image src="/assets/wallet.svg" alt="Wallet" width={22} height={22} className="object-contain flex-shrink-0" />;
+    if (active) return <Image src="/assets/wallet.svg" alt="Wallet" width={33} height={33} className="object-contain flex-shrink-0" />;
     return (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="flex-shrink-0">
         <rect x="2" y="5" width="20" height="14" rx="2" />
@@ -66,7 +66,7 @@ function NavIcon({ icon, active }: { icon: string; active: boolean }) {
     );
   }
   if (icon === 'settings') {
-    if (active) return <Image src="/assets/settings.svg.png" alt="Settings" width={36} height={22} className="object-contain flex-shrink-0" />;
+    if (active) return <Image src="/assets/settings.svg.png" alt="Settings" width={43} height={43} className="object-contain flex-shrink-0" />;
     return (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="flex-shrink-0">
         <circle cx="12" cy="12" r="3" />
@@ -455,7 +455,7 @@ export default function CreatorDashboardNav({
                       }}
                       className="hidden md:flex w-full items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50/70 font-semibold transition-colors text-left cursor-pointer"
                     >
-                      Log Out
+                      Logout
                     </button>
                   </div>
                 )}
@@ -566,7 +566,7 @@ export default function CreatorDashboardNav({
 
             {/* Description */}
             <p className="text-xs sm:text-sm text-gray-400 font-medium leading-relaxed mb-6 max-w-[260px] sm:max-w-[280px]">
-              Are you sure you want to log out of your account?
+              Are you sure you want to logout of your account?
             </p>
 
             {/* Action Buttons Row */}

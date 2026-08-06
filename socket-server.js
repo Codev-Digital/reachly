@@ -59,6 +59,12 @@ const MessageSchema = new mongoose.Schema(
     senderRole: { type: String, enum: ['creator', 'user'], required: true },
     content: { type: String, required: true, trim: true },
     read: { type: Boolean, default: false },
+    attachment: {
+      url: String,
+      fileType: String,
+      fileName: String,
+      fileSize: Number
+    },
   },
   { timestamps: true }
 );
@@ -149,7 +155,9 @@ wss.on('connection', (ws) => {
           senderRole,
           content,
           read: isRead,
+          attachment: data.attachment || undefined,
         });
+
         await newMsg.save();
 
         // Update conversation updatedAt so it bubbles to top
@@ -169,6 +177,8 @@ wss.on('connection', (ws) => {
               content,
               read: isRead,
               createdAt: newMsg.createdAt,
+              attachment: data.attachment || undefined,
+              tempId: data.tempId || undefined,
             },
           });
           roomClients.forEach(client => {
@@ -185,6 +195,19 @@ wss.on('connection', (ws) => {
           roomClients.forEach(client => {
             if (client.readyState === WebSocket.OPEN) {
               client.send(JSON.stringify({ type: 'lock_status', conversationId, isLocked }));
+            }
+          });
+        }
+      }
+
+      // ── CHAT CLEARED ───────────────────────────────────────────────────────
+      else if (data.type === 'chat_cleared') {
+        const { conversationId } = data;
+        const roomClients = rooms.get(conversationId);
+        if (roomClients) {
+          roomClients.forEach(client => {
+            if (client.readyState === WebSocket.OPEN) {
+              client.send(JSON.stringify({ type: 'chat_cleared', conversationId }));
             }
           });
         }

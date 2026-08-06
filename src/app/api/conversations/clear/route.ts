@@ -31,15 +31,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Conversation not found' }, { status: 404 });
     }
 
-    if (conv.creatorId.toString() !== user._id.toString()) {
-      return NextResponse.json({ error: 'Only the creator can clear this chat' }, { status: 403 });
+    if (conv.creatorId.toString() === user._id.toString()) {
+      conv.creatorClearedAt = new Date();
+      conv.userClearedAt = new Date();
+    } else if (conv.userId.toString() === user._id.toString()) {
+      conv.userClearedAt = new Date();
+    } else {
+      return NextResponse.json({ error: 'Only participants can clear this chat' }, { status: 403 });
     }
 
-    const result = await Message.deleteMany({
-      conversationId: new mongoose.Types.ObjectId(conversationId),
-    });
+    await conv.save();
 
-    return NextResponse.json({ success: true, deletedCount: result.deletedCount });
+    return NextResponse.json({ success: true, deletedCount: 0 });
   } catch (error: any) {
     console.error('POST /api/conversations/clear error:', error);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
