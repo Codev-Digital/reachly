@@ -1171,7 +1171,7 @@ export default function ChatsPage() {
                                         )}
                                         {msg.attachment.fileType === 'video' && (
                                           <div className="relative cursor-pointer group" onClick={() => setLightboxMedia({ url: msg.attachment!.url, type: 'video' })}>
-                                            <video src={msg.attachment.url} className="max-w-[240px] max-h-[240px] min-w-[160px] min-h-[120px] bg-black/10 rounded-lg object-cover pointer-events-none" />
+                                            <video src={`${msg.attachment.url}#t=0.1`} preload="metadata" playsInline className="max-w-[240px] max-h-[240px] min-w-[160px] min-h-[120px] bg-black/10 rounded-lg object-cover pointer-events-none" />
                                             <div className="absolute inset-0 flex items-center justify-center bg-black/10 group-hover:bg-black/20 transition-colors rounded-lg">
                                               <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center shadow-md">
                                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="text-gray-900 ml-1"><polygon points="5 3 19 12 5 21 5 3" /></svg>
@@ -1514,7 +1514,7 @@ export default function ChatsPage() {
             {lightboxMedia.type === 'image' ? (
               <img src={lightboxMedia.url} alt="Fullscreen Attachment" className="max-w-full max-h-full object-contain select-none drop-shadow-2xl rounded-sm" />
             ) : (
-              <video controls autoPlay src={lightboxMedia.url} className="max-w-full max-h-full outline-none drop-shadow-2xl rounded-sm" />
+              <video controls autoPlay playsInline src={lightboxMedia.url} className="max-w-full max-h-full outline-none drop-shadow-2xl rounded-sm" />
             )}
           </div>
         </div>
