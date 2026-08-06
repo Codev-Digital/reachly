@@ -116,12 +116,32 @@ export default function CreatorDashboardNav({
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
 
+  // Bulletproof time helper: tries createdAt first, then extracts timestamp from MongoDB ObjectId
+  const getNotifTime = (n: any): string => {
+    let date: Date | null = null;
+    if (n.createdAt) {
+      date = new Date(n.createdAt);
+    } else if (n.date) {
+      date = new Date(n.date);
+    } else if (n._id && typeof n._id === 'string' && /^[a-fA-F0-9]{24}$/.test(n._id)) {
+      const ts = parseInt(n._id.substring(0, 8), 16) * 1000;
+      date = new Date(ts);
+    }
+    if (!date || isNaN(date.getTime())) return 'Recently';
+    const diff = Math.abs(Math.floor((Date.now() - date.getTime()) / 1000));
+    if (diff < 60) return `${Math.max(1, diff)}s ago`;
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+    return `${Math.floor(diff / 86400)}d ago`;
+  };
+
   const fetchNotifications = useCallback(async () => {
     try {
       const res = await fetch('/api/creators/notifications');
       if (res.ok) {
         const data = await res.json();
         if (data.success) {
+          console.log('[CREATOR NOTIFICATIONS DEBUG]', JSON.stringify(data.notifications?.[0], null, 2));
           setNotifications(data.notifications || []);
         }
       }
@@ -161,7 +181,9 @@ export default function CreatorDashboardNav({
         body: JSON.stringify({ markAll: true })
       });
       if (res.ok) {
+        // Optimistic update first, then re-fetch fresh data with proper createdAt
         setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+        fetchNotifications();
       }
     } catch (err) {
       console.error(err);
@@ -176,9 +198,11 @@ export default function CreatorDashboardNav({
         body: JSON.stringify({ notificationId: id })
       });
       if (res.ok) {
+        // Optimistic update first, then re-fetch fresh data with proper createdAt
         setNotifications((prev) =>
           prev.map((n) => (n._id === id ? { ...n, read: true } : n))
         );
+        fetchNotifications();
       }
     } catch (err) {
       console.error(err);
@@ -354,7 +378,7 @@ export default function CreatorDashboardNav({
                                     <circle cx="12" cy="12" r="10" />
                                     <polyline points="12 6 12 12 16 14" />
                                   </svg>
-                                  <span>{getRelativeTime(n.createdAt || n.date)}</span>
+                                  <span>{getNotifTime(n)}</span>
                                 </div>
                               </div>
                             );
@@ -406,7 +430,7 @@ export default function CreatorDashboardNav({
                                     <circle cx="12" cy="12" r="10" />
                                     <polyline points="12 6 12 12 16 14" />
                                   </svg>
-                                  <span>{n.time || n.formattedTime || 'Yesterday'}</span>
+                                  <span>{getNotifTime(n)}</span>
                                 </div>
                               </div>
                             );
@@ -604,3 +628,4 @@ export default function CreatorDashboardNav({
     </div>
   );
 }
+// Trigger Fast Refresh

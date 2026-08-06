@@ -5,6 +5,7 @@ import connectDB from '@/lib/mongodb';
 import Booking from '@/models/Booking';
 import User from '@/models/User';
 import CreatorProfile from '@/models/CreatorProfile';
+import { autoSettleEarnings } from '@/lib/autoSettleEarnings';
 
 function isAdmin(email?: string | null) {
   if (!email) return false;
@@ -20,6 +21,9 @@ export async function GET() {
     }
 
     await connectDB();
+
+    // Auto-settle all creators: mark past-due pending earnings as paid
+    await autoSettleEarnings();
 
     // Fetch all bookings sorted by newest first
     const bookings = await Booking.find({}).sort({ createdAt: -1 }).lean();
@@ -48,10 +52,10 @@ export async function GET() {
         hour12: true
       });
 
-      // Status mapping based on booking.status
+      // Status mapping based on paymentStatus (source of truth for earnings)
       let displayStatus = 'Pending';
-      if (booking.status === 'completed' || booking.status === 'confirmed') displayStatus = 'Completed';
-      else if (booking.status === 'refunded' || booking.status === 'cancelled') displayStatus = 'Refunded';
+      if (booking.paymentStatus === 'paid') displayStatus = 'Completed';
+      else if (booking.status === 'refunded' || booking.status === 'cancelled' || booking.paymentStatus === 'refunded') displayStatus = 'Refunded';
 
       // Parse amount (assume finalPrice is string like "25,000" or number)
       let numericAmount = 0;

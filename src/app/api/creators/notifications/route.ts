@@ -27,7 +27,16 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: true, count });
     }
 
-    const notifications = await Notification.find({ userId: user._id }).sort({ createdAt: -1 });
+    const rawNotifications = await Notification.find({ userId: user._id }).sort({ createdAt: -1 }).lean();
+
+    // Ensure createdAt is always serialized as ISO string
+    const notifications = rawNotifications.map((n: any) => ({
+      ...n,
+      _id: n._id?.toString(),
+      userId: n.userId?.toString(),
+      createdAt: n.createdAt instanceof Date ? n.createdAt.toISOString() : n.createdAt,
+      updatedAt: n.updatedAt instanceof Date ? n.updatedAt.toISOString() : n.updatedAt,
+    }));
 
     return NextResponse.json({ success: true, notifications });
   } catch (error: any) {

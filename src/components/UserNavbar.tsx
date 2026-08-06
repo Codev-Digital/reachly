@@ -427,7 +427,7 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
                                   <circle cx="12" cy="12" r="10" />
                                   <polyline points="12 6 12 12 16 14" />
                                 </svg>
-                                <span>{getRelativeTime(n.createdAt || n.date)}</span>
+                                <span>{getRelativeTime(n.createdAt || n.date || n._id)}</span>
                               </div>
                             </div>
                           );
@@ -479,7 +479,7 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
                                   <circle cx="12" cy="12" r="10" />
                                   <polyline points="12 6 12 12 16 14" />
                                 </svg>
-                                <span>{n.time || n.formattedTime || 'Yesterday'}</span>
+                                <span>{getRelativeTime(n.createdAt || n.date || n._id)}</span>
                               </div>
                             </div>
                           );

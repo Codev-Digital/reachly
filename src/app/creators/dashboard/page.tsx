@@ -133,14 +133,17 @@ const CreatorDashboard = () => {
           setChartData(data.chartData);
           setTotalEarnings(data.totalEarnings);
           const now = new Date();
+          const lastNonZero = [...data.chartData].reverse().findIndex((d: any) => d.earnings > 0);
+          const maxIdx = data.chartData.length - 1;
+          const targetIndex = lastNonZero === -1 ? -1 : maxIdx - lastNonZero;
+
           if (timeframe === 'weekly') {
-            const dayIdx = (now.getDay() + 6) % 7;
-            setActiveBarIndex(dayIdx);
+            const currentDayIdx = (now.getDay() + 6) % 7;
+            setActiveBarIndex(targetIndex !== -1 ? targetIndex : currentDayIdx);
           } else if (year === now.getFullYear()) {
-            setActiveBarIndex(now.getMonth());
+            setActiveBarIndex(targetIndex !== -1 ? targetIndex : now.getMonth());
           } else {
-            const lastNonZero = [...data.chartData].reverse().findIndex((d: any) => d.earnings > 0);
-            setActiveBarIndex(lastNonZero === -1 ? 11 : 11 - lastNonZero);
+            setActiveBarIndex(targetIndex !== -1 ? targetIndex : maxIdx);
           }
         }
       }
@@ -684,6 +687,9 @@ const CreatorDashboard = () => {
                         data={chartData}
                         margin={{ top: 12, right: 12, left: 0, bottom: 0 }}
                         barCategoryGap="16%"
+                        tabIndex={-1}
+                        className="focus:outline-none [&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none"
+                        style={{ outline: 'none' }}
                         onClick={(data) => {
                           if (data?.activeTooltipIndex !== undefined) {
                             setActiveBarIndex(Number(data.activeTooltipIndex));

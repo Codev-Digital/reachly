@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
             scheduledDate: scheduledDateUTC,
             scheduledTime: time,
             status: 'confirmed', // Auto-approved
-            paymentStatus: 'paid', // Mark as paid since payment is simulated
+            paymentStatus: 'pending', // Will auto-settle to paid when session time passes
             paymentMethod: paymentMethod || 'jazzcash',
             price: originalPrice,
             promoApplied,

@@ -1,10 +1,17 @@
 export const getRelativeTime = (dateString?: string | Date): string => {
   if (!dateString) return 'Just now';
+  
+  // Fallback for MongoDB ObjectId (extracts timestamp from first 8 hex chars)
+  if (typeof dateString === 'string' && /^[a-fA-F0-9]{24}$/.test(dateString)) {
+    const timestamp = parseInt(dateString.substring(0, 8), 16) * 1000;
+    dateString = new Date(timestamp);
+  }
+
   const date = new Date(dateString);
   const now = new Date();
-  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+  const diffInSeconds = Math.abs(Math.floor((now.getTime() - date.getTime()) / 1000));
   
-  if (diffInSeconds < 60) return 'Just now';
+  if (diffInSeconds < 60) return `${Math.max(1, diffInSeconds)}s ago`;
   if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
   if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
   return `${Math.floor(diffInSeconds / 86400)}d ago`;
@@ -40,3 +47,4 @@ export function isMeetingPassed(scheduledDateStr: string | Date, scheduledTimeSt
     return false;
   }
 }
+// Trigger Fast Refresh

@@ -217,7 +217,7 @@ export default function CreatorProfileCard({ creator, mobileMode = 'compact', on
         <div className={`grid grid-cols-3 gap-2 border-y border-gray-100 text-center ${mobileMode === 'compact' ? 'mt-4 py-2.5 lg:mt-6 lg:py-4' : 'mt-6 py-4'}`}>
           <div className="flex flex-col items-center justify-center">
             <span className={`font-black text-black font-sans leading-tight ${mobileMode === 'compact' ? 'text-xl lg:text-2xl' : 'text-2xl'}`}>
-              {formatNumber(creator?.stats?.sessionsCompleted ?? 12000)}
+              {formatNumber(creator?.stats?.sessionsCompleted ?? 0)}
             </span>
             <span className={`text-xs text-gray-400 font-medium font-sans leading-snug ${mobileMode === 'compact' ? 'mt-0.5 lg:mt-1' : 'mt-1'}`}>
               Sessions completed
@@ -226,7 +226,7 @@ export default function CreatorProfileCard({ creator, mobileMode = 'compact', on
 
           <div className="flex flex-col items-center justify-center border-x border-gray-100 px-1">
             <span className={`font-black text-black font-sans leading-tight ${mobileMode === 'compact' ? 'text-xl lg:text-2xl' : 'text-2xl'}`}>
-              {formatNumber(creator?.stats?.happyCustomers ?? 50000)}
+              {formatNumber(creator?.stats?.happyCustomers ?? 0)}
             </span>
             <span className={`text-xs text-gray-400 font-medium font-sans leading-snug ${mobileMode === 'compact' ? 'mt-0.5 lg:mt-1' : 'mt-1'}`}>
               Happy Users
@@ -235,7 +235,7 @@ export default function CreatorProfileCard({ creator, mobileMode = 'compact', on
 
           <div className="flex flex-col items-center justify-center">
             <span className={`font-black text-black font-sans leading-tight ${mobileMode === 'compact' ? 'text-xl lg:text-2xl' : 'text-2xl'}`}>
-              {creator?.stats?.totalCategories ?? 8}
+              {creator?.stats?.totalCategories ?? 0}
             </span>
             <span className={`text-xs text-gray-400 font-medium font-sans leading-snug ${mobileMode === 'compact' ? 'mt-0.5 lg:mt-1' : 'mt-1'}`}>
               Total Categories

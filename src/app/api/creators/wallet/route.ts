@@ -5,6 +5,7 @@ import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
 import Booking from '@/models/Booking';
 import SessionType from '@/models/SessionType';
+import { autoSettleEarnings } from '@/lib/autoSettleEarnings';
 
 export async function GET(req: NextRequest) {
   try {
@@ -19,6 +20,9 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
+    // Auto-settle: mark past-due pending earnings as paid before fetching
+    await autoSettleEarnings(user._id.toString());
+
     // Fetch all bookings for this creator
     const bookings = await Booking.find({ creatorId: user._id })
       .populate({ path: 'sessionTypeId', model: SessionType })
@@ -31,11 +35,13 @@ export async function GET(req: NextRequest) {
 
     const transactions = bookings.map((b: any) => {
       const amount = b.finalPrice || 0;
-      const status = b.status;
+      const payStatus = b.paymentStatus || 'pending';
+      const bookingStatus = b.status;
 
-      if (status === 'completed') {
+      // Use paymentStatus as source of truth for earnings
+      if (payStatus === 'paid') {
         lifetimeEarning += amount;
-      } else if (status === 'confirmed' || status === 'pending') {
+      } else if (payStatus === 'pending' && bookingStatus !== 'cancelled' && bookingStatus !== 'refunded') {
         pendingEarning += amount;
       }
 
@@ -53,12 +59,12 @@ export async function GET(req: NextRequest) {
       });
 
       let displayStatus = 'Pending';
-      if (status === 'completed') displayStatus = 'Completed';
-      if (status === 'cancelled' || status === 'refunded') displayStatus = 'Failed';
+      if (b.paymentStatus === 'paid') displayStatus = 'Completed';
+      if (b.status === 'cancelled' || b.status === 'refunded' || b.paymentStatus === 'refunded') displayStatus = 'Failed';
 
       return {
         id: b.bookingRef || `TXN-${b._id.toString().slice(-5).toUpperCase()}`,
-        type: status === 'refunded' ? 'Refund' : 'Booking Earning',
+        type: bookingStatus === 'refunded' ? 'Refund' : 'Booking Earning',
         date: formattedDate,
         time: formattedTime,
         amount: `${amount.toLocaleString()} PKR`,

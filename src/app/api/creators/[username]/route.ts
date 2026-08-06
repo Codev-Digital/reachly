@@ -40,11 +40,37 @@ export async function GET(
 
         const sessions = await SessionType.find({ userId: user._id }).sort({ order: 1 });
 
-        // Calculate real stats from database
-        const sessionsCompleted = await Booking.countDocuments({ creatorId: user._id, status: 'completed' });
+        // Total session types this creator offers
+        const totalCategories = sessions.length;
+
+        // Sessions completed = bookings with this creator where scheduled date+time has passed
+        const allBookings = await Booking.find({ creatorId: user._id, status: { $ne: 'cancelled' } })
+            .select('scheduledDate scheduledTime')
+            .lean();
+        
+        const now = new Date();
+        const sessionsCompleted = allBookings.filter((b: any) => {
+            if (!b.scheduledDate) return false;
+            try {
+                const baseDate = new Date(b.scheduledDate);
+                const timeStr = (b.scheduledTime || '').split(' to ')[0].trim();
+                const match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
+                if (match) {
+                    let hours = parseInt(match[1]);
+                    const minutes = parseInt(match[2]);
+                    const ampm = match[3].toUpperCase();
+                    if (ampm === 'PM' && hours < 12) hours += 12;
+                    if (ampm === 'AM' && hours === 12) hours = 0;
+                    baseDate.setHours(hours, minutes, 0, 0);
+                } else {
+                    baseDate.setHours(23, 59, 59, 999);
+                }
+                return now > baseDate;
+            } catch { return false; }
+        }).length;
+
         const distinctEmails = await Booking.distinct('guestDetails.email', { creatorId: user._id });
         const happyCustomers = distinctEmails.length;
-        const totalCategories = profile.niches ? profile.niches.length : 0;
 
         return NextResponse.json({
             success: true,
