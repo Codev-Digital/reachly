@@ -114,6 +114,7 @@ export default function UserChatsPage() {
   const [previewFile, setPreviewFile] = useState<File | null>(null);
   const [lightboxMedia, setLightboxMedia] = useState<{url: string, type: 'image' | 'video'} | null>(null);
   const uploadAbortController = useRef<AbortController | null>(null);
+  const sendingRef = useRef<boolean>(false);
 
   const [showDotsMenu, setShowDotsMenu] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
@@ -466,7 +467,16 @@ export default function UserChatsPage() {
   }, [activeChat]);
 
   const handleSendMessage = () => {
-    if (!message.trim() || !activeChat || !userId) return;
+    const trimmed = message.trim();
+    if (!trimmed || !activeChat || !userId || sendingRef.current) return;
+
+    sendingRef.current = true;
+    setMessage('');
+    
+    // Release lock in next tick/event loop
+    setTimeout(() => {
+      sendingRef.current = false;
+    }, 300);
 
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
@@ -480,7 +490,7 @@ export default function UserChatsPage() {
       conversationId: activeChat,
       senderId: userId,
       senderRole: 'user',
-      content: message.trim(),
+      content: trimmed,
       createdAt: new Date().toISOString(),
       read: false
     };
@@ -494,10 +504,9 @@ export default function UserChatsPage() {
         conversationId: activeChat,
         senderId: userId,
         senderRole: 'user',
-        content: message.trim(),
+        content: trimmed,
         tempId
       }));
-      setMessage('');
     } else {
       console.error('WebSocket server is offline.');
     }
@@ -1213,7 +1222,12 @@ export default function UserChatsPage() {
                                 type="text"
                                 value={message}
                                 onChange={(e) => handleInputChange(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    handleSendMessage();
+                                  }
+                                }}
                                 placeholder="Type something..."
                                 className="w-full bg-[#F3F4F6] border-0 rounded-full py-4 pl-6 pr-20 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0012FF]/10 transition-all"
                               />

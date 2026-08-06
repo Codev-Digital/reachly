@@ -125,6 +125,7 @@ export default function ChatsPage() {
   const [previewFile, setPreviewFile] = useState<File | null>(null);
   const [lightboxMedia, setLightboxMedia] = useState<{url: string, type: 'image' | 'video'} | null>(null);
   const uploadAbortController = useRef<AbortController | null>(null);
+  const sendingRef = useRef<boolean>(false);
 
   const triggerFileInput = () => {
     if (fileInputRef.current) fileInputRef.current.click();
@@ -459,7 +460,16 @@ export default function ChatsPage() {
   }, [activeChat]);
 
   const handleSendMessage = () => {
-    if (!message.trim() || !activeChat || !creatorId) return;
+    const trimmed = message.trim();
+    if (!trimmed || !activeChat || !creatorId || sendingRef.current) return;
+
+    sendingRef.current = true;
+    setMessage('');
+    
+    // Release lock in next tick/event loop
+    setTimeout(() => {
+      sendingRef.current = false;
+    }, 300);
 
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
@@ -473,7 +483,7 @@ export default function ChatsPage() {
       conversationId: activeChat,
       senderId: creatorId,
       senderRole: 'creator',
-      content: message.trim(),
+      content: trimmed,
       createdAt: new Date().toISOString(),
       read: false
     };
@@ -487,10 +497,9 @@ export default function ChatsPage() {
         conversationId: activeChat,
         senderId: creatorId,
         senderRole: 'creator',
-        content: message.trim(),
+        content: trimmed,
         tempId
       }));
-      setMessage('');
     }
   };
 
@@ -1319,7 +1328,12 @@ export default function ChatsPage() {
                                 type="text"
                                 value={message}
                                 onChange={(e) => handleInputChange(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    handleSendMessage();
+                                  }
+                                }}
                                 placeholder="Type something..."
                                 className="w-full bg-[#F3F4F6] border-0 rounded-full py-4 pl-6 pr-20 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0012FF]/10 transition-all"
                               />
