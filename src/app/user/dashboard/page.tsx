@@ -753,14 +753,28 @@ export default function UserDashboard() {
                           </p>
                         </div>
 
-                        {/* Action Buttons (for Upcoming) */}
-                        {activeBookingTab === 'Upcoming' && (
-                          <div className="mt-3 pt-3 border-t border-gray-100 flex flex-col gap-2">
-                            {(() => {
-                              const passed = booking.scheduledDate ? isMeetingPassed(booking.scheduledDate, booking.time) : false;
+                        {/* Action Buttons */}
+                        <div className="mt-3 pt-3 border-t border-gray-100 flex flex-col gap-2">
+                          {(() => {
+                            const passed = booking.scheduledDate ? isMeetingPassed(booking.scheduledDate, booking.time) : false;
+                            const isCancelled = activeBookingTab === 'Cancelled' || booking.status === 'Cancelled' || booking.status === 'cancelled';
+                            const isPast = activeBookingTab === 'Past' || passed;
+
+                            if (isCancelled || isPast) {
                               return (
                                 <button
-                                  disabled={passed}
+                                  onClick={() => router.push(`/user/chats?bookingRef=${booking.bookingRef}`)}
+                                  className="w-full py-2 bg-[#0012FF] hover:bg-[#0012FF]/90 text-white rounded-lg text-[11px] font-bold text-center transition-all cursor-pointer shadow-xs shadow-[#0012FF]/20"
+                                >
+                                  Chat now
+                                </button>
+                              );
+                            }
+
+                            // Otherwise, upcoming active
+                            return (
+                              <>
+                                <button
                                   onClick={() => {
                                     if (booking.meetingUrl && booking.bookingRef) {
                                       setMeetingToJoin({ url: booking.meetingUrl, ref: booking.bookingRef });
@@ -768,32 +782,28 @@ export default function UserDashboard() {
                                       alert('Meeting link is not available yet.');
                                     }
                                   }}
-                                  className={`w-full py-2 rounded-lg text-[11px] font-bold text-center transition-all shadow-sm ${
-                                    passed
-                                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
-                                      : 'bg-[#0012FF] hover:bg-[#0012FF]/90 text-white cursor-pointer'
-                                  }`}
+                                  className="w-full py-2 bg-[#0012FF] hover:bg-[#0012FF]/90 text-white rounded-lg text-[11px] font-bold text-center transition-all cursor-pointer shadow-sm"
                                 >
-                                  {passed ? 'Meeting Ended' : 'Join Meeting'}
+                                  Join Meeting
                                 </button>
-                              );
-                            })()}
-                            <div className="flex items-center gap-2">
-                              <button
-                                onClick={() => router.push('/user/bookings')}
-                                className="flex-1 py-1.5 border border-gray-200 hover:bg-gray-50 text-gray-600 rounded-lg text-[11px] font-semibold text-center transition-all cursor-pointer"
-                              >
-                                Reschedule
-                              </button>
-                              <button
-                                onClick={() => handleCancelClick(booking.id)}
-                                className="flex-1 py-1.5 bg-[#FFF0F0] border border-red-100 hover:bg-red-100 text-[#FF3B3B] rounded-lg text-[11px] font-semibold text-center transition-all cursor-pointer"
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          </div>
-                        )}
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={() => router.push('/user/bookings')}
+                                    className="flex-1 py-1.5 border border-gray-200 hover:bg-gray-50 text-gray-600 rounded-lg text-[11px] font-semibold text-center transition-all cursor-pointer"
+                                  >
+                                    Reschedule
+                                  </button>
+                                  <button
+                                    onClick={() => handleCancelClick(booking.id)}
+                                    className="flex-1 py-1.5 bg-[#FFF0F0] border border-red-100 hover:bg-red-100 text-[#FF3B3B] rounded-lg text-[11px] font-semibold text-center transition-all cursor-pointer"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              </>
+                            );
+                          })()}
+                        </div>
                       </div>
                     ))}
                   </div>

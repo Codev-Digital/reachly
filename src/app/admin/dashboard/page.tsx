@@ -80,7 +80,7 @@ const AdminDashboard = () => {
   // Earnings chart state
   const [chartData, setChartData] = useState<any[]>([]);
   const [chartYear, setChartYear] = useState<number>(new Date().getFullYear());
-  const [chartTimeframe, setChartTimeframe] = useState<'weekly' | 'monthly'>('monthly');
+  const [chartTimeframe, setChartTimeframe] = useState<'weekly' | 'monthly'>('weekly');
   const [totalEarnings, setTotalEarnings] = useState<number>(0);
   const [loadingChart, setLoadingChart] = useState(true);
   const [chartYearDropdownOpen, setChartYearDropdownOpen] = useState(false);
@@ -322,20 +322,7 @@ const AdminDashboard = () => {
                     )}
                   </div>
 
-                  {/* Active Month Earnings Pill */}
-                  {activeBar && (
-                    <div className="bg-[#EEF2FF] rounded-2xl px-4 py-2 flex items-center gap-2 ml-auto">
-                      <div className="w-6 h-6 bg-[#0012FF] rounded-lg flex items-center justify-center">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
-                          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                        </svg>
-                      </div>
-                      <div>
-                        <p className="text-[10px] text-[#0012FF]/70 font-semibold uppercase tracking-wider leading-none">Earnings</p>
-                        <p className="text-sm font-bold text-[#0012FF] font-sans leading-tight">{activeBar.earnings}</p>
-                      </div>
-                    </div>
-                  )}
+
                 </div>
               </CardHeader>
               <CardContent className="px-0 pb-0">

@@ -88,13 +88,18 @@ export default function VoicePlayer({ url, isMe, timeStr, readStatus }: VoicePla
         </button>
 
         <div className="flex-1 flex flex-col gap-1 min-w-0">
+          <style>{`
+            input[type=range].voice-range::-webkit-slider-thumb { background: #0012FF !important; }
+            input[type=range].voice-range::-moz-range-thumb { background: #0012FF !important; border: none; }
+            input[type=range].voice-range::-ms-thumb { background: #0012FF !important; }
+          `}</style>
           <input
             type="range"
             min="0"
             max={duration || 100}
             value={currentTime}
             onChange={handleTimelineChange}
-            className="w-full accent-[#0012FF] h-1 bg-gray-200/70 rounded-lg appearance-none cursor-pointer"
+            className="voice-range w-full h-1 bg-gray-200/70 rounded-lg appearance-none cursor-pointer"
             style={{ accentColor: '#0012FF' }}
           />
           <div className="flex justify-between text-[9px] text-gray-400 font-medium">

@@ -170,6 +170,8 @@ export async function GET(request: NextRequest) {
                     duration,
                     price,
                     ref: bookingRef,
+                    isArchivedByCreator: isCreator ? Boolean((conv as any).isArchivedByCreator) : false,
+                    isArchivedByUser: !isCreator ? Boolean((conv as any).isArchivedByUser) : false,
                 };
             })
         );

@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import CreatorDashboardNav from '@/components/CreatorDashboardNav';
 import LoadingAnimation from '@/components/LoadingAnimation';
 import { Calendar, Clock, Video, MapPin, MessageSquare, AlertTriangle, CheckCircle, ArrowUpRight, X } from 'lucide-react';
@@ -36,6 +37,7 @@ interface BookingType {
 }
 
 export default function CreatorCalendar() {
+  const router = useRouter();
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string>('');
   const [username, setUsername] = useState<string>('');
@@ -521,39 +523,51 @@ export default function CreatorCalendar() {
                       {(() => {
                         const passed = booking.selectedDate ? isMeetingPassed(booking.selectedDate, booking.time) : false;
                         return (
-                          <button
-                            disabled={passed}
-                            onClick={() => {
-                              if (booking.meetingUrl && booking.bookingRef) {
-                                setMeetingToJoin({ url: booking.meetingUrl, ref: booking.bookingRef });
-                              } else {
-                                alert('Meeting link is not available yet.');
-                              }
-                            }}
-                            className={`w-full py-2.5 rounded-full text-xs font-bold text-center transition-all shadow-md ${
-                              passed
-                                ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
-                                : 'bg-[#0012FF] hover:bg-[#0012FF]/90 text-white shadow-[#0012FF]/20 cursor-pointer'
-                            }`}
-                          >
-                            {passed ? 'Meeting Ended' : 'Join Meeting'}
-                          </button>
+                          <>
+                            <button
+                              disabled={passed}
+                              onClick={() => {
+                                if (booking.meetingUrl && booking.bookingRef) {
+                                  setMeetingToJoin({ url: booking.meetingUrl, ref: booking.bookingRef });
+                                } else {
+                                  alert('Meeting link is not available yet.');
+                                }
+                              }}
+                              className={`w-full py-2.5 rounded-full text-xs font-bold text-center transition-all shadow-md ${
+                                passed
+                                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
+                                  : 'bg-[#0012FF] hover:bg-[#0012FF]/90 text-white shadow-[#0012FF]/20 cursor-pointer'
+                              }`}
+                            >
+                              {passed ? 'Meeting Ended' : 'Join Meeting'}
+                            </button>
+
+                            {passed ? (
+                              <button
+                                onClick={() => router.push(`/creators/chats?bookingRef=${booking.bookingRef}`)}
+                                className="w-full py-2.5 bg-[#0012FF] hover:bg-[#0012FF]/90 text-white rounded-full text-xs font-bold text-center transition-all cursor-pointer shadow-md shadow-[#0012FF]/20"
+                              >
+                                Chat now
+                              </button>
+                            ) : (
+                              <div className="flex items-center gap-3">
+                                <button
+                                  onClick={() => handleRescheduleClick(booking)}
+                                  className="flex-1 py-2 sm:py-2.5 border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-full text-xs font-semibold text-center transition-all cursor-pointer"
+                                >
+                                  Reschedule
+                                </button>
+                                <button
+                                  onClick={() => handleCancelClick(booking)}
+                                  className="flex-1 py-2 sm:py-2.5 bg-[#FFF0F0] border border-red-100 hover:bg-red-100 text-[#FF3B3B] rounded-full text-xs font-semibold text-center transition-all cursor-pointer"
+                                >
+                                  Cancel Appointment
+                                </button>
+                              </div>
+                            )}
+                          </>
                         );
                       })()}
-                      <div className="flex items-center gap-3">
-                        <button
-                          onClick={() => handleRescheduleClick(booking)}
-                          className="flex-1 py-2 sm:py-2.5 border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-full text-xs font-semibold text-center transition-all cursor-pointer"
-                        >
-                          Reschedule
-                        </button>
-                        <button
-                          onClick={() => handleCancelClick(booking)}
-                          className="flex-1 py-2 sm:py-2.5 bg-[#FFF0F0] border border-red-100 hover:bg-red-100 text-[#FF3B3B] rounded-full text-xs font-semibold text-center transition-all cursor-pointer"
-                        >
-                          Cancel Appointment
-                        </button>
-                      </div>
                     </div>
                   )}
                 </div>

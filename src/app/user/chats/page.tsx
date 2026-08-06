@@ -23,6 +23,7 @@ interface ConversationInfo {
   ref: string;
   unreadCount: number;
   scheduledDate: string;
+  isArchivedByUser?: boolean;
 }
 
 interface ChatMessage {
@@ -114,6 +115,24 @@ export default function UserChatsPage() {
   const [lightboxMedia, setLightboxMedia] = useState<{url: string, type: 'image' | 'video'} | null>(null);
   const uploadAbortController = useRef<AbortController | null>(null);
 
+  const [showDotsMenu, setShowDotsMenu] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
+  const [isArchivingChat, setIsArchivingChat] = useState(false);
+
+  // localStorage helpers — survive tab switches, remounts, and polls
+  const LS_KEY = 'reachly_user_archived_chats';
+  const getArchivedIds = (): Set<string> => {
+    try { return new Set(JSON.parse(localStorage.getItem(LS_KEY) || '[]')); } catch { return new Set(); }
+  };
+  const addArchivedId = (id: string) => {
+    const s = getArchivedIds(); s.add(id);
+    localStorage.setItem(LS_KEY, JSON.stringify([...s]));
+  };
+  const removeArchivedId = (id: string) => {
+    const s = getArchivedIds(); s.delete(id);
+    localStorage.setItem(LS_KEY, JSON.stringify([...s]));
+  };
+
   const triggerFileInput = () => {
     if (fileInputRef.current) fileInputRef.current.click();
   };
@@ -145,7 +164,7 @@ export default function UserChatsPage() {
   };
 
   const startUpload = async (file: File) => {
-    if (!file || !activeChat) return;
+    if (!file || !activeChat || !userId) return;
 
     setUploadFile(file);
     setIsUploading(true);
@@ -298,6 +317,7 @@ export default function UserChatsPage() {
           ref: c.ref || '',
           unreadCount: c.unreadCount || 0,
           scheduledDate: c.scheduledDate || '',
+          isArchivedByUser: c.isArchivedByUser ?? false,
         })).sort((a: ConversationInfo, b: ConversationInfo) => {
           const hasMsgA = !!a.lastMessageTime;
           const hasMsgB = !!b.lastMessageTime;
@@ -308,7 +328,17 @@ export default function UserChatsPage() {
           }
           return new Date(b.scheduledDate).getTime() - new Date(a.scheduledDate).getTime();
         });
-        setConversations(list);
+        setConversations(prev => {
+          const localArchived = getArchivedIds();
+          // Also sync any API-confirmed archives into localStorage
+          list.forEach(c => { if (Boolean(c.isArchivedByUser)) localArchived.add(c.id); });
+          localStorage.setItem(LS_KEY, JSON.stringify([...localArchived]));
+          return list.map(c => ({
+            ...c,
+            // localStorage is the source of truth — survives everything
+            isArchivedByUser: localArchived.has(c.id) || Boolean(c.isArchivedByUser),
+          }));
+        });
       }
     } catch (err) {
       console.error('Error fetching conversations:', err);
@@ -320,6 +350,21 @@ export default function UserChatsPage() {
   useEffect(() => {
     fetchConversations();
   }, []);
+
+  // Auto-activate chat if bookingRef is passed in URL query
+  useEffect(() => {
+    if (typeof window !== 'undefined' && conversations.length > 0) {
+      const params = new URLSearchParams(window.location.search);
+      const bookingRef = params.get('bookingRef');
+      if (bookingRef) {
+        const found = conversations.find(c => c.ref === bookingRef);
+        if (found) {
+          setActiveChat(found.id);
+        }
+      }
+    }
+  }, [conversations]);
+
 
   // Poll every 15 seconds
   useEffect(() => {
@@ -594,10 +639,41 @@ export default function UserChatsPage() {
   const activeConv = conversations.find(c => c.id === activeChat);
   const isChatLocked = activeConv?.isLocked ?? false;
 
-  const filteredConversations = conversations.filter(c =>
+  const handleArchiveChat = async (archive: boolean) => {
+    if (!activeChat) return;
+    setIsArchivingChat(true);
+    try {
+      const res = await fetch('/api/conversations/archive', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conversationId: activeChat, archive }),
+      });
+      if (res.ok) {
+        // Write to localStorage immediately so tab switches never reset it
+        if (archive) {
+          addArchivedId(activeChat);
+        } else {
+          removeArchivedId(activeChat);
+        }
+        setConversations(prev =>
+          prev.map(c => c.id === activeChat ? { ...c, isArchivedByUser: archive } : c)
+        );
+        if (archive) setActiveChat(null);
+      }
+    } catch (err) {
+      console.error('Error archiving chat:', err);
+    } finally {
+      setIsArchivingChat(false);
+      setShowDotsMenu(false);
+    }
+  };
+
+  const allFiltered = conversations.filter(c =>
     (c.creator || '').toLowerCase().includes((searchText || '').toLowerCase()) ||
     (c.session || '').toLowerCase().includes((searchText || '').toLowerCase())
   );
+  const filteredConversations = allFiltered.filter(c => !c.isArchivedByUser);
+  const archivedConversations = allFiltered.filter(c => c.isArchivedByUser);
 
   return (
     <div className="fixed inset-0 flex flex-col bg-[#F8F8FA] overflow-hidden">
@@ -634,6 +710,66 @@ export default function UserChatsPage() {
 
             {/* Chat List */}
             <div className="flex-1 overflow-y-auto pr-2 space-y-3 no-scrollbar">
+
+              {/* Archived Section – at the top */}
+              {!loadingConversations && archivedConversations.length > 0 && (
+                <div className="mb-1">
+                  <button
+                    onClick={() => setShowArchived(prev => !prev)}
+                    className="w-full flex items-center justify-between px-4 py-3 rounded-2xl bg-white border border-gray-100 shadow-xs hover:border-gray-200 transition-all"
+                  >
+                    <div className="flex items-center gap-2.5 text-gray-500">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
+                      <span className="text-sm font-semibold text-gray-600">Archived</span>
+                      <span className="text-xs bg-gray-100 text-gray-500 font-bold px-2 py-0.5 rounded-full">{archivedConversations.length}</span>
+                    </div>
+                    <svg className={`transition-transform duration-200 text-gray-400 ${showArchived ? 'rotate-180' : ''}`} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </button>
+                  {showArchived && (
+                    <div className="mt-2 space-y-2">
+                      {archivedConversations.map((chat) => (
+                        <div
+                          key={chat.id}
+                          onClick={() => setActiveChat(chat.id)}
+                          className={`rounded-2xl p-4 cursor-pointer transition-all border ${activeChat === chat.id ? 'border-[#0012FF]/20 shadow-md bg-white ring-1 ring-[#0012FF]/5' : 'border-gray-100 hover:border-gray-200 bg-white shadow-xs'}`}
+                        >
+                          <div className="flex justify-between items-start mb-1">
+                            <div className="flex gap-3 items-center">
+                              <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200">
+                                <img src={chat.image} alt={chat.creator} className="object-cover w-full h-full" />
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-1">
+                                  <h4 className="text-sm font-bold text-gray-700">{chat.creator}</h4>
+                                  <span className="text-[10px] bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded-full font-medium">Archived</span>
+                                </div>
+                                {chat.lastMessage && (
+                                  <p className="text-xs text-gray-400 truncate max-w-[150px] mt-0.5">
+                                    {isAudioMsg(chat.lastMessage) ? '🎤 Voice message' : chat.lastMessage}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex flex-col items-end gap-1.5 shrink-0">
+                              <span className="text-[10px] text-gray-400 font-medium">
+                                {chat.lastMessageTime ? formatMsgTime(chat.lastMessageTime) : chat.time}
+                              </span>
+                              {chat.unreadCount > 0 && chat.id !== activeChat && (
+                                <span className="w-5 h-5 bg-[#0012FF] text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-md">
+                                  {chat.unreadCount}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {loadingConversations ? (
                 <div className="flex items-center justify-center py-10">
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#0012FF]"></div>
@@ -765,15 +901,44 @@ export default function UserChatsPage() {
                     </div>
                   </div>
 
-                  {/* <div className="flex items-center gap-5 text-gray-400">
-                    <button className="hover:text-gray-600 transition-colors">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" /></svg>
-                    </button>
-                    <button className="hover:text-gray-600 transition-colors">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="1.5" /><circle cx="12" cy="5" r="1.5" /><circle cx="12" cy="19" r="1.5" /></svg>
-                    </button>
-                  </div> */}
+                  <div className="flex items-center gap-5 text-gray-400">
+                    <div className="relative">
+                      <button
+                        onClick={() => setShowDotsMenu(prev => !prev)}
+                        className="hover:text-gray-600 hover:bg-gray-100 w-9 h-9 rounded-full flex items-center justify-center transition-colors"
+                      >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="1.5" /><circle cx="12" cy="5" r="1.5" /><circle cx="12" cy="19" r="1.5" /></svg>
+                      </button>
+                      {showDotsMenu && (
+                        <>
+                          <div className="fixed inset-0 z-10" onClick={() => setShowDotsMenu(false)} />
+                          <div className="absolute right-0 top-10 z-20 bg-white rounded-2xl shadow-xl border border-gray-100 py-1.5 min-w-[180px] overflow-hidden">
+                            {activeConv?.isArchivedByUser ? (
+                              <button
+                                onClick={() => handleArchiveChat(false)}
+                                disabled={isArchivingChat}
+                                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+                              >
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
+                                {isArchivingChat ? 'Unarchiving...' : 'Unarchive Chat'}
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleArchiveChat(true)}
+                                disabled={isArchivingChat}
+                                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+                              >
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
+                                {isArchivingChat ? 'Archiving...' : 'Archive Chat'}
+                              </button>
+                            )}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
                 </div>
+
 
                 {/* Conditional View: lock screen ONLY if empty */}
                 {(isChatLocked && messages.length === 0 && !loadingMessages) ? (

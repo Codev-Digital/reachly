@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import CreatorDashboardNav from '@/components/CreatorDashboardNav';
 import LoadingAnimation from '@/components/LoadingAnimation';
 import { TrendingUp, BookOpen, Calendar, Eye, Users, Copy, Check, Bookmark, Target, Presentation } from 'lucide-react';
@@ -34,6 +34,7 @@ function getGreeting() {
 
 const CreatorDashboard = () => {
   const pathname = usePathname();
+  const router = useRouter();
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string>('');
   const [username, setUsername] = useState<string>('');
@@ -58,7 +59,7 @@ const CreatorDashboard = () => {
   const [chartData, setChartData] = useState<{ month: string; earnings: number; bookings: number }[]>([]);
   const [activeBarIndex, setActiveBarIndex] = useState<number | null>(null);
   const [chartYear, setChartYear] = useState<number>(new Date().getFullYear());
-  const [chartTimeframe, setChartTimeframe] = useState<'weekly' | 'monthly'>('monthly');
+  const [chartTimeframe, setChartTimeframe] = useState<'weekly' | 'monthly'>('weekly');
   const [totalEarnings, setTotalEarnings] = useState<number>(0);
   const [loadingChart, setLoadingChart] = useState(true);
   const [chartYearDropdownOpen, setChartYearDropdownOpen] = useState(false);
@@ -459,39 +460,51 @@ const CreatorDashboard = () => {
             {(() => {
               const passed = booking.scheduledDate ? isMeetingPassed(booking.scheduledDate, booking.time) : false;
               return (
-                <button
-                  disabled={passed}
-                  onClick={() => {
-                    if (booking.meetingUrl && booking.bookingRef) {
-                      setMeetingToJoin({ url: booking.meetingUrl, ref: booking.bookingRef });
-                    } else {
-                      alert('Meeting link is not available yet.');
-                    }
-                  }}
-                  className={`w-full py-2.5 rounded-full text-xs font-bold text-center transition-all shadow-md ${
-                    passed
-                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
-                      : 'bg-[#0012FF] hover:bg-[#0012FF]/90 text-white shadow-[#0012FF]/20 cursor-pointer'
-                  }`}
-                >
-                  {passed ? 'Meeting Ended' : 'Join Meeting'}
-                </button>
+                <>
+                  <button
+                    disabled={passed}
+                    onClick={() => {
+                      if (booking.meetingUrl && booking.bookingRef) {
+                        setMeetingToJoin({ url: booking.meetingUrl, ref: booking.bookingRef });
+                      } else {
+                        alert('Meeting link is not available yet.');
+                      }
+                    }}
+                    className={`w-full py-2.5 rounded-full text-xs font-bold text-center transition-all shadow-md ${
+                      passed
+                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
+                        : 'bg-[#0012FF] hover:bg-[#0012FF]/90 text-white shadow-[#0012FF]/20 cursor-pointer'
+                    }`}
+                  >
+                    {passed ? 'Meeting Ended' : 'Join Meeting'}
+                  </button>
+
+                  {passed ? (
+                    <button
+                      onClick={() => router.push(`/creators/chats?bookingRef=${booking.bookingRef}`)}
+                      className="w-full py-2.5 bg-[#0012FF] hover:bg-[#0012FF]/90 text-white rounded-full text-xs font-bold text-center transition-all cursor-pointer shadow-md shadow-[#0012FF]/20"
+                    >
+                      Chat now
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => handleRescheduleClick(booking)}
+                        className="flex-1 py-2 sm:py-2.5 border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-full text-xs font-semibold text-center transition-all cursor-pointer"
+                      >
+                        Reschedule
+                      </button>
+                      <button
+                        onClick={() => handleCancelClick(booking)}
+                        className="flex-1 py-2 sm:py-2.5 bg-[#FFF0F0] border border-red-100 hover:bg-red-100 text-[#FF3B3B] rounded-full text-xs font-semibold text-center transition-all cursor-pointer"
+                      >
+                        Cancel Appointment
+                      </button>
+                    </div>
+                  )}
+                </>
               );
             })()}
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => handleRescheduleClick(booking)}
-                className="flex-1 py-2 sm:py-2.5 border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-full text-xs font-semibold text-center transition-all cursor-pointer"
-              >
-                Reschedule
-              </button>
-              <button
-                onClick={() => handleCancelClick(booking)}
-                className="flex-1 py-2 sm:py-2.5 bg-[#FFF0F0] border border-red-100 hover:bg-red-100 text-[#FF3B3B] rounded-full text-xs font-semibold text-center transition-all cursor-pointer"
-              >
-                Cancel Appointment
-              </button>
-            </div>
           </div>
         )}
       </div>
@@ -659,25 +672,7 @@ const CreatorDashboard = () => {
                 </CardHeader>
 
                 <CardContent className="px-0 pb-0 flex-1 flex flex-col justify-center">
-                  {/* Floating Earnings Tooltip Callout Card as seen in design image */}
-                  <div className="flex justify-center mb-2 px-2">
-                    <div className="bg-white rounded-2xl shadow-md px-3 sm:px-4 py-2 flex items-center justify-center gap-2 sm:gap-3 w-fit max-w-full">
-                      <div className="w-8 h-8 bg-[#EEF2FF] rounded-xl flex shrink-0 items-center justify-center text-[#0012FF] font-bold text-sm">
-                        $
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-[10px] text-gray-400 font-semibold uppercase truncate">Total Earnings</p>
-                        <p className="text-sm sm:text-base font-black text-black font-sans leading-tight truncate">
-                          {activeBarIndex !== null && chartData[activeBarIndex]
-                            ? chartData[activeBarIndex].earnings.toLocaleString()
-                            : (totalEarnings || 30000).toLocaleString()} PKR
-                        </p>
-                      </div>
-                      <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100 shrink-0 whitespace-nowrap">
-                        ↑ +18.2%
-                      </span>
-                    </div>
-                  </div>
+
 
                   {loadingChart ? (
                     <div className="w-full h-48 flex items-center justify-center">

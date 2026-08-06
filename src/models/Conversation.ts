@@ -6,6 +6,8 @@ export interface IConversation extends Document {
   isLocked: boolean;
   creatorClearedAt?: Date;
   userClearedAt?: Date;
+  isArchivedByCreator?: boolean;
+  isArchivedByUser?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -35,6 +37,14 @@ const ConversationSchema = new Schema<IConversation>(
     userClearedAt: {
       type: Date,
       default: null,
+    },
+    isArchivedByCreator: {
+      type: Boolean,
+      default: false,
+    },
+    isArchivedByUser: {
+      type: Boolean,
+      default: false,
     },
   },
   { timestamps: true }

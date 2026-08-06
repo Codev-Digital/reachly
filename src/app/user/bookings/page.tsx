@@ -6,6 +6,7 @@ import LoadingAnimation from '@/components/LoadingAnimation';
 import { motion, useInView } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import DailyCall from '@/components/DailyCall';
 import { isMeetingPassed } from '@/lib/time';
 
@@ -44,6 +45,7 @@ interface Booking {
 }
 
 export default function UserBookingsPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<'Upcoming' | 'Past' | 'Cancelled'>('Upcoming');
   const [displayName, setDisplayName] = useState('Guest');
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
@@ -450,14 +452,28 @@ export default function UserBookingsPage() {
                       </p>
                     </div>
 
-                    {/* Action Buttons (for Upcoming) */}
-                    {activeTab === 'Upcoming' && (
-                      <div className="mt-4 pt-3 border-t border-gray-100 flex flex-col gap-3">
-                        {(() => {
-                          const passed = isMeetingPassed(booking.scheduledDate, booking.time);
+                    {/* Action Buttons */}
+                    <div className="mt-4 pt-3 border-t border-gray-100 flex flex-col gap-3">
+                      {(() => {
+                        const passed = isMeetingPassed(booking.scheduledDate, booking.time);
+                        const isCancelled = activeTab === 'Cancelled' || booking.originalStatus === 'cancelled' || booking.status === 'Cancelled';
+                        const isPast = activeTab === 'Past' || passed;
+
+                        if (isCancelled || isPast) {
                           return (
                             <button
-                              disabled={passed}
+                              onClick={() => router.push(`/user/chats?bookingRef=${booking.bookingRef}`)}
+                              className="w-full py-2.5 bg-[#0012FF] hover:bg-[#0012FF]/90 text-white rounded-full text-xs font-bold text-center transition-all cursor-pointer shadow-md shadow-[#0012FF]/20"
+                            >
+                              Chat now
+                            </button>
+                          );
+                        }
+
+                        // Otherwise, it's upcoming and active
+                        return (
+                          <>
+                            <button
                               onClick={() => {
                                 if (booking.meetingUrl && booking.bookingRef) {
                                   setMeetingToJoin({ url: booking.meetingUrl, ref: booking.bookingRef });
@@ -465,38 +481,45 @@ export default function UserBookingsPage() {
                                   alert('Meeting link is not available yet.');
                                 }
                               }}
-                              className={`w-full py-2.5 rounded-full text-xs font-bold text-center transition-all shadow-md ${
-                                passed
-                                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
-                                  : 'bg-[#0012FF] hover:bg-[#0012FF]/90 text-white shadow-[#0012FF]/20 cursor-pointer'
-                              }`}
+                              className="w-full py-2.5 rounded-full text-xs font-bold text-center transition-all shadow-md bg-[#0012FF] hover:bg-[#0012FF]/90 text-white shadow-[#0012FF]/20 cursor-pointer"
                             >
-                              {passed ? 'Meeting Ended' : 'Join Meeting'}
+                              Join Meeting
                             </button>
-                          );
-                        })()}
-                        <div className="flex items-center gap-3">
-                          <button
-                            onClick={() => handleRescheduleClick(booking)}
-                            className="flex-1 py-2 border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-full text-xs font-semibold text-center transition-all cursor-pointer"
-                          >
-                            Reschedule
-                          </button>
-                          <button
-                            onClick={() => handleCancelClick(booking.id)}
-                            className="flex-1 py-2 bg-[#FFF0F0] border border-red-100 hover:bg-red-100 text-[#FF3B3B] rounded-full text-xs font-semibold text-center transition-all cursor-pointer"
-                          >
-                            Cancel Appointment
-                          </button>
-                        </div>
-                      </div>
-                    )}
+                            <div className="flex items-center gap-3">
+                              <button
+                                onClick={() => handleRescheduleClick(booking)}
+                                className="flex-1 py-2 border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-full text-xs font-semibold text-center transition-all cursor-pointer"
+                              >
+                                Reschedule
+                              </button>
+                              <button
+                                onClick={() => handleCancelClick(booking.id)}
+                                className="flex-1 py-2 bg-[#FFF0F0] border border-red-100 hover:bg-red-100 text-[#FF3B3B] rounded-full text-xs font-semibold text-center transition-all cursor-pointer"
+                              >
+                                Cancel Appointment
+                              </button>
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </div>
                   </motion.div>
                 ))}
               </div>
             ) : (
-              <div className="bg-white rounded-3xl border border-gray-200/80 p-12 text-center text-gray-500 text-sm font-medium shadow-2xs">
-                No {activeTab.toLowerCase()} bookings found.
+              <div className="bg-white rounded-3xl border border-gray-200/80 p-16 flex flex-col items-center justify-center text-center shadow-2xs">
+                <div className="w-[220px] h-[220px] relative mb-6">
+                  <Image
+                    src="/assets/no-appointment.webp"
+                    alt="No Appointments"
+                    fill
+                    className="object-contain opacity-85"
+                  />
+                </div>
+                <h3 className="text-lg font-bold text-gray-800 mb-1">No bookings found</h3>
+                <p className="text-xs text-gray-400 max-w-[280px]">
+                  You have no {activeTab.toLowerCase()} bookings at the moment.
+                </p>
               </div>
             )}
           </>

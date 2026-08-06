@@ -268,7 +268,7 @@ export default function BookSessionLayout({ children }: { children: ReactNode })
               {/* Action Buttons */}
               <div className="flex flex-col gap-3 w-full max-w-[280px]">
                 <button
-                  onClick={() => router.push('/login')}
+                  onClick={() => router.push(`/login?callbackUrl=${encodeURIComponent(pathname)}`)}
                   className="w-full py-3.5 bg-[#0012FF] hover:bg-[#0010d0] text-white rounded-full font-bold text-sm sm:text-base transition-all shadow-md active:scale-98 cursor-pointer"
                 >
                   Log In

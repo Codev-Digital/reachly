@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import UserNavbar from '@/components/UserNavbar';
 import CreatorDashboardNav from '@/components/CreatorDashboardNav';
 import AdminNavbar from '@/components/AdminNavbar';
+import CreatorNavbar from '@/components/CreatorNavbar';
 
 const ITEMS_PER_PAGE = 8;
 
@@ -186,38 +187,25 @@ export default function ExploreCreatorsPage() {
       ) : (
         <div className="px-4 sm:px-6 pt-4">
           <nav className="bg-white shadow-sm border border-gray-100 max-w-[1536px] mx-auto rounded-3xl px-6 py-4 flex items-center justify-between">
+            {/* Logo */}
             <Link href="/" className="flex items-center gap-2">
               <img src="/assets/logo1.png" alt="Reachly" className="h-10 w-auto object-contain" />
             </Link>
 
-            <div className="hidden sm:flex items-center gap-8 font-medium text-sm text-gray-600">
-              <Link
-                href="/explore-creators"
-                className="text-[#0012FF] font-bold"
-              >
-                Explore Creators
-              </Link>
-              <Link
-                href="/for-creators"
-                className="hover:text-black transition-colors"
-              >
-                For Creators
-              </Link>
-              <Link
-                href="/about"
-                className="hover:text-black transition-colors"
-              >
-                About
-              </Link>
-            </div>
-
-            <div className="flex gap-3 items-center">
-              <button onClick={() => router.push('/login')} className="text-gray-600 font-semibold text-sm hover:text-black transition-all cursor-pointer">Login</button>
-              <button onClick={() => router.push('/signup')} className="bg-[#0012FF] text-white px-5 py-2 rounded-full font-semibold text-sm hover:bg-[#0012FF]/90 transition-all cursor-pointer">Sign up</button>
+            {/* Right side — all links + buttons grouped together like homepage */}
+            <div className="flex items-center gap-8">
+              <div className="hidden lg:flex items-center gap-8 font-medium text-sm text-gray-600">
+                <Link href="/explore-creators" className="text-[#0012FF] font-bold transition-colors">Explore Creators</Link>
+                <Link href="/for-creators" className="hover:text-black transition-colors">For Creators</Link>
+                <Link href="/about" className="hover:text-black transition-colors">About</Link>
+              </div>
+              <div className="flex items-center gap-3">
+                <button onClick={() => router.push('/login')} className="text-gray-700 font-semibold text-sm hover:text-black transition-all cursor-pointer">Login</button>
+                <button onClick={() => router.push('/signup')} className="border border-gray-300 text-gray-700 px-5 py-2 rounded-full font-semibold text-sm hover:bg-gray-50 transition-all cursor-pointer">Sign up</button>
+              </div>
             </div>
           </nav>
         </div>
-
       )}
 
       {/* Guest Login / Favourites Modal */}
