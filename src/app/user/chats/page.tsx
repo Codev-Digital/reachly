@@ -77,6 +77,25 @@ const formatTimeRange = (scheduledDate: string, timeStr: string, durationStr: st
   }
 };
 
+const parseEncodedAttachment = (msg: ChatMessage): ChatMessage => {
+  if (msg.content && msg.content.includes('|||')) {
+    const parts = msg.content.split('|||');
+    if (parts.length >= 3) {
+      try {
+        const parsedAttachment = JSON.parse(parts[1]);
+        return {
+          ...msg,
+          content: parts[0],
+          attachment: msg.attachment || parsedAttachment
+        };
+      } catch (e) {
+        // ignore parsing error
+      }
+    }
+  }
+  return msg;
+};
+
 export default function UserChatsPage() {
   const [conversations, setConversations] = useState<ConversationInfo[]>([]);
   const [activeChat, setActiveChat] = useState<string | null>(null);
@@ -241,12 +260,18 @@ export default function UserChatsPage() {
       scrollToBottom();
 
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        const attachMeta = JSON.stringify({
+          url: publicUrl,
+          fileType: msgType,
+          fileName: file.name,
+          fileSize: file.size
+        });
         wsRef.current.send(JSON.stringify({
           type: 'message',
           conversationId: activeChat,
           senderId: userId,
           senderRole: 'user',
-          content: `[Attached ${msgType}]`,
+          content: `[Attached ${msgType}]|||${attachMeta}|||`,
           tempId,
           attachment: {
             url: publicUrl,
@@ -398,7 +423,10 @@ export default function UserChatsPage() {
     fetch(`/api/conversations/messages?conversationId=${activeChat}`)
       .then(res => res.json())
       .then(data => {
-        if (data.success) setMessages(data.messages || []);
+        if (data.success) {
+          const parsedMessages = (data.messages || []).map((m: any) => parseEncodedAttachment(m));
+          setMessages(parsedMessages);
+        }
       })
       .catch(err => console.error('Error fetching messages:', err))
       .finally(() => setLoadingMessages(false));
@@ -415,21 +443,22 @@ export default function UserChatsPage() {
       try {
         const data = JSON.parse(event.data);
         if (data.type === 'message') {
-          if (data.message.conversationId === activeChat) {
+          const parsedMsg = parseEncodedAttachment(data.message);
+          if (parsedMsg.conversationId === activeChat) {
             setMessages(prev => {
-              if (prev.some(m => m.id === data.message.id)) return prev;
+              if (prev.some(m => m.id === parsedMsg.id)) return prev;
               
               let matchedIndex = -1;
-              if (data.message.tempId) {
-                matchedIndex = prev.findIndex(m => m.tempId === data.message.tempId);
+              if (parsedMsg.tempId) {
+                matchedIndex = prev.findIndex(m => m.tempId === parsedMsg.tempId);
               }
               
               if (matchedIndex === -1) {
-                const incomingTime = new Date(data.message.createdAt).getTime();
+                const incomingTime = new Date(parsedMsg.createdAt).getTime();
                 matchedIndex = prev.findIndex(m => 
                   m.id.startsWith('temp-') && 
-                  m.content === data.message.content &&
-                  m.senderId === data.message.senderId &&
+                  (m.content === parsedMsg.content || m.content + `|||` === parsedMsg.content.substring(0, m.content.length + 3)) &&
+                  m.senderId === parsedMsg.senderId &&
                   Math.abs(new Date(m.createdAt).getTime() - incomingTime) < 15000
                 );
               }
@@ -438,20 +467,20 @@ export default function UserChatsPage() {
                 const copy = [...prev];
                 copy[matchedIndex] = {
                   ...copy[matchedIndex],
-                  ...data.message,
-                  attachment: data.message.attachment || copy[matchedIndex].attachment
+                  ...parsedMsg,
+                  attachment: parsedMsg.attachment || copy[matchedIndex].attachment
                 };
                 return copy;
               }
               
-              return [...prev, data.message];
+              return [...prev, parsedMsg];
             });
           }
           setConversations(prev =>
             prev
               .map(c =>
-                c.id === data.message.conversationId
-                  ? { ...c, lastMessage: data.message.content, lastMessageTime: data.message.createdAt }
+                c.id === parsedMsg.conversationId
+                  ? { ...c, lastMessage: parsedMsg.content, lastMessageTime: parsedMsg.createdAt }
                   : c
               )
               .sort((a, b) => {
