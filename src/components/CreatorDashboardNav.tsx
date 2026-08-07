@@ -89,6 +89,34 @@ export default function CreatorDashboardNav({
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
+  // Local cache for profilePhoto and displayName to prevent flashes on navigation
+  const [localPhoto, setLocalPhoto] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('creator_profile_photo');
+    }
+    return null;
+  });
+  const [localName, setLocalName] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('creator_display_name') || '';
+    }
+    return '';
+  });
+
+  useEffect(() => {
+    if (profilePhoto) {
+      setLocalPhoto(profilePhoto);
+      localStorage.setItem('creator_profile_photo', profilePhoto);
+    }
+  }, [profilePhoto]);
+
+  useEffect(() => {
+    if (displayName) {
+      setLocalName(displayName);
+      localStorage.setItem('creator_display_name', displayName);
+    }
+  }, [displayName]);
+
   // Close menu on route change
   useEffect(() => {
     setMobileOpen(false);
@@ -458,13 +486,14 @@ export default function CreatorDashboardNav({
                 <button
                   onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
                   className="w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 border-white bg-gray-200 flex items-center justify-center flex-shrink-0 cursor-pointer focus:outline-none hover:shadow-md transition-all active:scale-95"
+                  suppressHydrationWarning
                 >
-                  {profilePhoto ? (
-                    <Image src={profilePhoto} alt={displayName || 'User'} className="w-full h-full object-cover" width={40} height={40} />
-                  ) : displayName ? (
-                    <span className="text-gray-700 font-bold text-sm">{displayName.charAt(0).toUpperCase()}</span>
+                  {localPhoto ? (
+                    <Image src={localPhoto} alt={localName || displayName || 'User'} className="w-full h-full object-cover" width={40} height={40} suppressHydrationWarning />
+                  ) : localName || displayName ? (
+                    <span className="text-gray-700 font-bold text-sm" suppressHydrationWarning>{(localName || displayName || '').charAt(0).toUpperCase()}</span>
                   ) : (
-                    <Image src="/avatar.png" alt="User" className="w-full h-full object-cover" width={40} height={40} />
+                    <Image src="/avatar.png" alt="User" className="w-full h-full object-cover" width={40} height={40} suppressHydrationWarning />
                   )}
                 </button>
 

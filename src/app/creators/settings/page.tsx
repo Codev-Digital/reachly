@@ -611,7 +611,7 @@ export default function CreatorSettings() {
         </div>
 
         {/* Premium Top Navigation Segment Bar */}
-        <div className="bg-white rounded-[20px] sm:rounded-full p-3 sm:p-1.5 border border-gray-100 shadow-sm flex flex-wrap justify-center gap-2 sm:gap-1.5 mb-8 max-w-3xl mx-auto">
+        <div className="flex flex-wrap justify-center gap-2 sm:gap-1.5 mb-8 max-w-3xl mx-auto">
           {tabs.map((tab) => (
             <button
               key={tab.name}

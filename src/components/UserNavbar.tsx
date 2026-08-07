@@ -19,6 +19,34 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  // Local cache for profilePhoto and displayName to prevent flashes on navigation
+  const [localPhoto, setLocalPhoto] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('user_profile_photo');
+    }
+    return null;
+  });
+  const [localName, setLocalName] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('user_display_name') || '';
+    }
+    return '';
+  });
+
+  useEffect(() => {
+    if (profilePhoto) {
+      setLocalPhoto(profilePhoto);
+      localStorage.setItem('user_profile_photo', profilePhoto);
+    }
+  }, [profilePhoto]);
+
+  useEffect(() => {
+    if (displayName) {
+      setLocalName(displayName);
+      localStorage.setItem('user_display_name', displayName);
+    }
+  }, [displayName]);
+
   // Determine active nav item from pathname
   const getActiveNavItem = () => {
     if (pathname === '/user/bookings') return 'Bookings';
@@ -507,11 +535,12 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
               <button
                 onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
                 className="w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 border-white bg-gray-200 flex items-center justify-center shadow-sm cursor-pointer hover:shadow-md transition-all active:scale-95 focus:outline-none"
+                suppressHydrationWarning
               >
-                {profilePhoto ? (
-                  <img src={profilePhoto} alt={displayName} className="w-full h-full object-cover" />
+                {localPhoto ? (
+                  <img src={localPhoto} alt={localName || displayName} className="w-full h-full object-cover" suppressHydrationWarning />
                 ) : (
-                  <img src="/avatar.png" alt="User Avatar" className="w-full h-full object-cover" />
+                  <img src="/avatar.png" alt="User Avatar" className="w-full h-full object-cover" suppressHydrationWarning />
                 )}
               </button>
 

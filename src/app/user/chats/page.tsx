@@ -131,7 +131,7 @@ export default function UserChatsPage() {
   const [uploadError, setUploadError] = useState<boolean>(false);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [previewFile, setPreviewFile] = useState<File | null>(null);
-  const [lightboxMedia, setLightboxMedia] = useState<{url: string, type: 'image' | 'video'} | null>(null);
+  const [lightboxMedia, setLightboxMedia] = useState<{ url: string, type: 'image' | 'video' } | null>(null);
   const uploadAbortController = useRef<AbortController | null>(null);
   const sendingRef = useRef<boolean>(false);
 
@@ -216,7 +216,7 @@ export default function UserChatsPage() {
 
       await new Promise((resolve, reject) => {
         xhr.open('PUT', signedUrl, true);
-        
+
         xhr.onload = () => {
           if (xhr.status >= 200 && xhr.status < 300) {
             resolve(xhr.responseText);
@@ -229,7 +229,7 @@ export default function UserChatsPage() {
         xhr.onabort = () => reject(new Error('Upload canceled'));
         xhr.setRequestHeader('Content-Type', file.type);
         xhr.send(file);
-        
+
         abortController.signal.addEventListener('abort', () => xhr.abort());
       });
 
@@ -447,16 +447,16 @@ export default function UserChatsPage() {
           if (parsedMsg.conversationId === activeChat) {
             setMessages(prev => {
               if (prev.some(m => m.id === parsedMsg.id)) return prev;
-              
+
               let matchedIndex = -1;
               if (parsedMsg.tempId) {
                 matchedIndex = prev.findIndex(m => m.tempId === parsedMsg.tempId);
               }
-              
+
               if (matchedIndex === -1) {
                 const incomingTime = new Date(parsedMsg.createdAt).getTime();
-                matchedIndex = prev.findIndex(m => 
-                  m.id.startsWith('temp-') && 
+                matchedIndex = prev.findIndex(m =>
+                  m.id.startsWith('temp-') &&
                   (m.content === parsedMsg.content || m.content + `|||` === parsedMsg.content.substring(0, m.content.length + 3)) &&
                   m.senderId === parsedMsg.senderId &&
                   Math.abs(new Date(m.createdAt).getTime() - incomingTime) < 15000
@@ -472,7 +472,7 @@ export default function UserChatsPage() {
                 };
                 return copy;
               }
-              
+
               return [...prev, parsedMsg];
             });
           }
@@ -524,7 +524,7 @@ export default function UserChatsPage() {
 
     sendingRef.current = true;
     setMessage('');
-    
+
     // Release lock in next tick/event loop
     setTimeout(() => {
       sendingRef.current = false;
@@ -743,12 +743,12 @@ export default function UserChatsPage() {
       </div>
 
       <main className="flex-grow min-h-0 px-4 sm:px-6 lg:px-10 py-4 lg:py-6">
-        <h1
+        {/* <h1
           className="text-[34px] leading-[34px] font-normal tracking-[0] text-black mb-3 lg:mb-6 shrink-0"
           style={{ fontFamily: 'Anton, sans-serif' }}
         >
           Chats
-        </h1>
+        </h1> */}
 
         <div className="flex-grow flex flex-col lg:flex-row gap-6 min-h-0 mb-0 lg:mb-6 h-[calc(100dvh-120px)] lg:h-[calc(100dvh-180px)]">
 
@@ -780,7 +780,7 @@ export default function UserChatsPage() {
                     className="w-full flex items-center justify-between px-4 py-3 rounded-2xl bg-white border border-gray-100 shadow-xs hover:border-gray-200 transition-all"
                   >
                     <div className="flex items-center gap-2.5 text-gray-500">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="5" rx="1" /><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8" /><path d="M10 12h4" /></svg>
                       <span className="text-sm font-semibold text-gray-600">Archived</span>
                       <span className="text-xs bg-gray-100 text-gray-500 font-bold px-2 py-0.5 rounded-full">{archivedConversations.length}</span>
                     </div>
@@ -980,7 +980,7 @@ export default function UserChatsPage() {
                                 disabled={isArchivingChat}
                                 className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
                               >
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="5" rx="1" /><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8" /><path d="M10 12h4" /></svg>
                                 {isArchivingChat ? 'Unarchiving...' : 'Unarchive Chat'}
                               </button>
                             ) : (
@@ -989,7 +989,7 @@ export default function UserChatsPage() {
                                 disabled={isArchivingChat}
                                 className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
                               >
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="5" rx="1" /><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8" /><path d="M10 12h4" /></svg>
                                 {isArchivingChat ? 'Archiving...' : 'Archive Chat'}
                               </button>
                             )}
@@ -1055,48 +1055,48 @@ export default function UserChatsPage() {
                                 </div>
                                 <div className="relative">
                                   {msg.attachment ? (
-                                      <div className={`p-4 shadow-sm relative flex flex-col gap-2 ${isMe ? 'bg-[#E6E8FF] text-gray-800 rounded-[20px] rounded-br-sm' : 'bg-white border border-gray-100 text-gray-800 rounded-[20px] rounded-bl-sm'}`}>
-                                        {msg.attachment.fileType === 'image' && (
-                                          <div onClick={() => setLightboxMedia({ url: msg.attachment!.url, type: 'image' })}>
-                                            <img src={msg.attachment.url} alt="Attachment" className="max-w-[240px] max-h-[240px] min-w-[160px] min-h-[120px] bg-black/10 rounded-lg object-cover cursor-pointer hover:opacity-90 transition-opacity" />
-                                          </div>
-                                        )}
-                                        {msg.attachment.fileType === 'video' && (
-                                          <div className="relative cursor-pointer group" onClick={() => setLightboxMedia({ url: msg.attachment!.url, type: 'video' })}>
-                                            <video src={`${msg.attachment.url}#t=0.1`} preload="metadata" playsInline className="max-w-[240px] max-h-[240px] min-w-[160px] min-h-[120px] bg-black/10 rounded-lg object-cover pointer-events-none" />
-                                            <div className="absolute inset-0 flex items-center justify-center bg-black/10 group-hover:bg-black/20 transition-colors rounded-lg">
-                                              <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center shadow-md">
-                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="text-gray-900 ml-1"><polygon points="5 3 19 12 5 21 5 3" /></svg>
-                                              </div>
-                                            </div>
-                                          </div>
-                                        )}
-                                        {(msg.attachment.fileType === 'document' || msg.attachment.fileType === 'pdf') && (
-                                          <a href={msg.attachment.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 bg-black/10 rounded-xl hover:bg-black/20 transition-colors">
-                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                                            <div className="flex flex-col min-w-0">
-                                              <span className="text-sm font-semibold truncate max-w-[160px]">{msg.attachment.fileName}</span>
-                                              <span className="text-xs opacity-70">{(msg.attachment.fileSize / 1024 / 1024).toFixed(2)} MB</span>
-                                            </div>
-                                          </a>
-                                        )}
-                                        <div className="flex justify-end items-center gap-1 mt-1">
-                                          <span className={`text-[10px] font-medium select-none text-gray-400`}>
-                                            {formatMsgTime(msg.createdAt)}
-                                          </span>
-                                          {isMe && (
-                                            <span className="inline-flex shrink-0">
-                                              {msg.read ? (
-                                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0057ff" strokeWidth="2.5"><path d="M17 5L9.5 12.5L6 9" /><path d="M22 5l-7.5 7.5" /></svg>
-                                              ) : isOtherUserOnline ? (
-                                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A8A8A" strokeWidth="2.5"><path d="M17 5L9.5 12.5L6 9" /><path d="M22 5l-7.5 7.5" /></svg>
-                                              ) : (
-                                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A8A8A" strokeWidth="2.5"><path d="M17 5L9.5 12.5L6 9" /></svg>
-                                              )}
-                                            </span>
-                                          )}
+                                    <div className={`p-4 shadow-sm relative flex flex-col gap-2 ${isMe ? 'bg-[#E6E8FF] text-gray-800 rounded-[20px] rounded-br-sm' : 'bg-white border border-gray-100 text-gray-800 rounded-[20px] rounded-bl-sm'}`}>
+                                      {msg.attachment.fileType === 'image' && (
+                                        <div onClick={() => setLightboxMedia({ url: msg.attachment!.url, type: 'image' })}>
+                                          <img src={msg.attachment.url} alt="Attachment" className="max-w-[240px] max-h-[240px] min-w-[160px] min-h-[120px] bg-black/10 rounded-lg object-cover cursor-pointer hover:opacity-90 transition-opacity" />
                                         </div>
+                                      )}
+                                      {msg.attachment.fileType === 'video' && (
+                                        <div className="relative cursor-pointer group" onClick={() => setLightboxMedia({ url: msg.attachment!.url, type: 'video' })}>
+                                          <video src={`${msg.attachment.url}#t=0.1`} preload="metadata" playsInline className="max-w-[240px] max-h-[240px] min-w-[160px] min-h-[120px] bg-black/10 rounded-lg object-cover pointer-events-none" />
+                                          <div className="absolute inset-0 flex items-center justify-center bg-black/10 group-hover:bg-black/20 transition-colors rounded-lg">
+                                            <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center shadow-md">
+                                              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="text-gray-900 ml-1"><polygon points="5 3 19 12 5 21 5 3" /></svg>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      )}
+                                      {(msg.attachment.fileType === 'document' || msg.attachment.fileType === 'pdf') && (
+                                        <a href={msg.attachment.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 bg-black/10 rounded-xl hover:bg-black/20 transition-colors">
+                                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                                          <div className="flex flex-col min-w-0">
+                                            <span className="text-sm font-semibold truncate max-w-[160px]">{msg.attachment.fileName}</span>
+                                            <span className="text-xs opacity-70">{(msg.attachment.fileSize / 1024 / 1024).toFixed(2)} MB</span>
+                                          </div>
+                                        </a>
+                                      )}
+                                      <div className="flex justify-end items-center gap-1 mt-1">
+                                        <span className={`text-[10px] font-medium select-none text-gray-400`}>
+                                          {formatMsgTime(msg.createdAt)}
+                                        </span>
+                                        {isMe && (
+                                          <span className="inline-flex shrink-0">
+                                            {msg.read ? (
+                                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0057ff" strokeWidth="2.5"><path d="M17 5L9.5 12.5L6 9" /><path d="M22 5l-7.5 7.5" /></svg>
+                                            ) : isOtherUserOnline ? (
+                                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A8A8A" strokeWidth="2.5"><path d="M17 5L9.5 12.5L6 9" /><path d="M22 5l-7.5 7.5" /></svg>
+                                            ) : (
+                                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A8A8A" strokeWidth="2.5"><path d="M17 5L9.5 12.5L6 9" /></svg>
+                                            )}
+                                          </span>
+                                        )}
                                       </div>
+                                    </div>
                                   ) : (
                                     isAudio ? (
                                       <VoicePlayer
@@ -1201,7 +1201,7 @@ export default function UserChatsPage() {
                                 <span className="text-xs">Upload failed or canceled</span>
                               </div>
                               <button onClick={retryUpload} className="w-10 h-10 shrink-0 bg-red-100 hover:bg-red-200 rounded-full flex items-center justify-center transition-colors">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M2.5 2v6h6M2.66 15.57a10 10 0 1 0 .57-8.38l-5.67-5.67"/></svg>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M2.5 2v6h6M2.66 15.57a10 10 0 1 0 .57-8.38l-5.67-5.67" /></svg>
                               </button>
                             </div>
                           </div>
@@ -1215,7 +1215,7 @@ export default function UserChatsPage() {
                                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
                                 </button>
                               </div>
-                              
+
                               <div className="flex items-center justify-center bg-gray-50 rounded-xl overflow-hidden min-h-[120px] max-h-[240px]">
                                 {previewFile.type.startsWith('image/') ? (
                                   <img src={URL.createObjectURL(previewFile)} alt="Preview" className="max-w-full max-h-[240px] object-contain" />
@@ -1229,7 +1229,7 @@ export default function UserChatsPage() {
                                   </div>
                                 )}
                               </div>
-                              
+
                               <div className="flex justify-end gap-2 mt-1">
                                 <button onClick={() => setPreviewFile(null)} className="px-4 py-2 text-sm font-medium text-gray-500 hover:bg-gray-100 rounded-full transition-colors">
                                   Cancel
@@ -1243,7 +1243,7 @@ export default function UserChatsPage() {
                           </div>
                         )}
                         <input type="file" ref={fileInputRef} hidden accept="image/*,video/*,application/pdf,.doc,.docx,.xls,.xlsx" onChange={handleFileInput} />
-                        
+
                         <div className="flex items-center gap-3">
                           {isRecording ? (
                             // Recording audio state banner
@@ -1337,14 +1337,14 @@ export default function UserChatsPage() {
           </div>
         </div>
       </main>
-      
+
       {/* Lightbox Modal */}
       {lightboxMedia && (
         <div className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity animate-fade-in" onClick={() => setLightboxMedia(null)}>
           <button className="absolute top-6 right-6 text-white/70 hover:text-white transition-colors bg-white/10 hover:bg-white/20 p-2.5 rounded-full z-[110]" onClick={() => setLightboxMedia(null)}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
           </button>
-          
+
           <div className="relative max-w-6xl max-h-[90vh] flex items-center justify-center w-full h-full" onClick={(e) => e.stopPropagation()}>
             {lightboxMedia.type === 'image' ? (
               <img src={lightboxMedia.url} alt="Fullscreen Attachment" className="max-w-full max-h-full object-contain select-none drop-shadow-2xl rounded-sm" />
