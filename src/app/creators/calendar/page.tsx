@@ -50,6 +50,23 @@ export default function CreatorCalendar() {
   const [bookings, setBookings] = useState<BookingType[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Load cached calendar details on mount
+  useEffect(() => {
+    try {
+      const cachedCalendar = sessionStorage.getItem('reachly_creator_calendar_cache');
+      if (cachedCalendar) {
+        const cached = JSON.parse(cachedCalendar);
+        if (cached.displayName) setDisplayName(cached.displayName);
+        if (cached.profilePhoto) setProfilePhoto(cached.profilePhoto);
+        if (cached.username) setUsername(cached.username);
+        if (cached.bookings) setBookings(cached.bookings);
+        setLoading(false);
+      }
+    } catch (e) {
+      console.error('Failed to load creator calendar cache:', e);
+    }
+  }, []);
+
   useEffect(() => {
     const timer = setTimeout(() => {
       if (selectedDayRef.current) {
@@ -104,6 +121,11 @@ export default function CreatorCalendar() {
   // Fetch creator profile & bookings
   const loadInitialData = useCallback(async () => {
     try {
+      let uName = '';
+      let uPhoto: string | null = null;
+      let uUser = '';
+      let list: any[] = [];
+
       const [meRes, bookingsRes] = await Promise.all([
         fetch('/api/user/me'),
         fetch('/api/creators/bookings')
@@ -111,16 +133,19 @@ export default function CreatorCalendar() {
 
       if (meRes.ok) {
         const data = await meRes.json();
-        setDisplayName(data.creatorProfile?.displayName || data.user?.name || '');
-        setProfilePhoto(data.creatorProfile?.profilePhoto || null);
-        setUsername(data.creatorProfile?.username || '');
+        uName = data.creatorProfile?.displayName || data.user?.name || '';
+        uPhoto = data.creatorProfile?.profilePhoto || null;
+        uUser = data.creatorProfile?.username || '';
+        setDisplayName(uName);
+        setProfilePhoto(uPhoto);
+        setUsername(uUser);
       }
 
       if (bookingsRes.ok) {
         const data = await bookingsRes.json();
         if (data.bookings) {
           // Format bookings for UI
-          const list = data.bookings.map((b: any) => ({
+          list = data.bookings.map((b: any) => ({
             id: b.id,
             _id: b.id,
             name: b.follower || 'Client',
@@ -140,6 +165,16 @@ export default function CreatorCalendar() {
           setBookings(list);
         }
       }
+
+      // Save to cache
+      try {
+        sessionStorage.setItem('reachly_creator_calendar_cache', JSON.stringify({
+          displayName: uName,
+          profilePhoto: uPhoto,
+          username: uUser,
+          bookings: list
+        }));
+      } catch (e) {}
     } catch (err) {
       console.error(err);
     } finally {
@@ -593,8 +628,14 @@ export default function CreatorCalendar() {
 
       {/* Cancel Appointment Modal */}
       {showCancelModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[100] p-4">
-          <div className="relative bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl border border-gray-100 w-full max-w-md p-6 sm:p-8 flex flex-col items-center text-center overflow-hidden">
+        <div 
+          className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[100] p-4 cursor-pointer"
+          onClick={() => setShowCancelModal(false)}
+        >
+          <div 
+            className="relative bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl border border-gray-100 w-full max-w-md p-6 sm:p-8 flex flex-col items-center text-center overflow-hidden cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* Close Button */}
             <button
               onClick={() => setShowCancelModal(false)}
@@ -640,9 +681,19 @@ export default function CreatorCalendar() {
 
       {/* Reschedule Appointment Modal */}
       {showRescheduleModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[100] p-4">
+        <div 
+          className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[100] p-4 cursor-pointer"
+          onClick={() => {
+            setShowRescheduleModal(false);
+            setIsRescheduleSuccess(false);
+            setBookingToReschedule(null);
+          }}
+        >
           {isRescheduleSuccess ? (
-            <div className="relative bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl border border-gray-100 w-full max-w-md p-6 sm:p-8 flex flex-col items-center text-center overflow-hidden">
+            <div 
+              className="relative bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl border border-gray-100 w-full max-w-md p-6 sm:p-8 flex flex-col items-center text-center overflow-hidden cursor-default"
+              onClick={(e) => e.stopPropagation()}
+            >
               <button
                 onClick={() => {
                   setShowRescheduleModal(false);
@@ -687,7 +738,10 @@ export default function CreatorCalendar() {
               </button>
             </div>
           ) : (
-            <div className="relative bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl border border-gray-100 w-full max-w-2xl p-6 sm:p-8 flex flex-col overflow-hidden">
+            <div 
+              className="relative bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl border border-gray-100 w-full max-w-2xl p-6 sm:p-8 flex flex-col overflow-hidden cursor-default"
+              onClick={(e) => e.stopPropagation()}
+            >
 
               {/* Header */}
               <div className="mb-6 text-left">

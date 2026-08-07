@@ -16,6 +16,7 @@ export interface IUser extends Document {
   onboardingStep: number;
   hasSeenWelcome: boolean;
   approvalStatus: 'none' | 'pending' | 'approved' | 'rejected';
+  lastActiveAt?: Date;
   createdAt: Date;
   profilePhoto?: string;
   savedCreators: string[];     // bookmark — "save for later"
@@ -54,6 +55,7 @@ const UserSchema = new Schema<IUser>(
       enum: ['none', 'pending', 'approved', 'rejected'], 
       default: 'none' 
     },
+    lastActiveAt: { type: Date },
     profilePhoto: { type: String },
     savedCreators: { type: [String], default: [] },
     favouriteCreators: { type: [String], default: [] },

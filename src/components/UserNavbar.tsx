@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useLayoutEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getRelativeTime } from '@/lib/time';
 import { signOut } from 'next-auth/react';
@@ -12,6 +12,24 @@ interface UserNavbarProps {
   profilePhoto?: string | null;
 }
 
+// Module-level cache to persist data across page navigation/remounts without flashes
+let globalUserPhotoCache: string | null = null;
+let globalUserNameCache: string = '';
+let globalIsHydrated: boolean = false;
+let globalNotificationsCache: any[] = [];
+
+if (typeof window !== 'undefined') {
+  globalUserPhotoCache = localStorage.getItem('user_profile_photo');
+  globalUserNameCache = localStorage.getItem('user_display_name') || '';
+  
+  try {
+    const cachedNotifs = localStorage.getItem('user_notifications_cache');
+    if (cachedNotifs) {
+      globalNotificationsCache = JSON.parse(cachedNotifs);
+    }
+  } catch (e) {}
+}
+
 export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -19,23 +37,40 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  // Track if hydration has occurred globally to prevent flashes on tab changes
+  // but ensure perfect SSR matching on full page refreshes.
+  const [isHydrated, setIsHydrated] = useState(globalIsHydrated);
+
   // Local cache for profilePhoto and displayName to prevent flashes on navigation
-  const [localPhoto, setLocalPhoto] = useState<string | null>(() => {
+  const [localPhoto, setLocalPhoto] = useState<string | null>(globalUserPhotoCache);
+  const [localName, setLocalName] = useState<string>(globalUserNameCache);
+
+  // useSafeLayoutEffect prevents visual flicker on hydration
+  const useSafeLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
+
+  // Load cache on mount to avoid Next.js SSR hydration mismatch
+  useSafeLayoutEffect(() => {
+    globalIsHydrated = true;
+    setIsHydrated(true);
+
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('user_profile_photo');
+      const cachedPhoto = localStorage.getItem('user_profile_photo');
+      if (cachedPhoto && cachedPhoto !== localPhoto) {
+        setLocalPhoto(cachedPhoto);
+        globalUserPhotoCache = cachedPhoto;
+      }
+      const cachedName = localStorage.getItem('user_display_name');
+      if (cachedName && cachedName !== localName) {
+        setLocalName(cachedName);
+        globalUserNameCache = cachedName;
+      }
     }
-    return null;
-  });
-  const [localName, setLocalName] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('user_display_name') || '';
-    }
-    return '';
-  });
+  }, [localPhoto, localName]);
 
   useEffect(() => {
     if (profilePhoto) {
       setLocalPhoto(profilePhoto);
+      globalUserPhotoCache = profilePhoto;
       localStorage.setItem('user_profile_photo', profilePhoto);
     }
   }, [profilePhoto]);
@@ -43,6 +78,7 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
   useEffect(() => {
     if (displayName) {
       setLocalName(displayName);
+      globalUserNameCache = displayName;
       localStorage.setItem('user_display_name', displayName);
     }
   }, [displayName]);
@@ -67,7 +103,15 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
 
   // Notifications State & Dropdown Open Toggle State
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<any[]>(globalNotificationsCache);
+
+  // Sync notifications to global cache and local storage whenever they change
+  useEffect(() => {
+    globalNotificationsCache = notifications;
+    if (typeof window !== 'undefined' && notifications.length > 0) {
+      localStorage.setItem('user_notifications_cache', JSON.stringify(notifications));
+    }
+  }, [notifications]);
 
   const fetchNotifications = useCallback(async () => {
     try {
@@ -374,7 +418,7 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
                   <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
                   <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                 </svg>
-                {notifications.filter(n => !n.read).length > 0 && (
+                {isHydrated && notifications.filter(n => !n.read).length > 0 && (
                   <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center px-1 border border-white">
                     {notifications.filter(n => !n.read).length}
                   </span>
@@ -388,7 +432,7 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-2">
                       <h3 className="text-xl sm:text-2xl font-extrabold text-black font-sans tracking-tight">Notifications</h3>
-                      {notifications.filter(n => !n.read).length > 0 && (
+                      {isHydrated && notifications.filter(n => !n.read).length > 0 && (
                         <span className="bg-[#E6F9EE] text-[#12B76A] text-xs font-bold px-2.5 py-0.5 rounded-full">
                           {notifications.filter(n => !n.read).length} New
                         </span>
@@ -535,12 +579,11 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
               <button
                 onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
                 className="w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 border-white bg-gray-200 flex items-center justify-center shadow-sm cursor-pointer hover:shadow-md transition-all active:scale-95 focus:outline-none"
-                suppressHydrationWarning
               >
-                {localPhoto ? (
-                  <img src={localPhoto} alt={localName || displayName} className="w-full h-full object-cover" suppressHydrationWarning />
+                {isHydrated && localPhoto ? (
+                  <img src={localPhoto} alt={localName || displayName} className="w-full h-full object-cover" />
                 ) : (
-                  <img src="/avatar.png" alt="User Avatar" className="w-full h-full object-cover" suppressHydrationWarning />
+                  <img src="/avatar.png" alt="User Avatar" className="w-full h-full object-cover" />
                 )}
               </button>
 
@@ -586,29 +629,39 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
         {/* Mobile Dropdown Menu */}
         <AnimatePresence>
           {mobileOpen && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="lg:hidden overflow-hidden border-t border-gray-100 mt-3"
-            >
-              <div className="px-4 py-3 flex flex-col gap-1">
-                {navItems.map((item) => {
-                  const isActive = activeNavItem === item.name || (item.name === 'Dashboard' && (pathname === '/user/dashboard' || pathname === '/explore-creators' || pathname.includes('/book-session'))) || (item.name === 'Bookings' && pathname === '/user/bookings') || (item.name === 'Chats' && pathname === '/user/chats');
-                  return (
-                    <Link
-                      key={item.name}
-                      href={item.href}
-                      onClick={() => {
-                        setMobileOpen(false);
-                        if (item.href !== '#') setActiveNavItem(item.name);
-                      }}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${isActive
-                        ? 'bg-[#0012FF]/10 text-[#0012FF]'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-[#0012FF]'
-                        }`}
-                    >
+            <>
+              {/* Click-outside backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="fixed inset-0 bg-transparent z-[40] lg:hidden"
+                onClick={() => setMobileOpen(false)}
+              />
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="lg:hidden overflow-hidden border-t border-gray-100 mt-3 relative z-[50]"
+              >
+                <div className="px-4 py-3 flex flex-col gap-1">
+                  {navItems.map((item) => {
+                    const isActive = activeNavItem === item.name || (item.name === 'Dashboard' && (pathname === '/user/dashboard' || pathname === '/explore-creators' || pathname.includes('/book-session'))) || (item.name === 'Bookings' && pathname === '/user/bookings') || (item.name === 'Chats' && pathname === '/user/chats');
+                    return (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        onClick={() => {
+                          setMobileOpen(false);
+                          if (item.href !== '#') setActiveNavItem(item.name);
+                        }}
+                        className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${isActive
+                          ? 'bg-[#0012FF]/10 text-[#0012FF]'
+                          : 'text-gray-600 hover:bg-gray-50 hover:text-[#0012FF]'
+                          }`}
+                      >
                       {/* Dashboard Icon */}
                       {item.icon === 'dashboard' && (
                         isActive ? (
@@ -730,14 +783,21 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
                 </button>
               </div>
             </motion.div>
+            </>
           )}
         </AnimatePresence>
       </nav>
 
       {/* Modern Royal Blue / White Logout Confirmation Modal */}
       {showLogoutModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[150] p-4">
-          <div className="relative bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl border border-gray-100 w-full max-w-md p-6 sm:p-8 flex flex-col items-center text-center overflow-hidden">
+        <div 
+          className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[150] p-4 cursor-pointer"
+          onClick={() => setShowLogoutModal(false)}
+        >
+          <div 
+            className="relative bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl border border-gray-100 w-full max-w-md p-6 sm:p-8 flex flex-col items-center text-center overflow-hidden cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* Close Button */}
             <button
               onClick={() => setShowLogoutModal(false)}

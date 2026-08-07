@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useLayoutEffect, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -77,6 +77,24 @@ function NavIcon({ icon, active }: { icon: string; active: boolean }) {
   return null;
 }
 
+// Module-level cache to persist data across page navigation/remounts without flashes
+let globalCreatorPhotoCache: string | null = null;
+let globalCreatorNameCache: string = '';
+let globalCreatorNotificationsCache: any[] = [];
+let globalCreatorIsHydrated: boolean = false;
+
+if (typeof window !== 'undefined') {
+  globalCreatorPhotoCache = localStorage.getItem('creator_profile_photo');
+  globalCreatorNameCache = localStorage.getItem('creator_display_name') || '';
+
+  try {
+    const cachedNotifs = localStorage.getItem('creator_notifications_cache');
+    if (cachedNotifs) {
+      globalCreatorNotificationsCache = JSON.parse(cachedNotifs);
+    }
+  } catch (e) {}
+}
+
 export default function CreatorDashboardNav({
   profilePhoto,
   displayName,
@@ -88,24 +106,37 @@ export default function CreatorDashboardNav({
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(globalCreatorIsHydrated);
 
   // Local cache for profilePhoto and displayName to prevent flashes on navigation
-  const [localPhoto, setLocalPhoto] = useState<string | null>(() => {
+  const [localPhoto, setLocalPhoto] = useState<string | null>(globalCreatorPhotoCache);
+  const [localName, setLocalName] = useState<string>(globalCreatorNameCache);
+
+  const useSafeLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
+
+  // Load cache on mount to avoid Next.js SSR hydration mismatch
+  useSafeLayoutEffect(() => {
+    globalCreatorIsHydrated = true;
+    setIsHydrated(true);
+
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('creator_profile_photo');
+      const cachedPhoto = localStorage.getItem('creator_profile_photo');
+      if (cachedPhoto && cachedPhoto !== localPhoto) {
+        setLocalPhoto(cachedPhoto);
+        globalCreatorPhotoCache = cachedPhoto;
+      }
+      const cachedName = localStorage.getItem('creator_display_name');
+      if (cachedName && cachedName !== localName) {
+        setLocalName(cachedName);
+        globalCreatorNameCache = cachedName;
+      }
     }
-    return null;
-  });
-  const [localName, setLocalName] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('creator_display_name') || '';
-    }
-    return '';
-  });
+  }, [localPhoto, localName]);
 
   useEffect(() => {
     if (profilePhoto) {
       setLocalPhoto(profilePhoto);
+      globalCreatorPhotoCache = profilePhoto;
       localStorage.setItem('creator_profile_photo', profilePhoto);
     }
   }, [profilePhoto]);
@@ -113,6 +144,7 @@ export default function CreatorDashboardNav({
   useEffect(() => {
     if (displayName) {
       setLocalName(displayName);
+      globalCreatorNameCache = displayName;
       localStorage.setItem('creator_display_name', displayName);
     }
   }, [displayName]);
@@ -142,7 +174,15 @@ export default function CreatorDashboardNav({
 
   // Notifications State & Dropdown Open Toggle State
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<any[]>(globalCreatorNotificationsCache);
+
+  // Sync notifications to global cache and local storage whenever they change
+  useEffect(() => {
+    globalCreatorNotificationsCache = notifications;
+    if (typeof window !== 'undefined' && notifications.length > 0) {
+      localStorage.setItem('creator_notifications_cache', JSON.stringify(notifications));
+    }
+  }, [notifications]);
 
   // Bulletproof time helper: tries createdAt first, then extracts timestamp from MongoDB ObjectId
   const getNotifTime = (n: any): string => {
@@ -325,7 +365,7 @@ export default function CreatorDashboardNav({
                     <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
                     <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                   </svg>
-                  {notifications.filter(n => !n.read).length > 0 && (
+                  {isHydrated && notifications.filter(n => !n.read).length > 0 && (
                     <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center px-1 border border-white">
                       {notifications.filter(n => !n.read).length}
                     </span>
@@ -339,7 +379,7 @@ export default function CreatorDashboardNav({
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
                         <h3 className="text-xl sm:text-2xl font-extrabold text-black font-sans tracking-tight">Notifications</h3>
-                        {notifications.filter(n => !n.read).length > 0 && (
+                        {isHydrated && notifications.filter(n => !n.read).length > 0 && (
                           <span className="bg-[#E6F9EE] text-[#12B76A] text-xs font-bold px-2.5 py-0.5 rounded-full">
                             {notifications.filter(n => !n.read).length} New
                           </span>
@@ -541,56 +581,73 @@ export default function CreatorDashboardNav({
         {/* Mobile dropdown menu */}
         <AnimatePresence>
           {mobileOpen && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="lg:hidden overflow-hidden border-t border-gray-100"
-            >
-              <div className="px-4 py-3 flex flex-col gap-1">
-                {NAV_ITEMS.map((item) => {
-                  const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
-                  return (
-                    <Link
-                      key={item.name}
-                      href={item.href}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${isActive
-                        ? 'bg-[#0012FF]/8 text-[#0012FF]'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-[#0012FF]'
-                        }`}
-                    >
-                      <NavIcon icon={item.icon} active={isActive} />
-                      {item.name}
-                    </Link>
-                  );
-                })}
+            <>
+              {/* Click-outside backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="fixed inset-0 bg-transparent z-[40] lg:hidden"
+                onClick={() => setMobileOpen(false)}
+              />
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="lg:hidden overflow-hidden border-t border-gray-100 relative z-[50]"
+              >
+                <div className="px-4 py-3 flex flex-col gap-1">
+                  {NAV_ITEMS.map((item) => {
+                    const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+                    return (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${isActive
+                          ? 'bg-[#0012FF]/8 text-[#0012FF]'
+                          : 'text-gray-600 hover:bg-gray-50 hover:text-[#0012FF]'
+                          }`}
+                      >
+                        <NavIcon icon={item.icon} active={isActive} />
+                        {item.name}
+                      </Link>
+                    );
+                  })}
 
-                {/* Logout Button (Mobile Only) */}
-                <button
-                  onClick={() => {
-                    setMobileOpen(false);
-                    setShowLogoutModal(true);
-                  }}
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all text-red-500 hover:bg-red-50"
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                    <polyline points="16 17 21 12 16 7" />
-                    <line x1="21" y1="12" x2="9" y2="12" />
-                  </svg>
-                  <span>Log Out</span>
-                </button>
-              </div>
-            </motion.div>
+                  {/* Logout Button (Mobile Only) */}
+                  <button
+                    onClick={() => {
+                      setMobileOpen(false);
+                      setShowLogoutModal(true);
+                    }}
+                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all text-red-500 hover:bg-red-50"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                      <polyline points="16 17 21 12 16 7" />
+                      <line x1="21" y1="12" x2="9" y2="12" />
+                    </svg>
+                    <span>Log Out</span>
+                  </button>
+                </div>
+              </motion.div>
+            </>
           )}
         </AnimatePresence>
       </nav>
 
       {/* Modern Royal Blue / White Logout Confirmation Modal */}
       {showLogoutModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[150] p-4">
-          <div className="relative bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl border border-gray-100 w-full max-w-md p-6 sm:p-8 flex flex-col items-center text-center overflow-hidden">
+        <div 
+          className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[150] p-4 cursor-pointer"
+          onClick={() => setShowLogoutModal(false)}
+        >
+          <div 
+            className="relative bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl border border-gray-100 w-full max-w-md p-6 sm:p-8 flex flex-col items-center text-center overflow-hidden cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* Close Button */}
             <button
               onClick={() => setShowLogoutModal(false)}

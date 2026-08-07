@@ -28,6 +28,8 @@ export const metadata: Metadata = {
   },
 };
 
+import GlobalPresence from "@/components/GlobalPresence";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -40,6 +42,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <AuthSessionProvider>
+          <GlobalPresence />
           <LoadingProvider>{children}</LoadingProvider>
         </AuthSessionProvider>
       </body>

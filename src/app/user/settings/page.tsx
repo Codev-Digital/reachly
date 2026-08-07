@@ -36,6 +36,20 @@ export default function UserSettings() {
 
   const [loading, setLoading] = useState(true);
 
+  // Load cached settings on mount
+  useEffect(() => {
+    try {
+      const cached = sessionStorage.getItem('reachly_user_settings_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed.name) setDisplayName(parsed.name);
+        if (parsed.email) setEmailAddress(parsed.email);
+        if (parsed.profilePhoto) setProfilePhoto(parsed.profilePhoto);
+        setLoading(false);
+      }
+    } catch (e) {}
+  }, []);
+
   useEffect(() => {
     async function loadUser() {
       try {
@@ -46,6 +60,13 @@ export default function UserSettings() {
             setDisplayName(data.user.name || '');
             setEmailAddress(data.user.email || '');
             setProfilePhoto(data.user.profilePhoto || null);
+            try {
+              sessionStorage.setItem('reachly_user_settings_cache', JSON.stringify({
+                name: data.user.name || '',
+                email: data.user.email || '',
+                profilePhoto: data.user.profilePhoto || null
+              }));
+            } catch (e) {}
           }
         }
       } catch (err) {

@@ -130,6 +130,10 @@ export default function BookSessionLayout({ children }: { children: ReactNode })
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isDraftSaved, setIsDraftSaved] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const handleClose = () => {
+    setShowLoginModal(false);
+    window.location.href = '/explore-creators';
+  };
   const lastDraftRef = useRef('');
 
   // On mount: restore from localStorage draft first, then sessionStorage
@@ -244,8 +248,14 @@ export default function BookSessionLayout({ children }: { children: ReactNode })
         <Footer />
 
         {showLoginModal && (
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[200] p-4">
-            <div className="relative bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl border border-gray-100 w-full max-w-md p-6 sm:p-8 flex flex-col items-center text-center overflow-hidden">
+          <div 
+            className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[200] p-4 cursor-pointer"
+            onClick={handleClose}
+          >
+            <div 
+              className="relative bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl border border-gray-100 w-full max-w-md p-6 sm:p-8 flex flex-col items-center text-center overflow-hidden cursor-default"
+              onClick={(e) => e.stopPropagation()}
+            >
               {/* Illustration */}
               <div className="w-40 sm:w-52 h-auto my-2">
                 <img

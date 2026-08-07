@@ -25,6 +25,7 @@ interface ConversationInfo {
   ref: string;
   isCreator: boolean;
   isArchivedByCreator?: boolean;
+  isOnline?: boolean;
 }
 
 interface ChatMessage {
@@ -140,6 +141,17 @@ export default function ChatsPage() {
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string>('');
   const [creatorId, setCreatorId] = useState<string | null>(null);
+
+  // Load cached conversations on mount
+  useEffect(() => {
+    try {
+      const cachedConvs = sessionStorage.getItem('reachly_creator_conversations_cache');
+      if (cachedConvs) {
+        setConversations(JSON.parse(cachedConvs));
+        setLoadingConversations(false);
+      }
+    } catch (e) {}
+  }, []);
   const [isOtherUserOnline, setIsOtherUserOnline] = useState(false);
   const [isChatLocked, setIsChatLocked] = useState(false);
   const [showLockModal, setShowLockModal] = useState(false);
@@ -373,6 +385,7 @@ export default function ChatsPage() {
             scheduledDate: c.scheduledDate || '',
             isCreator: c.isCreator,
             isArchivedByCreator: c.isArchivedByCreator ?? false,
+            isOnline: c.isOnline || false,
           }))
           .sort((a: ConversationInfo, b: ConversationInfo) => {
             const hasMsgA = !!a.lastMessageTime;
@@ -386,10 +399,14 @@ export default function ChatsPage() {
           });
         setConversations(prev => {
           const existingArchiveMap = new Map(prev.map(c => [c.id, c.isArchivedByCreator]));
-          return list.map(c => ({
+          const updatedList = list.map(c => ({
             ...c,
             isArchivedByCreator: archivedCreatorChatIds.current.has(c.id) || Boolean(c.isArchivedByCreator) || existingArchiveMap.get(c.id) || false,
           }));
+          try {
+            sessionStorage.setItem('reachly_creator_conversations_cache', JSON.stringify(updatedList));
+          } catch (e) {}
+          return updatedList;
         });
       }
     } catch (err) {
@@ -400,8 +417,11 @@ export default function ChatsPage() {
   };
 
   useEffect(() => {
-    setLoadingConversations(true);
     fetchConversations();
+    const interval = setInterval(() => {
+      fetchConversations();
+    }, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   // Auto-activate chat if bookingRef is passed in URL query
@@ -449,13 +469,28 @@ export default function ChatsPage() {
       prev.map(c => (c.id === activeChat ? { ...c, unreadCount: 0 } : c))
     );
 
-    setLoadingMessages(true);
+    // Try to load messages from cache immediately to skip spinner
+    try {
+      const cachedMessagesStr = sessionStorage.getItem(`reachly_chat_messages_${activeChat}`);
+      if (cachedMessagesStr) {
+        setMessages(JSON.parse(cachedMessagesStr));
+        setLoadingMessages(false);
+      } else {
+        setLoadingMessages(true);
+      }
+    } catch (e) {
+      setLoadingMessages(true);
+    }
+
     fetch(`/api/conversations/messages?conversationId=${activeChat}`)
       .then(res => res.json())
       .then(data => {
         if (data.success) {
           const parsedMessages = (data.messages || []).map((m: any) => parseEncodedAttachment(m));
           setMessages(parsedMessages);
+          try {
+            sessionStorage.setItem(`reachly_chat_messages_${activeChat}`, JSON.stringify(parsedMessages));
+          } catch (e) {}
         }
       })
       .catch(err => console.error('Error fetching messages:', err))
@@ -925,15 +960,15 @@ export default function ChatsPage() {
                     <div
                       key={chat.id}
                       onClick={() => setActiveChat(chat.id)}
-                      className={`rounded-2xl p-4 cursor-pointer transition-all border ${activeChat === chat.id ? 'border-[#0012FF]/20 shadow-md bg-white ring-1 ring-[#0012FF]/5' : 'border-gray-100 hover:border-gray-200 bg-white shadow-xs'}`}
+                      className={`rounded-2xl py-8 px-4 cursor-pointer transition-all border flex flex-col justify-center ${activeChat === chat.id ? 'border-[#0012FF]/20 shadow-md bg-white ring-1 ring-[#0012FF]/5' : 'border-gray-100 hover:border-gray-200 bg-white shadow-xs'}`}
                     >
-                      <div className="flex justify-between items-start mb-3">
+                      <div className="flex justify-between items-start">
                         <div className="flex gap-3">
-                          <div className="relative">
-                            <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200">
+                          <div className="relative w-9 h-9 shrink-0">
+                            <div className="w-full h-full rounded-full overflow-hidden bg-gray-200">
                               <img src={chat.avatar} alt={chat.follower} className="object-cover w-full h-full" />
                             </div>
-                            <div className="absolute bottom-0 right-0 w-3 h-3 bg-[#12B76A] border-2 border-white rounded-full"></div>
+                            <div className={`absolute bottom-0 right-0 w-3 h-3 border-2 border-white rounded-full ${chat.isOnline ? 'bg-[#12B76A]' : 'bg-gray-400'}`}></div>
                           </div>
                           <div>
                             <div className="flex items-center gap-1">
@@ -967,30 +1002,6 @@ export default function ChatsPage() {
                           )}
                         </div>
                       </div>
-
-                      <div className="flex items-center gap-4 text-[10px] text-gray-400 font-medium mt-3 border-t border-gray-50 pt-3">
-                        <div className="flex items-center gap-1">
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
-                          <span>{formatTimeRange(chat.scheduledDate, chat.time, chat.duration)}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          {chat.meetingUrl ? (
-                            <>
-                              <img
-                                src="https://static.vecteezy.com/system/resources/thumbnails/022/484/498/small/google-meet-gmeet-icon-logo-symbol-free-png.png"
-                                alt="Google Meet"
-                                className="w-4 h-4 object-contain shrink-0"
-                              />
-                              <span className="text-gray font-semibold">Online</span>
-                            </>
-                          ) : (
-                            <>
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
-                              <span>In-person</span>
-                            </>
-                          )}
-                        </div>
-                      </div>
                     </div>
                   ))
               ) : (
@@ -1021,20 +1032,20 @@ export default function ChatsPage() {
                       <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200">
                         <img src={activeConv.avatar} alt={activeConv.follower} className="object-cover w-full h-full" />
                       </div>
-                      <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-[#12B76A] border-3 border-white rounded-full"></div>
+                      <div className={`absolute bottom-0 right-0 w-3.5 h-3.5 border-3 border-white rounded-full ${activeConv.isOnline ? 'bg-[#12B76A]' : 'bg-gray-400'}`}></div>
                     </div>
                     <div>
                       <h3 className="text-base font-bold text-gray-900">{activeConv.follower}</h3>
                       <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className={`w-2 h-2 rounded-full ${isOtherUserOnline ? 'bg-[#12B76A]' : 'bg-gray-400'}`}></span>
+                        <span className={`w-2 h-2 rounded-full ${activeConv.isOnline ? 'bg-[#12B76A]' : 'bg-gray-400'}`}></span>
                         <span className="text-xs text-gray-400 font-medium">
-                          {isOtherUserOnline ? 'Online' : 'Offline'}
+                          {activeConv.isOnline ? 'Online' : 'Offline'}
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-5 text-gray-400">
+                  <div className="flex items-center gap-1.5 text-gray-400">
                     {activeConv.isCreator && (
                       <button
                         onClick={handleLockToggleClick}
@@ -1200,7 +1211,7 @@ export default function ChatsPage() {
                               )}
                               <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} gap-1 w-full`}>
                               <div className={`flex gap-3 max-w-[85%] items-end ${isMe ? 'flex-row-reverse' : ''}`}>
-                                <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 shrink-0 mb-1">
+                                <div className="w-6 h-6 rounded-full overflow-hidden bg-gray-200 shrink-0 mb-1">
                                   <img src={isMe ? (profilePhoto || '/avatar.png') : activeConv.avatar} alt="Avatar" className="object-cover w-full h-full" />
                                 </div>
                                 <div className="relative">

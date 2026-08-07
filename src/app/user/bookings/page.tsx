@@ -55,6 +55,22 @@ export default function UserBookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Load bookings cache on mount to skip skeletons
+  useEffect(() => {
+    try {
+      const cachedBookings = sessionStorage.getItem('reachly_user_bookings_page_cache');
+      if (cachedBookings) {
+        const cached = JSON.parse(cachedBookings);
+        if (cached.displayName) setDisplayName(cached.displayName);
+        if (cached.profilePhoto) setProfilePhoto(cached.profilePhoto);
+        if (cached.bookings) setBookings(cached.bookings);
+        setLoading(false);
+      }
+    } catch (e) {
+      console.error('Failed to load bookings cache:', e);
+    }
+  }, []);
+
   // Reschedule States
   const [showRescheduleModal, setShowRescheduleModal] = useState<boolean>(false);
   const [bookingToReschedule, setBookingToReschedule] = useState<Booking | null>(null);
@@ -86,12 +102,17 @@ export default function UserBookingsPage() {
 
   const loadData = useCallback(async () => {
     try {
+      let uName = 'Guest';
+      let uPhoto: string | null = null;
+
       const authRes = await fetch('/api/user/me');
       if (authRes.ok) {
         const userData = await authRes.json();
         if (userData.user) {
-          setDisplayName(userData.user.name || 'Guest');
-          setProfilePhoto(userData.creatorProfile?.profilePhoto || userData.user.profilePhoto || null);
+          uName = userData.user.name || 'Guest';
+          uPhoto = userData.creatorProfile?.profilePhoto || userData.user.profilePhoto || null;
+          setDisplayName(uName);
+          setProfilePhoto(uPhoto);
           setIsGuest(false);
         }
       }
@@ -104,24 +125,44 @@ export default function UserBookingsPage() {
       if (bookingsRes.ok) {
         const data = await bookingsRes.json();
         if (data.bookings) {
-          const list = data.bookings.map((b: any) => ({
-            id: b.id,
-            creator: b.creator,
-            username: `@${b.username}`,
-            avatar: b.image || '/Avatars/12.jpg',
-            price: b.price || '2500 PKR',
-            date: b.shortDate,
-            time: b.time,
-            location: b.paymentMethod === 'Guest' ? 'Online' : 'In-person',
-            bio: b.bio || 'No description provided.',
-            originalStatus: b.originalStatus,
-            status: b.status,
-            scheduledDate: b.scheduledDate,
-            isRescheduled: b.isRescheduled || false,
-            meetingUrl: b.meetingUrl,
-            bookingRef: b.bookingRef,
-          }));
+          const list = data.bookings.map((b: any) => {
+            const passed = b.scheduledDate ? isMeetingPassed(b.scheduledDate, b.time) : false;
+            let finalStatus = b.status;
+            if (b.originalStatus === 'cancelled' || b.status === 'Cancelled') {
+              finalStatus = 'Cancelled';
+            } else if (b.status === 'Past' || passed) {
+              finalStatus = 'Past';
+            } else {
+              finalStatus = 'Upcoming';
+            }
+
+            return {
+              id: b.id,
+              creator: b.creator,
+              username: `@${b.username}`,
+              avatar: b.image || '/Avatars/12.jpg',
+              price: b.price || '2500 PKR',
+              date: b.shortDate,
+              time: b.time,
+              location: b.paymentMethod === 'Guest' ? 'Online' : 'In-person',
+              bio: b.bio || 'No description provided.',
+              originalStatus: b.originalStatus,
+              status: finalStatus,
+              scheduledDate: b.scheduledDate,
+              isRescheduled: b.isRescheduled || false,
+              meetingUrl: b.meetingUrl,
+              bookingRef: b.bookingRef,
+            };
+          });
           setBookings(list);
+
+          try {
+            sessionStorage.setItem('reachly_user_bookings_page_cache', JSON.stringify({
+              displayName: uName,
+              profilePhoto: uPhoto,
+              bookings: list
+            }));
+          } catch (e) {}
         }
       }
     } catch (err) {
@@ -528,8 +569,14 @@ export default function UserBookingsPage() {
 
       {/* Reschedule Appointment Modal */}
       {showRescheduleModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[100] p-4">
-          <div className="relative bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl border border-gray-100 w-full max-w-2xl p-6 sm:p-8 flex flex-col overflow-hidden">
+        <div 
+          className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[100] p-4 cursor-pointer"
+          onClick={() => setShowRescheduleModal(false)}
+        >
+          <div 
+            className="relative bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl border border-gray-100 w-full max-w-2xl p-6 sm:p-8 flex flex-col overflow-hidden cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* Close Button */}
             <button
               onClick={() => setShowRescheduleModal(false)}
@@ -657,8 +704,14 @@ export default function UserBookingsPage() {
 
       {/* Cancel Confirmation Modal */}
       {showCancelConfirmModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[100] p-4">
-          <div className="relative bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl border border-gray-100 w-full max-w-md p-6 sm:p-8 flex flex-col items-center text-center overflow-hidden">
+        <div 
+          className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[100] p-4 cursor-pointer"
+          onClick={() => setShowCancelConfirmModal(false)}
+        >
+          <div 
+            className="relative bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl border border-gray-100 w-full max-w-md p-6 sm:p-8 flex flex-col items-center text-center overflow-hidden cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* Close Button */}
             <button
               onClick={() => setShowCancelConfirmModal(false)}

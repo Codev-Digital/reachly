@@ -176,10 +176,60 @@ export default function CreatorSettings() {
     }
   };
 
+  // Load cached settings on mount
+  useEffect(() => {
+    try {
+      const cached = sessionStorage.getItem('reachly_creator_settings_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed.email) setEmail(parsed.email);
+        if (parsed.displayName) setDisplayName(parsed.displayName);
+        if (parsed.profilePhoto) setProfilePhoto(parsed.profilePhoto);
+        if (parsed.coverPhoto) setCoverPhoto(parsed.coverPhoto);
+        if (parsed.shortBio) setShortBio(parsed.shortBio);
+        if (parsed.longBio) setLongBio(parsed.longBio);
+        if (parsed.city) setCity(parsed.city);
+        if (parsed.country) setCountry(parsed.country);
+        if (parsed.selectedLanguages) setSelectedLanguages(parsed.selectedLanguages);
+        if (parsed.selectedNiches) setSelectedNiches(parsed.selectedNiches);
+        if (parsed.instagram) setInstagram(parsed.instagram);
+        if (parsed.tiktok) setTiktok(parsed.tiktok);
+        if (parsed.youtube) setYoutube(parsed.youtube);
+        if (parsed.linkedin) setLinkedin(parsed.linkedin);
+        if (parsed.sessions) setSessions(parsed.sessions);
+        if (parsed.enabledDays) setEnabledDays(parsed.enabledDays);
+        if (parsed.dayTimes) setDayTimes(parsed.dayTimes);
+        if (parsed.duration) setDuration(parsed.duration);
+        if (parsed.locationAddress) setLocationAddress(parsed.locationAddress);
+        setLoading(false);
+      }
+    } catch (e) {}
+  }, []);
+
   // Load Profile, Sessions, & Availability on mount
   useEffect(() => {
     async function loadAllData() {
       try {
+        let cacheEmail = '';
+        let cacheDisplayName = '';
+        let cacheProfilePhoto: string | null = null;
+        let cacheCoverPhoto: string | null = null;
+        let cacheShortBio = '';
+        let cacheLongBio = '';
+        let cacheCity = 'Karachi';
+        let cacheCountry = 'Pakistan';
+        let cacheLanguages: string[] = [];
+        let cacheNiches: string[] = [];
+        let cacheInstagram = '';
+        let cacheTiktok = '';
+        let cacheYoutube = '';
+        let cacheLinkedin = '';
+        let cacheSessionsList: any[] = [];
+        let cacheEnabledDays: Record<string, boolean> = {};
+        let cacheDayTimes: Record<string, { start: string; end: string }> = {};
+        let cacheDuration = '30 minutes';
+        let cacheLocationAddress = '';
+
         const [profileRes, sessionsRes, availRes] = await Promise.all([
           fetch('/api/user/settings'),
           fetch('/api/creator-onboarding/step-3'),
@@ -189,27 +239,43 @@ export default function CreatorSettings() {
         if (profileRes.ok) {
           const data = await profileRes.json();
           if (data.success) {
-            setEmail(data.user?.email || '');
+            cacheEmail = data.user?.email || '';
+            setEmail(cacheEmail);
             if (data.profile) {
-              setDisplayName(data.profile.displayName || data.user?.name || '');
-              setProfilePhoto(data.profile.profilePhoto || data.user?.profilePhoto || null);
-              setCoverPhoto(data.profile.coverPhoto || null);
-              setShortBio(data.profile.shortBio || '');
-              setLongBio(data.profile.longBio || '');
-              setCity(data.profile.city || 'Karachi');
-              setCountry(data.profile.country || 'Pakistan');
-              setSelectedLanguages(data.profile.languages || []);
-              setSelectedNiches(data.profile.niches || []);
+              cacheDisplayName = data.profile.displayName || data.user?.name || '';
+              cacheProfilePhoto = data.profile.profilePhoto || data.user?.profilePhoto || null;
+              cacheCoverPhoto = data.profile.coverPhoto || null;
+              cacheShortBio = data.profile.shortBio || '';
+              cacheLongBio = data.profile.longBio || '';
+              cacheCity = data.profile.city || 'Karachi';
+              cacheCountry = data.profile.country || 'Pakistan';
+              cacheLanguages = data.profile.languages || [];
+              cacheNiches = data.profile.niches || [];
 
               const links = data.profile.socialLinks || {};
-              setInstagram(links.instagram || '');
-              setTiktok(links.tiktok || '');
-              setYoutube(links.youtube || '');
-              setLinkedin(links.linkedin || '');
+              cacheInstagram = links.instagram || '';
+              cacheTiktok = links.tiktok || '';
+              cacheYoutube = links.youtube || '';
+              cacheLinkedin = links.linkedin || '';
+
+              setDisplayName(cacheDisplayName);
+              setProfilePhoto(cacheProfilePhoto);
+              setCoverPhoto(cacheCoverPhoto);
+              setShortBio(cacheShortBio);
+              setLongBio(cacheLongBio);
+              setCity(cacheCity);
+              setCountry(cacheCountry);
+              setSelectedLanguages(cacheLanguages);
+              setSelectedNiches(cacheNiches);
+              setInstagram(cacheInstagram);
+              setTiktok(cacheTiktok);
+              setYoutube(cacheYoutube);
+              setLinkedin(cacheLinkedin);
             } else if (data.user) {
-              // Fallback for edge cases where creator profile is missing
-              setDisplayName(data.user.name || '');
-              setProfilePhoto(data.user.profilePhoto || null);
+              cacheDisplayName = data.user.name || '';
+              cacheProfilePhoto = data.user.profilePhoto || null;
+              setDisplayName(cacheDisplayName);
+              setProfilePhoto(cacheProfilePhoto);
             }
           }
         }
@@ -217,10 +283,11 @@ export default function CreatorSettings() {
         if (sessionsRes.ok) {
           const data = await sessionsRes.json();
           if (data.sessionTypes) {
-            setSessions(data.sessionTypes.map((s: any) => ({
+            cacheSessionsList = data.sessionTypes.map((s: any) => ({
               ...s,
               id: s._id || s.id
-            })));
+            }));
+            setSessions(cacheSessionsList);
           }
         }
 
@@ -229,29 +296,57 @@ export default function CreatorSettings() {
           if (data.availability) {
             const avail = data.availability;
             if (avail.schedule) {
-              const newEnabled: Record<string, boolean> = {};
-              const newTimes: Record<string, { start: string; end: string }> = {};
-
               Object.keys(avail.schedule).forEach((dayKey) => {
                 const s = avail.schedule[dayKey];
-                newEnabled[dayKey] = s.enabled || false;
+                cacheEnabledDays[dayKey] = s.enabled || false;
                 if (s.slots && s.slots.length > 0) {
-                  newTimes[dayKey] = {
+                  cacheDayTimes[dayKey] = {
                     start: to12h(s.slots[0].start),
                     end: to12h(s.slots[0].end),
                   };
                 } else {
-                  newTimes[dayKey] = { start: '09:00 AM', end: '05:00 PM' };
+                  cacheDayTimes[dayKey] = { start: '09:00 AM', end: '05:00 PM' };
                 }
               });
 
-              setEnabledDays(newEnabled);
-              setDayTimes(newTimes);
+              setEnabledDays(cacheEnabledDays);
+              setDayTimes(cacheDayTimes);
             }
-            if (avail.duration) setDuration(avail.duration);
-            if (avail.location) setLocationAddress(avail.location.address || '');
+            if (avail.duration) {
+              cacheDuration = String(avail.duration);
+              setDuration(cacheDuration);
+            }
+            if (avail.location) {
+              cacheLocationAddress = avail.location.address || '';
+              setLocationAddress(cacheLocationAddress);
+            }
           }
         }
+
+        // Save to cache
+        try {
+          sessionStorage.setItem('reachly_creator_settings_cache', JSON.stringify({
+            email: cacheEmail,
+            displayName: cacheDisplayName,
+            profilePhoto: cacheProfilePhoto,
+            coverPhoto: cacheCoverPhoto,
+            shortBio: cacheShortBio,
+            longBio: cacheLongBio,
+            city: cacheCity,
+            country: cacheCountry,
+            selectedLanguages: cacheLanguages,
+            selectedNiches: cacheNiches,
+            instagram: cacheInstagram,
+            tiktok: cacheTiktok,
+            youtube: cacheYoutube,
+            linkedin: cacheLinkedin,
+            sessions: cacheSessionsList,
+            enabledDays: cacheEnabledDays,
+            dayTimes: cacheDayTimes,
+            duration: cacheDuration,
+            locationAddress: cacheLocationAddress
+          }));
+        } catch (e) {}
       } catch (err) {
         console.error('Failed to load settings:', err);
       } finally {
@@ -1465,8 +1560,14 @@ export default function CreatorSettings() {
 
       {/* ============ DELETE ACCOUNT MODAL ============ */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[100] p-4">
-          <div className="relative bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl border border-gray-100 w-full max-w-md p-6 sm:p-8 flex flex-col items-center text-center overflow-hidden">
+        <div 
+          className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[100] p-4 cursor-pointer"
+          onClick={() => setShowDeleteModal(false)}
+        >
+          <div 
+            className="relative bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl border border-gray-100 w-full max-w-md p-6 sm:p-8 flex flex-col items-center text-center overflow-hidden cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* Close Button */}
             <button
               onClick={() => setShowDeleteModal(false)}

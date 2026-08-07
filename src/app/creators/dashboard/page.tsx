@@ -55,6 +55,24 @@ const CreatorDashboard = () => {
   const [bookingsList, setBookingsList] = useState<any[]>([]);
   const [loadingData, setLoadingData] = useState(true);
 
+  // Synchronously load from sessionStorage cache on mount to bypass skeleton loading
+  useEffect(() => {
+    try {
+      const cachedCreatorDashboard = sessionStorage.getItem('reachly_creator_dashboard_cache');
+      if (cachedCreatorDashboard) {
+        const cached = JSON.parse(cachedCreatorDashboard);
+        if (cached.displayName) setDisplayName(cached.displayName);
+        if (cached.profilePhoto) setProfilePhoto(cached.profilePhoto);
+        if (cached.username) setUsername(cached.username);
+        if (cached.dashboardStats) setDashboardStats(cached.dashboardStats);
+        if (cached.bookingsList) setBookingsList(cached.bookingsList);
+        setLoadingData(false);
+      }
+    } catch (e) {
+      console.error('Failed to load creator dashboard cache:', e);
+    }
+  }, []);
+
   // Earnings chart state
   const [chartData, setChartData] = useState<{ month: string; earnings: number; bookings: number }[]>([]);
   const [activeBarIndex, setActiveBarIndex] = useState<number | null>(null);
@@ -195,6 +213,17 @@ const CreatorDashboard = () => {
           if (data.success) {
             setDashboardStats(data.stats);
             setBookingsList(data.bookings || []);
+
+            // Save to cache
+            try {
+              sessionStorage.setItem('reachly_creator_dashboard_cache', JSON.stringify({
+                displayName: displayName || (data.creatorProfile?.displayName || data.user?.name || ''),
+                profilePhoto: profilePhoto || (data.creatorProfile?.profilePhoto || null),
+                username: username || (data.creatorProfile?.username || ''),
+                dashboardStats: data.stats,
+                bookingsList: data.bookings || []
+              }));
+            } catch (e) {}
           }
         }
       } catch (err) {
@@ -204,7 +233,7 @@ const CreatorDashboard = () => {
       }
     }
     loadData();
-  }, []);
+  }, [displayName, profilePhoto, username]);
 
   // Fetch reschedule slots when date changes
   useEffect(() => {
@@ -884,8 +913,14 @@ const CreatorDashboard = () => {
 
       {/* Cancel Appointment Modal */}
       {showCancelModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[100] p-4">
-          <div className="relative bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl border border-gray-100 w-full max-w-md p-6 sm:p-8 flex flex-col items-center text-center overflow-hidden">
+        <div 
+          className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[100] p-4 cursor-pointer"
+          onClick={() => setShowCancelModal(false)}
+        >
+          <div 
+            className="relative bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl border border-gray-100 w-full max-w-md p-6 sm:p-8 flex flex-col items-center text-center overflow-hidden cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* Close Button */}
             <button
               onClick={() => setShowCancelModal(false)}
@@ -931,9 +966,19 @@ const CreatorDashboard = () => {
 
       {/* Reschedule Appointment Modal */}
       {showRescheduleModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[100] p-4">
+        <div 
+          className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[100] p-4 cursor-pointer"
+          onClick={() => {
+            setShowRescheduleModal(false);
+            setIsRescheduleSuccess(false);
+            setBookingToReschedule(null);
+          }}
+        >
           {isRescheduleSuccess ? (
-            <div className="relative bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl border border-gray-100 w-full max-w-md p-6 sm:p-8 flex flex-col items-center text-center overflow-hidden">
+            <div 
+              className="relative bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl border border-gray-100 w-full max-w-md p-6 sm:p-8 flex flex-col items-center text-center overflow-hidden cursor-default"
+              onClick={(e) => e.stopPropagation()}
+            >
               <button
                 onClick={() => {
                   setShowRescheduleModal(false);
@@ -978,7 +1023,10 @@ const CreatorDashboard = () => {
               </button>
             </div>
           ) : (
-            <div className="relative bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl border border-gray-100 w-full max-w-2xl p-6 sm:p-8 flex flex-col overflow-hidden">
+            <div 
+              className="relative bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl border border-gray-100 w-full max-w-2xl p-6 sm:p-8 flex flex-col overflow-hidden cursor-default"
+              onClick={(e) => e.stopPropagation()}
+            >
 
               {/* Header */}
               <div className="mb-6 text-left">

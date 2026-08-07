@@ -190,20 +190,24 @@ export const sendEmail = async (
     return;
   }
 
-  const transporter = nodemailer.createTransport({
-    host,
-    port,
-    secure: port === 465,
-    auth: { user, pass },
-    tls: { rejectUnauthorized: false }, // allow self-signed certs in dev
-  });
+  try {
+    const transporter = nodemailer.createTransport({
+      host,
+      port,
+      secure: port === 465,
+      auth: { user, pass },
+      tls: { rejectUnauthorized: false }, // allow self-signed certs in dev
+    });
 
-  await transporter.sendMail({
-    from: `"Reachly" <${user}>`,
-    to,
-    subject,
-    html,
-  });
+    await transporter.sendMail({
+      from: `"Reachly" <${user}>`,
+      to,
+      subject,
+      html,
+    });
+  } catch (error) {
+    console.error('SMTP Email dispatch failed:', error);
+  }
 };
 
 export const checkPasswordStrength = (

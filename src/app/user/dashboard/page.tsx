@@ -52,6 +52,26 @@ export default function UserDashboard() {
   const BOOKINGS_PER_PAGE = 3;
   const [favorites, setFavorites] = useState<string[]>([]); // creator usernames
 
+  // Synchronously load from sessionStorage cache on mount to bypass skeleton loading
+  useEffect(() => {
+    try {
+      const cachedDashboard = sessionStorage.getItem('reachly_user_dashboard_cache');
+      if (cachedDashboard) {
+        const cached = JSON.parse(cachedDashboard);
+        if (cached.displayName) setDisplayName(cached.displayName);
+        if (cached.profilePhoto) setProfilePhoto(cached.profilePhoto);
+        if (cached.favorites) setFavorites(cached.favorites);
+        if (cached.creatorsList) setCreatorsList(cached.creatorsList);
+        if (cached.realBookingsList) setRealBookingsList(cached.realBookingsList);
+        setIsAuthenticated(true);
+        setUseFallback(false);
+        setLoading(false);
+      }
+    } catch (e) {
+      console.error('Failed to load dashboard cache:', e);
+    }
+  }, []);
+
   // User details
   const [displayName, setDisplayName] = useState<string>('James Richard');
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
@@ -143,6 +163,11 @@ export default function UserDashboard() {
 
   const loadData = useCallback(async () => {
     try {
+      let uName = 'James Richard';
+      let uPhoto: string | null = null;
+      let userFavorites: string[] = [];
+      let creators: any[] = [];
+
       // Execute all dashboard requests in parallel to eliminate sequential network latency
       const [meRes, bookingsRes, favRes, creatorsRes] = await Promise.all([
         fetch('/api/user/me'),
@@ -163,8 +188,10 @@ export default function UserDashboard() {
             router.push('/user/pending-approval');
             return;
           }
-          setDisplayName(data.user.name || 'James Richard');
-          setProfilePhoto(data.creatorProfile?.profilePhoto || data.user.profilePhoto || null);
+          uName = data.user.name || 'James Richard';
+          uPhoto = data.creatorProfile?.profilePhoto || data.user.profilePhoto || null;
+          setDisplayName(uName);
+          setProfilePhoto(uPhoto);
         }
       } else {
         setIsAuthenticated(false);
@@ -172,23 +199,25 @@ export default function UserDashboard() {
 
       if (favRes.ok) {
         const favData = await favRes.json();
-        setFavorites(favData.favouriteCreators || []);
+        userFavorites = favData.favouriteCreators || [];
+        setFavorites(userFavorites);
       }
 
       if (creatorsRes.ok) {
         const creatorsData = await creatorsRes.json();
         if (creatorsData.success && creatorsData.creators?.length) {
-          setCreatorsList(creatorsData.creators);
+          creators = creatorsData.creators;
+          setCreatorsList(creators);
         }
       }
 
       if (bookingsRes.ok) {
         const bData = await bookingsRes.json();
-        if (bData.bookings && bData.bookings.length > 0) {
-          const upcomingArr: DisplayBooking[] = [];
-          const pastArr: DisplayBooking[] = [];
-          const cancelledArr: DisplayBooking[] = [];
+        let upcomingArr: DisplayBooking[] = [];
+        let pastArr: DisplayBooking[] = [];
+        let cancelledArr: DisplayBooking[] = [];
 
+        if (bData.bookings && bData.bookings.length > 0) {
           bData.bookings.forEach((b: any) => {
             const displayObj: DisplayBooking = {
               id: b.id,
@@ -225,6 +254,18 @@ export default function UserDashboard() {
         } else {
           setUseFallback(true);
         }
+
+        // Save all fetched data into cache
+        try {
+          const cacheData = {
+            displayName: uName,
+            profilePhoto: uPhoto,
+            favorites: userFavorites,
+            creatorsList: creators,
+            realBookingsList: { Upcoming: upcomingArr, Past: pastArr, Cancelled: cancelledArr }
+          };
+          sessionStorage.setItem('reachly_user_dashboard_cache', JSON.stringify(cacheData));
+        } catch (e) {}
       } else {
         setUseFallback(true);
       }
@@ -868,8 +909,14 @@ export default function UserDashboard() {
 
       {/* Cancel Confirmation Modal */}
       {showCancelConfirmModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[100] p-4">
-          <div className="relative bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl border border-gray-100 w-full max-w-md p-6 sm:p-8 flex flex-col items-center text-center overflow-hidden">
+        <div 
+          className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[100] p-4 cursor-pointer"
+          onClick={() => setShowCancelConfirmModal(false)}
+        >
+          <div 
+            className="relative bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl border border-gray-100 w-full max-w-md p-6 sm:p-8 flex flex-col items-center text-center overflow-hidden cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* Close Button */}
             <button
               onClick={() => setShowCancelConfirmModal(false)}

@@ -146,6 +146,10 @@ export async function GET(request: NextRequest) {
                     ? `PKR ${targetBooking.finalPrice.toLocaleString()}`
                     : '';
 
+                const isOnline = otherUser?.lastActiveAt
+                    ? Date.now() - new Date(otherUser.lastActiveAt).getTime() < 2 * 60 * 1000
+                    : false;
+
                 return {
                     id: convId,
                     conversationId: convId,
@@ -159,6 +163,7 @@ export async function GET(request: NextRequest) {
                     avatar,
                     image: avatar,
                     email,
+                    isOnline,
                     lastMessage: lastMsg?.content || '',
                     lastMessageTime: lastMsg?.createdAt || null,
                     unreadCount,
