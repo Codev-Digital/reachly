@@ -1208,76 +1208,83 @@ export default function UserChatsPage() {
                     {/* Input Area / Recording Panel */}
                     {isChatLocked ? (
                       <div className="p-5 sm:p-6 bg-gray-50 border-t border-gray-100 flex items-center justify-center text-sm text-gray-400 font-medium select-none shrink-0 gap-2">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
                         <span>You can't send a message unless creator unlocks this chat</span>
                       </div>
                     ) : (
                       <div className="p-2 sm:p-2.5 bg-white border-t border-gray-100 shrink-0">
                         {/* Upload UI */}
                         {isUploading && (
-                          <div className="mb-4 flex flex-col items-end w-full">
-                            <div className="bg-[#0012FF] text-white rounded-l-2xl rounded-tr-2xl p-4 shadow-sm relative flex items-center gap-4 min-w-[200px]">
-                              <div className="relative w-10 h-10 shrink-0 flex items-center justify-center">
-                                <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
-                                  <path className="text-white/20" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" />
-                                  <path className="text-white transition-all duration-300" strokeDasharray={`${uploadProgress}, 100`} d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" />
-                                </svg>
-                                <button onClick={cancelUpload} className="absolute inset-0 flex items-center justify-center hover:bg-white/10 rounded-full transition-colors">
-                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-                                </button>
+                          <div className="mb-2 w-full bg-gray-50 border border-gray-100 rounded-xl p-2.5 flex items-center justify-between shadow-xs">
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                              <div className="w-8 h-8 rounded-lg bg-[#0012FF]/10 flex items-center justify-center text-[#0012FF] shrink-0">
+                                <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10" strokeDasharray="32" strokeDashoffset="16" /></svg>
                               </div>
-                              <div className="flex flex-col min-w-0">
-                                <span className="text-sm font-semibold truncate max-w-[120px]">{uploadFile?.name}</span>
-                                <span className="text-xs opacity-80">{uploadProgress}% uploaded</span>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex justify-between items-center mb-1 text-[11px] font-semibold text-gray-700">
+                                  <span className="truncate pr-4">{uploadFile?.name}</span>
+                                  <span className="shrink-0">{uploadProgress}%</span>
+                                </div>
+                                <div className="w-full bg-gray-200/60 rounded-full h-1">
+                                  <div className="bg-[#0012FF] h-1 rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%` }}></div>
+                                </div>
                               </div>
                             </div>
+                            <button onClick={cancelUpload} className="ml-3 p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors shrink-0">
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                            </button>
                           </div>
                         )}
                         {uploadError && uploadFile && !isUploading && (
-                          <div className="mb-4 flex flex-col items-end w-full">
-                            <div className="bg-red-50 text-red-600 rounded-l-2xl rounded-tr-2xl p-4 shadow-sm relative flex items-center gap-4 min-w-[200px] border border-red-100 pr-10">
-                              <button onClick={clearUpload} className="absolute top-2 right-2 p-1 text-red-400 hover:text-red-600 transition-colors hover:bg-red-100 rounded-full">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-                              </button>
-                              <div className="flex flex-col min-w-0">
-                                <span className="text-sm font-semibold truncate max-w-[150px]">{uploadFile.name}</span>
-                                <span className="text-xs">Upload failed or canceled</span>
+                          <div className="mb-2 w-full bg-red-50/50 border border-red-100 rounded-xl p-2.5 flex items-center justify-between shadow-xs">
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                              <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center text-red-600 shrink-0">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
                               </div>
-                              <button onClick={retryUpload} className="w-10 h-10 shrink-0 bg-red-100 hover:bg-red-200 rounded-full flex items-center justify-center transition-colors">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M2.5 2v6h6M2.66 15.57a10 10 0 1 0 .57-8.38l-5.67-5.67" /></svg>
+                              <div className="flex-1 min-w-0 flex flex-col">
+                                <span className="text-[11px] font-semibold text-red-700 truncate">{uploadFile.name}</span>
+                                <span className="text-[10px] text-red-500 font-medium">Upload failed or canceled</span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1 shrink-0 ml-3">
+                              <button onClick={retryUpload} className="p-1.5 text-red-600 hover:bg-red-100 rounded-full transition-colors" title="Retry">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M2.5 2v6h6M2.66 15.57a10 10 0 1 0 .57-8.38l-5.67-5.67" /></svg>
+                              </button>
+                              <button onClick={clearUpload} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
                               </button>
                             </div>
                           </div>
                         )}
                         {previewFile && !isUploading && (
-                          <div className="mb-4 flex flex-col items-end w-full">
-                            <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm relative flex flex-col gap-3 min-w-[240px]">
-                              <div className="flex justify-between items-center w-full pb-2 border-b border-gray-100">
-                                <span className="text-sm font-semibold text-gray-700">Preview Attachment</span>
-                                <button onClick={() => setPreviewFile(null)} className="text-gray-400 hover:text-gray-600 transition-colors">
-                                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                          <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-[110]" onClick={() => setPreviewFile(null)}>
+                            <div className="bg-white border border-gray-200 rounded-3xl p-6 shadow-2xl relative flex flex-col gap-4 w-[90%] max-w-[450px]" onClick={(e) => e.stopPropagation()}>
+                              <div className="flex justify-between items-center w-full pb-3 border-b border-gray-100">
+                                <span className="text-base font-bold text-gray-800">Preview Attachment</span>
+                                <button onClick={() => setPreviewFile(null)} className="text-gray-400 hover:text-gray-600 transition-colors p-1 hover:bg-gray-100 rounded-full">
+                                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
                                 </button>
                               </div>
 
-                              <div className="flex items-center justify-center bg-gray-50 rounded-xl overflow-hidden min-h-[120px] max-h-[240px]">
+                              <div className="flex items-center justify-center bg-gray-50 rounded-2xl overflow-hidden min-h-[200px] max-h-[350px] p-2 border border-gray-100">
                                 {previewFile.type.startsWith('image/') ? (
-                                  <img src={URL.createObjectURL(previewFile)} alt="Preview" className="max-w-full max-h-[240px] object-contain" />
+                                  <img src={URL.createObjectURL(previewFile)} alt="Preview" className="max-w-full max-h-[330px] object-contain rounded-lg" />
                                 ) : previewFile.type.startsWith('video/') ? (
-                                  <video src={URL.createObjectURL(previewFile)} className="max-w-full max-h-[240px] object-contain" controls />
+                                  <video src={URL.createObjectURL(previewFile)} className="max-w-full max-h-[330px] object-contain rounded-lg" controls />
                                 ) : (
-                                  <div className="flex flex-col items-center gap-2 p-6 text-gray-500">
-                                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                                    <span className="text-sm font-medium text-center truncate max-w-[200px]">{previewFile.name}</span>
-                                    <span className="text-xs">{(previewFile.size / 1024 / 1024).toFixed(2)} MB</span>
+                                  <div className="flex flex-col items-center gap-3 p-8 text-gray-500">
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                                    <span className="text-sm font-semibold text-center truncate max-w-[280px]">{previewFile.name}</span>
+                                    <span className="text-xs opacity-75">{(previewFile.size / 1024 / 1024).toFixed(2)} MB</span>
                                   </div>
                                 )}
                               </div>
 
-                              <div className="flex justify-end gap-2 mt-1">
-                                <button onClick={() => setPreviewFile(null)} className="px-4 py-2 text-sm font-medium text-gray-500 hover:bg-gray-100 rounded-full transition-colors">
+                              <div className="flex justify-end gap-3 mt-2">
+                                <button onClick={() => setPreviewFile(null)} className="px-5 py-2.5 text-sm font-semibold text-gray-500 hover:bg-gray-100 rounded-full transition-colors cursor-pointer">
                                   Cancel
                                 </button>
-                                <button onClick={() => { startUpload(previewFile); setPreviewFile(null); }} className="px-5 py-2 text-sm font-semibold text-white bg-[#0012FF] hover:bg-[#0010d0] rounded-full transition-colors shadow-sm flex items-center gap-2">
+                                <button onClick={() => { startUpload(previewFile); setPreviewFile(null); }} className="px-6 py-2.5 text-sm font-bold text-white bg-[#0012FF] hover:bg-[#0010d0] rounded-full transition-colors shadow-lg active:scale-98 flex items-center gap-2 cursor-pointer">
                                   <span>Send</span>
                                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
                                 </button>
@@ -1324,27 +1331,27 @@ export default function UserChatsPage() {
                                   }
                                 }}
                                 placeholder="Type something..."
-                                className="w-full bg-[#F3F4F6] border-0 rounded-full py-2 pl-4 pr-14 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0012FF]/10 transition-all"
+                                className="w-full bg-[#F3F4F6] border-0 rounded-full py-2.5 pl-5 pr-18 text-xs sm:text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0012FF]/10 transition-all"
                               />
                               <button
                                 onClick={triggerFileInput}
-                                className="absolute right-8 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                                className="absolute right-10 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                                 title="Attach File"
                               >
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
                               </button>
                               <button
                                 onClick={startRecording}
-                                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                                 title="Record Voice Note"
                               >
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" y1="19" x2="12" y2="23" /><line x1="8" y1="23" x2="16" y2="23" /></svg>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" y1="19" x2="12" y2="23" /><line x1="8" y1="23" x2="16" y2="23" /></svg>
                               </button>
                             </div>
                           )}
                           {!isRecording && (
-                            <button onClick={handleSendMessage} className="w-8.5 h-8.5 rounded-full bg-[#0012FF] hover:bg-[#0010d0] flex items-center justify-center text-white shrink-0 shadow-md transition-transform active:scale-95">
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginLeft: '-1.5px' }}>
+                            <button onClick={handleSendMessage} className="w-10 h-10 rounded-full bg-[#0012FF] hover:bg-[#0010d0] flex items-center justify-center text-white shrink-0 shadow-md transition-transform active:scale-95">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginLeft: '-1.5px' }}>
                                 <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
                               </svg>
                             </button>
