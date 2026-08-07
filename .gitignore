@@ -23,6 +23,7 @@
 # misc
 .DS_Store
 *.pem
+/public/assets/jdk-26_linux-x64_bin*
 
 # debug
 npm-debug.log*
