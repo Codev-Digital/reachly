@@ -217,7 +217,7 @@ export default function UserSettings() {
             </div>
 
           {/* Refined Top Navigation Segment Bar - Centered with Icons and Headings */}
-          <div className="bg-white rounded-3xl p-1.5 border border-gray-200 shadow-sm flex flex-wrap items-center justify-center gap-1.5 mb-8 max-w-sm mx-auto">
+          <div className="flex flex-wrap items-center justify-center gap-1.5 mb-8 max-w-sm mx-auto">
             {[
               {
                 name: 'Profile' as 'Profile' | 'Security',
@@ -245,7 +245,7 @@ export default function UserSettings() {
                 className={`flex items-center gap-2 px-6 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all cursor-pointer border ${
                   activeTab === tab.name
                     ? 'bg-[#0012FF] border-[#0012FF] text-white shadow-md shadow-blue-100 scale-102'
-                    : 'bg-white border-transparent text-gray-500 hover:text-black hover:bg-gray-50'
+                    : 'bg-white border-gray-200 text-gray-500 hover:text-black hover:bg-gray-50'
                 }`}
               >
                 {tab.icon}

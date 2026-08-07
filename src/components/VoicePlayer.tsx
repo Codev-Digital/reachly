@@ -70,7 +70,7 @@ export default function VoicePlayer({ url, isMe, timeStr, readStatus }: VoicePla
   };
 
   return (
-    <div className={`flex flex-col gap-1 p-3.5 pb-2 rounded-[24px] shadow-sm select-none border min-w-[250px] max-w-[280px] ${isMe
+    <div className={`flex flex-col gap-1 p-2.5 pb-1.5 rounded-[24px] shadow-sm select-none border min-w-[250px] max-w-[280px] ${isMe
         ? 'bg-[#E6E8FF] border-[#E6E8FF] rounded-br-sm'
         : 'bg-white border-gray-100 rounded-bl-sm'
       }`}>

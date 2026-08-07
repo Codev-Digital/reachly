@@ -55,6 +55,29 @@ const formatMsgTime = (dateStr: string) => {
   return `${hours}:${minutes}${ampm}`;
 };
 
+const formatMsgDate = (dateStr: string | null): string => {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  const now = new Date();
+  
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+  const msgDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+  if (msgDate.getTime() === today.getTime()) {
+    return 'Today';
+  } else if (msgDate.getTime() === yesterday.getTime()) {
+    return 'Yesterday';
+  } else {
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  }
+};
+
 // Format scheduled time range e.g. "Sat at 03:00 PM to 05:00 PM"
 const formatTimeRange = (scheduledDate: string, timeStr: string, durationStr: string): string => {
   if (!scheduledDate || !timeStr) return timeStr || '';
@@ -290,13 +313,23 @@ export default function ChatsPage() {
     }
   };
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const scrollToBottom = (behavior: 'smooth' | 'auto' = 'smooth') => {
+    const container = document.getElementById('chat-messages-container');
+    if (container) {
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: behavior
+      });
+    }
   };
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    if (!loadingMessages) {
+      scrollToBottom('auto');
+      const t = setTimeout(() => scrollToBottom('smooth'), 100);
+      return () => clearTimeout(t);
+    }
+  }, [messages, loadingMessages]);
 
   // Fetch creator data
   useEffect(() => {
@@ -786,7 +819,7 @@ export default function ChatsPage() {
     <div className="fixed inset-0 flex flex-col bg-[#F8F8FA] overflow-hidden">
       <CreatorDashboardNav profilePhoto={profilePhoto} displayName={displayName} />
 
-      <main className="flex-1 max-w-[1536px] w-full mx-auto px-4 sm:px-6 lg:px-10 py-4 lg:py-6 flex flex-col min-h-0">
+      <main className="flex-1 max-w-[1536px] w-full mx-auto px-4 sm:px-6 lg:px-10 py-4 lg:py-4 flex flex-col min-h-0">
         {/* <h1
           className="font-normal text-[34px] leading-[34px] tracking-[0] text-black mb-3 lg:mb-5 shrink-0"
           style={{ fontFamily: 'Anton, sans-serif' }}
@@ -794,7 +827,7 @@ export default function ChatsPage() {
           Chats
         </h1> */}
 
-        <div className="flex-grow flex flex-col lg:flex-row gap-6 min-h-0 mb-0 lg:mb-6 h-[calc(100dvh-120px)] lg:h-full">
+        <div className="flex-1 flex flex-col lg:flex-row gap-6 min-h-0 mb-0">
 
           {/* Left Sidebar */}
           <div className={`w-full lg:w-[380px] flex flex-col gap-4 h-full lg:h-full shrink-0 ${activeChat ? 'hidden lg:flex' : 'flex'}`}>
@@ -973,7 +1006,7 @@ export default function ChatsPage() {
             {activeConv ? (
               <>
                 {/* Header */}
-                <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between shrink-0">
+                <div className="px-6 py-2 border-b border-gray-100 flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => setActiveChat(null)}
@@ -985,7 +1018,7 @@ export default function ChatsPage() {
                     </button>
 
                     <div className="relative">
-                      <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200">
+                      <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200">
                         <img src={activeConv.avatar} alt={activeConv.follower} className="object-cover w-full h-full" />
                       </div>
                       <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-[#12B76A] border-3 border-white rounded-full"></div>
@@ -1139,39 +1172,48 @@ export default function ChatsPage() {
                 ) : (
                   <>
                     {/* Chat Messages */}
-                    <div className="flex-1 overflow-y-auto p-6 sm:p-8 flex flex-col gap-6 bg-[#FAFAFA]">
-                      <div className="relative flex items-center justify-center py-4 shrink-0">
-                        <div className="absolute inset-x-0 h-px bg-gray-200/60"></div>
-                        <span className="relative bg-[#FAFAFA] px-4 text-[11px] font-medium text-gray-400">
-                          {activeConv.shortDate}
-                        </span>
-                      </div>
+                    <div id="chat-messages-container" className="flex-1 overflow-y-auto p-6 sm:p-8 flex flex-col gap-6 bg-[#FAFAFA]">
 
                       {loadingMessages ? (
                         <div className="flex-grow flex items-center justify-center">
                           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0012FF]"></div>
                         </div>
                       ) : messages.length > 0 ? (
-                        messages.map((msg) => {
+                        messages.map((msg, index) => {
                           const isMe = msg.senderRole === 'creator';
                           const isAudio = isAudioMsg(msg.content);
+
+                          const prevMsg = index > 0 ? messages[index - 1] : null;
+                          const currentDateStr = formatMsgDate(msg.createdAt);
+                          const prevDateStr = prevMsg ? formatMsgDate(prevMsg.createdAt) : null;
+                          const showDateSeparator = currentDateStr !== prevDateStr;
+
                           return (
-                            <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} gap-1 w-full`}>
+                            <React.Fragment key={msg.id}>
+                              {showDateSeparator && (
+                                <div className="relative flex items-center justify-center py-4 shrink-0 w-full">
+                                  <div className="absolute inset-x-0 h-px bg-gray-200/60"></div>
+                                  <span className="relative bg-[#FAFAFA] px-4 text-[11px] font-medium text-gray-400">
+                                    {currentDateStr}
+                                  </span>
+                                </div>
+                              )}
+                              <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} gap-1 w-full`}>
                               <div className={`flex gap-3 max-w-[85%] items-end ${isMe ? 'flex-row-reverse' : ''}`}>
                                 <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 shrink-0 mb-1">
                                   <img src={isMe ? (profilePhoto || '/avatar.png') : activeConv.avatar} alt="Avatar" className="object-cover w-full h-full" />
                                 </div>
                                 <div className="relative">
                                   {msg.attachment ? (
-                                    <div className={`p-4 shadow-sm relative flex flex-col gap-2 ${isMe ? 'bg-[#E6E8FF] text-gray-800 rounded-[20px] rounded-br-sm' : 'bg-white border border-gray-100 text-gray-800 rounded-[20px] rounded-bl-sm'}`}>
+                                    <div className={`p-2.5 shadow-sm relative flex flex-col gap-1.5 ${isMe ? 'bg-[#E6E8FF] text-gray-800 rounded-[16px] rounded-br-sm' : 'bg-white border border-gray-100 text-gray-800 rounded-[16px] rounded-bl-sm'}`}>
                                       {msg.attachment.fileType === 'image' && (
                                         <div onClick={() => setLightboxMedia({ url: msg.attachment!.url, type: 'image' })}>
-                                          <img src={msg.attachment.url} alt="Attachment" className="max-w-[240px] max-h-[240px] min-w-[160px] min-h-[120px] bg-black/10 rounded-lg object-cover cursor-pointer hover:opacity-90 transition-opacity" />
+                                          <img src={msg.attachment.url} alt="Attachment" className="max-w-[240px] max-h-[240px] min-w-[160px] min-h-[120px] bg-black/10 rounded-lg object-cover cursor-pointer hover:opacity-90 transition-opacity" onLoad={() => scrollToBottom('auto')} />
                                         </div>
                                       )}
                                       {msg.attachment.fileType === 'video' && (
                                         <div className="relative cursor-pointer group" onClick={() => setLightboxMedia({ url: msg.attachment!.url, type: 'video' })}>
-                                          <video src={`${msg.attachment.url}#t=0.1`} preload="metadata" playsInline className="max-w-[240px] max-h-[240px] min-w-[160px] min-h-[120px] bg-black/10 rounded-lg object-cover pointer-events-none" />
+                                          <video src={`${msg.attachment.url}#t=0.1`} preload="metadata" playsInline className="max-w-[240px] max-h-[240px] min-w-[160px] min-h-[120px] bg-black/10 rounded-lg object-cover pointer-events-none" onLoadedMetadata={() => scrollToBottom('auto')} />
                                           <div className="absolute inset-0 flex items-center justify-center bg-black/10 group-hover:bg-black/20 transition-colors rounded-lg">
                                             <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center shadow-md">
                                               <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="text-gray-900 ml-1"><polygon points="5 3 19 12 5 21 5 3" /></svg>
@@ -1222,7 +1264,7 @@ export default function ChatsPage() {
                                         }
                                       />
                                     ) : (
-                                      <div className={`${isMe ? 'bg-[#E6E8FF] text-gray-800' : 'bg-white border border-gray-100 text-gray-800'} text-[13px] pt-3 pb-2 px-4 rounded-[20px] ${isMe ? 'rounded-br-sm' : 'rounded-bl-sm'} shadow-xs leading-relaxed break-all min-w-[80px]`}>
+                                      <div className={`${isMe ? 'bg-[#E6E8FF] text-gray-800' : 'bg-white border border-gray-100 text-gray-800'} text-[13px] py-2 px-3.5 rounded-[16px] ${isMe ? 'rounded-br-sm' : 'rounded-bl-sm'} shadow-xs leading-relaxed break-all min-w-[80px]`}>
                                         <span>{msg.content}</span>
                                         <span className="float-right mt-3 ml-2.5 text-[10px] text-gray-400 font-medium inline-flex items-center gap-1 select-none shrink-0 translate-y-[2px]">
                                           {formatMsgTime(msg.createdAt)}
@@ -1245,6 +1287,7 @@ export default function ChatsPage() {
                                 </div>
                               </div>
                             </div>
+                          </React.Fragment>
                           );
                         })
                       ) : (
@@ -1277,7 +1320,7 @@ export default function ChatsPage() {
                         <span>This chat is locked. Click the lock icon in the header to unlock.</span>
                       </div>
                     ) : (
-                      <div className="p-4 sm:p-6 bg-white border-t border-gray-100 shrink-0">
+                      <div className="p-2 sm:p-2.5 bg-white border-t border-gray-100 shrink-0">
                         {/* Upload UI */}
                         {isUploading && (
                           <div className="mb-4 flex flex-col items-end w-full">
@@ -1387,27 +1430,27 @@ export default function ChatsPage() {
                                   }
                                 }}
                                 placeholder="Type something..."
-                                className="w-full bg-[#F3F4F6] border-0 rounded-full py-4 pl-6 pr-20 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0012FF]/10 transition-all"
+                                className="w-full bg-[#F3F4F6] border-0 rounded-full py-2 pl-4 pr-14 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0012FF]/10 transition-all"
                               />
                               <button
                                 onClick={triggerFileInput}
-                                className="absolute right-12 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                                className="absolute right-8 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                                 title="Attach File"
                               >
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
                               </button>
                               <button
                                 onClick={startRecording}
-                                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                                 title="Record Voice Note"
                               >
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" y1="19" x2="12" y2="23" /><line x1="8" y1="23" x2="16" y2="23" /></svg>
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" y1="19" x2="12" y2="23" /><line x1="8" y1="23" x2="16" y2="23" /></svg>
                               </button>
                             </div>
                           )}
                           {!isRecording && (
-                            <button onClick={handleSendMessage} className="w-14 h-14 rounded-full bg-[#0012FF] hover:bg-[#0010d0] flex items-center justify-center text-white shrink-0 shadow-md transition-transform active:scale-95">
-                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginLeft: '-2px' }}>
+                            <button onClick={handleSendMessage} className="w-8.5 h-8.5 rounded-full bg-[#0012FF] hover:bg-[#0010d0] flex items-center justify-center text-white shrink-0 shadow-md transition-transform active:scale-95">
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginLeft: '-1.5px' }}>
                                 <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
                               </svg>
                             </button>
