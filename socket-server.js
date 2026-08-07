@@ -128,7 +128,7 @@ wss.on('connection', (ws) => {
 
       // ── MESSAGE ───────────────────────────────────────────────────────────
       else if (data.type === 'message') {
-        const { conversationId, senderId, senderRole, content } = data;
+        const { conversationId, senderId, senderRole, content, tempId } = data;
         if (!conversationId || !senderId || !senderRole || !content) {
           console.warn('Invalid message structure:', data);
           return;
@@ -178,7 +178,7 @@ wss.on('connection', (ws) => {
               read: isRead,
               createdAt: newMsg.createdAt,
               attachment: data.attachment || undefined,
-              tempId: data.tempId || undefined,
+              tempId: tempId || data.tempId || undefined,
             },
           });
           roomClients.forEach(client => {

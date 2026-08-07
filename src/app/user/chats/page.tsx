@@ -448,7 +448,7 @@ export default function UserChatsPage() {
 
   // Poll every 15 seconds
   useEffect(() => {
-    const id = setInterval(fetchConversations, 15000);
+    const id = setInterval(fetchConversations, 7000);
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         fetchConversations();
@@ -463,15 +463,27 @@ export default function UserChatsPage() {
 
   // WebSocket + message history
   useEffect(() => {
+    const currentConv = conversations.find(c => c.id === activeChat);
+
     setIsOtherUserOnline(false);
     if (!activeChat) {
       setMessages([]);
       return;
     }
 
-    setConversations(prev =>
-      prev.map(c => (c.id === activeChat ? { ...c, unreadCount: 0 } : c))
-    );
+    setConversations(prev => {
+      const updated = prev.map(c => (c.id === activeChat ? { ...c, unreadCount: 0 } : c));
+      try {
+        sessionStorage.setItem('reachly_user_conversations_cache', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
+
+    fetch('/api/conversations/mark-read', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ conversationId: activeChat, role: 'user' })
+    }).catch(console.error);
 
     // Try to load messages from cache immediately to skip spinner
     try {
@@ -588,6 +600,16 @@ export default function UserChatsPage() {
   }, [activeChat]);
 
   const handleSendMessage = () => {
+    if (previewFile) {
+      startUpload(previewFile);
+      setPreviewFile(null);
+      const text = message.trim();
+      if (!text) {
+        setMessage('');
+        return;
+      }
+    }
+
     const trimmed = message.trim();
     if (!trimmed || !activeChat || !userId || sendingRef.current) return;
 

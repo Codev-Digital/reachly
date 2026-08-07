@@ -211,8 +211,10 @@ export default function ChatsPage() {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const startUpload = async (file: File) => {
+  const startUpload = async (file: File, roleOverride?: 'creator' | 'user') => {
     if (!file || !activeChat || !creatorId) return;
+    const activeConvUpload = conversations.find(c => c.id === activeChat);
+    const myRoleUpload: 'creator' | 'user' = roleOverride ?? ((activeConvUpload?.isCreator === false) ? 'user' : 'creator');
 
     setUploadFile(file);
     setIsUploading(true);
@@ -273,7 +275,7 @@ export default function ChatsPage() {
         tempId,
         conversationId: activeChat,
         senderId: creatorId,
-        senderRole: 'creator',
+        senderRole: myRoleUpload,
         content: `[Attached ${msgType}]`,
         createdAt: new Date().toISOString(),
         read: false,
@@ -298,7 +300,7 @@ export default function ChatsPage() {
           type: 'message',
           conversationId: activeChat,
           senderId: creatorId,
-          senderRole: 'creator',
+          senderRole: myRoleUpload,
           content: `[Attached ${msgType}]|||${attachMeta}|||`,
           tempId,
           attachment: {
@@ -360,7 +362,7 @@ export default function ChatsPage() {
   // Fetch conversations
   const fetchConversations = async () => {
     try {
-      const res = await fetch(`/api/conversations`);
+      const res = await fetch(`/api/conversations`, { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
         const list: ConversationInfo[] = (data.conversations || [])
@@ -441,7 +443,7 @@ export default function ChatsPage() {
 
   // Poll every 15 seconds
   useEffect(() => {
-    const id = setInterval(() => fetchConversations(), 15000);
+    const id = setInterval(() => fetchConversations(), 7000);
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         fetchConversations();
@@ -465,9 +467,22 @@ export default function ChatsPage() {
       return;
     }
 
-    setConversations(prev =>
-      prev.map(c => (c.id === activeChat ? { ...c, unreadCount: 0 } : c))
-    );
+    setConversations(prev => {
+      const updated = prev.map(c => (c.id === activeChat ? { ...c, unreadCount: 0 } : c));
+      try {
+        sessionStorage.setItem('reachly_creator_conversations_cache', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
+
+    const currentRole = currentConv?.isCreator ? 'creator' : 'user';
+
+    fetch('/api/conversations/mark-read', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ conversationId: activeChat, role: currentRole })
+    }).catch(console.error);
+
 
     // Try to load messages from cache immediately to skip spinner
     try {
@@ -500,8 +515,12 @@ export default function ChatsPage() {
     const socket = new WebSocket(socketUrl);
     wsRef.current = socket;
 
+    // Derive role: if isCreator flag is true (or undefined/missing = legacy creator), use 'creator', else 'user'
+    const activeConvForSocket = conversations.find(c => c.id === activeChat);
+    const myRole: 'creator' | 'user' = (activeConvForSocket?.isCreator === false) ? 'user' : 'creator';
+
     socket.onopen = () => {
-      socket.send(JSON.stringify({ type: 'join', conversationId: activeChat, senderRole: 'creator' }));
+      socket.send(JSON.stringify({ type: 'join', conversationId: activeChat, senderRole: myRole }));
     };
 
     socket.onmessage = (event) => {
@@ -580,6 +599,19 @@ export default function ChatsPage() {
   }, [activeChat]);
 
   const handleSendMessage = () => {
+    const activeConvNow = conversations.find(c => c.id === activeChat);
+    const myRoleNow: 'creator' | 'user' = (activeConvNow?.isCreator === false) ? 'user' : 'creator';
+
+    if (previewFile) {
+      startUpload(previewFile, myRoleNow);
+      setPreviewFile(null);
+      const text = message.trim();
+      if (!text) {
+        setMessage('');
+        return;
+      }
+    }
+
     const trimmed = message.trim();
     if (!trimmed || !activeChat || !creatorId || sendingRef.current) return;
 
@@ -602,7 +634,7 @@ export default function ChatsPage() {
       tempId,
       conversationId: activeChat,
       senderId: creatorId,
-      senderRole: 'creator',
+      senderRole: myRoleNow,
       content: trimmed,
       createdAt: new Date().toISOString(),
       read: false
@@ -616,7 +648,7 @@ export default function ChatsPage() {
         type: 'message',
         conversationId: activeChat,
         senderId: creatorId,
-        senderRole: 'creator',
+        senderRole: myRoleNow,
         content: trimmed,
         tempId
       }));
@@ -626,11 +658,13 @@ export default function ChatsPage() {
   const sendTypingStatus = (typingState: boolean) => {
     if (!activeChat || !wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
     if (lastTypingSentRef.current === typingState) return;
+    const activeConvTyping = conversations.find(c => c.id === activeChat);
+    const myRoleTyping: 'creator' | 'user' = (activeConvTyping?.isCreator === false) ? 'user' : 'creator';
 
     wsRef.current.send(JSON.stringify({
       type: 'typing',
       conversationId: activeChat,
-      senderRole: 'creator',
+      senderRole: myRoleTyping,
       isTyping: typingState
     }));
     lastTypingSentRef.current = typingState;
@@ -1078,25 +1112,29 @@ export default function ChatsPage() {
                         <>
                           <div className="fixed inset-0 z-10" onClick={() => setShowDotsMenu(false)} />
                           <div className="absolute right-0 top-10 z-20 bg-white rounded-2xl shadow-xl border border-gray-100 py-1.5 min-w-[180px] overflow-hidden">
-                            {/* Lock / Unlock */}
-                            <button
-                              onClick={() => { setShowDotsMenu(false); handleLockToggleClick(); }}
-                              disabled={isLockingLoading}
-                              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-                            >
-                              {isChatLocked ? (
-                                <>
-                                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 9.9-1" /></svg>
-                                  {isLockingLoading ? 'Unlocking...' : 'Unlock Chat'}
-                                </>
-                              ) : (
-                                <>
-                                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
-                                  {isLockingLoading ? 'Locking...' : 'Lock Chat'}
-                                </>
-                              )}
-                            </button>
-                            <div className="border-t border-gray-100 my-1" />
+                            {/* Lock / Unlock — only for the creator side */}
+                            {activeConv?.isCreator !== false && (
+                              <>
+                                <button
+                                  onClick={() => { setShowDotsMenu(false); handleLockToggleClick(); }}
+                                  disabled={isLockingLoading}
+                                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+                                >
+                                  {isChatLocked ? (
+                                    <>
+                                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 9.9-1" /></svg>
+                                      {isLockingLoading ? 'Unlocking...' : 'Unlock Chat'}
+                                    </>
+                                  ) : (
+                                    <>
+                                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                                      {isLockingLoading ? 'Locking...' : 'Lock Chat'}
+                                    </>
+                                  )}
+                                </button>
+                                <div className="border-t border-gray-100 my-1" />
+                              </>
+                            )}
                             {/* Archive / Unarchive */}
                             {activeConv?.isArchivedByCreator ? (
                               <button
@@ -1117,15 +1155,20 @@ export default function ChatsPage() {
                                 {isArchivingChat ? 'Archiving...' : 'Archive Chat'}
                               </button>
                             )}
-                            <div className="border-t border-gray-100 my-1" />
-                            <button
-                              onClick={() => { setShowDotsMenu(false); setShowClearModal(true); }}
-                              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors"
-                            >
-                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4h6v2" /></svg>
-                              Delete Chat
-                            </button>
+                            {activeConv?.isCreator !== false && (
+                              <>
+                                <div className="border-t border-gray-100 my-1" />
+                                <button
+                                  onClick={() => { setShowDotsMenu(false); setShowClearModal(true); }}
+                                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                                >
+                                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4h6v2" /></svg>
+                                  Delete Chat
+                                </button>
+                              </>
+                            )}
                           </div>
+
 
                         </>
                       )}
@@ -1191,7 +1234,8 @@ export default function ChatsPage() {
                         </div>
                       ) : messages.length > 0 ? (
                         messages.map((msg, index) => {
-                          const isMe = msg.senderRole === 'creator';
+                          const currentRole = activeConv?.isCreator ? 'creator' : 'user';
+                          const isMe = msg.senderRole === currentRole;
                           const isAudio = isAudioMsg(msg.content);
 
                           const prevMsg = index > 0 ? messages[index - 1] : null;
