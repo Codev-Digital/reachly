@@ -205,9 +205,11 @@ export default function UserDashboard() {
               bookingRef: b.bookingRef
             };
 
+            const passed = b.scheduledDate ? isMeetingPassed(b.scheduledDate, b.time) : false;
+
             if (b.originalStatus === 'cancelled' || b.status === 'Cancelled') {
               cancelledArr.push(displayObj);
-            } else if (b.status === 'Past') {
+            } else if (b.status === 'Past' || passed) {
               pastArr.push(displayObj);
             } else {
               upcomingArr.push(displayObj);

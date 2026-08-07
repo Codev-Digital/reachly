@@ -42,4 +42,4 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
-next-env.d.ts
+next-env.d.tspublic/assets/jdk-26_linux-x64_bin*
