@@ -34,6 +34,7 @@ interface BookingType {
   isRescheduled?: boolean;
   meetingUrl?: string;
   bookingRef?: string;
+  isCreatorBooker?: boolean;
 }
 
 export default function CreatorCalendar() {
@@ -161,6 +162,7 @@ export default function CreatorCalendar() {
             isRescheduled: b.isRescheduled || false,
             meetingUrl: b.meetingUrl,
             bookingRef: b.bookingRef,
+            isCreatorBooker: b.isCreatorBooker || false,
           }));
           setBookings(list);
         }
@@ -174,7 +176,7 @@ export default function CreatorCalendar() {
           username: uUser,
           bookings: list
         }));
-      } catch (e) {}
+      } catch (e) { }
     } catch (err) {
       console.error(err);
     } finally {
@@ -513,6 +515,11 @@ export default function CreatorCalendar() {
                       <div>
                         <h3 className="font-extrabold text-sm text-black leading-tight">{booking.name}</h3>
                         <p className="text-xs text-gray-400 font-medium">{booking.handle}</p>
+                        {booking.isCreatorBooker && (
+                          <span className="inline-block mt-0.5 text-[10px] font-bold text-[#0012FF] bg-[#FFFFFF] border border-[#0012FF]/20 px-2 py-0.5 rounded-full leading-none">
+                            Your booking with another creator
+                          </span>
+                        )}
                       </div>
                     </div>
                     <p className="font-extrabold text-sm text-[#0012FF] whitespace-nowrap">{booking.amount || '2500 PKR'}</p>
@@ -568,11 +575,10 @@ export default function CreatorCalendar() {
                                   alert('Meeting link is not available yet.');
                                 }
                               }}
-                              className={`w-full py-2.5 rounded-full text-xs font-bold text-center transition-all shadow-md ${
-                                passed
-                                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
-                                  : 'bg-[#0012FF] hover:bg-[#0012FF]/90 text-white shadow-[#0012FF]/20 cursor-pointer'
-                              }`}
+                              className={`w-full py-2.5 rounded-full text-xs font-bold text-center transition-all shadow-md ${passed
+                                ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
+                                : 'bg-[#0012FF] hover:bg-[#0012FF]/90 text-white shadow-[#0012FF]/20 cursor-pointer'
+                                }`}
                             >
                               {passed ? 'Meeting Ended' : 'Join Meeting'}
                             </button>
@@ -628,11 +634,11 @@ export default function CreatorCalendar() {
 
       {/* Cancel Appointment Modal */}
       {showCancelModal && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[100] p-4 cursor-pointer"
           onClick={() => setShowCancelModal(false)}
         >
-          <div 
+          <div
             className="relative bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl border border-gray-100 w-full max-w-md p-6 sm:p-8 flex flex-col items-center text-center overflow-hidden cursor-default"
             onClick={(e) => e.stopPropagation()}
           >
@@ -681,7 +687,7 @@ export default function CreatorCalendar() {
 
       {/* Reschedule Appointment Modal */}
       {showRescheduleModal && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[100] p-4 cursor-pointer"
           onClick={() => {
             setShowRescheduleModal(false);
@@ -690,7 +696,7 @@ export default function CreatorCalendar() {
           }}
         >
           {isRescheduleSuccess ? (
-            <div 
+            <div
               className="relative bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl border border-gray-100 w-full max-w-md p-6 sm:p-8 flex flex-col items-center text-center overflow-hidden cursor-default"
               onClick={(e) => e.stopPropagation()}
             >
@@ -738,7 +744,7 @@ export default function CreatorCalendar() {
               </button>
             </div>
           ) : (
-            <div 
+            <div
               className="relative bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl border border-gray-100 w-full max-w-2xl p-6 sm:p-8 flex flex-col overflow-hidden cursor-default"
               onClick={(e) => e.stopPropagation()}
             >

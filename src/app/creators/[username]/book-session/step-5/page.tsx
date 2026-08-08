@@ -24,8 +24,12 @@ export default function BookSessionStep5() {
 
   const handleGoToBookings = () => {
     const isLoggedIn = !!userData?.user?.id;
+    const isCreator = !!(userData?.creatorProfile);
     if (isLoggedIn) {
-      if (fallbackUrl) {
+      if (isCreator) {
+        // Creator booking another creator → go to their calendar
+        router.push('/creators/calendar');
+      } else if (fallbackUrl) {
         window.location.href = fallbackUrl;
       } else {
         router.push('/user/bookings');

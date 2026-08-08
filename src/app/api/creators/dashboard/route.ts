@@ -23,8 +23,13 @@ export async function GET(req: NextRequest) {
     const profile = await CreatorProfile.findOne({ userId: user._id });
     const profileViews = profile?.views || 0;
 
-    // Fetch all bookings for this creator
-    const bookings = await Booking.find({ creatorId: user._id })
+    // Fetch all incoming bookings for this creator (they are the host)
+    const incomingBookings = await Booking.find({ creatorId: user._id })
+      .populate({ path: 'sessionTypeId', model: SessionType })
+      .sort({ createdAt: -1 });
+
+    // Fetch outgoing bookings: this creator booked another creator
+    const outgoingBookings = await Booking.find({ userId: user._id, creatorId: { $ne: user._id } })
       .populate({ path: 'sessionTypeId', model: SessionType })
       .sort({ createdAt: -1 });
 
@@ -32,24 +37,24 @@ export async function GET(req: NextRequest) {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
 
-    // Stats calculations
-    const totalBookings = bookings.filter((b) => b.status !== 'cancelled').length;
+    // Stats calculations (based on incoming bookings only)
+    const totalBookings = incomingBookings.filter((b) => b.status !== 'cancelled').length;
 
-    const totalBookingsThisMonth = bookings.filter((b) => {
+    const totalBookingsThisMonth = incomingBookings.filter((b) => {
       const created = new Date(b.createdAt);
       return created >= startOfMonth && created <= endOfMonth && b.status !== 'cancelled';
     }).length;
 
-    const upcomingSessions = bookings.filter((b) => {
+    const upcomingSessions = incomingBookings.filter((b) => {
       const scheduled = new Date(b.scheduledDate);
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       return scheduled >= today && (b.status === 'confirmed' || b.status === 'pending');
     }).length;
 
-    // Unique customers count
+    // Unique customers count (incoming only)
     const uniqueCustomerEmails = new Set<string>();
-    bookings.forEach((b) => {
+    incomingBookings.forEach((b) => {
       if (b.status !== 'cancelled') {
         if (b.guestDetails?.email) {
           uniqueCustomerEmails.add(b.guestDetails.email.toLowerCase());
@@ -58,13 +63,13 @@ export async function GET(req: NextRequest) {
     });
     const totalCustomers = uniqueCustomerEmails.size;
 
-    // Extract all guest emails and form-filler user IDs to fetch photos
+    // Extract all guest emails and form-filler user IDs to fetch photos (for incoming)
     const guestEmails = Array.from(new Set(
-      bookings.map((b) => b.guestDetails?.email?.toLowerCase()).filter(Boolean)
+      incomingBookings.map((b) => b.guestDetails?.email?.toLowerCase()).filter(Boolean)
     )) as string[];
 
     const formFillerUserIds = Array.from(new Set(
-      bookings.map((b) => b.userId?.toString()).filter(Boolean)
+      incomingBookings.map((b) => b.userId?.toString()).filter(Boolean)
     )) as string[];
 
     // Fetch users registered with the guest emails
@@ -90,20 +95,14 @@ export async function GET(req: NextRequest) {
       : [];
     const cpMap = new Map<string, string>(cpDocs.map((cp) => [cp.userId.toString(), cp.profilePhoto]));
 
-    // Format recent bookings list
-    const formattedBookings = bookings.map((b) => {
+    // Format incoming bookings
+    const formattedIncoming = incomingBookings.map((b) => {
       const scheduledDateStr = new Date(b.scheduledDate).toLocaleDateString('en-US', {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric',
+        weekday: 'short', month: 'short', day: 'numeric',
       });
-      
       const duration = (b.sessionTypeId as any)?.duration || 30;
-      
-      // Determine avatar photo
       let avatarUrl = '/avatar.png';
       const guestEmail = b.guestDetails?.email?.toLowerCase();
-      
       if (guestEmail && guestUsersMap.has(guestEmail)) {
         const guestUserObj = guestUsersMap.get(guestEmail);
         avatarUrl = guestUserObj.profilePhoto || cpMap.get(guestUserObj._id.toString()) || '/avatar.png';
@@ -113,7 +112,6 @@ export async function GET(req: NextRequest) {
           avatarUrl = fillerUserObj.profilePhoto || cpMap.get(b.userId.toString()) || '/avatar.png';
         }
       }
-      
       return {
         id: b._id || b.bookingRef,
         name: b.guestDetails?.fullName || 'Guest Client',
@@ -127,8 +125,54 @@ export async function GET(req: NextRequest) {
         scheduledDate: b.scheduledDate,
         meetingUrl: b.meetingUrl,
         bookingRef: b.bookingRef,
+        isCreatorBooker: b.userId ? cpMap.has(b.userId.toString()) : false,
       };
     });
+
+    // Format outgoing bookings (creator booking another creator)
+    // Collect other creator IDs to fetch their profiles in bulk
+    const otherCreatorIds = Array.from(new Set(outgoingBookings.map((b) => b.creatorId?.toString()).filter(Boolean)));
+    const otherCreatorUsers = otherCreatorIds.length > 0
+      ? await User.find({ _id: { $in: otherCreatorIds } }).select('name email profilePhoto').lean() as any[]
+      : [];
+    const otherCreatorUsersMap = new Map<string, any>(otherCreatorUsers.map((u) => [u._id.toString(), u]));
+    const otherCreatorProfiles = otherCreatorIds.length > 0
+      ? await CreatorProfile.find({ userId: { $in: otherCreatorIds } }).select('userId displayName profilePhoto').lean() as any[]
+      : [];
+    const otherCreatorProfilesMap = new Map<string, any>(otherCreatorProfiles.map((cp) => [cp.userId.toString(), cp]));
+
+    const formattedOutgoing = outgoingBookings.map((b) => {
+      const scheduledDateStr = new Date(b.scheduledDate).toLocaleDateString('en-US', {
+        weekday: 'short', month: 'short', day: 'numeric',
+      });
+      const duration = (b.sessionTypeId as any)?.duration || 30;
+      const creatorIdStr = b.creatorId?.toString();
+      const otherUser = otherCreatorUsersMap.get(creatorIdStr || '');
+      const otherProfile = otherCreatorProfilesMap.get(creatorIdStr || '');
+      const name = otherProfile?.displayName || otherUser?.name || 'Creator';
+      const handle = otherUser?.email || '@creator';
+      const avatarUrl = otherProfile?.profilePhoto || otherUser?.profilePhoto || '/avatar.png';
+      return {
+        id: b._id || b.bookingRef,
+        name,
+        handle,
+        avatar: avatarUrl,
+        time: `${scheduledDateStr} at ${b.scheduledTime} (${duration} mins)`,
+        type: b.paymentMethod || 'Online',
+        note: b.guestDetails?.whatToDiscuss || 'No special requirements listed.',
+        amount: `${b.finalPrice} PKR`,
+        status: b.status,
+        scheduledDate: b.scheduledDate,
+        meetingUrl: b.meetingUrl,
+        bookingRef: b.bookingRef,
+        isCreatorBooker: true,
+      };
+    });
+
+    // Merge and sort combined list by scheduledDate descending
+    const allBookings = [...formattedIncoming, ...formattedOutgoing].sort((a, b) =>
+      new Date(b.scheduledDate).getTime() - new Date(a.scheduledDate).getTime()
+    );
 
     return NextResponse.json({
       success: true,
@@ -139,10 +183,11 @@ export async function GET(req: NextRequest) {
         profileViews,
         totalCustomers,
       },
-      bookings: formattedBookings,
+      bookings: allBookings,
     });
   } catch (error: any) {
     console.error('Creator dashboard stats API error:', error);
     return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });
   }
 }
+
