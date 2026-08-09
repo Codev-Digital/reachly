@@ -517,7 +517,7 @@ export default function CreatorCalendar() {
                         <p className="text-xs text-gray-400 font-medium">{booking.handle}</p>
                         {booking.isCreatorBooker && (
                           <span className="inline-block mt-0.5 text-[10px] font-bold text-[#0012FF] bg-[#FFFFFF] border border-[#0012FF]/20 px-2 py-0.5 rounded-full leading-none">
-                            Your booking with another creator
+                            You booked a session with this creator
                           </span>
                         )}
                       </div>

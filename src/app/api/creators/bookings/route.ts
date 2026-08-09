@@ -100,10 +100,11 @@ export async function GET(request: NextRequest) {
                     if (u) { followerName = u.name || 'Guest'; email = u.email || ''; }
                 }
 
-                // Check if the booker (userId) is also a creator
+                // (We no longer set isCreatorBooker to true for incoming bookings, 
+                // so the host doesn't see the 'Your booking with another creator' label)
                 if (booking.userId) {
                     const bookerCp = await CreatorProfile.findOne({ userId: booking.userId }).lean() as any;
-                    if (bookerCp) isCreatorBooker = true;
+                    // if (bookerCp) isCreatorBooker = true;
                 }
             }
 

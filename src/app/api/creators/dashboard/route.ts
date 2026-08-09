@@ -125,7 +125,7 @@ export async function GET(req: NextRequest) {
         scheduledDate: b.scheduledDate,
         meetingUrl: b.meetingUrl,
         bookingRef: b.bookingRef,
-        isCreatorBooker: b.userId ? cpMap.has(b.userId.toString()) : false,
+        isCreatorBooker: false, // Label only shows for the creator who made the booking (outgoing)
       };
     });
 
