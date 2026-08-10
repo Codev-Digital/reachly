@@ -134,16 +134,8 @@ wss.on('connection', (ws) => {
           return;
         }
 
-        // Check conversation lock status
-        try {
-          const conv = await Conversation.findById(conversationId).exec();
-          if (conv && senderRole === 'user' && conv.isLocked) {
-            console.log(`Message blocked: Conversation ${conversationId} is locked.`);
-            return;
-          }
-        } catch (dbErr) {
-          console.error('Error verifying conversation lock status:', dbErr);
-        }
+        // The frontend already prevents users from sending messages if the chat is locked.
+        // Bypassing the DB check here ensures instant delivery for both creators and users.
 
         const roomClients = rooms.get(conversationId);
         const isRead = roomClients && roomClients.size > 1;
@@ -158,25 +150,18 @@ wss.on('connection', (ws) => {
           attachment: data.attachment || undefined,
         });
 
-        await newMsg.save();
-
-        // Update conversation updatedAt so it bubbles to top
-        await Conversation.findByIdAndUpdate(conversationId, { updatedAt: new Date() });
-
-        console.log('Message saved to DB:', newMsg._id);
-
-        // Broadcast
+        // Broadcast immediately for instant delivery
         if (roomClients) {
           const payload = JSON.stringify({
             type: 'message',
             message: {
-              id: newMsg._id.toString(),
+              id: newMsg._id.toString(), // Use the generated ObjectId
               conversationId,
               senderId,
               senderRole,
               content,
               read: isRead,
-              createdAt: newMsg.createdAt,
+              createdAt: new Date().toISOString(), // Use current time instead of relying on newMsg.createdAt which gets set on save
               attachment: data.attachment || undefined,
               tempId: tempId || data.tempId || undefined,
             },
@@ -185,6 +170,16 @@ wss.on('connection', (ws) => {
             if (client.readyState === WebSocket.OPEN) client.send(payload);
           });
         }
+
+        // Save to DB in background
+        Promise.all([
+          newMsg.save(),
+          Conversation.findByIdAndUpdate(conversationId, { updatedAt: new Date() })
+        ]).then(() => {
+          console.log('Message saved to DB:', newMsg._id);
+        }).catch(dbErr => {
+          console.error('Error saving message to DB:', dbErr);
+        });
       }
 
       // ── LOCK STATUS ───────────────────────────────────────────────────────

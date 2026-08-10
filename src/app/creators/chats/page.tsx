@@ -18,6 +18,7 @@ interface ConversationInfo {
   isLocked: boolean;
   lastMessage: string;
   lastMessageTime: string | null;
+  lastMessageSenderRole?: string | null;
   unreadCount: number;
   session: string;
   duration: string;
@@ -289,6 +290,24 @@ export default function ChatsPage() {
       setMessages(prev => [...prev, optimisticMsg]);
       scrollToBottom();
 
+      setConversations(prev =>
+        prev
+          .map(c =>
+            c.id === activeChat
+              ? { ...c, lastMessage: `[Attached ${msgType}]`, lastMessageTime: optimisticMsg.createdAt, lastMessageSenderRole: myRoleUpload }
+              : c
+          )
+          .sort((a, b) => {
+            const hasMsgA = !!a.lastMessageTime;
+            const hasMsgB = !!b.lastMessageTime;
+            if (hasMsgA && !hasMsgB) return -1;
+            if (!hasMsgA && hasMsgB) return 1;
+            if (hasMsgA && hasMsgB)
+              return new Date(b.lastMessageTime!).getTime() - new Date(a.lastMessageTime!).getTime();
+            return 0;
+          })
+      );
+
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
         const attachMeta = JSON.stringify({
           url: publicUrl,
@@ -382,6 +401,7 @@ export default function ChatsPage() {
             isLocked: c.isLocked,
             lastMessage: c.lastMessage || '',
             lastMessageTime: c.lastMessageTime || null,
+            lastMessageSenderRole: c.lastMessageSenderRole || null,
             ref: c.ref || '',
             unreadCount: c.unreadCount || 0,
             scheduledDate: c.scheduledDate || '',
@@ -487,12 +507,47 @@ export default function ChatsPage() {
     // Try to load messages from cache immediately to skip spinner
     try {
       const cachedMessagesStr = sessionStorage.getItem(`reachly_chat_messages_${activeChat}`);
-      if (cachedMessagesStr) {
-        setMessages(JSON.parse(cachedMessagesStr));
-        setLoadingMessages(false);
-      } else {
-        setLoadingMessages(true);
+      let cachedMessages: ChatMessage[] = cachedMessagesStr ? JSON.parse(cachedMessagesStr) : [];
+
+      if (currentConv && currentConv.lastMessage) {
+        const cacheLastMsg = cachedMessages[cachedMessages.length - 1];
+        const isLastMsgInCacheSame = cacheLastMsg && (
+          cacheLastMsg.content === currentConv.lastMessage ||
+          (cacheLastMsg.attachment && currentConv.lastMessage.startsWith('[Attached'))
+        );
+
+        if (!isLastMsgInCacheSame) {
+          const tempMsg: ChatMessage = {
+            id: `temp-sidebar-${Date.now()}`,
+            conversationId: activeChat,
+            senderId: '',
+            senderRole: (currentConv.lastMessageSenderRole as any) || 'user',
+            content: currentConv.lastMessage,
+            createdAt: currentConv.lastMessageTime || new Date().toISOString(),
+            read: true
+          };
+
+          // Handle if the last message is an attachment
+          if (currentConv.lastMessage.startsWith('[Attached')) {
+            let fileType = 'document';
+            if (currentConv.lastMessage.includes('image')) fileType = 'image';
+            else if (currentConv.lastMessage.includes('video')) fileType = 'video';
+            else if (currentConv.lastMessage.includes('pdf')) fileType = 'pdf';
+
+            tempMsg.attachment = {
+              url: '', // Will be loaded by the API call
+              fileType,
+              fileName: 'File',
+              fileSize: 0
+            };
+          }
+
+          cachedMessages.push(tempMsg);
+        }
       }
+
+      setMessages(cachedMessages);
+      setLoadingMessages(false);
     } catch (e) {
       setLoadingMessages(true);
     }
@@ -564,7 +619,7 @@ export default function ChatsPage() {
             prev
               .map(c =>
                 c.id === parsedMsg.conversationId
-                  ? { ...c, lastMessage: parsedMsg.content, lastMessageTime: parsedMsg.createdAt }
+                  ? { ...c, lastMessage: parsedMsg.content, lastMessageTime: parsedMsg.createdAt, lastMessageSenderRole: parsedMsg.senderRole }
                   : c
               )
               .sort((a, b) => {
@@ -643,6 +698,24 @@ export default function ChatsPage() {
     setMessages(prev => [...prev, optimisticMsg]);
     scrollToBottom();
 
+    setConversations(prev =>
+      prev
+        .map(c =>
+          c.id === activeChat
+            ? { ...c, lastMessage: trimmed, lastMessageTime: optimisticMsg.createdAt, lastMessageSenderRole: myRoleNow }
+            : c
+        )
+        .sort((a, b) => {
+          const hasMsgA = !!a.lastMessageTime;
+          const hasMsgB = !!b.lastMessageTime;
+          if (hasMsgA && !hasMsgB) return -1;
+          if (!hasMsgA && hasMsgB) return 1;
+          if (hasMsgA && hasMsgB)
+            return new Date(b.lastMessageTime!).getTime() - new Date(a.lastMessageTime!).getTime();
+          return 0;
+        })
+    );
+
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({
         type: 'message',
@@ -716,28 +789,85 @@ export default function ChatsPage() {
           return;
         }
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const file = new File([audioBlob], 'Voice message.webm', { type: 'audio/webm' });
+
+        setIsUploading(true);
+        setUploadFile(file);
+        setUploadProgress(0);
+        setUploadError(false);
+
+        const abortController = new AbortController();
+        uploadAbortController.current = abortController;
+
         const formData = new FormData();
         formData.append('audio', audioBlob, 'voice-note.webm');
 
-        try {
-          const res = await fetch('/api/conversations/upload-voice', {
-            method: 'POST',
-            body: formData,
-          });
-          if (res.ok) {
-            const data = await res.json();
-            if (data.url && wsRef.current?.readyState === WebSocket.OPEN) {
-              wsRef.current.send(JSON.stringify({
-                type: 'message',
-                conversationId: activeChat,
-                senderId: creatorId,
-                senderRole: 'creator',
-                content: data.url,
-              }));
-            }
+        const xhr = new XMLHttpRequest();
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            const percent = Math.round((event.loaded / event.total) * 100);
+            setUploadProgress(percent);
           }
+        };
+
+        try {
+          const res = await new Promise<any>((resolve, reject) => {
+            xhr.open('POST', '/api/conversations/upload-voice', true);
+            xhr.onload = () => {
+              if (xhr.status >= 200 && xhr.status < 300) {
+                try {
+                  resolve(JSON.parse(xhr.responseText));
+                } catch (e) {
+                  reject(new Error('Failed to parse upload response'));
+                }
+              } else {
+                reject(new Error(`Upload failed: ${xhr.statusText}`));
+              }
+            };
+            xhr.onerror = () => reject(new Error('Upload failed'));
+            xhr.onabort = () => reject(new Error('Upload canceled'));
+            xhr.send(formData);
+            abortController.signal.addEventListener('abort', () => xhr.abort());
+          });
+
+          const activeConvVoice = conversations.find(c => c.id === activeChat);
+          const myRoleVoice: 'creator' | 'user' = (activeConvVoice?.isCreator === false) ? 'user' : 'creator';
+
+          if (res.url && wsRef.current?.readyState === WebSocket.OPEN) {
+            wsRef.current.send(JSON.stringify({
+              type: 'message',
+              conversationId: activeChat,
+              senderId: creatorId,
+              senderRole: myRoleVoice,
+              content: res.url,
+            }));
+
+            // Optimistic update for the sidebar
+            setConversations(prev =>
+              prev
+                .map(c =>
+                  c.id === activeChat
+                    ? { ...c, lastMessage: '[Voice message]', lastMessageTime: new Date().toISOString(), lastMessageSenderRole: myRoleVoice }
+                    : c
+                )
+                .sort((a, b) => {
+                  const hasMsgA = !!a.lastMessageTime;
+                  const hasMsgB = !!b.lastMessageTime;
+                  if (hasMsgA && !hasMsgB) return -1;
+                  if (!hasMsgA && hasMsgB) return 1;
+                  if (hasMsgA && hasMsgB)
+                    return new Date(b.lastMessageTime!).getTime() - new Date(a.lastMessageTime!).getTime();
+                  return 0;
+                })
+            );
+          }
+          setUploadFile(null);
         } catch (uploadErr) {
           console.error('Voice upload failed:', uploadErr);
+          setUploadError(true);
+        } finally {
+          setIsUploading(false);
+          uploadAbortController.current = null;
         }
       };
 
@@ -877,6 +1007,35 @@ export default function ChatsPage() {
     }
   };
 
+  const renderMessagePreview = (chat: ConversationInfo, myRole: 'creator' | 'user') => {
+    if (chat.isLocked) {
+      return <span className="flex items-center gap-1 text-gray-600 font-semibold"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg> Chat is locked</span>;
+    }
+    if (!chat.lastMessage) return <span className="text-gray-400 font-medium">No messages yet</span>;
+    
+    let prefix = '';
+    if (chat.lastMessageSenderRole) {
+      if (chat.lastMessageSenderRole === myRole) {
+        prefix = 'You: ';
+      } else {
+        const otherName = chat.follower || 'User';
+        prefix = `${otherName.charAt(0)}: `;
+      }
+    }
+    let content: React.ReactNode = chat.lastMessage;
+    if (chat.lastMessage === '[Attached image]') content = <span className="inline-flex items-center gap-1"><span className="translate-y-[-1px]">📷</span><span>Photo</span></span>;
+    else if (chat.lastMessage === '[Attached video]') content = <span className="inline-flex items-center gap-1"><span className="translate-y-[-1px]">🎥</span><span>Video</span></span>;
+    else if (chat.lastMessage === '[Attached document]' || chat.lastMessage === '[Attached pdf]') content = <span className="inline-flex items-center gap-1"><span className="translate-y-[-1px]">📄</span><span>Document</span></span>;
+    else if (isAudioMsg(chat.lastMessage)) content = <span className="inline-flex items-center gap-1"><span className="translate-y-[-1px]">🎤</span><span>Voice message</span></span>;
+    else if (chat.lastMessage.startsWith('http')) content = <span className="inline-flex items-center gap-1"><span className="translate-y-[-1px]">🔗</span><span>Link</span></span>;
+    return (
+      <span className="flex items-center gap-1 truncate text-[14px] text-gray-500 mt-0.5">
+        {prefix && <span className="font-semibold text-gray-700 shrink-0">{prefix}</span>}
+        <span className="truncate">{content}</span>
+      </span>
+    );
+  };
+
   const allFiltered = conversations.filter(c =>
     (c.follower || '').toLowerCase().includes((searchText || '').toLowerCase()) ||
     (c.session || '').toLowerCase().includes((searchText || '').toLowerCase())
@@ -916,7 +1075,7 @@ export default function ChatsPage() {
             </div>
 
             {/* Chat List */}
-            <div className="flex-1 overflow-y-auto pr-2 space-y-3 no-scrollbar">
+            <div className="flex-1 overflow-y-auto pr-2 no-scrollbar">
 
               {/* Archived Section – WhatsApp style, at the TOP */}
               {!loadingConversations && archivedConversations.length > 0 && (
@@ -939,34 +1098,32 @@ export default function ChatsPage() {
                   </button>
 
                   {showArchived && (
-                    <div className="mt-2 space-y-2">
+                    <div className="mt-2">
                       {archivedConversations.map((chat) => (
                         <div
                           key={chat.id}
                           onClick={() => setActiveChat(chat.id)}
-                          className={`rounded-2xl p-4 cursor-pointer transition-all border ${activeChat === chat.id ? 'border-[#0012FF]/20 shadow-md bg-white ring-1 ring-[#0012FF]/5' : 'border-gray-100 hover:border-gray-200 bg-white shadow-xs'}`}
+                          className={`py-5 px-4 cursor-pointer transition-all flex flex-col justify-center ${activeChat === chat.id ? 'rounded-2xl border border-[#0012FF]/30 bg-[#F4F5FF] ring-1 ring-[#0012FF]/10 my-1' : 'border-b border-gray-200 hover:bg-gray-50 bg-transparent'}`}
                         >
                           <div className="flex justify-between items-start mb-1">
                             <div className="flex gap-3 items-center">
                               <div className="relative">
-                                <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200">
+                                <div className="w-[50px] h-[50px] rounded-full overflow-hidden bg-gray-200">
                                   <img src={chat.avatar} alt={chat.follower} className="object-cover w-full h-full" />
                                 </div>
                               </div>
                               <div>
                                 <div className="flex items-center gap-1">
-                                  <h4 className="text-sm font-bold text-gray-700">{chat.follower}</h4>
+                                  <h4 className="text-[16px] font-semibold text-gray-900">{chat.follower}</h4>
                                   <span className="text-[10px] bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded-full font-medium">Archived</span>
                                 </div>
-                                {chat.lastMessage && (
-                                  <p className="text-xs text-gray-400 truncate max-w-[150px] mt-0.5">
-                                    {isAudioMsg(chat.lastMessage) ? '🎤 Voice message' : chat.lastMessage}
-                                  </p>
-                                )}
+                                <div className="max-w-[200px] truncate">
+                                  {renderMessagePreview(chat, chat.isCreator === false ? 'user' : 'creator')}
+                                </div>
                               </div>
                             </div>
                             <div className="flex flex-col items-end gap-1.5 shrink-0">
-                              <span className="text-[10px] text-gray-400 font-medium">
+                              <span className="text-[12px] text-gray-400 font-medium">
                                 {chat.lastMessageTime ? formatMsgTime(chat.lastMessageTime) : chat.time}
                               </span>
                               {chat.unreadCount > 0 && chat.id !== activeChat && (
@@ -994,39 +1151,31 @@ export default function ChatsPage() {
                     <div
                       key={chat.id}
                       onClick={() => setActiveChat(chat.id)}
-                      className={`rounded-2xl py-8 px-4 cursor-pointer transition-all border flex flex-col justify-center ${activeChat === chat.id ? 'border-[#0012FF]/20 shadow-md bg-white ring-1 ring-[#0012FF]/5' : 'border-gray-100 hover:border-gray-200 bg-white shadow-xs'}`}
+                      className={`py-5 px-4 cursor-pointer transition-all flex flex-col justify-center ${activeChat === chat.id ? 'rounded-2xl border border-[#0012FF]/30 bg-[#F4F5FF] ring-1 ring-[#0012FF]/10 my-1' : 'border-b border-gray-200 hover:bg-gray-50 bg-transparent'}`}
                     >
                       <div className="flex justify-between items-start">
                         <div className="flex gap-3">
-                          <div className="relative w-9 h-9 shrink-0">
+                          <div className="relative w-[50px] h-[50px] shrink-0">
                             <div className="w-full h-full rounded-full overflow-hidden bg-gray-200">
                               <img src={chat.avatar} alt={chat.follower} className="object-cover w-full h-full" />
                             </div>
-                            <div className={`absolute bottom-0 right-0 w-3 h-3 border-2 border-white rounded-full ${chat.isOnline ? 'bg-[#12B76A]' : 'bg-gray-400'}`}></div>
+                            <div className={`absolute bottom-0 right-0 w-3.5 h-3.5 border-2 border-white rounded-full ${chat.isOnline ? 'bg-[#12B76A]' : 'bg-gray-400'}`}></div>
                           </div>
                           <div>
                             <div className="flex items-center gap-1">
-                              <h4 className="text-sm font-bold text-gray-900">{chat.follower}</h4>
+                              <h4 className="text-[16px] font-semibold text-gray-900">{chat.follower}</h4>
                               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <circle cx="12" cy="12" r="12" fill="#12B76A" />
                                 <polyline points="7 12.5 10.5 16 17 9" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
                               </svg>
                             </div>
-                            {chat.isLocked ? (
-                              <span className="inline-flex items-center text-[12px] font-semibold text-gray-800 px-1.5 py-0.5 rounded mt-1">
-                                Chat is locked
-                              </span>
-                            ) : chat.lastMessage ? (
-                              <div className="flex items-center gap-1 mt-0.5">
-                                <p className="text-xs text-gray-500 truncate max-w-[150px]">
-                                  {isAudioMsg(chat.lastMessage) ? '🎤 Voice message' : chat.lastMessage}
-                                </p>
+                              <div className="max-w-[200px] truncate">
+                                {renderMessagePreview(chat, chat.isCreator === false ? 'user' : 'creator')}
                               </div>
-                            ) : null}
                           </div>
                         </div>
                         <div className="flex flex-col items-end gap-1.5 shrink-0">
-                          <span className="text-[10px] text-gray-400 font-medium">
+                          <span className="text-[12px] text-gray-400 font-medium">
                             {chat.lastMessageTime ? formatMsgTime(chat.lastMessageTime) : chat.time}
                           </span>
                           {chat.unreadCount > 0 && chat.id !== activeChat && (
@@ -1260,15 +1409,15 @@ export default function ChatsPage() {
                                 </div>
                                 <div className="relative">
                                   {msg.attachment ? (
-                                    <div className={`p-2.5 shadow-sm relative flex flex-col gap-1.5 ${isMe ? 'bg-[#E6E8FF] text-gray-800 rounded-[16px] rounded-br-sm' : 'bg-white border border-gray-100 text-gray-800 rounded-[16px] rounded-bl-sm'}`}>
+                                    <div className={`p-1 shadow-sm relative flex flex-col gap-1 ${isMe ? 'bg-[#EDE8FF] text-gray-800 rounded-[18px] rounded-br-[4px]' : 'bg-white border border-gray-100 text-gray-800 rounded-[18px] rounded-bl-[4px]'}`}>
                                       {msg.attachment.fileType === 'image' && (
                                         <div onClick={() => setLightboxMedia({ url: msg.attachment!.url, type: 'image' })}>
-                                          <img src={msg.attachment.url} alt="Attachment" className="max-w-[240px] max-h-[240px] min-w-[160px] min-h-[120px] bg-black/10 rounded-lg object-cover cursor-pointer hover:opacity-90 transition-opacity" onLoad={() => scrollToBottom('auto')} />
+                                          <img src={msg.attachment.url} alt="Attachment" className="max-w-[240px] max-h-[240px] min-w-[160px] min-h-[120px] bg-black/10 rounded-[14px] object-cover cursor-pointer hover:opacity-90 transition-opacity" onLoad={() => scrollToBottom('auto')} />
                                         </div>
                                       )}
                                       {msg.attachment.fileType === 'video' && (
                                         <div className="relative cursor-pointer group" onClick={() => setLightboxMedia({ url: msg.attachment!.url, type: 'video' })}>
-                                          <video src={`${msg.attachment.url}#t=0.1`} preload="metadata" playsInline className="max-w-[240px] max-h-[240px] min-w-[160px] min-h-[120px] bg-black/10 rounded-lg object-cover pointer-events-none" onLoadedMetadata={() => scrollToBottom('auto')} />
+                                          <video src={`${msg.attachment.url}#t=0.1`} preload="metadata" playsInline className="max-w-[240px] max-h-[240px] min-w-[160px] min-h-[120px] bg-black/10 rounded-[14px] object-cover pointer-events-none" onLoadedMetadata={() => scrollToBottom('auto')} />
                                           <div className="absolute inset-0 flex items-center justify-center bg-black/10 group-hover:bg-black/20 transition-colors rounded-lg">
                                             <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center shadow-md">
                                               <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="text-gray-900 ml-1"><polygon points="5 3 19 12 5 21 5 3" /></svg>
@@ -1286,7 +1435,7 @@ export default function ChatsPage() {
                                         </a>
                                       )}
                                       <div className="flex justify-end items-center gap-1 mt-1">
-                                        <span className={`text-[10px] font-medium select-none text-gray-400`}>
+                                        <span className={`text-[10px] font-medium select-none ${isMe ? 'text-gray-400' : 'text-gray-400'} px-1`}>
                                           {formatMsgTime(msg.createdAt)}
                                         </span>
                                         {isMe && (
@@ -1319,9 +1468,9 @@ export default function ChatsPage() {
                                         }
                                       />
                                     ) : (
-                                      <div className={`${isMe ? 'bg-[#E6E8FF] text-gray-800' : 'bg-white border border-gray-100 text-gray-800'} text-[13px] py-2 px-3.5 rounded-[16px] ${isMe ? 'rounded-br-sm' : 'rounded-bl-sm'} shadow-xs leading-relaxed break-all min-w-[80px]`}>
+                                      <div className={`${isMe ? 'bg-[#EDE8FF] text-gray-800' : 'bg-white border border-gray-100 text-gray-800'} text-[14px] py-2.5 px-4 rounded-[18px] ${isMe ? 'rounded-br-[4px]' : 'rounded-bl-[4px]'} shadow-sm leading-relaxed break-word min-w-[80px] inline-block`}>
                                         <span>{msg.content}</span>
-                                        <span className="float-right mt-3 ml-2.5 text-[10px] text-gray-400 font-medium inline-flex items-center gap-1 select-none shrink-0 translate-y-[2px]">
+                                        <span className={`float-right mt-3 ml-2.5 text-[10px] ${isMe ? 'text-gray-400' : 'text-gray-400'} font-medium inline-flex items-center gap-1 select-none shrink-0 translate-y-[2px]`}>
                                           {formatMsgTime(msg.createdAt)}
                                           {isMe && (
                                             <span className="inline-flex shrink-0">
@@ -1375,7 +1524,7 @@ export default function ChatsPage() {
                         <span>This chat is locked. Click the lock icon in the header to unlock.</span>
                       </div>
                     ) : (
-                      <div className="p-2 sm:p-2.5 bg-white border-t border-gray-100 shrink-0">
+                      <div className="p-3 mb-3 mx-3 bg-white border border-[#0012FF]/10 rounded-2xl shadow-[0_4px_24px_rgba(0,18,255,0.06)] shrink-0">
                         {/* Upload UI */}
                         {isUploading && (
                           <div className="mb-2 w-full bg-gray-50 border border-gray-100 rounded-xl p-2.5 flex items-center justify-between shadow-xs">
@@ -1491,8 +1640,8 @@ export default function ChatsPage() {
                                     handleSendMessage();
                                   }
                                 }}
-                                placeholder="Type something..."
-                                className="w-full bg-[#F3F4F6] border-0 rounded-full py-2.5 pl-5 pr-18 text-xs sm:text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0012FF]/10 transition-all"
+                                placeholder="Type a message..."
+                                className="w-full bg-gray-50/80 border border-transparent rounded-full py-3 pl-5 pr-20 text-xs sm:text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0012FF]/10 focus:border-[#0012FF]/20 focus:bg-white transition-all"
                               />
                               <button
                                 onClick={triggerFileInput}

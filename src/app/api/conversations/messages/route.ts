@@ -20,18 +20,14 @@ export async function GET(request: NextRequest) {
 
         await connectDB();
 
-        const user = await User.findOne({ email: session.user.email });
-        if (!user) {
-            return NextResponse.json({ error: 'User not found' }, { status: 404 });
-        }
+        const uid = (session.user as any).id;
 
-        const conversation = await Conversation.findById(conversationId);
+        const conversation = await Conversation.findById(conversationId).lean() as any;
         if (!conversation) {
             return NextResponse.json({ error: 'Conversation not found' }, { status: 404 });
         }
 
         // Only participants can read messages
-        const uid = user._id.toString();
         if (conversation.creatorId.toString() !== uid && conversation.userId.toString() !== uid) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
