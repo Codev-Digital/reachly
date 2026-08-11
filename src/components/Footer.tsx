@@ -160,6 +160,12 @@ export default function Footer() {
               <Link href="/refund-policy" className="hover:text-white underline">Refund Policy</Link> · {' '}
               <Link href="/service-policy" className="hover:text-white underline">Service Policy</Link>
             </p>
+            <p className="font-sans text-[11px] tracking-wide text-white/30 text-center mt-2">
+              Powered by{' '}
+              <span className="text-white/50 font-medium tracking-wider">
+                Codev Digital
+              </span>
+            </p>
           </div>
         </div>
       </div>
