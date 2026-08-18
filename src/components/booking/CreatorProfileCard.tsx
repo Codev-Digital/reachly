@@ -11,7 +11,7 @@ interface CreatorProfileCardProps {
 }
 
 export default function CreatorProfileCard({ creator, mobileMode = 'compact', onMobileBookClick }: CreatorProfileCardProps) {
-  const [isSaved, setIsSaved] = useState(false);
+  const [isFavourite, setIsFavourite] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(true);
@@ -20,27 +20,27 @@ export default function CreatorProfileCard({ creator, mobileMode = 'compact', on
 
   useEffect(() => {
     if (!creator?.username) return;
-    const checkSavedStatus = async () => {
+    const checkFavouriteStatus = async () => {
       try {
-        const res = await fetch('/api/user/saved-creators');
+        const res = await fetch('/api/user/favourite-creators');
         if (res.ok) {
           setIsAuthenticated(true);
           const data = await res.json();
-          const savedList = data.savedCreators || [];
-          setIsSaved(savedList.includes(creator.username));
+          const favouriteList = data.favouriteCreators || [];
+          setIsFavourite(favouriteList.includes(creator.username));
         } else if (res.status === 401) {
           setIsAuthenticated(false);
         }
       } catch (err) {
-        console.error('Error checking saved status:', err);
+        console.error('Error checking favourite status:', err);
       } finally {
         setLoading(false);
       }
     };
-    checkSavedStatus();
+    checkFavouriteStatus();
   }, [creator?.username]);
 
-  const toggleSaved = async (e: React.MouseEvent) => {
+  const toggleFavourite = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!isAuthenticated) {
       setShowLoginModal(true);
@@ -48,25 +48,25 @@ export default function CreatorProfileCard({ creator, mobileMode = 'compact', on
     }
     if (!creator?.username || saving) return;
     setSaving(true);
-    const nextSavedState = !isSaved;
-    setIsSaved(nextSavedState);
+    const nextFavouriteState = !isFavourite;
+    setIsFavourite(nextFavouriteState);
 
     try {
-      const res = await fetch('/api/user/saved-creators', {
-        method: nextSavedState ? 'POST' : 'DELETE',
+      const res = await fetch('/api/user/favourite-creators', {
+        method: nextFavouriteState ? 'POST' : 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: creator.username }),
       });
       if (res.ok) {
         const data = await res.json();
-        const savedList = data.savedCreators || [];
-        setIsSaved(savedList.includes(creator.username));
+        const favouriteList = data.favouriteCreators || [];
+        setIsFavourite(favouriteList.includes(creator.username));
       } else {
-        setIsSaved(!nextSavedState);
+        setIsFavourite(!nextFavouriteState);
       }
     } catch (err) {
-      console.error('Error toggling save:', err);
-      setIsSaved(!nextSavedState);
+      console.error('Error toggling favourite:', err);
+      setIsFavourite(!nextFavouriteState);
     } finally {
       setSaving(false);
     }
@@ -150,23 +150,24 @@ export default function CreatorProfileCard({ creator, mobileMode = 'compact', on
             <div className="w-full h-full bg-gradient-to-br from-[#0012FF] via-indigo-600 to-purple-700" />
           )}
 
-          {/* Top-Right Badges: Bookmark + Role Tag */}
+          {/* Top-Right Badges: Heart + Role Tag */}
           <div className="absolute top-3.5 right-3.5 z-20 flex items-center gap-2">
-            {/* Bookmark button */}
             {creator && (
               <button
-                onClick={toggleSaved}
+                onClick={toggleFavourite}
                 disabled={loading || saving}
-                className="w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center hover:bg-white transition-all shadow-md disabled:opacity-60 cursor-pointer"
-                aria-label={isSaved ? 'Remove from saved' : 'Save creator'}
+                className="w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center hover:bg-white hover:scale-105 active:scale-95 transition-all shadow-md disabled:opacity-60 cursor-pointer"
+                aria-label={isFavourite ? 'Remove from favourites' : 'Add to favourites'}
               >
-                <svg width="14" height="17" viewBox="0 0 24 28"
-                  fill={isSaved ? '#0012FF' : '#0012FF'}
-                  stroke={isSaved ? '#0012FF' : '#0012FF'}
+                <svg
+                  className={`w-5 h-5 transition-colors duration-200 ${
+                    isFavourite ? 'text-[#FF3B3B] fill-[#FF3B3B]' : 'text-gray-400 fill-none'
+                  }`}
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
                   strokeWidth="2"
-                  className="transition-colors duration-200"
                 >
-                  <path d="M19 25L12 19L5 25V4C5 2.9 5.9 2 7 2H17C18.1 2 19 2.9 19 4V25Z" />
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
                 </svg>
               </button>
             )}
@@ -332,7 +333,7 @@ export default function CreatorProfileCard({ creator, mobileMode = 'compact', on
 
               {/* Title */}
               <h3 className="text-xl sm:text-2xl font-extrabold text-black mb-2 tracking-tight">
-                Save Creator
+                Save to Favourites
               </h3>
 
               {/* Description */}

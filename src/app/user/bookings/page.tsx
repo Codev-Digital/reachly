@@ -88,6 +88,7 @@ export default function UserBookingsPage() {
   // Meeting Modal States
   const [meetingToJoin, setMeetingToJoin] = useState<{ url: string; ref: string } | null>(null);
   const [activeCallUrl, setActiveCallUrl] = useState<string | null>(null);
+  const [expandedBios, setExpandedBios] = useState<Record<string, boolean>>({});
 
   // Read guestEmail from URL on mount
   useEffect(() => {
@@ -441,8 +442,14 @@ export default function UserBookingsPage() {
                               <svg className="w-4 h-4 text-[#12B76A] fill-current shrink-0" viewBox="0 0 24 24">
                                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
                               </svg>
-                              <span className="bg-[#E6F9EE] text-[#12B76A] font-bold text-[11px] px-2.5 py-0.5 rounded-full shadow-2xs">
-                                Accepted
+                              <span className={`font-bold text-[11px] px-2.5 py-0.5 rounded-full shadow-2xs ${
+                                activeTab === 'Cancelled' || booking.originalStatus === 'cancelled' || booking.status === 'Cancelled'
+                                  ? 'bg-[#FFF0F0] text-[#FF3B3B]'
+                                  : 'bg-[#E6F9EE] text-[#12B76A]'
+                              }`}>
+                                {activeTab === 'Cancelled' || booking.originalStatus === 'cancelled' || booking.status === 'Cancelled'
+                                  ? 'Cancelled'
+                                  : 'Accepted'}
                               </span>
                             </div>
                             <p className="text-xs text-gray-400 font-medium font-sans mt-0.5">{booking.username}</p>
@@ -487,10 +494,25 @@ export default function UserBookingsPage() {
                       </div>
 
                       {/* Bio Note Description */}
-                      <p className="text-xs text-gray-400 font-sans leading-relaxed line-clamp-2">
-                        {booking.bio}
-                        <span className="text-[#0012FF] font-bold text-xs ml-1 hover:underline cursor-pointer">Read more</span>
-                      </p>
+                      {(() => {
+                        const bioText = booking.bio || 'No description provided.';
+                        const isLong = bioText.length > 120;
+                        const isExpanded = !!expandedBios[booking.id];
+                        return (
+                          <p className="text-xs text-gray-400 font-sans leading-relaxed">
+                            {isExpanded || !isLong ? bioText : `${bioText.slice(0, 120).trim()}...`}
+                            {isLong && (
+                              <button
+                                type="button"
+                                onClick={() => setExpandedBios((prev) => ({ ...prev, [booking.id]: !prev[booking.id] }))}
+                                className="text-[#0012FF] font-bold text-xs ml-1 hover:underline cursor-pointer"
+                              >
+                                {isExpanded ? 'Read less' : 'Read more'}
+                              </button>
+                            )}
+                          </p>
+                        );
+                      })()}
                     </div>
 
                     {/* Action Buttons */}

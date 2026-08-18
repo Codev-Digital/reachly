@@ -8,6 +8,7 @@ import CreatorDashboardNav from '@/components/CreatorDashboardNav';
 import LoadingAnimation from '@/components/LoadingAnimation';
 import { signOut } from 'next-auth/react';
 import { User, Briefcase, Clock, Shield, Star, Camera, Plus, Trash2, MapPin, ChevronRight, X, AlertTriangle } from 'lucide-react';
+import PasswordToggle from '@/components/PasswordToggle';
 
 function ModalShell({
   onClose,
@@ -99,6 +100,9 @@ export default function CreatorSettings() {
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showOldPassword, setShowOldPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Sessions State
   const [sessions, setSessions] = useState<DBTypeSession[]>([]);
@@ -1237,25 +1241,31 @@ export default function CreatorSettings() {
 
                 <div className="mb-5">
                   <label className="text-xs font-bold text-gray-700 uppercase tracking-wider block mb-2 font-sans">Current Password</label>
-                  <input
-                    type="password"
-                    value={oldPassword}
-                    onChange={(e) => setOldPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showOldPassword ? 'text' : 'password'}
+                      value={oldPassword}
+                      onChange={(e) => setOldPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 pr-12 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
+                    />
+                    <PasswordToggle visible={showOldPassword} onToggle={() => setShowOldPassword(!showOldPassword)} />
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
                   <div>
                     <label className="text-xs font-bold text-gray-700 uppercase tracking-wider block mb-2 font-sans">New Password</label>
-                    <input
-                      type="password"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      placeholder="Enter new password"
-                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
-                    />
+                    <div className="relative">
+                      <input
+                        type={showNewPassword ? 'text' : 'password'}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="Enter new password"
+                        className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 pr-12 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
+                      />
+                      <PasswordToggle visible={showNewPassword} onToggle={() => setShowNewPassword(!showNewPassword)} />
+                    </div>
                     {/* Password Strength Indicator Lines */}
                     <div className="grid grid-cols-4 gap-2 mt-2.5">
                       <div className={`h-1.5 rounded-full transition-all duration-300 ${newPassword.length > 0 ? 'bg-[#0012FF]' : 'bg-gray-200'}`} />
@@ -1266,13 +1276,16 @@ export default function CreatorSettings() {
                   </div>
                   <div>
                     <label className="text-xs font-bold text-gray-700 uppercase tracking-wider block mb-2 font-sans">Confirm New Password</label>
-                    <input
-                      type="password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="Confirm new password"
-                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
-                    />
+                    <div className="relative">
+                      <input
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="Confirm new password"
+                        className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 pr-12 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
+                      />
+                      <PasswordToggle visible={showConfirmPassword} onToggle={() => setShowConfirmPassword(!showConfirmPassword)} />
+                    </div>
                   </div>
                 </div>
 

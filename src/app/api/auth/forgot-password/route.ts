@@ -29,8 +29,8 @@ export async function POST(request: NextRequest) {
 
     await sendEmail(
       email,
-      'Reset your Reachly password',
-      generateOTPEmail(user.name || 'User', otp, 'Password Reset')
+      'Your Reachly verification code',
+      generateOTPEmail(user.name || 'User', otp, 'Your verification code')
     );
 
     return NextResponse.json({

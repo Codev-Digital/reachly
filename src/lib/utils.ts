@@ -142,32 +142,41 @@ export const generateOTPEmail = (name: string, otp: string, title: string = "Ver
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>${title}</title>
     </head>
-    <body style="margin: 0; padding: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #F7F7FA; color: #0C0C0C;">
+    <body style="margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; background-color: #F7F7FA; color: #0C0C0C;">
       <div style="max-width: 500px; margin: 0 auto; padding: 40px 20px;">
-        <div style="text-align: center; margin-bottom: 30px;">
-          <div style="font-size: 28px; color: #0012FF; font-weight: 900; letter-spacing: -1px;">REACHLY</div>
+        <div style="text-align: center; margin-bottom: 24px;">
+          <div style="font-size: 22px; color: #0012FF; font-weight: 700;">Reachly</div>
         </div>
 
-        <div style="background-color: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 16px; padding: 40px 32px; text-align: center; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
-          <h2 style="margin: 0 0 16px; font-size: 22px; font-weight: 800; color: #111827;">${title}</h2>
-          <p style="color: #6B7280; margin: 0 0 32px; font-size: 16px; line-height: 1.5;">Hi ${name},<br>Use the verification code below to complete your request.</p>
+        <div style="background-color: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 16px; padding: 40px 32px; text-align: center;">
+          <h2 style="margin: 0 0 16px; font-size: 22px; font-weight: 700; color: #111827;">${title}</h2>
+          <p style="color: #6B7280; margin: 0 0 28px; font-size: 15px; line-height: 1.6;">Hi ${name},<br>Use this verification code to continue. Do not share it with anyone.</p>
           
-          <div style="background-color: #F3F4F6; border-radius: 12px; padding: 24px; margin-bottom: 32px;">
-            <div style="font-size: 42px; font-weight: 800; letter-spacing: 12px; color: #0012FF; text-align: center;">${otp}</div>
+          <div style="background-color: #F3F4F6; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+            <div style="font-size: 32px; font-weight: 700; letter-spacing: 6px; color: #0012FF; text-align: center;">${otp}</div>
           </div>
           
-          <p style="color: #9CA3AF; margin: 0; font-size: 14px; font-weight: 500;">This code will expire securely in 10 minutes.</p>
+          <p style="color: #9CA3AF; margin: 0; font-size: 13px;">This code expires in 10 minutes.</p>
         </div>
         
-        <div style="margin-top: 32px; text-align: center; color: #9CA3AF; font-size: 13px;">
-          <p style="margin: 0;">Sent by REACHLY</p>
-          <p style="margin-top: 8px;">If you didn't request this, you can safely ignore this email.</p>
+        <div style="margin-top: 28px; text-align: center; color: #9CA3AF; font-size: 12px; line-height: 1.6;">
+          <p style="margin: 0;">This email was sent by Reachly (reachly.pk).</p>
+          <p style="margin-top: 8px;">If you did not request this, you can ignore this email. Your account is still secure.</p>
         </div>
       </div>
     </body>
     </html>
   `;
 };
+
+const htmlToText = (html: string): string =>
+  html
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/\s+/g, ' ')
+    .trim();
 
 export const sendEmail = async (
   to: string,
@@ -180,12 +189,13 @@ export const sendEmail = async (
   const user = (process.env.SMTP_USER || '').replace(/^["']|["']$/g, '');
   // Gmail app passwords are 16 chars — strip spaces if accidentally included
   const pass = (process.env.SMTP_PASSWORD || process.env.SMTP_PASS || '').replace(/\s/g, '').replace(/^["']|["']$/g, '');
+  const fromAddress = (process.env.SMTP_FROM || user).replace(/^["']|["']$/g, '');
 
   if (!host || !user || !pass) {
     console.log('------- EMAIL (SMTP not configured) -------');
     console.log(`TO:      ${to}`);
     console.log(`SUBJECT: ${subject}`);
-    console.log(`BODY:    ${html.replace(/<[^>]+>/g, '')}`);
+    console.log(`BODY:    ${htmlToText(html)}`);
     console.log('-------------------------------------------');
     return;
   }
@@ -196,14 +206,15 @@ export const sendEmail = async (
       port,
       secure: port === 465,
       auth: { user, pass },
-      tls: { rejectUnauthorized: false }, // allow self-signed certs in dev
     });
 
     await transporter.sendMail({
-      from: `"Reachly" <${user}>`,
+      from: `"Reachly" <${fromAddress}>`,
+      replyTo: process.env.SMTP_REPLY_TO || fromAddress,
       to,
       subject,
       html,
+      text: htmlToText(html),
     });
   } catch (error) {
     console.error('SMTP Email dispatch failed:', error);

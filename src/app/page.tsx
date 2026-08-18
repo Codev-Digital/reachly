@@ -233,14 +233,14 @@ export default function Home() {
       {/* ════════════════════════════════════════
             HERO SECTION
         ════════════════════════════════════════ */}
-      <section className="relative overflow-hidden">
+      <section className="relative overflow-hidden flex items-center [@media(min-height:900px)]:h-screen [@media(min-height:900px)]:min-h-screen">
         <img
           src="/assets/new-bg-image.png"
           alt=""
           className="fixed inset-0 w-screen h-screen object-cover object-top -z-10"
         />
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-32 pb-20 relative z-10">
+        <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 pt-28 pb-16 [@media(min-height:900px)]:pt-24 [@media(min-height:900px)]:pb-8 relative z-10">
           <div className="text-center">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
               <p className="font-sans text-xs sm:text-sm text-white/80 tracking-widest uppercase mb-4">
