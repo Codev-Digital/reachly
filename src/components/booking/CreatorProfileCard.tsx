@@ -260,12 +260,12 @@ export default function CreatorProfileCard({ creator, mobileMode = 'compact', on
           <p className={`text-xs sm:text-sm text-gray-400 font-sans leading-relaxed ${isBioExpanded ? '' : 'line-clamp-3'}`}>
             {creator?.shortBio || 'Ayesha Khan is one of Pakistan’s leading fashion and lifestyle content creators. With over 500K followers across Instagram and TikTok...'}
           </p>
-          <button
+          {/* <button
             onClick={() => setIsBioExpanded(!isBioExpanded)}
             className="text-xs font-bold text-black font-sans mt-1.5 cursor-pointer hover:underline"
           >
             {isBioExpanded ? 'Read less' : 'Read more'}
-          </button>
+          </button> */}
         </div>
 
         {/* Niche Tag Badges */}

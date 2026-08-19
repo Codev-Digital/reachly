@@ -498,20 +498,20 @@ export default function UserBookingsPage() {
                         const bioText = booking.bio || 'No description provided.';
                         const isLong = bioText.length > 120;
                         const isExpanded = !!expandedBios[booking.id];
-                        return (
-                          <p className="text-xs text-gray-400 font-sans leading-relaxed">
-                            {isExpanded || !isLong ? bioText : `${bioText.slice(0, 120).trim()}...`}
-                            {isLong && (
-                              <button
-                                type="button"
-                                onClick={() => setExpandedBios((prev) => ({ ...prev, [booking.id]: !prev[booking.id] }))}
-                                className="text-[#0012FF] font-bold text-xs ml-1 hover:underline cursor-pointer"
-                              >
-                                {isExpanded ? 'Read less' : 'Read more'}
-                              </button>
-                            )}
-                          </p>
-                        );
+                        // return (
+                        //   <p className="text-xs text-gray-400 font-sans leading-relaxed">
+                        //     {isExpanded || !isLong ? bioText : `${bioText.slice(0, 120).trim()}...`}
+                        //     {isLong && (
+                        //       <button
+                        //         type="button"
+                        //         onClick={() => setExpandedBios((prev) => ({ ...prev, [booking.id]: !prev[booking.id] }))}
+                        //         className="text-[#0012FF] font-bold text-xs ml-1 hover:underline cursor-pointer"
+                        //       >
+                        //         {isExpanded ? 'Read less' : 'Read more'}
+                        //       </button>
+                        //     )}
+                        //   </p>
+                        // );
                       })()}
                     </div>
 
