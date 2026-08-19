@@ -802,7 +802,7 @@ export default function Home() {
       {/* ════════════════════════════════════════
             UPCOMING EVENTS
         ════════════════════════════════════════ */}
-      <section className="py-20 bg-[#F7F7FA] text-[#0C0C0C] border-t border-gray-100">
+      {/* <section className="py-20 bg-[#F7F7FA] text-[#0C0C0C] border-t border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <FadeUp className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
             <div>
@@ -885,7 +885,7 @@ export default function Home() {
             ))}
           </motion.div>
         </div>
-      </section>
+      </section> */}
 
       {/* ════════════════════════════════════════
             WHY REACHLY

@@ -460,7 +460,7 @@ export default function UserBookingsPage() {
                         </span>
                       </div>
 
-                      {/* Time & Location Row */}
+                    
                       <div className="space-y-1.5 text-xs text-gray-500 font-sans font-medium my-3">
                         <div className="flex items-center gap-2">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
@@ -494,7 +494,7 @@ export default function UserBookingsPage() {
                       </div>
 
                       {/* Bio Note Description */}
-                      {(() => {
+                      {/* {(() => {
                         const bioText = booking.bio || 'No description provided.';
                         const isLong = bioText.length > 120;
                         const isExpanded = !!expandedBios[booking.id];
@@ -512,7 +512,7 @@ export default function UserBookingsPage() {
                         //     )}
                         //   </p>
                         // );
-                      })()}
+                      })()} */}
                     </div>
 
                     {/* Action Buttons */}
