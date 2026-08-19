@@ -1,10 +1,16 @@
 // All client-side fetch wrappers for auth API routes
 
-export const signUp = async (name: string, email: string): Promise<any> => {
+export const signUp = async (name: string, email: string,ref:string): Promise<any> => {
+  // let body ; 
+  //  if(ref.trim() === ""){
+  //     body: JSON.stringify({ name, email }),
+  //   }else{
+  //     body: JSON.stringify({ name, email, ref }),
+  //   } 
   const res = await fetch('/api/auth/signup', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, email }),
+    body: ref === null ? JSON.stringify({ name, email }) : JSON.stringify({ name, email, ref }),
   });
   return res.json();
 };

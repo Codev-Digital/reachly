@@ -56,6 +56,7 @@ export default function UserDashboard() {
   useEffect(() => {
     try {
       const cachedDashboard = sessionStorage.getItem('reachly_user_dashboard_cache');
+      console.log("cachedDashboard",cachedDashboard)
       if (cachedDashboard) {
         const cached = JSON.parse(cachedDashboard);
         if (cached.displayName) setDisplayName(cached.displayName);
@@ -75,6 +76,7 @@ export default function UserDashboard() {
   // User details
   const [displayName, setDisplayName] = useState<string>('James Richard');
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
+  let [userId, setUserId] = useState<string | null>(null);
 
   // Bookings list state
   const [realBookingsList, setRealBookingsList] = useState<{
@@ -178,6 +180,7 @@ export default function UserDashboard() {
 
       if (meRes.ok) {
         const data = await meRes.json();
+        console.log("meRes data",data);
         setIsAuthenticated(true);
         if (data.user) {
           if (data.user.approvalStatus === 'pending' && data.user.hasCreatorProfile) {
@@ -190,8 +193,10 @@ export default function UserDashboard() {
           }
           uName = data.user.name || 'James Richard';
           uPhoto = data.creatorProfile?.profilePhoto || data.user.profilePhoto || null;
+          userId = data.user.id;
           setDisplayName(uName);
           setProfilePhoto(uPhoto);
+          setUserId(userId);
         }
       } else {
         setIsAuthenticated(false);
@@ -260,6 +265,7 @@ export default function UserDashboard() {
           const cacheData = {
             displayName: uName,
             profilePhoto: uPhoto,
+            userId: userId,
             favorites: userFavorites,
             creatorsList: creators,
             realBookingsList: { Upcoming: upcomingArr, Past: pastArr, Cancelled: cancelledArr }

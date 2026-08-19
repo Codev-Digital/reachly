@@ -10,6 +10,8 @@ import { signUp } from '@/lib/auth-client';
 function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const ref = searchParams.get("ref");
+  console.log("Referral Code:", ref); // Log the referral code to the console
   const callbackUrl = searchParams.get('callbackUrl') || '/welcome';
   const userType =
     searchParams.get('type') ||
@@ -22,6 +24,7 @@ function SignupForm() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    ref:ref || '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -30,7 +33,7 @@ function SignupForm() {
     setError('');
 
     try {
-      const res = await signUp(formData.name, formData.email);
+      const res = await signUp(formData.name, formData.email,formData.ref);
       if (res.success) {
         localStorage.setItem('signupEmail', formData.email);
         router.push(`/verify-email?callbackUrl=${encodeURIComponent(callbackUrl)}`);

@@ -1,5 +1,16 @@
 @import "tailwindcss";
 
+@keyframes checkPop {
+  0% { transform: scale(0.5); opacity: 0; }
+  60% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5); }
+  50% { box-shadow: 0 0 18px 4px rgba(16, 185, 129, 0.55); }
+}
+
 :root {
   --color-background: #0C0C0C;
   --color-accent: #C8A97E;

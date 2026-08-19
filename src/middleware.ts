@@ -5,7 +5,7 @@ import { getToken } from 'next-auth/jwt';
 // ─── Simple In-Memory Rate Limiter ──────────────────────────────────────────
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
-const MAX_REQUESTS = 100; // 100 requests per minute per IP
+const MAX_REQUESTS = 200; // 200 requests per minute per IP
 
 function isRateLimited(ip: string): boolean {
   const now = Date.now();

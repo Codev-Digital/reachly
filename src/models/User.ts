@@ -22,6 +22,8 @@ export interface IUser extends Document {
   savedCreators: string[];     // bookmark — "save for later"
   favouriteCreators: string[]; // heart — "favourites"
   comparePassword(candidatePassword: string): Promise<boolean>;
+  isReferred?: boolean;
+  whoReferred?: mongoose.Types.ObjectId;
 }
 
 const UserSchema = new Schema<IUser>(
@@ -59,6 +61,10 @@ const UserSchema = new Schema<IUser>(
     profilePhoto: { type: String },
     savedCreators: { type: [String], default: [] },
     favouriteCreators: { type: [String], default: [] },
+    //referral info
+    isReferred: { type: Boolean, default: false },
+    whoReferred: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    
   },
   { timestamps: true }
 );
