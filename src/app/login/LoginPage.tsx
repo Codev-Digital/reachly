@@ -18,6 +18,11 @@ export default function LoginPage() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const callbackUrl = searchParams.get('callbackUrl') || '/welcome';
+  const initialUserType = callbackUrl.startsWith('/creator-onboarding') ? 'creator' : 'user';
+  const [userType, setUserType] = useState<'user' | 'creator'>(initialUserType);
+  const googleCallbackUrl = userType === 'creator'
+    ? '/creator-onboarding/step-1'
+    : '/user/pending-approval';
   const signupUrl = callbackUrl.startsWith('/creator-onboarding')
     ? `/signup?type=creator&callbackUrl=${encodeURIComponent(callbackUrl)}`
     : `/signup?callbackUrl=${encodeURIComponent(callbackUrl)}`;
@@ -81,7 +86,7 @@ export default function LoginPage() {
 
   const handleGoogleSignIn = () => {
     setIsGoogleLoading(true);
-    signIn('google', { callbackUrl });
+    signIn('google', { callbackUrl: googleCallbackUrl });
   };
 
   return (
@@ -114,6 +119,37 @@ export default function LoginPage() {
                 <p className="font-sans text-gray-400 text-sm">
                   Login to your Reachly account to continue
                 </p>
+              </div>
+
+              <div
+                className="grid grid-cols-2 gap-3 mb-6"
+                role="group"
+                aria-label="Choose account type"
+              >
+                <button
+                  type="button"
+                  aria-pressed={userType === 'user'}
+                  onClick={() => setUserType('user')}
+                  className={`rounded-xl border px-4 py-3 text-sm font-bold transition-all ${
+                    userType === 'user'
+                      ? 'border-[#0012FF] bg-[#0012FF] text-white shadow-lg shadow-blue-500/20'
+                      : 'border-gray-200 bg-white text-gray-600 hover:border-[#0012FF]'
+                  }`}
+                >
+                  Continue as User
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={userType === 'creator'}
+                  onClick={() => setUserType('creator')}
+                  className={`rounded-xl border px-4 py-3 text-sm font-bold transition-all ${
+                    userType === 'creator'
+                      ? 'border-[#0012FF] bg-[#0012FF] text-white shadow-lg shadow-blue-500/20'
+                      : 'border-gray-200 bg-white text-gray-600 hover:border-[#0012FF]'
+                  }`}
+                >
+                  Continue as Creator
+                </button>
               </div>
 
               {error && (
