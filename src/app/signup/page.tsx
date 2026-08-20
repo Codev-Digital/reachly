@@ -13,9 +13,12 @@ function SignupForm() {
   const ref = searchParams.get("ref");
   console.log("Referral Code:", ref); // Log the referral code to the console
   const callbackUrl = searchParams.get("callbackUrl") || "/welcome";
-  const userType =
+  const initialUserType =
     searchParams.get("type") ||
     (callbackUrl.startsWith("/creator-onboarding") ? "creator" : "user");
+  const [userType, setUserType] = useState<"user" | "creator">(
+    initialUserType === "creator" ? "creator" : "user",
+  );
 
   const [loading, setLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
@@ -37,7 +40,7 @@ function SignupForm() {
       if (res.success) {
         localStorage.setItem("signupEmail", formData.email);
         router.push(
-          `/verify-email?callbackUrl=${encodeURIComponent(callbackUrl)}`,
+          `/verify-email?callbackUrl=${encodeURIComponent(signupCallbackUrl)}`,
         );
       } else {
         setError(res.error || "Something went wrong");
@@ -51,8 +54,16 @@ function SignupForm() {
 
   const handleGoogleSignIn = () => {
     setIsGoogleLoading(true);
-    signIn("google", { callbackUrl: `${callbackUrl}?ref=${ref || "null"}`, });
+    const refQuery = ref
+      ? `${signupCallbackUrl.includes("?") ? "&" : "?"}ref=${encodeURIComponent(ref)}`
+      : "";
+    signIn("google", { callbackUrl: `${signupCallbackUrl}${refQuery}` });
   };
+
+  const signupCallbackUrl =
+    userType === "creator"
+      ? "/creator-onboarding/step-1"
+      : "/user/pending-approval";
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -87,6 +98,66 @@ function SignupForm() {
           </p>
         </div>
 
+        {/* <div
+          className="grid grid-cols-2 gap-3 mb-6"
+          role="group"
+          aria-label="Choose account type"
+        >
+          <button
+            type="button"
+            aria-pressed={userType === "user"}
+            onClick={() => setUserType("user")}
+            className={`rounded-xl border px-4 py-3 text-sm font-bold transition-all ${
+              userType === "user"
+                ? "border-[#0012FF] bg-[#0012FF] text-white shadow-lg shadow-blue-500/20"
+                : "border-gray-200 bg-white text-gray-600 hover:border-[#0012FF]"
+            }`}
+          >
+            Create as User
+          </button>
+          <button
+            type="button"
+            aria-pressed={userType === "creator"}
+            onClick={() => setUserType("creator")}
+            className={`rounded-xl border px-4 py-3 text-sm font-bold transition-all ${
+              userType === "creator"
+                ? "border-[#0012FF] bg-[#0012FF] text-white shadow-lg shadow-blue-500/20"
+                : "border-gray-200 bg-white text-gray-600 hover:border-[#0012FF]"
+            }`}
+          >
+            Create as Creator
+          </button>
+        </div> */}
+<div
+  className="grid grid-cols-2 gap-3 mb-6"
+  role="group"
+  aria-label="Choose account type"
+>
+  <button
+    type="button"
+    aria-pressed={userType === "user"}
+    onClick={() => setUserType("user")}
+    className={`rounded-xl border px-4 py-3 text-sm font-semibold transition-colors duration-300 ease-in-out ${
+      userType === "user"
+        ? "border-[#0012FF] bg-[#0012FF] text-white"
+        : "border-gray-200 bg-white text-gray-600 hover:border-[#0012FF]/50 hover:text-[#0012FF]"
+    }`}
+  >
+    Create as User
+  </button>
+  <button
+    type="button"
+    aria-pressed={userType === "creator"}
+    onClick={() => setUserType("creator")}
+    className={`rounded-xl border px-4 py-3 text-sm font-semibold transition-colors duration-300 ease-in-out ${
+      userType === "creator"
+        ? "border-[#0012FF] bg-[#0012FF] text-white"
+        : "border-gray-200 bg-white text-gray-600 hover:border-[#0012FF]/50 hover:text-[#0012FF]"
+    }`}
+  >
+    Create as Creator
+  </button>
+</div>
         {error && (
           <div className="mb-4 p-3.5 bg-red-50 border border-red-200 rounded-xl">
             <p className="font-sans text-xs text-red-600 font-semibold">
@@ -170,7 +241,11 @@ function SignupForm() {
             disabled={loading}
             className="w-full bg-[#0012FF] hover:bg-[#000EB4] active:scale-[0.98] text-white font-sans font-bold py-3.5 px-6 rounded-full text-sm tracking-wide shadow-lg shadow-blue-500/20 transition-all disabled:opacity-50 mt-4 cursor-pointer"
           >
-            {loading ? "Creating account..." : "Create Account"}
+            {loading
+              ? "Creating account..."
+              : userType === "creator"
+                ? "Create Creator Account"
+                : "Create User Account"}
           </button>
         </form>
 

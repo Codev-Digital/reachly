@@ -2,12 +2,12 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { useEffect, useState, useRef } from 'react';
+import { Suspense, useEffect, useState, useRef } from 'react';
 import LoadingAnimation from '@/components/LoadingAnimation';
 import WelcomeModal from '@/components/WelcomeModal';
 import Home from '../page';
 
-export default function WelcomePage() {
+function WelcomeContent() {
   const router = useRouter();
   const { status } = useSession();
   const [redirected, setRedirected] = useState(false);
@@ -138,5 +138,13 @@ export default function WelcomePage() {
         loading={isLoadingButton}
       />
     </div>
+  );
+}
+
+export default function WelcomePage() {
+  return (
+    <Suspense fallback={<LoadingAnimation />}>
+      <WelcomeContent />
+    </Suspense>
   );
 }
