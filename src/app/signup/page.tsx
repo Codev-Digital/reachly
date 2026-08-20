@@ -40,7 +40,7 @@ function SignupForm() {
       if (res.success) {
         localStorage.setItem("signupEmail", formData.email);
         router.push(
-          `/verify-email?callbackUrl=${encodeURIComponent(signupCallbackUrl)}`,
+          `/verify-email?callbackUrl=${encodeURIComponent(signupCallbackWithRef)}`,
         );
       } else {
         setError(res.error || "Something went wrong");
@@ -54,16 +54,16 @@ function SignupForm() {
 
   const handleGoogleSignIn = () => {
     setIsGoogleLoading(true);
-    const refQuery = ref
-      ? `${signupCallbackUrl.includes("?") ? "&" : "?"}ref=${encodeURIComponent(ref)}`
-      : "";
-    signIn("google", { callbackUrl: `${signupCallbackUrl}${refQuery}` });
+    signIn("google", { callbackUrl: signupCallbackWithRef });
   };
 
   const signupCallbackUrl =
     userType === "creator"
       ? "/creator-onboarding/step-1"
       : "/user/pending-approval";
+  const signupCallbackWithRef = ref
+    ? `${signupCallbackUrl}?ref=${encodeURIComponent(ref)}`
+    : signupCallbackUrl;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -128,36 +128,36 @@ function SignupForm() {
             Create as Creator
           </button>
         </div> */}
-<div
-  className="grid grid-cols-2 gap-3 mb-6"
-  role="group"
-  aria-label="Choose account type"
->
-  <button
-    type="button"
-    aria-pressed={userType === "user"}
-    onClick={() => setUserType("user")}
-    className={`rounded-xl border px-4 py-3 text-sm font-semibold transition-colors duration-300 ease-in-out ${
-      userType === "user"
-        ? "border-[#0012FF] bg-[#0012FF] text-white"
-        : "border-gray-200 bg-white text-gray-600 hover:border-[#0012FF]/50 hover:text-[#0012FF]"
-    }`}
-  >
-    Create as User
-  </button>
-  <button
-    type="button"
-    aria-pressed={userType === "creator"}
-    onClick={() => setUserType("creator")}
-    className={`rounded-xl border px-4 py-3 text-sm font-semibold transition-colors duration-300 ease-in-out ${
-      userType === "creator"
-        ? "border-[#0012FF] bg-[#0012FF] text-white"
-        : "border-gray-200 bg-white text-gray-600 hover:border-[#0012FF]/50 hover:text-[#0012FF]"
-    }`}
-  >
-    Create as Creator
-  </button>
-</div>
+        <div
+          className="grid grid-cols-2 gap-3 mb-6"
+          role="group"
+          aria-label="Choose account type"
+        >
+          <button
+            type="button"
+            aria-pressed={userType === "user"}
+            onClick={() => setUserType("user")}
+            className={`rounded-xl border px-4 py-3 text-sm font-semibold transition-colors duration-300 ease-in-out ${
+              userType === "user"
+                ? "border-[#0012FF] bg-[#0012FF] text-white"
+                : "border-gray-200 bg-white text-gray-600 hover:border-[#0012FF]/50 hover:text-[#0012FF]"
+            }`}
+          >
+            Create as User
+          </button>
+          <button
+            type="button"
+            aria-pressed={userType === "creator"}
+            onClick={() => setUserType("creator")}
+            className={`rounded-xl border px-4 py-3 text-sm font-semibold transition-colors duration-300 ease-in-out ${
+              userType === "creator"
+                ? "border-[#0012FF] bg-[#0012FF] text-white"
+                : "border-gray-200 bg-white text-gray-600 hover:border-[#0012FF]/50 hover:text-[#0012FF]"
+            }`}
+          >
+            Create as Creator
+          </button>
+        </div>
         {error && (
           <div className="mb-4 p-3.5 bg-red-50 border border-red-200 rounded-xl">
             <p className="font-sans text-xs text-red-600 font-semibold">

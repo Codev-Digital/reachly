@@ -28,32 +28,30 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
-    if (ref) {
-      console.log("Called referral code:", ref);
+    if (ref && mongoose.isValidObjectId(atob(ref))) {
       const referrer = atob(ref);
       user.whoReferred = new mongoose.Types.ObjectId(referrer);
       user.isReferred = true;
-      await user.save();
-      console.log("Now call query for save in referral modal");
-      const referralRecord = await Referral.create({
-        referrer: new mongoose.Types.ObjectId(referrer),
-        joinnee: user._id,
-        totalBuyActivities: 1,
-        buyActivities: [
-          {
-            type: "newly_joinned",
-            activityTime: new Date(),
-            totalAmount: 0,
-          },
-        ],
-      });
-      console.log("Referral record created:", referralRecord);
-    } else {
-      console.log("No referral code provided");
-      user.onboardingStep = step;
-      user.hasSeenWelcome = true; // Mark that user has seen welcome page
-      await user.save();
+      const existingReferral = await Referral.findOne({ joinnee: user._id });
+      if (!existingReferral) {
+        await Referral.create({
+          referrer: new mongoose.Types.ObjectId(referrer),
+          joinnee: user._id,
+          totalBuyActivities: 1,
+          buyActivities: [
+            {
+              type: "newly_joinned",
+              activityTime: new Date(),
+              totalAmount: 0,
+            },
+          ],
+        });
+      }
     }
+
+    user.onboardingStep = Math.max(user.onboardingStep || 0, step);
+    user.hasSeenWelcome = true;
+    await user.save();
 
     return NextResponse.json({
       success: true,

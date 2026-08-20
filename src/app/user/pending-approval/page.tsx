@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import LoadingAnimation from '@/components/LoadingAnimation';
-import OnboardingNavbar from '@/components/OnboardingNavbar';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import LoadingAnimation from "@/components/LoadingAnimation";
+import OnboardingNavbar from "@/components/OnboardingNavbar";
 
 export default function UserPendingApprovalPage() {
   const router = useRouter();
@@ -13,26 +13,34 @@ export default function UserPendingApprovalPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetch('/api/user/me');
+        const res = await fetch("/api/user/me");
         if (!res.ok) {
-          router.push('/login');
+          router.push("/login");
           return;
         }
 
         const data = await res.json();
-        if (data.user?.approvalStatus === 'approved') {
-          router.push('/user/dashboard');
+        const ref = new URLSearchParams(window.location.search).get("ref");
+        if (ref) {
+          await fetch("/api/user/update-onboarding-step", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ step: 0, ref }),
+          });
+        }
+        if (data.user?.approvalStatus === "approved") {
+          router.push("/user/dashboard");
           return;
         }
 
         if (data.user?.hasCreatorProfile) {
-          router.push('/creators/pending-approval');
+          router.push("/creators/pending-approval");
           return;
         }
 
-        if (data.user?.approvalStatus !== 'pending') {
+        if (data.user?.approvalStatus !== "pending") {
           setCreatingRequest(true);
-          await fetch('/api/user-approval-request', { method: 'POST' });
+          await fetch("/api/user-approval-request", { method: "POST" });
         }
       } catch (err) {
         console.error(err);
@@ -54,7 +62,14 @@ export default function UserPendingApprovalPage() {
       <div className="flex-grow flex items-center justify-center px-4 sm:px-6 py-12 sm:py-16">
         <div className="bg-white border border-gray-200/80 rounded-3xl p-8 sm:p-12 text-center max-w-2xl w-full shadow-sm">
           <div className="mx-auto w-20 h-20 rounded-full bg-[#EEF2FF] flex items-center justify-center mb-8 shadow-xs">
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2.5">
+            <svg
+              width="36"
+              height="36"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#0012FF"
+              strokeWidth="2.5"
+            >
               <polyline points="20 6 9 17 4 12" />
             </svg>
           </div>
@@ -64,13 +79,21 @@ export default function UserPendingApprovalPage() {
           </h1>
 
           <p className="font-sans text-gray-500 text-sm sm:text-base font-medium mb-8 leading-relaxed max-w-lg mx-auto">
-            Thank you for choosing Reachly. Your normal user request has been sent to the admin team and is now waiting for approval.
+            Thank you for choosing Reachly. Your normal user request has been
+            sent to the admin team and is now waiting for approval.
           </p>
 
           <div className="bg-gray-50/50 border border-gray-100 rounded-2xl p-6 mb-8 text-left">
             <div className="flex items-start gap-4">
               <div className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center flex-shrink-0 mt-0.5 shadow-xs">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2.5">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#0012FF"
+                  strokeWidth="2.5"
+                >
                   <circle cx="12" cy="12" r="10" />
                   <polyline points="12 6 12 12 16 14" />
                 </svg>
@@ -86,7 +109,8 @@ export default function UserPendingApprovalPage() {
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-[#0012FF]">•</span>
-                    Once approved, your account will automatically unlock the user dashboard.
+                    Once approved, your account will automatically unlock the
+                    user dashboard.
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-[#0012FF]">•</span>
@@ -102,7 +126,7 @@ export default function UserPendingApprovalPage() {
             disabled={creatingRequest}
             className="w-full bg-[#0012FF] text-white hover:bg-[#0010d0] font-bold py-2.5 px-8 rounded-full text-xs transition-colors shadow-sm disabled:opacity-50"
           >
-            {creatingRequest ? 'Sending Request...' : 'Refresh Status'}
+            {creatingRequest ? "Sending Request..." : "Refresh Status"}
           </button>
         </div>
       </div>
