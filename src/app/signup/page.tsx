@@ -1,47 +1,49 @@
-'use client';
+"use client";
 
-import { useState, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { signIn } from 'next-auth/react';
-import Image from 'next/image';
-import HeroImage from '../components/HeroImage';
-import { signUp } from '@/lib/auth-client';
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { signIn } from "next-auth/react";
+import Image from "next/image";
+import HeroImage from "../components/HeroImage";
+import { signUp } from "@/lib/auth-client";
 
 function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const ref = searchParams.get("ref");
   console.log("Referral Code:", ref); // Log the referral code to the console
-  const callbackUrl = searchParams.get('callbackUrl') || '/welcome';
+  const callbackUrl = searchParams.get("callbackUrl") || "/welcome";
   const userType =
-    searchParams.get('type') ||
-    (callbackUrl.startsWith('/creator-onboarding') ? 'creator' : 'user');
+    searchParams.get("type") ||
+    (callbackUrl.startsWith("/creator-onboarding") ? "creator" : "user");
 
   const [loading, setLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    ref:ref || '',
+    name: "",
+    email: "",
+    ref: ref || "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setError("");
 
     try {
-      const res = await signUp(formData.name, formData.email,formData.ref);
+      const res = await signUp(formData.name, formData.email, formData.ref);
       if (res.success) {
-        localStorage.setItem('signupEmail', formData.email);
-        router.push(`/verify-email?callbackUrl=${encodeURIComponent(callbackUrl)}`);
+        localStorage.setItem("signupEmail", formData.email);
+        router.push(
+          `/verify-email?callbackUrl=${encodeURIComponent(callbackUrl)}`,
+        );
       } else {
-        setError(res.error || 'Something went wrong');
+        setError(res.error || "Something went wrong");
       }
     } catch (err) {
-      setError('Network error. Please try again.');
+      setError("Network error. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -49,7 +51,7 @@ function SignupForm() {
 
   const handleGoogleSignIn = () => {
     setIsGoogleLoading(true);
-    signIn('google', { callbackUrl });
+    signIn("google", { callbackUrl: `${callbackUrl}?ref=${ref || "null"}`, });
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -65,9 +67,9 @@ function SignupForm() {
           alt="Reachly Logo"
           width={120}
           height={40}
-          style={{ width: 'auto', height: '40px' }}
+          style={{ width: "auto", height: "40px" }}
           className="cursor-pointer"
-          onClick={() => router.push('/')}
+          onClick={() => router.push("/")}
           priority
         />
       </div>
@@ -79,15 +81,17 @@ function SignupForm() {
             Create Account
           </h1>
           <p className="font-sans text-gray-400 text-sm">
-            {userType === 'creator'
-              ? 'Join as a creator and share your knowledge'
-              : 'Join to book sessions with amazing creators'}
+            {userType === "creator"
+              ? "Join as a creator and share your knowledge"
+              : "Join to book sessions with amazing creators"}
           </p>
         </div>
 
         {error && (
           <div className="mb-4 p-3.5 bg-red-50 border border-red-200 rounded-xl">
-            <p className="font-sans text-xs text-red-600 font-semibold">{error}</p>
+            <p className="font-sans text-xs text-red-600 font-semibold">
+              {error}
+            </p>
           </div>
         )}
 
@@ -100,8 +104,18 @@ function SignupForm() {
             <div className="relative">
               <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
                 {/* User Icon */}
-                <svg className="w-4 h-4 text-[#0012FF]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                <svg
+                  className="w-4 h-4 text-[#0012FF]"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                  />
                 </svg>
               </div>
               <input
@@ -124,8 +138,18 @@ function SignupForm() {
             <div className="relative">
               <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
                 {/* Envelope Icon */}
-                <svg className="w-4 h-4 text-[#0012FF]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                <svg
+                  className="w-4 h-4 text-[#0012FF]"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                  />
                 </svg>
               </div>
               <input
@@ -146,7 +170,7 @@ function SignupForm() {
             disabled={loading}
             className="w-full bg-[#0012FF] hover:bg-[#000EB4] active:scale-[0.98] text-white font-sans font-bold py-3.5 px-6 rounded-full text-sm tracking-wide shadow-lg shadow-blue-500/20 transition-all disabled:opacity-50 mt-4 cursor-pointer"
           >
-            {loading ? 'Creating account...' : 'Create Account'}
+            {loading ? "Creating account..." : "Create Account"}
           </button>
         </form>
 
@@ -167,24 +191,19 @@ function SignupForm() {
           {isGoogleLoading ? (
             <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
           ) : (
-            <Image
-              src="/google.svg"
-              alt="Google"
-              width={16}
-              height={16}
-            />
+            <Image src="/google.svg" alt="Google" width={16} height={16} />
           )}
-          {isGoogleLoading ? 'Redirecting...' : 'Sign up with Google'}
+          {isGoogleLoading ? "Redirecting..." : "Sign up with Google"}
         </button>
       </div>
 
       {/* Bottom Redirect Link */}
       <div className="mt-8 pt-4 border-t border-gray-100 text-center">
         <p className="font-sans text-xs text-gray-500 font-medium">
-          Already have an account?{' '}
+          Already have an account?{" "}
           <span
             className="text-[#0012FF] font-bold cursor-pointer hover:underline"
-            onClick={() => router.push('/login')}
+            onClick={() => router.push("/login")}
           >
             Sign in
           </span>

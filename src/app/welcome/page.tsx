@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useEffect, useState, useRef } from 'react';
 import LoadingAnimation from '@/components/LoadingAnimation';
@@ -15,7 +15,9 @@ export default function WelcomePage() {
   const [isLoadingButton, setIsLoadingButton] = useState(false);
   const [userData, setUserData] = useState<any>(null);
   const [selected, setSelected] = useState<'user' | 'creator' | null>(null);
-
+  const searchParams = useSearchParams();
+   const ref = searchParams.get("ref")
+   console.log("Referral Code in Welcome Page:", ref); // Log the referral code to the console
   const hasSelected = useRef(false);
 
   useEffect(() => {
@@ -98,7 +100,7 @@ export default function WelcomePage() {
       await fetch('/api/user/update-onboarding-step', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ step: selected === 'creator' ? 1 : 0 }),
+        body: JSON.stringify({ step: selected === 'creator' ? 1 : 0 , ref}),
       });
       router.push(selected === 'creator' ? '/creator-onboarding/step-1' : '/user/pending-approval');
     } catch (error) {

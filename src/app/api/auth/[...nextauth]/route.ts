@@ -83,7 +83,6 @@ export const authOptions: NextAuthOptions = {
     async signIn({ user, account }) {
       if (account?.provider === "google" && user.email && user.name) {
         await connectDB();
-
         const existingUser = await User.findOne({ email: user.email });
 
         if (!existingUser) {

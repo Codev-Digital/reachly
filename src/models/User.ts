@@ -24,6 +24,7 @@ export interface IUser extends Document {
   comparePassword(candidatePassword: string): Promise<boolean>;
   isReferred?: boolean;
   whoReferred?: mongoose.Types.ObjectId;
+  totalAmountEarnedFromReferrals?: number;
 }
 
 const UserSchema = new Schema<IUser>(
@@ -64,6 +65,7 @@ const UserSchema = new Schema<IUser>(
     //referral info
     isReferred: { type: Boolean, default: false },
     whoReferred: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    totalAmountEarnedFromReferrals: { type: Number, default: 0 },
     
   },
   { timestamps: true }
