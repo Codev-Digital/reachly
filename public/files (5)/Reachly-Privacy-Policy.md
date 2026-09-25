@@ -93,6 +93,6 @@ We may update this Privacy Policy from time to time. The updated version will be
 For any questions or requests regarding your privacy, contact us at:
 
 **Reachly**
-Email: [INSERT EMAIL, e.g. privacy@reachly.pk]
-WhatsApp / Phone: [INSERT NUMBER]
-Address: [INSERT REGISTERED BUSINESS ADDRESS]
+Email: support@reachly.pk
+WhatsApp / Phone: +92 331 0448857
+Address: 45-D Toheed Park Gulshan-e-ravi Lahore

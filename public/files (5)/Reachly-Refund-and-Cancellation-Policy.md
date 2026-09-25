@@ -64,6 +64,6 @@ We reserve the right to decline refunds and to suspend accounts where we detect 
 For refund or cancellation questions, contact:
 
 **Reachly**
-Email: [INSERT EMAIL, e.g. support@reachly.pk]
-WhatsApp / Phone: [INSERT NUMBER]
-Address: [INSERT REGISTERED BUSINESS ADDRESS]
+Email: support@reachly.pk
+WhatsApp / Phone: +92 331 0448857
+Address: 45-D Toheed Park Gulshan-e-ravi Lahore

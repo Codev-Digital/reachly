@@ -92,6 +92,6 @@ We may update these Terms from time to time. The updated version will be posted 
 For any questions about these Terms, contact us at:
 
 **Reachly**
-Email: [INSERT EMAIL, e.g. support@reachly.pk]
-WhatsApp / Phone: [INSERT NUMBER]
-Address: [INSERT REGISTERED BUSINESS ADDRESS]
+Email: support@reachly.pk
+WhatsApp / Phone: +92 331 0448857
+Address: 45-D Toheed Park Gulshan-e-ravi Lahore

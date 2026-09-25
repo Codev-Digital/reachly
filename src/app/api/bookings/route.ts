@@ -9,6 +9,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { createMeetingRoom } from "@/lib/daily";
 import Referral from "@/models/referral.model";
+import mongoose from "mongoose";
 
 // Helper to generate booking reference
 function generateBookingRef(): string {
@@ -93,14 +94,21 @@ export async function POST(request: NextRequest) {
         referrer: referrerID,
         joinnee: u._id,
       });
+      //fetch referrer user
+      const referrerUser = await User.findById(referrerID);
       //now check in buyActivities if this is first purchase or not
+      console.log("Referral User:", referrerUser);
+      console.log("Referral Document:", referralDoc);
+      let referralReward = "";
       if (referralDoc.totalBuyActivities === 1) {
         //so if there 1 mean they not buy anything yet so we can add the amount to referrer
         //calculate referral reward
-        const referralReward = (0.05 * finalPrice).toFixed(2); // 10% of the final price
+        referralReward = (0.05 * finalPrice).toFixed(2); // 5% of the final price
         //update the referrer user totalAmountEarnedFromReferrals
-        u.totalAmountEarnedFromReferrals = Number(referralReward);
-        await u.save();
+        referrerUser!.totalAmountEarnedFromReferrals =
+          (Number(referrerUser!.totalAmountEarnedFromReferrals) || 0) + Number(referralReward);
+        console.log("Save after updating referral reward:", referrerUser);
+        await referrerUser!.save();
         //after save update referral doc buyActivities
         referralDoc.totalBuyActivities += 1;
         referralDoc.buyActivities.push({
@@ -108,11 +116,12 @@ export async function POST(request: NextRequest) {
           activityTime: new Date(),
           totalAmount: Number(referralReward),
           status: "completed",
+          sessionId: new mongoose.Types.ObjectId(sessionId),
         });
         await referralDoc.save();
-        //TASK : send notification to referrer about the reward
+        //TODO : send notification to referrer about the reward
       } else {
-        return;
+       console.log("You have already received a referral reward for this user. No additional reward will be given.");
       }
     }
     if (!userToAttachId) {

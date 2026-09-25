@@ -3,22 +3,22 @@ import mongoose from "mongoose";
 interface IReferral {
   referrer: mongoose.Types.ObjectId;
   joinnee: mongoose.Types.ObjectId;
-  referalType: "newly_joinned" | "buy_session";
   totalBuyActivities: number;
   buyActivities: IBuyActivity[];
 }
 // Buy Activity interface
 interface IBuyActivity {
-  type: "newly_joinned" | "buy_session";
+  type: "newly_joinned" | "buy_session" | "cancel_session";
   activityTime: Date;
   totalAmount: number;
-  status: string
+  status: string;
+  sessionId?: mongoose.Types.ObjectId;
 }
 //Buy Activities model
 const buyActivitiesSchema = new mongoose.Schema<IBuyActivity>({
   type: {
     type: String,
-    enum: ["newly_joinned", "buy_session"],
+    enum: ["newly_joinned", "buy_session", "cancel_session"],
     required: true,
   },
   activityTime: {
@@ -33,6 +33,10 @@ const buyActivitiesSchema = new mongoose.Schema<IBuyActivity>({
   status:{
     type: String,
     default: "pending",
+  },
+  sessionId:{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Session",
   }
 });
 // Create referral schema

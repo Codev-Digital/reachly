@@ -51,6 +51,6 @@ Reachly currently operates in Pakistan, with all transactions in PKR through sup
 If you experience any problem before, during, or after a session, our support team can help with rescheduling, technical issues, and disputes.
 
 **Reachly**
-Email: [INSERT EMAIL, e.g. support@reachly.pk]
-WhatsApp / Phone: [INSERT NUMBER]
-Address: [INSERT REGISTERED BUSINESS ADDRESS]
+Email: support@reachly.pk
+WhatsApp / Phone: +92 331 0448857
+Address: 45-D Toheed Park Gulshan-e-ravi Lahore
