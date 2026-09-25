@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Camera, Globe2, Music2, Pin, Play } from "lucide-react";
 
 const platformLinks = [
   { name: "Explore", href: "/explore-creators" },
@@ -76,19 +77,23 @@ export default function Footer() {
               </p>
               <div className="flex items-center gap-2.5">
                 {[
-                  "Facebook",
-                  "Instagram",
-                  "Pinterest",
-                  "YouTube",
-                  "TikTok",
-                ].map((name) => (
+                  { name: "Facebook", icon: Globe2 },
+                  { name: "Instagram", icon: Camera },
+                  { name: "Pinterest", icon: Pin },
+                  { name: "YouTube", icon: Play },
+                  { name: "TikTok", icon: Music2 },
+                ].map(({ name, icon: Icon }) => (
                   <Link
                     key={name}
                     href="#"
                     aria-label={name}
-                    className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-[10px] font-semibold text-white transition-colors hover:bg-white/25"
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/25"
                   >
-                    {name.slice(0, 1)}
+                    <Icon
+                      className="h-4 w-4"
+                      strokeWidth={1.8}
+                      aria-hidden="true"
+                    />
                   </Link>
                 ))}
               </div>
