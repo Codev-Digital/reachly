@@ -54,88 +54,90 @@ export async function GET(request: NextRequest) {
     const limit = 10;
     const skip = (page - 1) * limit;
 
-    const referrals = await Referral.aggregate([
-      // 1. Get referrals of logged-in user
-      {
-        $match: {
-          referrer: new mongoose.Types.ObjectId(loggedInUserId),
-        },
-      },
-
-      // 2. Create separate document for every buy activity
-      {
-        $unwind: "$buyActivities",
-      },
-
-      // 3. Most recent activity first
-      {
-        $sort: {
-          "buyActivities.activityTime": -1,
-        },
-      },
-
-      // 4. Pagination
-      {
-        $skip: skip,
-      },
-      {
-        $limit: limit,
-      },
-
-      // 5. Get joinnee details
-      {
-        $lookup: {
-          from: "users",
-          localField: "joinnee",
-          foreignField: "_id",
-          as: "joinnee",
-        },
-      },
-
-      // 6. Convert joinnee array to object
-      {
-        $unwind: {
-          path: "$joinnee",
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-
-      // 7. Return required fields
-      {
-        $project: {
-          _id: 1,
-          referrer: 1,
-          totalBuyActivities: 1,
-
-          joinnee: {
-            _id: "$joinnee._id",
-            name: "$joinnee.name",
-            email: "$joinnee.email",
+    const [referrals, totalResult] = await Promise.all([
+      Referral.aggregate([
+        // 1. Get referrals of logged-in user
+        {
+          $match: {
+            referrer: new mongoose.Types.ObjectId(loggedInUserId),
           },
+        },
 
-          buyActivity: "$buyActivities",
+        // 2. Create separate document for every buy activity
+        {
+          $unwind: "$buyActivities",
         },
-      },
-    ]);
 
-    // Total activities for pagination
-    const totalResult = await Referral.aggregate([
-      {
-        $match: {
-          referrer: new mongoose.Types.ObjectId(loggedInUserId),
+        // 3. Most recent activity first
+        {
+          $sort: {
+            "buyActivities.activityTime": -1,
+          },
         },
-      },
-      {
-        $project: {
-          count: { $size: "$buyActivities" },
+
+        // 4. Pagination
+        {
+          $skip: skip,
         },
-      },
-      {
-        $group: {
-          _id: null,
-          total: { $sum: "$count" },
+        {
+          $limit: limit,
         },
-      },
+
+        // 5. Get joinnee details
+        {
+          $lookup: {
+            from: "users",
+            localField: "joinnee",
+            foreignField: "_id",
+            as: "joinnee",
+          },
+        },
+
+        // 6. Convert joinnee array to object
+        {
+          $unwind: {
+            path: "$joinnee",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+
+        // 7. Return required fields
+        {
+          $project: {
+            _id: 1,
+            referrer: 1,
+            totalBuyActivities: 1,
+
+            joinnee: {
+              _id: "$joinnee._id",
+              name: "$joinnee.name",
+              email: "$joinnee.email",
+            },
+
+            buyActivity: "$buyActivities",
+          },
+        },
+      ]),
+
+      // Total activities for pagination
+      Referral.aggregate([
+        {
+          $match: {
+            referrer: new mongoose.Types.ObjectId(loggedInUserId),
+          },
+        },
+        {
+          $project: {
+            count: { $size: "$buyActivities" },
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            total: { $sum: "$count" },
+          },
+        },
+      ])
     ]);
 
     const total = totalResult[0]?.total || 0;

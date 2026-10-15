@@ -67,7 +67,8 @@ const referralSchema = new mongoose.Schema<IReferral>(
   { timestamps: true },
 );
 
-//now create model
+referralSchema.index({ referrer: 1, joinnee: 1 });
+referralSchema.index({ referrer: 1 });
 
 const Referral =
   mongoose.models.Referral ||

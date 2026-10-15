@@ -7,7 +7,7 @@ import UserNavbar from '@/components/UserNavbar';
 import { CreditCard, DollarSign, Clock, Calendar, TrendingUp, ArrowUpRight } from 'lucide-react';
 
 export default function UserPayments() {
-  const [displayName, setDisplayName] = useState('James Richard');
+  const [displayName, setDisplayName] = useState('');
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [methodFilter, setMethodFilter] = useState('All');
@@ -20,12 +20,36 @@ export default function UserPayments() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function loadData() {
+    // Read cached user details immediately
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = sessionStorage.getItem('reachly_user_settings_cache');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed.name) setDisplayName(parsed.name);
+          if (parsed.profilePhoto) setProfilePhoto(parsed.profilePhoto);
+        }
+      } catch (e) {}
+    }
+
+    async function loadAll() {
       try {
         setLoading(true);
-        const res = await fetch('/api/user/bookings');
-        if (res.ok) {
-          const data = await res.json();
+        const [authRes, bookingsRes] = await Promise.all([
+          fetch('/api/user/me'),
+          fetch('/api/user/bookings')
+        ]);
+
+        if (authRes.ok) {
+          const userData = await authRes.json();
+          if (userData.user) {
+            setDisplayName(userData.user.name || '');
+            setProfilePhoto(userData.creatorProfile?.profilePhoto || userData.user.profilePhoto || null);
+          }
+        }
+
+        if (bookingsRes.ok) {
+          const data = await bookingsRes.json();
           const formatted = (data.bookings || []).map((b: any) => ({
             id: b.ref || `TXN-${b.id.slice(-5).toUpperCase()}`,
             creator: {
@@ -46,29 +70,13 @@ export default function UserPayments() {
           setTransactions(formatted);
         }
       } catch (err) {
-        console.error('Error loading bookings:', err);
+        console.error('Error loading payments data:', err);
       } finally {
         setLoading(false);
       }
     }
 
-    async function checkAuth() {
-      try {
-        const res = await fetch('/api/user/me');
-        if (res.ok) {
-          const userData = await res.json();
-          if (userData.user) {
-            setDisplayName(userData.user.name || 'James Richard');
-            setProfilePhoto(userData.creatorProfile?.profilePhoto || userData.user.profilePhoto || null);
-          }
-        }
-      } catch (err) {
-        console.error('Error fetching user:', err);
-      }
-    }
-
-    checkAuth();
-    loadData();
+    loadAll();
   }, []);
 
   const filteredTransactions = transactions.filter(txn => {
