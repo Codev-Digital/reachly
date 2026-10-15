@@ -3,25 +3,29 @@ const mongoose = require('mongoose');
 const fs = require('fs');
 const path = require('path');
 
-// 1. Load Environment Variables from .env file manually
+// 1. Load Environment Variables from .env and .env.local manually
 try {
-  const envPath = path.join(__dirname, '.env');
-  if (fs.existsSync(envPath)) {
-    const envConfig = fs.readFileSync(envPath, 'utf8');
-    envConfig.split('\n').forEach(line => {
-      const parts = line.split('=');
-      if (parts.length >= 2) {
-        const key = parts[0].trim();
-        let value = parts.slice(1).join('=').trim();
-        if (value.startsWith('"') && value.endsWith('"')) value = value.slice(1, -1);
-        else if (value.startsWith("'") && value.endsWith("'")) value = value.slice(1, -1);
-        process.env[key] = value;
-      }
-    });
-    console.log('Loaded env variables from .env');
-  }
+  ['.env', '.env.local'].forEach(file => {
+    const envPath = path.join(__dirname, file);
+    if (fs.existsSync(envPath)) {
+      const envConfig = fs.readFileSync(envPath, 'utf8');
+      envConfig.split('\n').forEach(line => {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith('#')) return;
+        const parts = trimmed.split('=');
+        if (parts.length >= 2) {
+          const key = parts[0].trim();
+          let value = parts.slice(1).join('=').trim();
+          if (value.startsWith('"') && value.endsWith('"')) value = value.slice(1, -1);
+          else if (value.startsWith("'") && value.endsWith("'")) value = value.slice(1, -1);
+          process.env[key] = value;
+        }
+      });
+      console.log(`Loaded env variables from ${file}`);
+    }
+  });
 } catch (e) {
-  console.error('Error loading .env file:', e);
+  console.error('Error loading env file:', e);
 }
 
 const MONGODB_URI = process.env.MONGODB_URI;

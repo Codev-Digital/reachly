@@ -10,6 +10,8 @@ interface CreatorProfileCardProps {
   onMobileBookClick?: () => void;
 }
 
+let globalFavListCache: string[] | null = null;
+
 export default function CreatorProfileCard({ creator, mobileMode = 'compact', onMobileBookClick }: CreatorProfileCardProps) {
   const [isFavourite, setIsFavourite] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -22,11 +24,28 @@ export default function CreatorProfileCard({ creator, mobileMode = 'compact', on
     if (!creator?.username) return;
     const checkFavouriteStatus = async () => {
       try {
+        if (globalFavListCache !== null) {
+          setIsFavourite(globalFavListCache.includes(creator.username));
+          setLoading(false);
+          return;
+        }
+        if (typeof window !== 'undefined') {
+          const cached = sessionStorage.getItem('reachly_fav_creators');
+          if (cached) {
+            const list = JSON.parse(cached);
+            globalFavListCache = list;
+            setIsFavourite(list.includes(creator.username));
+            setLoading(false);
+            return;
+          }
+        }
         const res = await fetch('/api/user/favourite-creators');
         if (res.ok) {
           setIsAuthenticated(true);
           const data = await res.json();
           const favouriteList = data.favouriteCreators || [];
+          globalFavListCache = favouriteList;
+          try { sessionStorage.setItem('reachly_fav_creators', JSON.stringify(favouriteList)); } catch (e) {}
           setIsFavourite(favouriteList.includes(creator.username));
         } else if (res.status === 401) {
           setIsAuthenticated(false);
@@ -60,6 +79,8 @@ export default function CreatorProfileCard({ creator, mobileMode = 'compact', on
       if (res.ok) {
         const data = await res.json();
         const favouriteList = data.favouriteCreators || [];
+        globalFavListCache = favouriteList;
+        try { sessionStorage.setItem('reachly_fav_creators', JSON.stringify(favouriteList)); } catch (e) {}
         setIsFavourite(favouriteList.includes(creator.username));
       } else {
         setIsFavourite(!nextFavouriteState);

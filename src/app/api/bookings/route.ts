@@ -66,12 +66,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 1. Find the creator and session type
-    const creatorProfile = await CreatorProfile.findOne({ username });
+    // 1. Find the creator and session type concurrently
+    const [creatorProfile, sessionType] = await Promise.all([
+      CreatorProfile.findOne({ username }).lean(),
+      SessionType.findById(sessionId).lean()
+    ]);
+
     if (!creatorProfile)
       return NextResponse.json({ error: "Creator not found" }, { status: 404 });
 
-    const sessionType = await SessionType.findById(sessionId);
     if (!sessionType)
       return NextResponse.json(
         { error: "Session type not found" },
@@ -89,18 +92,18 @@ export async function POST(request: NextRequest) {
     if (u?.isReferred) {
       //now check who referred this user
       const referrerID = u.whoReferred;
-      //now check total number pruchase
-      const referralDoc = await Referral.findOne({
-        referrer: referrerID,
-        joinnee: u._id,
-      });
-      //fetch referrer user
-      const referrerUser = await User.findById(referrerID);
+      const [referralDoc, referrerUser] = await Promise.all([
+        Referral.findOne({
+          referrer: referrerID,
+          joinnee: u._id,
+        }),
+        User.findById(referrerID)
+      ]);
       //now check in buyActivities if this is first purchase or not
       console.log("Referral User:", referrerUser);
       console.log("Referral Document:", referralDoc);
       let referralReward = "";
-      if (referralDoc.totalBuyActivities === 1) {
+      if (referralDoc && referralDoc.totalBuyActivities === 1) {
         //so if there 1 mean they not buy anything yet so we can add the amount to referrer
         //calculate referral reward
         referralReward = (0.05 * finalPrice).toFixed(2); // 5% of the final price
@@ -108,17 +111,24 @@ export async function POST(request: NextRequest) {
         referrerUser!.totalAmountEarnedFromReferrals =
           (Number(referrerUser!.totalAmountEarnedFromReferrals) || 0) + Number(referralReward);
         console.log("Save after updating referral reward:", referrerUser);
-        await referrerUser!.save();
-        //after save update referral doc buyActivities
-        referralDoc.totalBuyActivities += 1;
-        referralDoc.buyActivities.push({
-          type: "buy_session",
-          activityTime: new Date(),
-          totalAmount: Number(referralReward),
-          status: "completed",
-          sessionId: new mongoose.Types.ObjectId(sessionId),
-        });
-        await referralDoc.save();
+        await Promise.all([
+          referrerUser!.save(),
+          Referral.updateOne(
+            { _id: referralDoc._id },
+            {
+              $inc: { totalBuyActivities: 1 },
+              $push: {
+                buyActivities: {
+                  type: "buy_session",
+                  activityTime: new Date(),
+                  totalAmount: Number(referralReward),
+                  status: "completed",
+                  sessionId: new mongoose.Types.ObjectId(sessionId),
+                }
+              }
+            }
+          )
+        ]);
         //TODO : send notification to referrer about the reward
       } else {
        console.log("You have already received a referral reward for this user. No additional reward will be given.");
@@ -200,63 +210,73 @@ export async function POST(request: NextRequest) {
 
     await booking.save();
 
-    // Automatically create a conversation if the user is logged in
-    if (userToAttachId) {
+    // Perform conversation check, notification, and email asynchronously without blocking HTTP response
+    (async () => {
       try {
-        const Conversation = (await import("@/models/Conversation")).default;
-        const existingConv = await Conversation.findOne({
-          creatorId: creatorProfile.userId,
-          userId: userToAttachId,
-        });
-        if (!existingConv) {
-          await Conversation.create({
-            creatorId: creatorProfile.userId,
-            userId: userToAttachId,
-            isLocked: true,
-          });
+        if (userToAttachId) {
+          try {
+            const Conversation = (await import("@/models/Conversation")).default;
+            const existingConv = await Conversation.findOne({
+              creatorId: creatorProfile.userId,
+              userId: userToAttachId,
+            }).lean();
+            if (!existingConv) {
+              await Conversation.create({
+                creatorId: creatorProfile.userId,
+                userId: userToAttachId,
+                isLocked: true,
+              });
+            }
+          } catch (convErr) {
+            console.error("Error creating conversation on booking:", convErr);
+          }
         }
-      } catch (convErr) {
-        console.error("Error creating conversation on booking:", convErr);
+
+        // Notification for creator
+        try {
+          const Notification = (await import("@/models/Notification")).default;
+          await new Notification({
+            userId: creatorProfile.userId,
+            title: "New Session Booked",
+            message: `${userDetails.fullName} booked a "${sessionType.title}" session on ${formatDate(new Date(date))} at ${time}.`,
+            type: "booking",
+            read: false,
+            time: "Just now",
+          }).save();
+        } catch (notifErr) {
+          console.error("Error creating creator notification:", notifErr);
+        }
+
+        // Send confirmation email
+        try {
+          const emailHtml = generateBookingConfirmationEmail({
+            bookingRef,
+            creatorName: creatorProfile.displayName,
+            creatorUsername: creatorProfile.username,
+            creatorProfilePhoto: creatorProfile.profilePhoto || "",
+            sessionTitle: sessionType.title,
+            sessionDuration: `${sessionType.duration} min`,
+            date: formatDate(new Date(date)),
+            time,
+            userName: userDetails.fullName,
+            userEmail: userDetails.email.toLowerCase(),
+            whatsapp: userDetails.whatsapp,
+            whatToDiscuss: userDetails.whatToDiscuss,
+            meetLink: meetingUrl,
+          });
+
+          await sendEmail(
+            userDetails.email.toLowerCase(),
+            `Your Booking with ${creatorProfile.displayName} is Confirmed!`,
+            emailHtml,
+          );
+        } catch (emailErr) {
+          console.error("Error sending booking email:", emailErr);
+        }
+      } catch (bgErr) {
+        console.error("Background task error:", bgErr);
       }
-    }
-
-    // Create a real Notification for the creator
-    try {
-      const Notification = (await import("@/models/Notification")).default;
-      await new Notification({
-        userId: creatorProfile.userId,
-        title: "New Session Booked",
-        message: `${userDetails.fullName} booked a "${sessionType.title}" session on ${formatDate(new Date(date))} at ${time}.`,
-        type: "booking",
-        read: false,
-        time: "Just now",
-      }).save();
-    } catch (notifErr) {
-      console.error("Error creating creator notification:", notifErr);
-    }
-
-    // Send confirmation email
-    const emailHtml = generateBookingConfirmationEmail({
-      bookingRef,
-      creatorName: creatorProfile.displayName,
-      creatorUsername: creatorProfile.username,
-      creatorProfilePhoto: creatorProfile.profilePhoto || "",
-      sessionTitle: sessionType.title,
-      sessionDuration: `${sessionType.duration} min`,
-      date: formatDate(new Date(date)),
-      time,
-      userName: userDetails.fullName,
-      userEmail: userDetails.email.toLowerCase(),
-      whatsapp: userDetails.whatsapp,
-      whatToDiscuss: userDetails.whatToDiscuss,
-      meetLink: meetingUrl,
-    });
-
-    await sendEmail(
-      userDetails.email.toLowerCase(),
-      `Your Booking with ${creatorProfile.displayName} is Confirmed!`,
-      emailHtml,
-    );
+    })();
 
     return NextResponse.json({
       success: true,

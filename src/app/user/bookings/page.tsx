@@ -106,7 +106,16 @@ export default function UserBookingsPage() {
       let uName = 'Guest';
       let uPhoto: string | null = null;
 
-      const authRes = await fetch('/api/user/me');
+      // Fetch user profile and bookings concurrently
+      const params = new URLSearchParams(window.location.search);
+      const ge = params.get('guestEmail');
+      const bookingsUrl = ge ? `/api/user/bookings?guestEmail=${encodeURIComponent(ge)}` : '/api/user/bookings';
+
+      const [authRes, bookingsRes] = await Promise.all([
+        fetch('/api/user/me'),
+        fetch(bookingsUrl)
+      ]);
+
       if (authRes.ok) {
         const userData = await authRes.json();
         if (userData.user) {
@@ -117,12 +126,6 @@ export default function UserBookingsPage() {
           setIsGuest(false);
         }
       }
-
-      // Fetch bookings — use guestEmail param if not logged in
-      const params = new URLSearchParams(window.location.search);
-      const ge = params.get('guestEmail');
-      const bookingsUrl = ge ? `/api/user/bookings?guestEmail=${encodeURIComponent(ge)}` : '/api/user/bookings';
-      const bookingsRes = await fetch(bookingsUrl);
       if (bookingsRes.ok) {
         const data = await bookingsRes.json();
         if (data.bookings) {

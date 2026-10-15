@@ -44,3 +44,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.tspublic/assets/jdk-26_linux-x64_bin*
+
+# database migration & backup
+db-backup/
+test-connections.mjs
+export-source-data.mjs
+migrate-to-target.mjs

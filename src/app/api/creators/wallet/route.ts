@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
     }
 
     await connectDB();
-    const user = await User.findOne({ email: session.user.email });
+    const user = await User.findOne({ email: session.user.email }).select('_id').lean() as any;
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
@@ -24,26 +24,30 @@ export async function GET(req: NextRequest) {
     // Auto-settle: mark past-due pending earnings as paid before fetching
     await autoSettleEarnings(user._id.toString());
 
-    // Fetch incoming bookings (this creator is the host — earnings)
-    const incomingBookings = await Booking.find({ creatorId: user._id })
-      .populate({ path: 'sessionTypeId', model: SessionType })
-      .sort({ createdAt: -1 });
+    // Fetch incoming and outgoing bookings in parallel with .lean()
+    const [incomingBookings, outgoingBookings] = (await Promise.all([
+      Booking.find({ creatorId: user._id })
+        .populate({ path: 'sessionTypeId', model: SessionType, select: 'title' })
+        .sort({ createdAt: -1 })
+        .lean(),
+      Booking.find({ userId: user._id, creatorId: { $ne: user._id } })
+        .populate({ path: 'sessionTypeId', model: SessionType, select: 'title' })
+        .sort({ createdAt: -1 })
+        .lean()
+    ])) as [any[], any[]];
 
-    // Fetch outgoing bookings (this creator booked another creator)
-    const outgoingBookings = await Booking.find({ userId: user._id, creatorId: { $ne: user._id } })
-      .populate({ path: 'sessionTypeId', model: SessionType })
-      .sort({ createdAt: -1 });
-
-    // Collect other creator IDs for name lookup on outgoing
+    // Collect other creator IDs for name lookup on outgoing in parallel
     const otherCreatorIds = Array.from(new Set(outgoingBookings.map((b: any) => b.creatorId?.toString()).filter(Boolean)));
-    const otherCreatorProfiles = otherCreatorIds.length > 0
-      ? await CreatorProfile.find({ userId: { $in: otherCreatorIds } }).select('userId displayName').lean() as any[]
-      : [];
-    const otherCreatorProfilesMap = new Map<string, string>(otherCreatorProfiles.map((cp) => [cp.userId.toString(), cp.displayName]));
-    const otherCreatorUsers = otherCreatorIds.length > 0
-      ? await User.find({ _id: { $in: otherCreatorIds } }).select('name').lean() as any[]
-      : [];
-    const otherCreatorUsersMap = new Map<string, string>(otherCreatorUsers.map((u: any) => [u._id.toString(), u.name]));
+    const [otherCreatorProfiles, otherCreatorUsers] = (await Promise.all([
+      otherCreatorIds.length > 0
+        ? CreatorProfile.find({ userId: { $in: otherCreatorIds } }).select('userId displayName').lean()
+        : Promise.resolve([]),
+      otherCreatorIds.length > 0
+        ? User.find({ _id: { $in: otherCreatorIds } }).select('name').lean()
+        : Promise.resolve([])
+    ])) as [any[], any[]];
+    const otherCreatorProfilesMap = new Map<string, string>((otherCreatorProfiles as any[]).map((cp) => [cp.userId.toString(), cp.displayName]));
+    const otherCreatorUsersMap = new Map<string, string>((otherCreatorUsers as any[]).map((u: any) => [u._id.toString(), u.name]));
 
     // Calculate metrics
     let lifetimeEarning = 0;

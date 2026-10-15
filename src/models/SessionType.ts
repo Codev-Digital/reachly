@@ -62,6 +62,8 @@ const SessionTypeSchema = new Schema<ISessionType>(
   { timestamps: true }
 );
 
+SessionTypeSchema.index({ userId: 1, order: 1 });
+
 const SessionType: Model<ISessionType> =
   mongoose.models.SessionType ||
   mongoose.model<ISessionType>('SessionType', SessionTypeSchema);

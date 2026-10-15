@@ -52,19 +52,68 @@ export default function BookSessionStep2() {
 
   const datesList = getDatesList();
 
-  // Fetch full schedule once on mount
-  useEffect(() => {
-    async function fetchSchedule() {
+  const slotsCache = useRef<Record<string, string[]>>({});
+
+  // Fetch slots (and schedule from same response) with in-memory caching
+  const fetchSlots = useCallback(async (date: Date) => {
+    const iso = toISO(date);
+    if (iso === fetchedDate && slots.length > 0) return;
+
+    if (slotsCache.current[iso]) {
+      setSlots(slotsCache.current[iso]);
+      setFetchedDate(iso);
+      setLoadingSlots(false);
+      return;
+    }
+
+    const cacheKey = `reachly_slots_${params.username}_${iso}`;
+    if (typeof window !== 'undefined') {
       try {
-        const res = await fetch(`/api/creators/${params.username}/availability`);
-        const data = await res.json();
-        if (data.success && data.schedule) {
+        const stored = sessionStorage.getItem(cacheKey);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          slotsCache.current[iso] = parsed;
+          setSlots(parsed);
+          setFetchedDate(iso);
+          setLoadingSlots(false);
+          return;
+        }
+      } catch (e) {}
+    }
+
+    setLoadingSlots(true);
+    try {
+      const res = await fetch(`/api/creators/${params.username}/availability?date=${iso}`);
+      const data = await res.json();
+      if (data.success) {
+        const availableSlots = data.slots || [];
+        slotsCache.current[iso] = availableSlots;
+        if (typeof window !== 'undefined') {
+          try {
+            sessionStorage.setItem(cacheKey, JSON.stringify(availableSlots));
+          } catch (e) {}
+        }
+        setSlots(availableSlots);
+        setFetchedDate(iso);
+        if (data.schedule) {
           setSchedule(data.schedule);
         }
-      } catch { /* silent */ }
+      } else {
+        setSlots([]);
+      }
+    } catch (err) {
+      console.error('Error fetching slots:', err);
+      setSlots([]);
+    } finally {
+      setLoadingSlots(false);
     }
-    fetchSchedule();
-  }, [params.username]);
+  }, [params.username, fetchedDate, slots.length]);
+
+  useEffect(() => {
+    if (params.username) {
+      router.prefetch(`/creators/${params.username}/book-session/step-3${queryStr}`);
+    }
+  }, [params.username, queryStr, router]);
 
   // Default selected date to the first enabled day
   useEffect(() => {
@@ -76,24 +125,6 @@ export default function BookSessionStep2() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [booking.selectedDate, schedule]);
-
-  const fetchSlots = useCallback(async (date: Date) => {
-    const iso = toISO(date);
-    if (iso === fetchedDate) return;
-    setLoadingSlots(true);
-    setSlots([]); // clear while loading
-    try {
-      const res = await fetch(`/api/creators/${params.username}/availability?date=${iso}`);
-      const data = await res.json();
-      setSlots(data.success && data.slots ? data.slots : []);
-      setFetchedDate(iso);
-    } catch (err) {
-      console.error('Error fetching slots:', err);
-      setSlots([]);
-    } finally {
-      setLoadingSlots(false);
-    }
-  }, [params.username, fetchedDate]);
 
   useEffect(() => {
     if (booking.selectedDate) {
@@ -109,8 +140,6 @@ export default function BookSessionStep2() {
     setBooking(b => ({ ...b, selectedDate: date, selectedTime: null }));
     setFetchedDate(null);
   };
-
-
 
   const handleContinue = () => {
     if (booking.selectedDate && booking.selectedTime) {

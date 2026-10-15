@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -32,54 +32,105 @@ export default function ExploreCreatorsPage() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [favLoading, setFavLoading] = useState<string | null>(null); // username being toggled
 
-  // Fetch creators + auth + saved list on mount
+  // Hydrate from cache immediately on mount to prevent loading flashes
+  useEffect(() => {
+    try {
+      const cached = sessionStorage.getItem('reachly_explore_creators_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed.creators && parsed.creators.length > 0) setCreators(parsed.creators);
+        if (parsed.favourites) setFavourites(parsed.favourites);
+        if (parsed.saved) setSaved(parsed.saved);
+        if (parsed.displayName) setDisplayName(parsed.displayName);
+        if (parsed.profilePhoto) setProfilePhoto(parsed.profilePhoto);
+        if (parsed.isAuthenticated !== undefined) setIsAuthenticated(parsed.isAuthenticated);
+        if (parsed.isCreator !== undefined) setIsCreator(parsed.isCreator);
+        if (parsed.isAdmin !== undefined) setIsAdmin(parsed.isAdmin);
+        setLoading(false);
+      }
+    } catch (e) {}
+  }, []);
+
+  // Fetch creators + auth + saved + favourite lists in parallel
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [creatorsRes, authRes] = await Promise.all([
+        const [creatorsRes, authRes, savedRes, favRes] = await Promise.all([
           fetch('/api/creators'),
           fetch('/api/user/me'),
+          fetch('/api/user/saved-creators'),
+          fetch('/api/user/favourite-creators'),
         ]);
+
+        let freshCreators: any[] = [];
+        let freshFavourites: string[] = [];
+        let freshSaved: string[] = [];
+        let freshAuth = false;
+        let freshIsCreator = false;
+        let freshIsAdmin = false;
+        let freshDisplayName = '';
+        let freshProfilePhoto: string | null = null;
 
         if (creatorsRes.ok) {
           const data = await creatorsRes.json();
-          setCreators(data.creators || []);
+          freshCreators = data.creators || [];
+          setCreators(freshCreators);
         }
 
         if (authRes.ok) {
           const userData = await authRes.json();
+          freshAuth = true;
           setIsAuthenticated(true);
           
           const email = userData.user?.email?.toLowerCase() || '';
           if (email === 'abdullahgotaccess@gmail.com' || email === 'admin@reachly.com') {
+            freshIsAdmin = true;
             setIsAdmin(true);
           }
 
           if (userData.creatorProfile) {
+            freshIsCreator = true;
+            freshDisplayName = userData.creatorProfile.displayName || userData.user?.name || '';
+            freshProfilePhoto = userData.creatorProfile.profilePhoto || null;
             setIsCreator(true);
-            setDisplayName(userData.creatorProfile.displayName || userData.user?.name || '');
-            setProfilePhoto(userData.creatorProfile.profilePhoto || null);
+            setDisplayName(freshDisplayName);
+            setProfilePhoto(freshProfilePhoto);
           } else if (userData.user) {
+            freshIsCreator = false;
+            freshDisplayName = userData.user.name || '';
+            freshProfilePhoto = userData.user.profilePhoto || null;
             setIsCreator(false);
-            setDisplayName(userData.user.name || '');
-            setProfilePhoto(userData.user.profilePhoto || null);
+            setDisplayName(freshDisplayName);
+            setProfilePhoto(freshProfilePhoto);
           }
-          // Fetch both saved and favourite creators in parallel
-          const [savedRes, favRes] = await Promise.all([
-            fetch('/api/user/saved-creators'),
-            fetch('/api/user/favourite-creators'),
-          ]);
+
           if (savedRes.ok) {
             const d = await savedRes.json();
-            setSaved(d.savedCreators || []);
+            freshSaved = d.savedCreators || [];
+            setSaved(freshSaved);
           }
           if (favRes.ok) {
             const d = await favRes.json();
-            setFavourites(d.favouriteCreators || []);
+            freshFavourites = d.favouriteCreators || [];
+            setFavourites(freshFavourites);
           }
         } else {
           setIsAuthenticated(false);
         }
+
+        // Cache for next instant mount
+        try {
+          sessionStorage.setItem('reachly_explore_creators_cache', JSON.stringify({
+            creators: freshCreators,
+            favourites: freshFavourites,
+            saved: freshSaved,
+            isAuthenticated: freshAuth,
+            isCreator: freshIsCreator,
+            isAdmin: freshIsAdmin,
+            displayName: freshDisplayName,
+            profilePhoto: freshProfilePhoto
+          }));
+        } catch (e) {}
       } catch (err) {
         console.error('Error fetching data:', err);
         setIsAuthenticated(false);
@@ -140,18 +191,20 @@ export default function ExploreCreatorsPage() {
     }
   }, [isAuthenticated, saved, favLoading]);
 
-  // Filter creators
-  const filteredCreators = creators.filter(c => {
-    if (showFavouritesOnly && !favourites.includes(c.username)) return false;
-    if (showSavedOnly && !saved.includes(c.username)) return false;
-    if (selectedCategory !== 'all') {
-      const niches: string[] = c.niches || [];
-      if (!niches.some((n: string) => n.toLowerCase() === selectedCategory)) return false;
-    }
-    if (verifiedOnly && !c.isVerified) return false;
-    if (minRating !== null && (parseFloat(c.rating) || 0) < minRating) return false;
-    return true;
-  });
+  // Filter creators (memoized)
+  const filteredCreators = useMemo(() => {
+    return creators.filter(c => {
+      if (showFavouritesOnly && !favourites.includes(c.username)) return false;
+      if (showSavedOnly && !saved.includes(c.username)) return false;
+      if (selectedCategory !== 'all') {
+        const niches: string[] = c.niches || [];
+        if (!niches.some((n: string) => n.toLowerCase() === selectedCategory)) return false;
+      }
+      if (verifiedOnly && !c.isVerified) return false;
+      if (minRating !== null && (parseFloat(c.rating) || 0) < minRating) return false;
+      return true;
+    });
+  }, [creators, showFavouritesOnly, favourites, showSavedOnly, saved, selectedCategory, verifiedOnly, minRating]);
 
   const totalPages = Math.max(1, Math.ceil(filteredCreators.length / ITEMS_PER_PAGE));
   const paginated = filteredCreators.slice(

@@ -13,12 +13,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
     }
 
-    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    const user = await User.findOne({ email: email.toLowerCase().trim() })
+      .select('_id onboardingStep approvalStatus hasSeenWelcome isRegistrationComplete')
+      .lean() as any;
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const creatorProfile = await CreatorProfile.findOne({ userId: user._id }).lean();
+    const creatorProfile = await CreatorProfile.findOne({ userId: user._id }).select('_id').lean();
 
     return NextResponse.json({
       onboardingStep: user.onboardingStep || 0,

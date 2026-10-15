@@ -110,10 +110,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Apply Rate Limiting to API and page routes
+  // Apply Rate Limiting to API and page routes (skip in development and loopback)
+  const isDev = process.env.NODE_ENV === 'development';
   const ip =
     request.headers.get("x-forwarded-for") || (request as any).ip || "unknown";
-  if (ip !== "unknown" && isRateLimited(ip)) {
+  if (!isDev && ip !== "unknown" && ip !== "127.0.0.1" && ip !== "::1" && isRateLimited(ip)) {
     return new NextResponse("Too Many Requests. Please try again later.", {
       status: 429,
     });
@@ -122,6 +123,11 @@ export async function middleware(request: NextRequest) {
   // Allow API routes to pass through auth checks
   if (pathname.startsWith("/api/")) {
     return NextResponse.next();
+  }
+
+  // Redirect /creators/bookings to /creators/calendar
+  if (pathname === "/creators/bookings" || pathname.startsWith("/creators/bookings/")) {
+    return NextResponse.redirect(new URL("/creators/calendar", request.url));
   }
 
   // Read the JWT session token

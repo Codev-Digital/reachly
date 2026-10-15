@@ -58,6 +58,11 @@ const MessageSchema = new Schema<IMessage>(
   { timestamps: true }
 );
 
+MessageSchema.index({ bookingId: 1, createdAt: -1 });
+MessageSchema.index({ bookingId: 1, senderRole: 1, read: 1 });
+MessageSchema.index({ conversationId: 1, createdAt: -1 });
+MessageSchema.index({ conversationId: 1, senderRole: 1, read: 1 });
+
 const Message: Model<IMessage> =
   mongoose.models.Message || mongoose.model<IMessage>('Message', MessageSchema);
 

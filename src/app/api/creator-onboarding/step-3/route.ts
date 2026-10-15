@@ -15,12 +15,12 @@ export async function GET() {
 
     await connectDB();
 
-    const user = await User.findOne({ email: session.user.email });
+    const user = await User.findOne({ email: session.user.email }).select('_id').lean() as any;
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const sessionTypes = await SessionType.find({ userId: user._id }).sort({ order: 1 });
+    const sessionTypes = await SessionType.find({ userId: user._id }).sort({ order: 1 }).lean();
 
     return NextResponse.json({ sessionTypes });
   } catch (error: any) {

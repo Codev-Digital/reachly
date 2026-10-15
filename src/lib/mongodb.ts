@@ -1,4 +1,9 @@
 import mongoose from 'mongoose';
+import dns from 'dns';
+
+try {
+  dns.setServers(['8.8.8.8', '1.1.1.1']);
+} catch (e) {}
 
 const MONGODB_URI = process.env.MONGODB_URI || '';
 
@@ -27,7 +32,14 @@ async function connectDB(): Promise<typeof mongoose> {
   }
 
   if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGODB_URI).then((mongoose) => {
+    const opts = {
+      maxPoolSize: 20,
+      minPoolSize: 5,
+      maxIdleTimeMS: 60000,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+    };
+    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
       return mongoose;
     });
   }

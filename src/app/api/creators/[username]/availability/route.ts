@@ -42,12 +42,20 @@ export async function GET(
             return NextResponse.json({ error: 'Username required' }, { status: 400 });
         }
 
-        const profile = await CreatorProfile.findOne({ username });
+        const lowerUsername = username.toLowerCase();
+        const cleanUsername = lowerUsername.replace(/-/g, '');
+        const profile = await CreatorProfile.findOne({
+            $or: [
+                { username: lowerUsername },
+                { username: cleanUsername }
+            ]
+        }).select('userId').lean() as any;
+
         if (!profile) {
             return NextResponse.json({ error: 'Creator not found' }, { status: 404 });
         }
 
-        const availability = await CreatorAvailability.findOne({ userId: profile.userId });
+        const availability = await CreatorAvailability.findOne({ userId: profile.userId }).lean() as any;
 
         // Return availability schedule structure so frontend can compute slots per date
         if (!availability) {
@@ -161,7 +169,7 @@ export async function GET(
                 creatorId: profile.userId,
                 scheduledDate: { $gte: searchStart, $lte: searchEnd },
                 status: { $in: ['pending', 'confirmed'] },
-            }).select('scheduledDate scheduledTime');
+            }).select('scheduledDate scheduledTime').lean();
 
             // Filter manually: match by extracting the UTC date from the stored noon-UTC timestamp
             const bookedTimes = new Set<string>();
@@ -182,7 +190,14 @@ export async function GET(
             // Filter out booked slots
             const availableSlots = slots.filter(slot => !bookedTimes.has(slot));
 
-            return NextResponse.json({ success: true, slots: availableSlots, date: dateStr });
+            return NextResponse.json({
+                success: true,
+                slots: availableSlots,
+                date: dateStr,
+                schedule: availability.schedule,
+                timezone: availability.timezone,
+                blockedDates: availability.blockedDates,
+            });
         }
 
         // Return full schedule

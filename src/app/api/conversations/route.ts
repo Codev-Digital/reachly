@@ -76,114 +76,158 @@ export async function GET(request: NextRequest) {
             })
             : conversations;
 
-        const enriched = await Promise.all(
-            filteredConversations.map(async (conv) => {
-                const convId = conv._id.toString();
-                const isCreator = conv.creatorId.toString() === userId;
-                const otherUserId = isCreator ? conv.userId : conv.creatorId;
+        if (filteredConversations.length === 0) {
+            return NextResponse.json({ success: true, conversations: [] });
+        }
 
-                // Participant info
-                const otherUser = await User.findById(otherUserId).lean() as any;
-                const creatorProfile = await CreatorProfile.findOne({ userId: otherUserId }).lean() as any;
+        const convIds = filteredConversations.map((c) => c._id);
+        const otherUserIds = Array.from(new Set(
+            filteredConversations.map((c) => (c.creatorId.toString() === userId ? c.userId : c.creatorId).toString())
+        ));
 
-                const displayName = creatorProfile?.displayName || otherUser?.name || 'Unknown';
-                const username = creatorProfile?.username || '';
-                const avatar = creatorProfile?.profilePhoto || otherUser?.profilePhoto || '/avatar.png';
-                const email = otherUser?.email || '';
+        // Build pair matching for bookings
+        const pairConditions = filteredConversations.map((c) => ({
+            creatorId: c.creatorId,
+            userId: c.userId,
+        }));
 
-                // Last message
-                const lastMsg = await Message.findOne({ conversationId: conv._id })
-                    .sort({ createdAt: -1 })
-                    .lean() as any;
+        // Batch fetch users, profiles, messages, and bookings concurrently
+        const [
+            otherUsers,
+            creatorProfiles,
+            lastMessagesAgg,
+            unreadCountsAgg,
+            bookingsList
+        ] = await Promise.all([
+            User.find({ _id: { $in: otherUserIds } }).select('_id name email profilePhoto lastActiveAt').lean(),
+            CreatorProfile.find({ userId: { $in: otherUserIds } }).select('userId displayName username profilePhoto').lean(),
+            Message.aggregate([
+                { $match: { conversationId: { $in: convIds } } },
+                { $sort: { createdAt: -1 } },
+                { $group: {
+                    _id: '$conversationId',
+                    content: { $first: '$content' },
+                    createdAt: { $first: '$createdAt' },
+                    senderRole: { $first: '$senderRole' }
+                } }
+            ]),
+            Message.aggregate([
+                { $match: { conversationId: { $in: convIds }, read: false } },
+                { $group: {
+                    _id: { conversationId: '$conversationId', senderRole: '$senderRole' },
+                    count: { $sum: 1 }
+                } }
+            ]),
+            !dateParam && pairConditions.length > 0
+                ? Booking.find({ $or: pairConditions })
+                    .sort({ scheduledDate: -1 })
+                    .populate({ path: 'sessionTypeId', model: SessionType, select: 'title duration' })
+                    .lean()
+                : []
+        ]);
 
-                // Unread count
-                const unreadSenderRole = isCreator ? 'user' : 'creator';
-                const unreadCount = await Message.countDocuments({
-                    conversationId: conv._id,
-                    senderRole: unreadSenderRole,
-                    read: false,
-                });
+        const otherUsersMap = new Map<string, any>((otherUsers as any[]).map((u) => [u._id.toString(), u]));
+        const creatorProfilesMap = new Map<string, any>((creatorProfiles as any[]).map((cp) => [cp.userId.toString(), cp]));
+        const lastMsgMap = new Map<string, any>(lastMessagesAgg.map((m: any) => [m._id.toString(), m]));
+        
+        // Unread map key: `${convId}-${senderRole}`
+        const unreadMap = new Map<string, number>();
+        unreadCountsAgg.forEach((item: any) => {
+            const key = `${item._id.conversationId.toString()}-${item._id.senderRole}`;
+            unreadMap.set(key, item.count);
+        });
 
-                // Use date-specific booking if filter active, else latest booking
-                let targetBooking: any = null;
-                if (dateParam) {
-                    const key = `${conv.creatorId}-${conv.userId}`;
-                    targetBooking = dateBookingMap.get(key);
-                } else {
-                    targetBooking = await Booking.findOne({
-                        creatorId: conv.creatorId,
-                        userId: conv.userId,
-                    })
-                        .sort({ scheduledDate: -1 })
-                        .lean() as any;
-                }
+        // Booking map: pick the most recent booking per conversation pair
+        const pairBookingMap = new Map<string, any>();
+        (bookingsList as any[]).forEach((b) => {
+            const key = `${b.creatorId.toString()}-${b.userId?.toString()}`;
+            if (!pairBookingMap.has(key)) {
+                pairBookingMap.set(key, b);
+            }
+        });
 
-                // Session type info
-                let sessionTitle = '';
-                let duration = '';
-                if (targetBooking?.sessionTypeId) {
-                    const st = await SessionType.findById(targetBooking.sessionTypeId).lean() as any;
-                    if (st) {
-                        sessionTitle = st.title || '';
-                        duration = st.duration ? `${st.duration} min` : '';
-                    }
-                }
+        const enriched = filteredConversations.map((conv) => {
+            const convId = conv._id.toString();
+            const isCreator = conv.creatorId.toString() === userId;
+            const otherUserId = isCreator ? conv.userId.toString() : conv.creatorId.toString();
 
-                const scheduledDate = targetBooking?.scheduledDate
-                    ? new Date(targetBooking.scheduledDate).toISOString()
-                    : '';
+            const otherUser = otherUsersMap.get(otherUserId);
+            const creatorProfile = creatorProfilesMap.get(otherUserId);
 
-                const shortDate = targetBooking?.scheduledDate
-                    ? new Date(targetBooking.scheduledDate).toLocaleDateString('en-US', {
-                          weekday: 'long',
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                      })
-                    : '';
+            const displayName = creatorProfile?.displayName || otherUser?.name || 'Unknown';
+            const username = creatorProfile?.username || '';
+            const avatar = creatorProfile?.profilePhoto || otherUser?.profilePhoto || '/avatar.png';
+            const email = otherUser?.email || '';
 
-                const time = targetBooking?.scheduledTime || '';
-                const meetingUrl = targetBooking?.meetingUrl || null;
-                const bookingRef = targetBooking?.bookingRef || '';
-                const price = targetBooking?.finalPrice
-                    ? `PKR ${targetBooking.finalPrice.toLocaleString()}`
-                    : '';
+            const lastMsg = lastMsgMap.get(convId);
+            const unreadSenderRole = isCreator ? 'user' : 'creator';
+            const unreadCount = unreadMap.get(`${convId}-${unreadSenderRole}`) || 0;
 
-                const isOnline = otherUser?.lastActiveAt
-                    ? Date.now() - new Date(otherUser.lastActiveAt).getTime() < 2 * 60 * 1000
-                    : false;
+            const pairKey = `${conv.creatorId.toString()}-${conv.userId.toString()}`;
+            const targetBooking = dateParam ? dateBookingMap.get(pairKey) : pairBookingMap.get(pairKey);
 
-                return {
-                    id: convId,
-                    conversationId: convId,
-                    creatorId: conv.creatorId.toString(),
-                    userId: conv.userId.toString(),
-                    isLocked: conv.isLocked,
-                    isCreator,
-                    follower: displayName,
-                    creator: displayName,
-                    username,
-                    avatar,
-                    image: avatar,
-                    email,
-                    isOnline,
-                    lastMessage: (lastMsg?.content || '').split('|||')[0],
-                    lastMessageSenderRole: lastMsg?.senderRole || null,
-                    lastMessageTime: lastMsg?.createdAt || null,
-                    unreadCount,
-                    scheduledDate,
-                    shortDate,
-                    time,
-                    meetingUrl,
-                    session: sessionTitle,
-                    duration,
-                    price,
-                    ref: bookingRef,
-                    isArchivedByCreator: isCreator ? Boolean((conv as any).isArchivedByCreator) : false,
-                    isArchivedByUser: !isCreator ? Boolean((conv as any).isArchivedByUser) : false,
-                };
-            })
-        );
+            let sessionTitle = '';
+            let duration = '';
+            if (targetBooking?.sessionTypeId) {
+                sessionTitle = (targetBooking.sessionTypeId as any)?.title || '';
+                const durVal = (targetBooking.sessionTypeId as any)?.duration;
+                duration = durVal ? `${durVal} min` : '';
+            }
+
+            const scheduledDate = targetBooking?.scheduledDate
+                ? new Date(targetBooking.scheduledDate).toISOString()
+                : '';
+
+            const shortDate = targetBooking?.scheduledDate
+                ? new Date(targetBooking.scheduledDate).toLocaleDateString('en-US', {
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                  })
+                : '';
+
+            const time = targetBooking?.scheduledTime || '';
+            const meetingUrl = targetBooking?.meetingUrl || null;
+            const bookingRef = targetBooking?.bookingRef || '';
+            const price = targetBooking?.finalPrice
+                ? `PKR ${targetBooking.finalPrice.toLocaleString()}`
+                : '';
+
+            const isOnline = otherUser?.lastActiveAt
+                ? Date.now() - new Date(otherUser.lastActiveAt).getTime() < 2 * 60 * 1000
+                : false;
+
+            return {
+                id: convId,
+                conversationId: convId,
+                creatorId: conv.creatorId.toString(),
+                userId: conv.userId.toString(),
+                isLocked: conv.isLocked,
+                isCreator,
+                follower: displayName,
+                creator: displayName,
+                username,
+                avatar,
+                image: avatar,
+                email,
+                isOnline,
+                lastMessage: (lastMsg?.content || '').split('|||')[0],
+                lastMessageSenderRole: lastMsg?.senderRole || null,
+                lastMessageTime: lastMsg?.createdAt || null,
+                unreadCount,
+                scheduledDate,
+                shortDate,
+                time,
+                meetingUrl,
+                session: sessionTitle,
+                duration,
+                price,
+                ref: bookingRef,
+                isArchivedByCreator: isCreator ? Boolean((conv as any).isArchivedByCreator) : false,
+                isArchivedByUser: !isCreator ? Boolean((conv as any).isArchivedByUser) : false,
+            };
+        });
 
         return NextResponse.json({ success: true, conversations: enriched });
     } catch (error: any) {
