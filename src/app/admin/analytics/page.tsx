@@ -13,6 +13,7 @@ const AnalyticsPage = () => {
         <h2 className="font-serif text-2xl font-bold text-[#F9F6F2]">Analytics</h2>
       </div>
       
+      
       <motion.div
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
