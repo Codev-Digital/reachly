@@ -186,13 +186,14 @@ export const sendEmail = async (
   subject: string,
   html: string
 ): Promise<void> => {
-  const host = process.env.SMTP_HOST;
-  const port = parseInt(process.env.SMTP_PORT || '587', 10);
+  const host = process.env.EMAIL_HOST || process.env.SMTP_HOST;
+  const port = parseInt(process.env.EMAIL_PORT || process.env.SMTP_PORT || '587', 10);
+  const secureEnv = process.env.EMAIL_SECURE ?? process.env.SMTP_SECURE;
+  const secure = secureEnv !== undefined ? secureEnv === 'true' : port === 465;
   // Strip any surrounding quotes that .env parsers sometimes leave in
-  const user = (process.env.SMTP_USER || '').replace(/^["']|["']$/g, '');
-  // Gmail app passwords are 16 chars — strip spaces if accidentally included
-  const pass = (process.env.SMTP_PASSWORD || process.env.SMTP_PASS || '').replace(/\s/g, '').replace(/^["']|["']$/g, '');
-  const fromAddress = (process.env.SMTP_FROM || user).replace(/^["']|["']$/g, '');
+  const user = (process.env.EMAIL_USER || process.env.SMTP_USER || '').replace(/^["']|["']$/g, '');
+  const pass = (process.env.EMAIL_PASS || process.env.SMTP_PASSWORD || process.env.SMTP_PASS || '').replace(/^["']|["']$/g, '');
+  const fromAddress = (process.env.EMAIL_FROM || process.env.SMTP_FROM || user).replace(/^["']|["']$/g, '');
 
   if (!host || !user || !pass) {
     console.log('------- EMAIL (SMTP not configured) -------');
@@ -204,23 +205,26 @@ export const sendEmail = async (
   }
 
   try {
-    const configKey = `${host}:${port}:${user}:${pass}`;
+    const configKey = `${host}:${port}:${secure}:${user}:${pass}`;
     if (!cachedTransporter || lastTransporterConfigKey !== configKey) {
       cachedTransporter = nodemailer.createTransport({
         host,
         port,
-        secure: port === 465,
+        secure,
         auth: { user, pass },
         pool: true,
         maxConnections: 3,
         maxMessages: 100,
+        tls: {
+          rejectUnauthorized: false,
+        },
       });
       lastTransporterConfigKey = configKey;
     }
 
     await cachedTransporter.sendMail({
       from: `"Reachly" <${fromAddress}>`,
-      replyTo: process.env.SMTP_REPLY_TO || fromAddress,
+      replyTo: process.env.EMAIL_REPLY_TO || process.env.SMTP_REPLY_TO || fromAddress,
       to,
       subject,
       html,
