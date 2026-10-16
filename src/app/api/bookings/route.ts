@@ -45,6 +45,7 @@ export async function POST(request: NextRequest) {
       promoApplied,
       finalPrice,
       originalPrice,
+      answers,
     } = payload;
 
     if (!username || !sessionId || !date || !time) {
@@ -195,6 +196,7 @@ export async function POST(request: NextRequest) {
         heardFrom: userDetails.heardFrom || "",
         whatToDiscuss: userDetails.whatToDiscuss || "",
       },
+      answers: Array.isArray(answers) ? answers : [],
       scheduledDate: scheduledDateUTC,
       scheduledTime: time,
       status: "confirmed", // Auto-approved

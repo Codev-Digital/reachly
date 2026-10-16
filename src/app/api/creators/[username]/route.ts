@@ -109,7 +109,10 @@ export async function GET(
                 title: s.title,
                 description: s.description,
                 duration: `${s.duration} mins`,
+                durationMinutes: s.duration,
                 price: s.price,
+                discountedPrice: s.discountedPrice,
+                questions: s.questions || [],
                 features: s.features,
             })),
         });

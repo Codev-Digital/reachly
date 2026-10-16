@@ -15,6 +15,13 @@ export interface IBooking extends Document {
         whatToDiscuss?: string;
     };
 
+    answers?: Array<{
+        questionId?: string;
+        question: string;
+        answer: string | string[];
+        type?: 'multiple_choice' | 'short_answer';
+    }>;
+
     scheduledDate: Date;
     scheduledTime: string; // e.g. "05:00 PM"
 
@@ -69,6 +76,14 @@ const BookingSchema = new Schema<IBooking>(
             heardFrom: { type: String },
             whatToDiscuss: { type: String },
         },
+        answers: [
+            {
+                questionId: { type: String },
+                question: { type: String },
+                answer: { type: Schema.Types.Mixed },
+                type: { type: String, enum: ['multiple_choice', 'short_answer'] },
+            }
+        ],
         scheduledDate: {
             type: Date,
             required: true,
