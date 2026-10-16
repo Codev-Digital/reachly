@@ -57,6 +57,12 @@ export default function BookSessionStep3() {
 
   const step4Url = `/creators/${params.username}/book-session/step-4${queryStr}`;
 
+  useEffect(() => {
+    if (params.username) {
+      router.prefetch(step4Url);
+    }
+  }, [params.username, step4Url, router]);
+
   const handleContinue = async () => {
     if (!canProceed) return;
 

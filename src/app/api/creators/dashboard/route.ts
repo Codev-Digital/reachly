@@ -20,18 +20,20 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const profile = await CreatorProfile.findOne({ userId: user._id });
+    // Fetch profile and bookings in parallel with .lean()
+    const [profile, incomingBookings, outgoingBookings] = (await Promise.all([
+      CreatorProfile.findOne({ userId: user._id }).select('views').lean(),
+      Booking.find({ creatorId: user._id })
+        .populate({ path: 'sessionTypeId', model: SessionType, select: 'duration' })
+        .sort({ createdAt: -1 })
+        .lean(),
+      Booking.find({ userId: user._id, creatorId: { $ne: user._id } })
+        .populate({ path: 'sessionTypeId', model: SessionType, select: 'duration' })
+        .sort({ createdAt: -1 })
+        .lean(),
+    ])) as [any, any[], any[]];
+
     const profileViews = profile?.views || 0;
-
-    // Fetch all incoming bookings for this creator (they are the host)
-    const incomingBookings = await Booking.find({ creatorId: user._id })
-      .populate({ path: 'sessionTypeId', model: SessionType })
-      .sort({ createdAt: -1 });
-
-    // Fetch outgoing bookings: this creator booked another creator
-    const outgoingBookings = await Booking.find({ userId: user._id, creatorId: { $ne: user._id } })
-      .populate({ path: 'sessionTypeId', model: SessionType })
-      .sort({ createdAt: -1 });
 
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -63,7 +65,7 @@ export async function GET(req: NextRequest) {
     });
     const totalCustomers = uniqueCustomerEmails.size;
 
-    // Extract all guest emails and form-filler user IDs to fetch photos (for incoming)
+    // Extract all guest emails, form-filler user IDs, and other creator IDs in parallel
     const guestEmails = Array.from(new Set(
       incomingBookings.map((b) => b.guestDetails?.email?.toLowerCase()).filter(Boolean)
     )) as string[];
@@ -72,21 +74,34 @@ export async function GET(req: NextRequest) {
       incomingBookings.map((b) => b.userId?.toString()).filter(Boolean)
     )) as string[];
 
-    // Fetch users registered with the guest emails
-    const guestUsers = guestEmails.length > 0
-      ? await User.find({ email: { $in: guestEmails } }).select('email profilePhoto').lean() as any[]
-      : [];
-    const guestUsersMap = new Map<string, any>(guestUsers.map((u) => [u.email.toLowerCase(), u]));
+    const otherCreatorIds = Array.from(new Set(
+      outgoingBookings.map((b) => b.creatorId?.toString()).filter(Boolean)
+    ));
 
-    // Fetch users who filled the form (fallback)
-    const formFillerUsers = formFillerUserIds.length > 0
-      ? await User.find({ _id: { $in: formFillerUserIds } }).select('profilePhoto').lean() as any[]
-      : [];
-    const formFillersMap = new Map<string, any>(formFillerUsers.map((u) => [u._id.toString(), u]));
+    // Batch fetch all participant users and other creator data concurrently
+    const [guestUsers, formFillerUsers, otherCreatorUsers, otherCreatorProfiles] = (await Promise.all([
+      guestEmails.length > 0
+        ? User.find({ email: { $in: guestEmails } }).select('_id email profilePhoto').lean()
+        : Promise.resolve([]),
+      formFillerUserIds.length > 0
+        ? User.find({ _id: { $in: formFillerUserIds } }).select('_id profilePhoto').lean()
+        : Promise.resolve([]),
+      otherCreatorIds.length > 0
+        ? User.find({ _id: { $in: otherCreatorIds } }).select('_id name email profilePhoto').lean()
+        : Promise.resolve([]),
+      otherCreatorIds.length > 0
+        ? CreatorProfile.find({ userId: { $in: otherCreatorIds } }).select('userId displayName profilePhoto').lean()
+        : Promise.resolve([])
+    ])) as [any[], any[], any[], any[]];
+
+    const guestUsersMap = new Map<string, any>((guestUsers as any[]).map((u) => [u.email.toLowerCase(), u]));
+    const formFillersMap = new Map<string, any>((formFillerUsers as any[]).map((u) => [u._id.toString(), u]));
+    const otherCreatorUsersMap = new Map<string, any>((otherCreatorUsers as any[]).map((u) => [u._id.toString(), u]));
+    const otherCreatorProfilesMap = new Map<string, any>((otherCreatorProfiles as any[]).map((cp) => [cp.userId.toString(), cp]));
 
     // Collect all user IDs we might check CreatorProfiles for
     const allUserIdsToCheck = Array.from(new Set([
-      ...guestUsers.map((u) => u._id.toString()),
+      ...(guestUsers as any[]).map((u) => u._id.toString()),
       ...formFillerUserIds
     ]));
 
@@ -125,21 +140,9 @@ export async function GET(req: NextRequest) {
         scheduledDate: b.scheduledDate,
         meetingUrl: b.meetingUrl,
         bookingRef: b.bookingRef,
-        isCreatorBooker: false, // Label only shows for the creator who made the booking (outgoing)
+        isCreatorBooker: false,
       };
     });
-
-    // Format outgoing bookings (creator booking another creator)
-    // Collect other creator IDs to fetch their profiles in bulk
-    const otherCreatorIds = Array.from(new Set(outgoingBookings.map((b) => b.creatorId?.toString()).filter(Boolean)));
-    const otherCreatorUsers = otherCreatorIds.length > 0
-      ? await User.find({ _id: { $in: otherCreatorIds } }).select('name email profilePhoto').lean() as any[]
-      : [];
-    const otherCreatorUsersMap = new Map<string, any>(otherCreatorUsers.map((u) => [u._id.toString(), u]));
-    const otherCreatorProfiles = otherCreatorIds.length > 0
-      ? await CreatorProfile.find({ userId: { $in: otherCreatorIds } }).select('userId displayName profilePhoto').lean() as any[]
-      : [];
-    const otherCreatorProfilesMap = new Map<string, any>(otherCreatorProfiles.map((cp) => [cp.userId.toString(), cp]));
 
     const formattedOutgoing = outgoingBookings.map((b) => {
       const scheduledDateStr = new Date(b.scheduledDate).toLocaleDateString('en-US', {

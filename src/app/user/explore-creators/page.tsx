@@ -29,15 +29,50 @@ export default function UserExploreCreatorsPage() {
   // No hardcoded creators - we'll use only the API data
   const hardcodedCreators: any[] = [];
 
+  // Hydrate from cache immediately on mount
+  useEffect(() => {
+    try {
+      const cached = sessionStorage.getItem('reachly_explore_creators_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed.creators && parsed.creators.length > 0) {
+          setCreators(parsed.creators);
+          if (parsed.isAuthenticated) setIsAuthenticated(true);
+          setLoading(false);
+        }
+      }
+    } catch (e) {}
+  }, []);
+
   useEffect(() => {
     async function checkAuthAndFetch() {
       try {
-        const res = await fetch('/api/user/me');
+        const [res, creatorsRes] = await Promise.all([
+          fetch('/api/user/me'),
+          fetch('/api/creators')
+        ]);
+
+        let freshAuth = false;
         if (res.ok) {
+          freshAuth = true;
           setIsAuthenticated(true);
-          await fetchCreators();
         } else {
           setIsAuthenticated(false);
+        }
+
+        if (creatorsRes.ok) {
+          const data = await creatorsRes.json();
+          if (data.success && data.creators) {
+            setCreators(data.creators);
+            try {
+              sessionStorage.setItem('reachly_explore_creators_cache', JSON.stringify({
+                creators: data.creators,
+                isAuthenticated: freshAuth
+              }));
+            } catch (e) {}
+          } else {
+            setCreators([]);
+          }
         }
       } catch {
         setIsAuthenticated(false);
@@ -47,21 +82,6 @@ export default function UserExploreCreatorsPage() {
     }
     checkAuthAndFetch();
   }, []);
-
-  async function fetchCreators() {
-    try {
-      const res = await fetch('/api/creators');
-      const data = await res.json();
-      if (data.success) {
-        setCreators(data.creators);
-      } else {
-        setCreators([]);
-      }
-    } catch (err) {
-      console.error('Failed to fetch creators:', err);
-      setCreators([]);
-    }
-  }
 
   const toggleSection = (section: keyof typeof openSections) => {
     setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));

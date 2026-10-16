@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
         await connectDB();
         console.log('Connected to DB');
 
-        const user = await User.findOne({ email: session.user.email });
+        const user = await User.findOne({ email: session.user.email }).select('_id').lean() as any;
         if (!user) {
             console.log('User not found');
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -55,82 +55,125 @@ export async function GET(request: NextRequest) {
             dateFilter.scheduledDate = { $gte: startOfDay, $lte: endOfDay };
         }
 
-        // ── 1. Incoming bookings: this creator is the host ──────────────────
+        // ── 1. Query Incoming and Outgoing Bookings in parallel ────────────
         const incomingQuery: any = { creatorId: user._id, ...dateFilter };
-        console.log('Querying incoming bookings with:', incomingQuery);
-        const incomingBookings = await Booking.find(incomingQuery)
-            .sort({ scheduledDate: -1, createdAt: -1 })
-            .populate({ path: 'sessionTypeId', model: SessionType, select: 'title duration features' })
-            .lean();
-        console.log('Found', incomingBookings.length, 'incoming bookings');
-
-        // ── 2. Outgoing bookings: this creator booked another creator ───────
         const outgoingQuery: any = { userId: user._id, creatorId: { $ne: user._id }, ...dateFilter };
-        const outgoingBookings = await Booking.find(outgoingQuery)
-            .sort({ scheduledDate: -1, createdAt: -1 })
-            .populate({ path: 'sessionTypeId', model: SessionType, select: 'title duration features' })
-            .lean();
-        console.log('Found', outgoingBookings.length, 'outgoing bookings');
 
-        // Helper to enrich a single booking
-        async function enrichBooking(booking: any, isOutgoing: boolean) {
-            // Get last message and unread count
-            const [lastMsgDoc, unreadCount] = await Promise.all([
-                Message.findOne({ bookingId: booking._id }).sort({ createdAt: -1 }).lean(),
-                Message.countDocuments({ bookingId: booking._id, senderRole: 'user', read: false })
-            ]);
+        const [incomingBookings, outgoingBookings] = await Promise.all([
+            Booking.find(incomingQuery)
+                .sort({ scheduledDate: -1, createdAt: -1 })
+                .populate({ path: 'sessionTypeId', model: SessionType, select: 'title duration features' })
+                .lean(),
+            Booking.find(outgoingQuery)
+                .sort({ scheduledDate: -1, createdAt: -1 })
+                .populate({ path: 'sessionTypeId', model: SessionType, select: 'title duration features' })
+                .lean()
+        ]);
+
+        const rawAllBookings = [...incomingBookings, ...outgoingBookings];
+        if (rawAllBookings.length === 0) {
+            return NextResponse.json({ bookings: [] });
+        }
+
+        const allBookingIds = rawAllBookings.map((b: any) => b._id);
+        const allUserIds = Array.from(new Set([
+            ...rawAllBookings.map((b: any) => b.userId?.toString()),
+            ...outgoingBookings.map((b: any) => b.creatorId?.toString())
+        ].filter(Boolean)));
+
+        const guestEmails = Array.from(new Set(
+            rawAllBookings.map((b: any) => b.guestDetails?.email?.toLowerCase()).filter(Boolean)
+        )) as string[];
+
+        // ── 2. Batch fetch Users, Profiles, and Messages concurrently ─────
+        const [
+            guestUsers,
+            knownUsers,
+            unreadCountsAgg,
+            lastMessagesAgg
+        ] = await Promise.all([
+            guestEmails.length > 0
+                ? User.find({ email: { $in: guestEmails } }).select('_id email name profilePhoto').lean()
+                : [],
+            allUserIds.length > 0
+                ? User.find({ _id: { $in: allUserIds } }).select('_id email name profilePhoto').lean()
+                : [],
+            Message.aggregate([
+                { $match: { bookingId: { $in: allBookingIds }, senderRole: 'user', read: false } },
+                { $group: { _id: '$bookingId', count: { $sum: 1 } } }
+            ]),
+            Message.aggregate([
+                { $match: { bookingId: { $in: allBookingIds } } },
+                { $sort: { createdAt: -1 } },
+                { $group: {
+                    _id: '$bookingId',
+                    content: { $first: '$content' },
+                    createdAt: { $first: '$createdAt' }
+                } }
+            ])
+        ]);
+
+        // Collect all possible user IDs for creator profiles
+        const guestUserIds = (guestUsers as any[]).map((u) => u._id.toString());
+        const allProfileUserIds = Array.from(new Set([...allUserIds, ...guestUserIds]));
+        const creatorProfiles = allProfileUserIds.length > 0
+            ? await CreatorProfile.find({ userId: { $in: allProfileUserIds } }).select('userId displayName profilePhoto').lean() as any[]
+            : [];
+
+        // Build Map lookups for O(1) in-memory resolution
+        const guestUserByEmail = new Map<string, any>((guestUsers as any[]).map((u) => [u.email.toLowerCase(), u]));
+        const userById = new Map<string, any>((knownUsers as any[]).map((u) => [u._id.toString(), u]));
+        const profileByUserId = new Map<string, any>(creatorProfiles.map((cp) => [cp.userId.toString(), cp]));
+        const unreadCountByBooking = new Map<string, number>(unreadCountsAgg.map((u: any) => [u._id.toString(), u.count]));
+        const lastMsgByBooking = new Map<string, any>(lastMessagesAgg.map((m: any) => [m._id.toString(), m]));
+
+        // Enrich bookings synchronously without ANY additional DB queries
+        const enrichBookingSync = (booking: any, isOutgoing: boolean) => {
+            const bookingIdStr = booking._id.toString();
+            const lastMsgDoc = lastMsgByBooking.get(bookingIdStr);
+            const unreadCount = unreadCountByBooking.get(bookingIdStr) || 0;
 
             let followerName = 'Guest';
             let email = '';
-            let isCreatorBooker = isOutgoing; // outgoing bookings are always creator-booker cards
+            let avatar = '/avatar.png';
+            const isCreatorBooker = isOutgoing;
 
             if (isOutgoing) {
-                // For outgoing bookings, show the OTHER creator's info (the one being booked)
-                const otherCreatorUser = await User.findById(booking.creatorId).lean() as any;
-                const otherCreatorProfile = await CreatorProfile.findOne({ userId: booking.creatorId }).lean() as any;
-                followerName = otherCreatorProfile?.displayName || otherCreatorUser?.name || 'Creator';
-                email = otherCreatorUser?.email || '';
+                const creatorIdStr = booking.creatorId?.toString();
+                const otherUser = creatorIdStr ? userById.get(creatorIdStr) : null;
+                const otherProfile = creatorIdStr ? profileByUserId.get(creatorIdStr) : null;
+                followerName = otherProfile?.displayName || otherUser?.name || 'Creator';
+                email = otherUser?.email || '';
+                avatar = otherProfile?.profilePhoto || otherUser?.profilePhoto || '/avatar.png';
             } else {
-                // Incoming: show the booker's info
+                const guestEmail = booking.guestDetails?.email?.toLowerCase();
+                const guestUser = guestEmail ? guestUserByEmail.get(guestEmail) : null;
+
                 if (booking.guestDetails?.fullName) {
                     followerName = booking.guestDetails.fullName;
                     email = booking.guestDetails.email || '';
                 } else if (booking.userId) {
-                    const u = await User.findById(booking.userId).lean() as any;
-                    if (u) { followerName = u.name || 'Guest'; email = u.email || ''; }
-                }
-
-                // (We no longer set isCreatorBooker to true for incoming bookings, 
-                // so the host doesn't see the 'Your booking with another creator' label)
-                if (booking.userId) {
-                    const bookerCp = await CreatorProfile.findOne({ userId: booking.userId }).lean() as any;
-                    // if (bookerCp) isCreatorBooker = true;
-                }
-            }
-
-            // Determine avatar
-            let avatar = '/avatar.png';
-            if (isOutgoing) {
-                const otherCp = await CreatorProfile.findOne({ userId: booking.creatorId }).lean() as any;
-                avatar = otherCp?.profilePhoto || (await User.findById(booking.creatorId).lean() as any)?.profilePhoto || '/avatar.png';
-            } else {
-                const guestEmail = booking.guestDetails?.email?.toLowerCase();
-                if (guestEmail) {
-                    const guestUser = await User.findOne({ email: guestEmail }).lean() as any;
-                    if (guestUser) {
-                        if (guestUser.profilePhoto) { avatar = guestUser.profilePhoto; }
-                        else {
-                            const cp = await CreatorProfile.findOne({ userId: guestUser._id }).lean() as any;
-                            if (cp?.profilePhoto) avatar = cp.profilePhoto;
-                        }
+                    const u = userById.get(booking.userId.toString());
+                    if (u) {
+                        followerName = u.name || 'Guest';
+                        email = u.email || '';
                     }
                 }
-                if (avatar === '/avatar.png' && booking.userId) {
-                    const u = await User.findById(booking.userId).lean() as any;
+
+                if (guestUser) {
+                    if (guestUser.profilePhoto) {
+                        avatar = guestUser.profilePhoto;
+                    } else {
+                        const cp = profileByUserId.get(guestUser._id.toString());
+                        if (cp?.profilePhoto) avatar = cp.profilePhoto;
+                    }
+                } else if (booking.userId) {
+                    const u = userById.get(booking.userId.toString());
                     if (u) {
-                        if (u.profilePhoto) { avatar = u.profilePhoto; }
-                        else {
-                            const cp = await CreatorProfile.findOne({ userId: u._id }).lean() as any;
+                        if (u.profilePhoto) {
+                            avatar = u.profilePhoto;
+                        } else {
+                            const cp = profileByUserId.get(u._id.toString());
                             if (cp?.profilePhoto) avatar = cp.profilePhoto;
                         }
                     }
@@ -175,15 +218,15 @@ export async function GET(request: NextRequest) {
                 isRescheduled: booking.isRescheduled || false,
                 isLocked: booking.isLocked !== undefined ? booking.isLocked : !lastMsgDoc,
                 meetingUrl: booking.meetingUrl,
-                lastMessage: lastMsgDoc ? (lastMsgDoc as any).content : '',
-                lastMessageTime: lastMsgDoc ? (lastMsgDoc as any).createdAt : null,
+                lastMessage: lastMsgDoc ? lastMsgDoc.content : '',
+                lastMessageTime: lastMsgDoc ? lastMsgDoc.createdAt : null,
                 unreadCount: unreadCount,
                 isCreatorBooker: isCreatorBooker,
             };
-        }
+        };
 
-        const enrichedIncoming = await Promise.all(incomingBookings.map((b) => enrichBooking(b, false)));
-        const enrichedOutgoing = await Promise.all(outgoingBookings.map((b) => enrichBooking(b, true)));
+        const enrichedIncoming = incomingBookings.map((b) => enrichBookingSync(b, false));
+        const enrichedOutgoing = outgoingBookings.map((b) => enrichBookingSync(b, true));
 
         // Merge and sort by scheduledDate descending
         const allBookings = [...enrichedIncoming, ...enrichedOutgoing].sort((a, b) => {

@@ -178,6 +178,9 @@ const htmlToText = (html: string): string =>
     .replace(/\s+/g, ' ')
     .trim();
 
+let cachedTransporter: nodemailer.Transporter | null = null;
+let lastTransporterConfigKey = '';
+
 export const sendEmail = async (
   to: string,
   subject: string,
@@ -201,14 +204,21 @@ export const sendEmail = async (
   }
 
   try {
-    const transporter = nodemailer.createTransport({
-      host,
-      port,
-      secure: port === 465,
-      auth: { user, pass },
-    });
+    const configKey = `${host}:${port}:${user}:${pass}`;
+    if (!cachedTransporter || lastTransporterConfigKey !== configKey) {
+      cachedTransporter = nodemailer.createTransport({
+        host,
+        port,
+        secure: port === 465,
+        auth: { user, pass },
+        pool: true,
+        maxConnections: 3,
+        maxMessages: 100,
+      });
+      lastTransporterConfigKey = configKey;
+    }
 
-    await transporter.sendMail({
+    await cachedTransporter.sendMail({
       from: `"Reachly" <${fromAddress}>`,
       replyTo: process.env.SMTP_REPLY_TO || fromAddress,
       to,

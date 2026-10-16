@@ -28,6 +28,12 @@ export default function BookSessionStep4() {
     setIsLoadingContinue(false);
   }, [showQr]);
 
+  useEffect(() => {
+    if (params.username) {
+      router.prefetch(`/creators/${params.username}/book-session/step-5${queryStr}`);
+    }
+  }, [params.username, queryStr, router]);
+
   const handleContinue = () => {
     setShowQr(true);
   };

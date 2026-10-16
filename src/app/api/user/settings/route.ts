@@ -15,12 +15,16 @@ export async function GET(req: NextRequest) {
     }
 
     await connectDB();
-    const user = await User.findOne({ email: session.user.email });
+    const user = await User.findOne({ email: session.user.email })
+      .select('name email profilePhoto')
+      .lean() as any;
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const creatorProfile = await CreatorProfile.findOne({ userId: user._id });
+    const creatorProfile = await CreatorProfile.findOne({ userId: user._id })
+      .select('displayName shortBio longBio city country languages niches socialLinks coverPhoto profilePhoto')
+      .lean() as any;
 
     return NextResponse.json({
       success: true,

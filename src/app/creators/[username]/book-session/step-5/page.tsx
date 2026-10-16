@@ -20,7 +20,9 @@ export default function BookSessionStep5() {
   // Booking confirmed — clear any saved draft so next visit starts fresh
   useEffect(() => {
     try { localStorage.removeItem('reachly_booking_draft'); } catch { }
-  }, []);
+    router.prefetch('/user/bookings');
+    router.prefetch('/creators/calendar');
+  }, [router]);
 
   const handleGoToBookings = () => {
     const isLoggedIn = !!userData?.user?.id;

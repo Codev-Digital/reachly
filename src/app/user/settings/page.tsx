@@ -15,9 +15,9 @@ export default function UserSettings() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successModalMessage, setSuccessModalMessage] = useState('');
   
-  const [displayName, setDisplayName] = useState('James Richard');
+  const [displayName, setDisplayName] = useState('');
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
-  const [emailAddress, setEmailAddress] = useState('jamesrichard@gmail.com');
+  const [emailAddress, setEmailAddress] = useState('');
   const [bio, setBio] = useState('');
   const [city, setCity] = useState('Karachi');
   const [country, setCountry] = useState('Pakistan');
@@ -35,9 +35,6 @@ export default function UserSettings() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [loading, setLoading] = useState(true);
-
-  // Load cached settings on mount
   useEffect(() => {
     try {
       const cached = sessionStorage.getItem('reachly_user_settings_cache');
@@ -46,12 +43,9 @@ export default function UserSettings() {
         if (parsed.name) setDisplayName(parsed.name);
         if (parsed.email) setEmailAddress(parsed.email);
         if (parsed.profilePhoto) setProfilePhoto(parsed.profilePhoto);
-        setLoading(false);
       }
     } catch (e) {}
-  }, []);
 
-  useEffect(() => {
     async function loadUser() {
       try {
         const res = await fetch('/api/user/settings');
@@ -72,8 +66,6 @@ export default function UserSettings() {
         }
       } catch (err) {
         console.error('Failed to load user info:', err);
-      } finally {
-        setLoading(false);
       }
     }
     loadUser();
@@ -107,6 +99,13 @@ export default function UserSettings() {
       });
 
       if (res.ok) {
+        try {
+          sessionStorage.setItem('reachly_user_settings_cache', JSON.stringify({
+            name: displayName,
+            email: emailAddress,
+            profilePhoto: profilePhoto
+          }));
+        } catch (e) {}
         setSuccessModalMessage('Your profile changes have been saved successfully.');
         setShowSuccessModal(true);
       } else {
@@ -201,35 +200,12 @@ export default function UserSettings() {
       <UserNavbar displayName={displayName} profilePhoto={profilePhoto} />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-        {loading ? (
-          <div className="space-y-8">
-            {/* Header Skeleton */}
-            <div className="space-y-2">
-              <div className="h-4 w-32 bg-gray-200 animate-pulse rounded-md" />
-              <div className="h-10 w-80 bg-gray-200 animate-pulse rounded-lg" />
-            </div>
-            {/* Segment Bar Skeleton */}
-            <div className="h-12 w-64 mx-auto bg-gray-200 animate-pulse rounded-3xl" />
-            {/* Form Skeleton */}
-            <div className="bg-white rounded-3xl p-8 border border-gray-200 space-y-6">
-              <div className="flex items-center gap-6">
-                <div className="w-24 h-24 rounded-full bg-gray-200 animate-pulse" />
-                <div className="h-10 w-36 bg-gray-200 animate-pulse rounded-full" />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="h-12 bg-gray-200 animate-pulse rounded-2xl" />
-                <div className="h-12 bg-gray-200 animate-pulse rounded-2xl" />
-              </div>
-              <div className="h-28 bg-gray-200 animate-pulse rounded-2xl" />
-            </div>
-          </div>
-        ) : (
-          <motion.main
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="flex-grow"
-          >
+        <motion.main
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="flex-grow"
+        >
             {/* Header */}
             <div className="mb-8">
               <p className="text-gray-400 font-sans mb-1 text-sm font-medium">Hello {displayName}!</p>
@@ -546,7 +522,6 @@ export default function UserSettings() {
             </div>
           )}
         </motion.main>
-        )}
       </div>
 
       {/* Delete Account Confirmation Modal */}

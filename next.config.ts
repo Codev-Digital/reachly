@@ -3,6 +3,16 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   allowedDevOrigins: ['10.173.131.145'],
 
+  async redirects() {
+    return [
+      {
+        source: '/creators/bookings',
+        destination: '/creators/calendar',
+        permanent: false,
+      },
+    ];
+  },
+
   experimental: {
     serverActions: {
       bodySizeLimit: '50mb',

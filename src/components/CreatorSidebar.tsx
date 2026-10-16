@@ -35,10 +35,8 @@ const CreatorSidebar = ({
       setActiveItem('Session Types');
     } else if (pathname?.includes('/creators/availability')) {
       setActiveItem('Availability');
-    } else if (pathname?.includes('/creators/calendar')) {
+    } else if (pathname?.includes('/creators/calendar') || pathname?.includes('/creators/bookings')) {
       setActiveItem('Calendar');
-    } else if (pathname?.includes('/creators/bookings')) {
-      setActiveItem('Bookings');
     } else if (pathname?.includes('/creators/booking-links')) {
       setActiveItem('Booking Links');
     } else if (pathname?.includes('/creators/notifications')) {
@@ -52,7 +50,6 @@ const CreatorSidebar = ({
 
   const menuItems = [
     { name: 'Dashboard', icon: 'dashboard', href: '/creators/dashboard' },
-    { name: 'Bookings', icon: 'bookings', href: '/creators/bookings' },
     { name: 'Calendar', icon: 'calendar', href: '/creators/calendar' },
     { name: 'Wallet', icon: 'wallet', href: '/creators/earnings' },
     { name: 'Settings', icon: 'settings', href: '/creators/settings' },

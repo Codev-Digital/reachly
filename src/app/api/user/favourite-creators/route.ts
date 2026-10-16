@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     const email = await getEmailFromRequest(request);
     if (!email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     await connectDB();
-    const user = await User.findOne({ email }).select('favouriteCreators');
+    const user = await User.findOne({ email }).select('favouriteCreators').lean() as any;
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
     return NextResponse.json({ favouriteCreators: user.favouriteCreators || [] });
   } catch (err) {

@@ -13,13 +13,16 @@ export async function GET() {
     }
 
     await connectDB();
-    const user = await User.findOne({ email: session.user.email });
+    const user = await User.findOne({ email: session.user.email })
+      .select('name email isRegistrationComplete onboardingStep hasSeenWelcome approvalStatus profilePhoto');
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Only mark hasSeenWelcome as true if user has onboardingStep > 0 OR a CreatorProfile
-    // Also ensure approvalStatus is set for existing users
+    const creatorProfilePromise = CreatorProfile.findOne({ userId: user._id })
+      .select('username displayName profilePhoto isProfileComplete')
+      .lean();
+
     let needsSave = false;
     if (user.onboardingStep > 0 && !user.hasSeenWelcome) {
       user.hasSeenWelcome = true;
@@ -33,9 +36,7 @@ export async function GET() {
       await user.save();
     }
 
-    const creatorProfile = await CreatorProfile.findOne({
-      userId: user._id,
-    });
+    const creatorProfile = await creatorProfilePromise as any;
 
     return NextResponse.json({
       user: {

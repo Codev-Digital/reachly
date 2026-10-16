@@ -124,9 +124,9 @@ export default function BookSessionLayout({ children }: { children: ReactNode })
   const pathname = usePathname();
   const router = useRouter();
   const [booking, setBookingRaw] = useState<BookingState>(emptyBooking);
+  const [userData, setUserData] = useState<any>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState<'user' | 'creator' | null>(null);
-  const [userData, setUserData] = useState<any>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isDraftSaved, setIsDraftSaved] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -172,6 +172,21 @@ export default function BookSessionLayout({ children }: { children: ReactNode })
 
   // Check authentication status
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = sessionStorage.getItem('reachly_user_me_cache');
+        if (cached) {
+          const data = JSON.parse(cached);
+          setIsLoggedIn(true);
+          setUserData(data);
+          const isCreator = 
+            Boolean(data.creatorProfile) && 
+            (data.user?.approvalStatus === 'approved' || data.user?.approvalStatus === 'active' || data.creatorProfile?.isProfileComplete === true);
+          setUserRole(isCreator ? 'creator' : 'user');
+        }
+      } catch (e) {}
+    }
+
     async function checkAuth() {
       try {
         const res = await fetch('/api/user/me');
@@ -179,6 +194,9 @@ export default function BookSessionLayout({ children }: { children: ReactNode })
           const data = await res.json();
           setIsLoggedIn(true);
           setUserData(data);
+          try {
+            sessionStorage.setItem('reachly_user_me_cache', JSON.stringify(data));
+          } catch (e) {}
           
           const isCreator = 
             Boolean(data.creatorProfile) && 

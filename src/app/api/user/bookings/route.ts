@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
         let bookingsQuery = {};
 
         if (email) {
-            const user = await User.findOne({ email });
+            const user = await User.findOne({ email }).select('_id').lean() as any;
             if (user) {
                 bookingsQuery = { userId: user._id };
             } else if (guestEmail) {
@@ -56,50 +56,70 @@ export async function GET(request: NextRequest) {
             })
             .lean();
 
-        // Batch fetch CreatorProfiles in one query to avoid N+1 bottleneck
+        const allBookingIds = bookings.map((b: any) => b._id);
         const creatorIds = Array.from(new Set(bookings.map((b: any) => b.creatorId?.toString()).filter(Boolean)));
-        const creatorProfiles = creatorIds.length > 0 
-            ? await CreatorProfile.find({ userId: { $in: creatorIds } }).lean()
-            : [];
+
+        // Batch fetch CreatorProfiles, unread counts, and last messages concurrently
+        const [
+            creatorProfiles,
+            unreadCountsAgg,
+            lastMessagesAgg
+        ] = await Promise.all([
+            creatorIds.length > 0 
+                ? CreatorProfile.find({ userId: { $in: creatorIds } }).lean()
+                : [],
+            allBookingIds.length > 0
+                ? Message.aggregate([
+                    { $match: { bookingId: { $in: allBookingIds }, senderRole: 'creator', read: false } },
+                    { $group: { _id: '$bookingId', count: { $sum: 1 } } }
+                ])
+                : [],
+            allBookingIds.length > 0
+                ? Message.aggregate([
+                    { $match: { bookingId: { $in: allBookingIds } } },
+                    { $sort: { createdAt: -1 } },
+                    { $group: {
+                        _id: '$bookingId',
+                        content: { $first: '$content' },
+                        createdAt: { $first: '$createdAt' }
+                    } }
+                ])
+                : []
+        ]);
+
         const profileMap = new Map(creatorProfiles.map((cp: any) => [cp.userId.toString(), cp]));
+        const unreadMap = new Map(unreadCountsAgg.map((item: any) => [item._id.toString(), item.count]));
+        const lastMsgMap = new Map(lastMessagesAgg.map((item: any) => [item._id.toString(), item]));
 
-        const enrichedBookings = await Promise.all(
-            bookings.map(async (booking: any) => {
-                const creatorProfile = profileMap.get(booking.creatorId?.toString());
-                const [lastMsgDoc, unreadCount] = await Promise.all([
-                    Message.findOne({ bookingId: booking._id })
-                        .sort({ createdAt: -1 })
-                        .lean(),
-                    Message.countDocuments({
-                        bookingId: booking._id,
-                        senderRole: 'creator',
-                        read: false
-                    })
-                ]);
+        const now = new Date();
 
-                const d = new Date(booking.scheduledDate);
-                const formattedShortDate = d.toLocaleDateString('en-GB', {
-                    weekday: 'short',
-                    day: 'numeric',
-                    month: 'short',
-                    year: 'numeric'
-                });
+        const enrichedBookings = bookings.map((booking: any) => {
+            const bIdStr = booking._id.toString();
+            const creatorProfile = profileMap.get(booking.creatorId?.toString());
+            const lastMsgDoc = lastMsgMap.get(bIdStr);
+            const unreadCount = unreadMap.get(bIdStr) || 0;
 
-                const bookedOn = new Date(booking.createdAt).toLocaleDateString('en-GB', {
-                    weekday: 'short',
-                    day: 'numeric',
-                    month: 'short',
-                    year: 'numeric'
-                });
+            const d = new Date(booking.scheduledDate);
+            const formattedShortDate = d.toLocaleDateString('en-GB', {
+                weekday: 'short',
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric'
+            });
 
-                // Determine relative status:
-                let displayStatus = booking.status;
-                // Build the booking's datetime in PKT (UTC+5) for accurate comparison
+            const bookedOn = new Date(booking.createdAt).toLocaleDateString('en-GB', {
+                weekday: 'short',
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric'
+            });
+
+            // Determine relative status:
+            let displayStatus = booking.status;
+            if (booking.scheduledDate) {
                 const [bYear, bMonth, bDay] = booking.scheduledDate.toISOString().split('T')[0].split('-');
                 const time24 = convertTo24Hour(booking.scheduledTime);
-                // Combine date + time as PKT, then convert to UTC for comparison
                 const bookingDateTimePKT = new Date(`${bYear}-${bMonth}-${bDay}T${time24}+05:00`);
-                const now = new Date();
 
                 if (booking.status === 'pending') {
                     displayStatus = 'Pending Approval';
@@ -112,37 +132,37 @@ export async function GET(request: NextRequest) {
                 } else {
                     displayStatus = booking.status.charAt(0).toUpperCase() + booking.status.slice(1);
                 }
+            }
 
-                return {
-                    id: booking._id.toString(),
-                    creator: creatorProfile?.displayName || 'Unknown Creator',
-                    username: creatorProfile?.username || '',
-                    session: booking.sessionTypeId?.title || 'Session',
-                    sessionType: booking.sessionTypeId?.title || 'Session',
-                    date: `${formattedShortDate} at ${booking.scheduledTime}`,
-                    shortDate: formattedShortDate,
-                    time: booking.scheduledTime,
-                    status: displayStatus,
-                    image: creatorProfile?.profilePhoto || '/ahad raza mir.png',
-                    tags: [displayStatus],
-                    ref: `RCH-${booking._id.toString().slice(-8).toUpperCase()}`,
-                    duration: `${booking.sessionTypeId?.duration || 0} minutes`,
-                    price: `PKR ${booking.finalPrice}`,
-                    paymentMethod: booking.paymentMethod || 'Guest',
-                    transactionId: `${booking._id.toString().slice(0, 8).toUpperCase()}`,
-                    bookedOn: bookedOn,
-                    originalStatus: booking.status,
-                    scheduledDate: booking.scheduledDate,
-                    isRescheduled: booking.isRescheduled || false,
-                    isLocked: booking.isLocked !== undefined ? booking.isLocked : !lastMsgDoc,
-                    meetingUrl: booking.meetingUrl,
-                    bookingRef: booking.bookingRef,
-                    lastMessage: lastMsgDoc ? lastMsgDoc.content : "",
-                    lastMessageTime: lastMsgDoc ? lastMsgDoc.createdAt : null,
-                    unreadCount: unreadCount,
-                };
-            })
-        );
+            return {
+                id: bIdStr,
+                creator: creatorProfile?.displayName || 'Unknown Creator',
+                username: creatorProfile?.username || '',
+                session: booking.sessionTypeId?.title || 'Session',
+                sessionType: booking.sessionTypeId?.title || 'Session',
+                date: `${formattedShortDate} at ${booking.scheduledTime}`,
+                shortDate: formattedShortDate,
+                time: booking.scheduledTime,
+                status: displayStatus,
+                image: creatorProfile?.profilePhoto || '/ahad raza mir.png',
+                tags: [displayStatus],
+                ref: `RCH-${bIdStr.slice(-8).toUpperCase()}`,
+                duration: `${booking.sessionTypeId?.duration || 0} minutes`,
+                price: `PKR ${booking.finalPrice}`,
+                paymentMethod: booking.paymentMethod || 'Guest',
+                transactionId: `${bIdStr.slice(0, 8).toUpperCase()}`,
+                bookedOn: bookedOn,
+                originalStatus: booking.status,
+                scheduledDate: booking.scheduledDate,
+                isRescheduled: booking.isRescheduled || false,
+                isLocked: booking.isLocked !== undefined ? booking.isLocked : !lastMsgDoc,
+                meetingUrl: booking.meetingUrl,
+                bookingRef: booking.bookingRef,
+                lastMessage: lastMsgDoc ? lastMsgDoc.content : "",
+                lastMessageTime: lastMsgDoc ? lastMsgDoc.createdAt : null,
+                unreadCount: unreadCount,
+            };
+        });
 
         return NextResponse.json({ bookings: enrichedBookings });
     } catch (error: any) {

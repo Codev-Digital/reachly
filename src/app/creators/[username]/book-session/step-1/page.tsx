@@ -15,7 +15,7 @@ export default function BookSessionStep1() {
   const queryStr = fallbackUrl ? `?fallbackUrl=${encodeURIComponent(fallbackUrl)}` : '';
   const { booking, setBooking, nextStep } = useBooking();
   const [sessions, setSessions] = useState<SessionType[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
   const [isLoadingContinue, setIsLoadingContinue] = useState(false);
   const [isLoadingBack, setIsLoadingBack] = useState(false);
   const [hasScrolled, setHasScrolled] = useState(false);
@@ -48,12 +48,39 @@ export default function BookSessionStep1() {
   };
 
   useEffect(() => {
+    // Prefetch Step 2 and warm up availability endpoint in background
+    if (params.username) {
+      router.prefetch(`/creators/${params.username}/book-session/step-2${queryStr}`);
+      fetch(`/api/creators/${params.username}/availability`).catch(() => {});
+    }
+  }, [params.username, queryStr, router]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = sessionStorage.getItem(`reachly_sessions_${params.username}`);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed && parsed.length > 0) {
+            setSessions(parsed);
+            setLoading(false);
+          }
+        }
+      } catch (e) {}
+    }
+
     async function fetchCreator() {
       try {
         const res = await fetch(`/api/creators/${params.username}`);
         const data = await res.json();
         if (data.success) {
           setSessions(data.sessions || []);
+          if (typeof window !== 'undefined') {
+            try {
+              sessionStorage.setItem(`reachly_sessions_${params.username}`, JSON.stringify(data.sessions || []));
+              sessionStorage.setItem(`reachly_creator_${params.username}`, JSON.stringify(data.creator));
+            } catch (e) {}
+          }
           setBooking(b => ({
             ...b,
             creator: {

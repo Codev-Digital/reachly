@@ -52,6 +52,8 @@ const ConversationSchema = new Schema<IConversation>(
 
 // Unique conversation per creator-user pair
 ConversationSchema.index({ creatorId: 1, userId: 1 }, { unique: true });
+ConversationSchema.index({ creatorId: 1, updatedAt: -1 });
+ConversationSchema.index({ userId: 1, updatedAt: -1 });
 
 const Conversation: Model<IConversation> =
   mongoose.models.Conversation ||

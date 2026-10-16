@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     if (!email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     await connectDB();
-    const user = await User.findOne({ email }).select('savedCreators');
+    const user = await User.findOne({ email }).select('savedCreators').lean() as any;
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
     return NextResponse.json({ savedCreators: user.savedCreators || [] });

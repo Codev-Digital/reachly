@@ -18,28 +18,8 @@ export async function GET(req: NextRequest) {
     const year = parseInt(searchParams.get('year') || String(new Date().getFullYear()), 10);
 
     await connectDB();
-    const user = await User.findOne({ email: session.user.email });
+    const user = await User.findOne({ email: session.user.email }).select('_id').lean() as any;
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
-
-    // Fetch all non-cancelled bookings for this creator in the requested year
-    const startOfYear = new Date(year, 0, 1);
-    const endOfYear = new Date(year, 11, 31, 23, 59, 59);
-
-    const bookings = await Booking.find({
-      creatorId: user._id,
-      status: { $in: ['confirmed', 'completed'] },
-      scheduledDate: { $gte: startOfYear, $lte: endOfYear },
-    }).select('finalPrice scheduledDate status');
-
-    // Aggregate earnings per month
-    const monthlyTotals: number[] = Array(12).fill(0);
-    const monthlyBookings: number[] = Array(12).fill(0);
-
-    bookings.forEach((b) => {
-      const month = new Date(b.scheduledDate).getMonth(); // 0-indexed
-      monthlyTotals[month] += b.finalPrice || 0;
-      monthlyBookings[month] += 1;
-    });
 
     const timeframe = searchParams.get('timeframe') || 'monthly'; // 'weekly' | 'monthly' | 'yearly'
 
@@ -64,9 +44,9 @@ export async function GET(req: NextRequest) {
         creatorId: user._id,
         status: { $in: ['confirmed', 'completed'] },
         scheduledDate: { $gte: startOfWeek, $lte: endOfWeek },
-      }).select('finalPrice scheduledDate status');
+      }).select('finalPrice scheduledDate status').lean();
 
-      weekBookings.forEach((b) => {
+      weekBookings.forEach((b: any) => {
         const d = new Date(b.scheduledDate);
         const dayIdx = (d.getDay() + 6) % 7;
         dailyTotals[dayIdx] += b.finalPrice || 0;
@@ -92,6 +72,24 @@ export async function GET(req: NextRequest) {
     }
 
     // Monthly view (default)
+    const startOfYear = new Date(year, 0, 1);
+    const endOfYear = new Date(year, 11, 31, 23, 59, 59);
+
+    const bookings = await Booking.find({
+      creatorId: user._id,
+      status: { $in: ['confirmed', 'completed'] },
+      scheduledDate: { $gte: startOfYear, $lte: endOfYear },
+    }).select('finalPrice scheduledDate status').lean();
+
+    // Aggregate earnings per month
+    const monthlyTotals: number[] = Array(12).fill(0);
+    const monthlyBookings: number[] = Array(12).fill(0);
+
+    bookings.forEach((b: any) => {
+      const month = new Date(b.scheduledDate).getMonth(); // 0-indexed
+      monthlyTotals[month] += b.finalPrice || 0;
+      monthlyBookings[month] += 1;
+    });
     const chartData = MONTHS.map((month, idx) => ({
       label: month,
       month,

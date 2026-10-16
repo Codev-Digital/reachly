@@ -19,9 +19,9 @@ function cleanup() {
   try {
     nextDev.kill();
   } catch (e) {}
-  process.exit();
 }
 
-process.on('SIGINT', cleanup);
-process.on('SIGTERM', cleanup);
-process.on('exit', cleanup);
+process.on('SIGINT', () => { cleanup(); process.exit(0); });
+process.on('SIGTERM', () => { cleanup(); process.exit(0); });
+nextDev.on('close', (code) => { cleanup(); process.exit(code || 0); });
+socketServer.on('close', (code) => { cleanup(); process.exit(code || 0); });

@@ -58,6 +58,7 @@ const BookingSchema = new Schema<IBooking>(
         userId: {
             type: Schema.Types.ObjectId,
             ref: 'User',
+            index: true,
             // Optional: because the user might just be a guest if we don't force account creation immediately
         },
         guestDetails: {
@@ -122,6 +123,11 @@ const BookingSchema = new Schema<IBooking>(
     },
     { timestamps: true }
 );
+
+BookingSchema.index({ creatorId: 1, scheduledDate: -1, createdAt: -1 });
+BookingSchema.index({ creatorId: 1, status: 1, scheduledDate: 1 });
+BookingSchema.index({ userId: 1, scheduledDate: -1, createdAt: -1 });
+BookingSchema.index({ scheduledDate: 1 });
 
 const Booking: Model<IBooking> =
     mongoose.models.Booking || mongoose.model<IBooking>('Booking', BookingSchema);

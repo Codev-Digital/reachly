@@ -11,10 +11,10 @@ export async function GET() {
     if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     await connectDB();
-    const user = await User.findOne({ email: session.user.email });
+    const user = await User.findOne({ email: session.user.email }).select('_id').lean() as any;
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
-    const availability = await CreatorAvailability.findOne({ userId: user._id });
+    const availability = await CreatorAvailability.findOne({ userId: user._id }).lean();
     return NextResponse.json({ availability });
   } catch (error: any) {
     return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });

@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
         // Only show approved creators on the public explore page
         const creators = await User.find({
           approvalStatus: 'approved'
-        }).select('_id onboardingStep isVerified');
+        }).select('_id onboardingStep isVerified').lean() as any[];
         const creatorUserIds = creators.map((c) => c._id);
 
         if (!creatorUserIds.length) {
@@ -19,27 +19,37 @@ export async function GET(request: NextRequest) {
         }
 
         const [profiles, sessions] = await Promise.all([
-            CreatorProfile.find({ userId: { $in: creatorUserIds } }),
-            SessionType.find({ userId: { $in: creatorUserIds } }),
+            CreatorProfile.find({ userId: { $in: creatorUserIds } })
+                .select('userId username displayName shortBio niches profilePhoto')
+                .lean(),
+            SessionType.find({ userId: { $in: creatorUserIds } })
+                .select('userId price')
+                .lean(),
         ]);
 
+        const profileMap = new Map((profiles as any[]).map(p => [p.userId.toString(), p]));
+        const minPriceMap = new Map<string, number>();
+        for (const s of (sessions as any[])) {
+            const uid = s.userId.toString();
+            const cur = minPriceMap.get(uid);
+            if (cur === undefined || s.price < cur) {
+                minPriceMap.set(uid, s.price);
+            }
+        }
+
         const formattedCreators = creators.map((user) => {
-            const profile = profiles.find((p) => p.userId.toString() === user._id.toString());
+            const uIdStr = user._id.toString();
+            const profile = profileMap.get(uIdStr);
             if (!profile) return null;
 
-            const userSessions = sessions.filter((s) => s.userId.toString() === user._id.toString());
-            const minPrice = userSessions.length
-                ? Math.min(...userSessions.map((s) => s.price))
-                : 0;
-
             return {
-                id: user._id,
+                id: uIdStr,
                 username: profile.username,
                 displayName: profile.displayName || 'Unknown Creator',
                 shortBio: profile.shortBio,
                 niches: profile.niches || [],
                 profilePhoto: profile.profilePhoto || '/merium.png', // fallback
-                startingPrice: minPrice,
+                startingPrice: minPriceMap.get(uIdStr) || 0,
                 rating: 4.9, // placeholder for now since we don't have reviews implemented
                 isVerified: user.isVerified || false,
             };

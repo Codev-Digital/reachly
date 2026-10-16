@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -122,17 +122,30 @@ export default function CreatorCalendar() {
   // Fetch creator profile & bookings
   const loadInitialData = useCallback(async () => {
     try {
-      let uName = '';
-      let uPhoto: string | null = null;
-      let uUser = '';
+      let uName = displayName;
+      let uPhoto: string | null = profilePhoto;
+      let uUser = username;
       let list: any[] = [];
 
+      if (!uUser && typeof window !== 'undefined') {
+        try {
+          const cachedCalendar = sessionStorage.getItem('reachly_creator_calendar_cache');
+          if (cachedCalendar) {
+            const cached = JSON.parse(cachedCalendar);
+            if (cached.username) uUser = cached.username;
+            if (cached.displayName) uName = cached.displayName;
+            if (cached.profilePhoto) uPhoto = cached.profilePhoto;
+          }
+        } catch (e) {}
+      }
+
+      const fetchProfile = !uUser;
       const [meRes, bookingsRes] = await Promise.all([
-        fetch('/api/user/me'),
+        fetchProfile ? fetch('/api/user/me') : Promise.resolve(null),
         fetch('/api/creators/bookings')
       ]);
 
-      if (meRes.ok) {
+      if (meRes && meRes.ok) {
         const data = await meRes.json();
         uName = data.creatorProfile?.displayName || data.user?.name || '';
         uPhoto = data.creatorProfile?.profilePhoto || null;
@@ -142,7 +155,7 @@ export default function CreatorCalendar() {
         setUsername(uUser);
       }
 
-      if (bookingsRes.ok) {
+      if (bookingsRes && bookingsRes.ok) {
         const data = await bookingsRes.json();
         if (data.bookings) {
           // Format bookings for UI
@@ -182,7 +195,7 @@ export default function CreatorCalendar() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [displayName, profilePhoto, username]);
 
   useEffect(() => {
     loadInitialData();
@@ -197,6 +210,15 @@ export default function CreatorCalendar() {
       setSelectedRescheduleTime('');
       try {
         let activeUsername = username;
+        if (!activeUsername) {
+          try {
+            const cachedCalendar = sessionStorage.getItem('reachly_creator_calendar_cache');
+            if (cachedCalendar) {
+              const cached = JSON.parse(cachedCalendar);
+              if (cached.username) activeUsername = cached.username;
+            }
+          } catch (e) {}
+        }
         if (!activeUsername) {
           const profileRes = await fetch('/api/user/me');
           if (profileRes.ok) {
@@ -234,16 +256,49 @@ export default function CreatorCalendar() {
     fetchRescheduleSlots();
   }, [rescheduleDate, showRescheduleModal, username]);
 
-  // Group and filter bookings for currently selected day
-  const currentBookings = bookings.filter((b) => {
-    if (!b.selectedDate) return false;
-    const d = new Date(b.selectedDate);
-    return (
-      d.getDate() === currentDate.getDate() &&
-      d.getMonth() === currentDate.getMonth() &&
-      d.getFullYear() === currentDate.getFullYear()
-    );
-  });
+  // Group and filter bookings for currently selected day (memoized)
+  const currentBookings = useMemo(() => {
+    const curDate = currentDate.getDate();
+    const curMonth = currentDate.getMonth();
+    const curYear = currentDate.getFullYear();
+    return bookings.filter((b) => {
+      if (!b.selectedDate) return false;
+      const d = new Date(b.selectedDate);
+      return (
+        d.getDate() === curDate &&
+        d.getMonth() === curMonth &&
+        d.getFullYear() === curYear
+      );
+    });
+  }, [bookings, currentDate]);
+
+  // Days list for horizontal selector (memoized to avoid repeated Date object creation)
+  const daysInMonthList = useMemo(() => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const daysCount = new Date(year, month + 1, 0).getDate();
+    return Array.from({ length: daysCount }, (_, i) => {
+      const dayNum = i + 1;
+      const d = new Date(year, month, dayNum);
+      const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
+      return { dayNum, dayName };
+    });
+  }, [currentDate]);
+
+  // Set of dates with bookings in current month for indicator dots
+  const bookedDaysInCurrentMonth = useMemo(() => {
+    const set = new Set<number>();
+    const curMonth = currentDate.getMonth();
+    const curYear = currentDate.getFullYear();
+    for (const b of bookings) {
+      if (!b.selectedDate) continue;
+      const d = new Date(b.selectedDate);
+      if (d.getMonth() === curMonth && d.getFullYear() === curYear) {
+        set.add(d.getDate());
+      }
+    }
+    return set;
+  }, [bookings, currentDate]);
 
   const handleCancelClick = (booking: BookingType) => {
     setBookingToCancel(booking);
@@ -430,11 +485,9 @@ export default function CreatorCalendar() {
 
           {/* Middle: Horizontal Days Strip */}
           <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar py-1 px-1 w-full lg:w-auto lg:flex-1 order-3 lg:order-2">
-            {Array.from({ length: 31 }, (_, i) => {
-              const dayNum = i + 1;
-              const d = new Date(currentDate.getFullYear(), currentDate.getMonth(), dayNum);
-              const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
+            {daysInMonthList.map(({ dayNum, dayName }) => {
               const isSelected = currentDate.getDate() === dayNum;
+              const hasBooking = bookedDaysInCurrentMonth.has(dayNum);
 
               return (
                 <button
@@ -445,7 +498,7 @@ export default function CreatorCalendar() {
                     newD.setDate(dayNum);
                     setCurrentDate(newD);
                   }}
-                  className={`flex flex-col items-center justify-center min-w-[46px] sm:min-w-[50px] h-[52px] py-1.5 px-1 rounded-[14px] transition-all cursor-pointer flex-shrink-0 ${isSelected
+                  className={`flex flex-col items-center justify-center min-w-[46px] sm:min-w-[50px] h-[52px] py-1.5 px-1 rounded-[14px] transition-all cursor-pointer flex-shrink-0 relative ${isSelected
                     ? 'bg-[#EEF2FF] border border-[#0012FF]/30 text-[#0012FF] shadow-xs'
                     : 'text-[#64748B] hover:bg-gray-100 bg-transparent'
                     }`}
@@ -456,6 +509,9 @@ export default function CreatorCalendar() {
                   <span className={`text-xs sm:text-sm font-extrabold mt-0.5 ${isSelected ? 'text-[#0012FF]' : 'text-gray-800'}`}>
                     {String(dayNum).padStart(2, '0')}
                   </span>
+                  {hasBooking && !isSelected && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#0012FF] mt-0.5" />
+                  )}
                 </button>
               );
             })}
