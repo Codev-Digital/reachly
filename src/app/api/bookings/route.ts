@@ -82,6 +82,20 @@ export async function POST(request: NextRequest) {
         { status: 404 },
       );
 
+    if ((creatorProfile as any).isDeactivated) {
+      return NextResponse.json(
+        { error: "This creator is currently not accepting bookings." },
+        { status: 400 },
+      );
+    }
+
+    if ((sessionType as any).isActive === false) {
+      return NextResponse.json(
+        { error: "This session is no longer active." },
+        { status: 400 },
+      );
+    }
+
     // 2. Identify the user
     let userToAttachId = null;
     let u;

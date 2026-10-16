@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
+import CreatorProfile from '@/models/CreatorProfile';
 import SessionType from '@/models/SessionType';
 
 // ── GET — load all saved session types for this user ─────────────────────────
@@ -108,6 +109,12 @@ export async function PUT(req: NextRequest) {
     }));
 
     const saved = await SessionType.insertMany(docs);
+
+    // ── Ensure creator profile is reactivated if previously deactivated ──
+    await CreatorProfile.updateOne(
+      { userId: user._id, isDeactivated: true },
+      { $set: { isDeactivated: false }, $unset: { deactivatedAt: '' } }
+    );
 
     // ── Bump onboardingStep ───────────────────────────────────────────────
     if (user.onboardingStep < 3) {

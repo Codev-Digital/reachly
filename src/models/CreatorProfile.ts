@@ -24,6 +24,8 @@ export interface ICreatorProfile extends Document {
   };
   // Step completion flag — only true when all required fields are filled
   isProfileComplete: boolean;
+  isDeactivated?: boolean; // true when creator has no active sessions
+  deactivatedAt?: Date;
   views?: number;
   createdAt: Date;
   updatedAt: Date;
@@ -66,6 +68,8 @@ const CreatorProfileSchema = new Schema<ICreatorProfile>(
     },
     views: { type: Number, default: 0 },
     isProfileComplete: { type: Boolean, default: false },
+    isDeactivated: { type: Boolean, default: false, index: true },
+    deactivatedAt: { type: Date },
   },
   { timestamps: true }
 );

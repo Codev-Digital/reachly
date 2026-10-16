@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
+import CreatorProfile from '@/models/CreatorProfile';
 import SessionType from '@/models/SessionType';
 
 // ── GET /api/creators/sessions ───────────────────────────────────────────────
@@ -144,6 +145,12 @@ export async function POST(req: NextRequest) {
       order: nextOrder,
       isActive: true,
     });
+
+    // Auto-reactivate creator profile if it was deactivated
+    await CreatorProfile.updateOne(
+      { userId: user._id, isDeactivated: true },
+      { $set: { isDeactivated: false }, $unset: { deactivatedAt: '' } }
+    );
 
     // Ensure user onboardingStep reflects session creation
     if (user.onboardingStep < 3) {

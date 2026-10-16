@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
+import CreatorProfile from '@/models/CreatorProfile';
 import SessionType from '@/models/SessionType';
 import Booking from '@/models/Booking';
 
@@ -189,12 +190,34 @@ export async function PUT(
       { returnDocument: 'after', runValidators: true }
     ).exec();
 
+    // Check remaining active sessions to keep creator profile deactivation state in sync
+    const remainingActiveCount = await SessionType.countDocuments({
+      userId: user._id,
+      isActive: { $ne: false },
+    });
+
+    let isDeactivated = false;
+    if (remainingActiveCount === 0) {
+      await CreatorProfile.updateOne(
+        { userId: user._id, isDeactivated: { $ne: true } },
+        { $set: { isDeactivated: true, deactivatedAt: new Date() } }
+      );
+      isDeactivated = true;
+    } else {
+      await CreatorProfile.updateOne(
+        { userId: user._id, isDeactivated: true },
+        { $set: { isDeactivated: false }, $unset: { deactivatedAt: '' } }
+      );
+    }
+
     return NextResponse.json({
       success: true,
       session: {
         ...updatedSession!.toObject(),
         id: updatedSession!._id.toString(),
       },
+      isDeactivated,
+      remainingActiveSessions: remainingActiveCount,
     });
   } catch (error: any) {
     console.error('PUT /api/creators/sessions/[id] error:', error);
@@ -207,6 +230,7 @@ export async function PUT(
 
 // ── DELETE /api/creators/sessions/[id] ───────────────────────────────────────
 // Safe deletion: checks for existing bookings to prevent broken foreign key references
+// Deactivates creator profile when last active session is removed
 export async function DELETE(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
@@ -240,18 +264,33 @@ export async function DELETE(
     if (hasBookings) {
       // Soft-delete to preserve booking history and financial records
       await SessionType.findByIdAndUpdate(id, { $set: { isActive: false } });
-      return NextResponse.json({
-        success: true,
-        message: 'Session deactivated (preserved for past bookings).',
-      });
+    } else {
+      // If no bookings reference it, hard delete
+      await SessionType.findByIdAndDelete(id);
     }
 
-    // If no bookings reference it, hard delete
-    await SessionType.findByIdAndDelete(id);
+    // Check remaining active sessions for this creator
+    const remainingActiveCount = await SessionType.countDocuments({
+      userId: user._id,
+      isActive: { $ne: false },
+    });
+
+    let isDeactivated = false;
+    if (remainingActiveCount === 0) {
+      await CreatorProfile.updateOne(
+        { userId: user._id },
+        { $set: { isDeactivated: true, deactivatedAt: new Date() } }
+      );
+      isDeactivated = true;
+    }
 
     return NextResponse.json({
       success: true,
-      message: 'Session deleted successfully.',
+      message: hasBookings
+        ? 'Session deactivated (preserved for past bookings).'
+        : 'Session deleted successfully.',
+      isDeactivated,
+      remainingActiveSessions: remainingActiveCount,
     });
   } catch (error: any) {
     console.error('DELETE /api/creators/sessions/[id] error:', error);

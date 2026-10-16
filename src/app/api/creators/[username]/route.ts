@@ -98,23 +98,26 @@ export async function GET(
                 niches: profile.niches,
                 socialLinks: profile.socialLinks,
                 isVerified: user.isVerified,
+                isDeactivated: Boolean(profile.isDeactivated),
                 stats: {
                     sessionsCompleted: sessionsCompleted,
                     happyCustomers: happyCustomers,
                     totalCategories: totalCategories
                 }
             },
-            sessions: sessions.map((s) => ({
-                id: s._id,
-                title: s.title,
-                description: s.description,
-                duration: `${s.duration} mins`,
-                durationMinutes: s.duration,
-                price: s.price,
-                discountedPrice: s.discountedPrice,
-                questions: s.questions || [],
-                features: s.features,
-            })),
+            sessions: sessions
+                .filter((s: any) => s.isActive !== false)
+                .map((s: any) => ({
+                    id: s._id,
+                    title: s.title,
+                    description: s.description,
+                    duration: `${s.duration} mins`,
+                    durationMinutes: s.duration,
+                    price: s.price,
+                    discountedPrice: s.discountedPrice,
+                    questions: s.questions || [],
+                    features: s.features,
+                })),
         });
     } catch (error: any) {
         console.error('Fetch creator profile error:', error);
