@@ -69,6 +69,7 @@ export const authOptions: NextAuthOptions = {
 
   session: {
     strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
 
   secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET,
@@ -111,7 +112,6 @@ export const authOptions: NextAuthOptions = {
       return true;
     },
 
-    //  FIXED: NO DATABASE CALL HERE (this was breaking Vercel build)
     async jwt({ token, user, account, trigger, session }) {
       if (trigger === "update" && session?.approvalStatus) {
         token.approvalStatus = session.approvalStatus;
@@ -131,18 +131,35 @@ export const authOptions: NextAuthOptions = {
           token.approvalStatus = (user as any).approvalStatus;
           token.hasSeenWelcome = (user as any).hasSeenWelcome;
         }
+        (token as any).lastChecked = Date.now();
       }
 
-      if (token?.email) {
-        await connectDB();
-        const dbUser = await User.findOne({ email: String(token.email).toLowerCase().trim() }).lean();
-        if (dbUser) {
-          const creatorProfile = await CreatorProfile.findOne({ userId: dbUser._id }).lean();
-          token.isRegistrationComplete = !!dbUser.isRegistrationComplete;
-          token.onboardingStep = dbUser.onboardingStep || 0;
-          token.approvalStatus = dbUser.approvalStatus || 'none';
-          token.hasSeenWelcome = !!dbUser.hasSeenWelcome;
-          (token as any).hasCreatorProfile = !!creatorProfile;
+      // Check DB periodically or on explicit update, preventing unthrottled sequential Atlas calls on every micro-request
+      const now = Date.now();
+      const lastChecked = (token as any).lastChecked || 0;
+      const shouldRefreshFromDB = trigger === "update" || !lastChecked || (now - lastChecked > 5 * 60 * 1000);
+
+      if (token?.email && shouldRefreshFromDB) {
+        try {
+          await connectDB();
+          const dbUser = await User.findOne({ email: String(token.email).toLowerCase().trim() }).lean();
+          if (dbUser) {
+            if (dbUser.isVerified === false) {
+              return {} as any; // Invalidate unverified/revoked session
+            }
+            const creatorProfile = await CreatorProfile.findOne({ userId: dbUser._id }).lean();
+            token.isRegistrationComplete = !!dbUser.isRegistrationComplete;
+            token.onboardingStep = dbUser.onboardingStep || 0;
+            token.approvalStatus = dbUser.approvalStatus || 'none';
+            token.hasSeenWelcome = !!dbUser.hasSeenWelcome;
+            (token as any).hasCreatorProfile = !!creatorProfile;
+            (token as any).lastChecked = now;
+          } else {
+            // User was deleted from database -> revoke token
+            return {} as any;
+          }
+        } catch (dbErr) {
+          console.error("JWT sync error:", dbErr);
         }
       }
 
@@ -150,6 +167,9 @@ export const authOptions: NextAuthOptions = {
     },
 
     async session({ session, token }) {
+      if (!token?.email) {
+        return session;
+      }
       return {
         ...session,
         user: {
