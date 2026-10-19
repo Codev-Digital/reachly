@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
 import Image from 'next/image';
+import { usePreloadImages } from '@/lib/usePreloadImages';
 
 interface Event {
   id: string;
@@ -17,6 +18,7 @@ interface Event {
 }
 
 export default function AdminEventsPage() {
+  usePreloadImages(['/assets/add-category-sm.webp']);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('All Categories');
 
@@ -446,13 +448,13 @@ export default function AdminEventsPage() {
       {/* Add Event Type Modal */}
       <AnimatePresence>
         {showAddModal && (
-          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100] p-4">
+          <div className="fixed inset-0 flex items-center justify-center z-[100] p-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowAddModal(false)}
-              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+              className="absolute inset-0 bg-black/40"
             />
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
@@ -479,13 +481,15 @@ export default function AdminEventsPage() {
               </button>
 
               {/* Responsive Illustration */}
-              <div className="w-28 sm:w-36 md:w-44 lg:w-56 mt-3 mb-4">
+              <div className="w-28 sm:w-36 md:w-44 lg:w-56 aspect-[3/2] mt-3 mb-4">
                 <Image
-                  src="/assets/add-category.png"
+                  src="/assets/add-category-sm.webp"
+                  unoptimized
                   alt="Add event type"
-                  width={240}
-                  height={170}
-                  className="w-full h-auto object-contain"
+                  width={480}
+                  height={320}
+                  loading="eager"
+                  className="w-full h-full object-contain"
                 />
               </div>
 

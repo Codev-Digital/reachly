@@ -4,8 +4,10 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { AdminDetailSkeleton } from '@/components/admin/AdminSkeletons';
+import { usePreloadImages } from '@/lib/usePreloadImages';
+import ActionDialog from '@/components/ActionDialog';
 
 interface User {
   id: string;
@@ -24,6 +26,7 @@ interface User {
 }
 
 export default function AdminUserDetailPage() {
+  usePreloadImages(['/assets/cancel-appointment-sm.webp','/assets/booking-confirm-sm.webp']);
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
 
@@ -290,134 +293,38 @@ export default function AdminUserDetailPage() {
       </motion.div>
 
       {/* Delete Confirmation Modal */}
-      <AnimatePresence>
-        {showDeleteModal && (
-          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100] p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowDeleteModal(false)}
-              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-[32px] p-6 sm:p-8 w-full max-w-[400px] shadow-2xl relative flex flex-col items-center z-10 overflow-hidden"
-            >
-              {/* Close Button */}
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-              </button>
-
-              {/* Responsive Illustration */}
-              <div className="w-28 sm:w-36 md:w-44 lg:w-56 mt-3 mb-4">
-                <Image
-                  src="/assets/cancel-appointment.webp"
-                  alt="Delete account"
-                  width={240}
-                  height={170}
-                  className="w-full h-auto object-contain"
-                />
-              </div>
-
-              <h3 className="text-xl sm:text-2xl font-bold text-black mb-2 text-center">
-                Delete User
-              </h3>
-
-              <p className="text-xs sm:text-sm text-gray-500 text-center">
-                Are you sure you want to delete this user?
-              </p>
-
-              <p className="text-xs sm:text-sm text-gray-500 text-center mb-6">
-                This action cannot be undone.
-              </p>
-
-              <div className="flex gap-3 w-full">
-                <button
-                  onClick={() => setShowDeleteModal(false)}
-                  className="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-all bg-white"
-                >
-                  Cancel
-                </button>
-
-                <button
-                  onClick={handleConfirmDelete}
-                  className="flex-1 py-2.5 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700 transition-all"
-                >
-                  Delete User
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      <ActionDialog
+        open={showDeleteModal}
+        onOpenChange={setShowDeleteModal}
+        image={{ src: '/assets/cancel-appointment-sm.webp', alt: 'Delete user' }}
+        title="Delete User"
+        description={['Are you sure you want to delete this user?', 'This action cannot be undone.']}
+        actions={[
+          { label: 'Cancel', variant: 'outline', onClick: () => setShowDeleteModal(false) },
+          { label: 'Delete User', variant: 'destructive', onClick: handleConfirmDelete },
+        ]}
+      />
 
       {/* Action Status Feedback Modal */}
-      <AnimatePresence>
-        {showStatusFeedbackModal && (
-          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100] p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowStatusFeedbackModal(false)}
-              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-[32px] p-6 sm:p-8 w-full max-w-[400px] shadow-2xl relative flex flex-col items-center z-10 overflow-hidden"
-            >
-              {/* Close Button */}
-              <button
-                onClick={() => setShowStatusFeedbackModal(false)}
-                className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-              </button>
-
-              {/* Responsive Illustration */}
-              <div className="w-28 sm:w-36 md:w-44 lg:w-56 mt-3 mb-4">
-                <Image
-                  src={statusFeedbackType === 'success' ? '/assets/booking-confirm.png' : '/assets/cancel-appointment.webp'}
-                  alt="Feedback Status"
-                  width={240}
-                  height={170}
-                  className="w-full h-auto object-contain"
-                />
-              </div>
-
-              <h3 className="text-xl sm:text-2xl font-bold text-black mb-2 text-center">
-                {statusFeedbackType === 'success' ? 'Success!' : 'Error'}
-              </h3>
-
-              <p className="text-xs sm:text-sm text-gray-500 text-center mb-6 px-4">
-                {statusFeedbackMessage}
-              </p>
-
-              <button
-                onClick={() => setShowStatusFeedbackModal(false)}
-                className={`w-full py-2.5 max-w-[300px] text-white rounded-xl text-sm font-semibold transition-all ${statusFeedbackType === 'success' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-red-600 hover:bg-red-700'
-                  }`}
-              >
-                OK
-              </button>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      <ActionDialog
+        open={showStatusFeedbackModal}
+        onOpenChange={setShowStatusFeedbackModal}
+        image={{
+          src: statusFeedbackType === 'success' ? '/assets/booking-confirm-sm.webp' : '/assets/cancel-appointment-sm.webp',
+          alt: 'Feedback status',
+        }}
+        title={statusFeedbackType === 'success' ? 'Success!' : 'Error'}
+        description={statusFeedbackMessage}
+        classNames={{ description: 'px-4', actions: 'justify-center' }}
+        actions={[
+          {
+            label: 'OK',
+            variant: statusFeedbackType === 'success' ? 'success' : 'destructive',
+            className: 'max-w-[300px]',
+            onClick: () => setShowStatusFeedbackModal(false),
+          },
+        ]}
+      />
     </>
   );
 }

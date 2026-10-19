@@ -6,6 +6,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { usePreloadImages } from '@/lib/usePreloadImages';
+import ActionDialog from '@/components/ActionDialog';
 
 interface Creator {
   id: string;
@@ -36,6 +38,7 @@ interface Creator {
 }
 
 export default function AdminCreatorsPage() {
+  usePreloadImages(['/assets/cancel-appointment-sm.webp','/assets/booking-confirm-sm.webp','/assets/add-category-sm.webp']);
   const router = useRouter();
   const openDetail = (c: Creator) => router.push(`/admin/creators/${c.dbId || c.id}`);
 
@@ -120,6 +123,7 @@ export default function AdminCreatorsPage() {
 
   const handleRejectClick = (creator: Creator) => {
     setCreatorToReject(creator);
+    setRejectSuccess(false);
     setShowRejectModal(true);
   };
 
@@ -516,210 +520,58 @@ export default function AdminCreatorsPage() {
         </div>
       </div>
 
-      {/* Reject Confirmation Modal (Delete structure) */}
-      <AnimatePresence>
-        {showRejectModal && (
-          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100] p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowRejectModal(false)}
-              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="relative w-full max-w-sm flex flex-col items-center p-8 z-10 bg-white rounded-[24px] shadow-xl"
-            >
-              {/* Close Button */}
-              <button
-                onClick={() => setShowRejectModal(false)}
-                className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-500 hover:bg-gray-100 transition-all z-20"
-              >
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                >
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-              </button>
-
-              {/* Responsive Illustration */}
-              <div className="w-28 sm:w-36 md:w-44 lg:w-56 mt-3 mb-4">
-                <Image
-                  src="/assets/cancel-appointment.webp"
-                  alt="Reject creator"
-                  width={240}
-                  height={170}
-                  className="w-full h-auto object-contain"
-                />
-              </div>
-
-              {rejectSuccess ? (
-                <>
-                  <h3 className="text-xl sm:text-2xl font-bold text-black mb-2 text-center">
-                    Success!
-                  </h3>
-                  <p className="text-xs sm:text-sm text-gray-500 text-center mb-6">
-                    Creator rejected successfully.
-                  </p>
-                  <button
-                    onClick={() => {
-                      setShowRejectModal(false);
-                      setCreatorToReject(null);
-                      setRejectSuccess(false);
-                    }}
-                    className="w-full py-2.5 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700 transition-all"
-                  >
-                    OK
-                  </button>
-                </>
-              ) : (
-                <>
-                  <h3 className="text-xl sm:text-2xl font-bold text-black mb-2 text-center">
-                    Reject Creator
-                  </h3>
-                  <p className="text-xs sm:text-sm text-gray-500 text-center">
-                    Are you sure you want to reject this creator?
-                  </p>
-                  <p className="text-xs sm:text-sm text-gray-500 text-center mb-6">
-                    This action cannot be undone.
-                  </p>
-                  <div className="flex gap-3 w-full">
-                    <button
-                      onClick={() => setShowRejectModal(false)}
-                      className="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-all bg-white"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleConfirmReject}
-                      className="flex-1 py-2.5 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700 transition-all"
-                    >
-                      Reject Creator
-                    </button>
-                  </div>
-                </>
-              )}
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      {/* Reject Confirmation Modal */}
+      <ActionDialog
+        open={showRejectModal}
+        onOpenChange={setShowRejectModal}
+        image={{ src: '/assets/cancel-appointment-sm.webp', alt: 'Reject creator' }}
+        title={rejectSuccess ? 'Success!' : 'Reject Creator'}
+        description={
+          rejectSuccess
+            ? 'Creator rejected successfully.'
+            : ['Are you sure you want to reject this creator?', 'This action cannot be undone.']
+        }
+        actions={
+          rejectSuccess
+            ? [{ label: 'OK', variant: 'destructive', onClick: () => setShowRejectModal(false) }]
+            : [
+                { label: 'Cancel', variant: 'outline', onClick: () => setShowRejectModal(false) },
+                { label: 'Reject Creator', variant: 'destructive', onClick: handleConfirmReject },
+              ]
+        }
+      />
 
       {/* Accept Confirmation Modal */}
-      <AnimatePresence>
-        {showAcceptModal && (
-          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100] p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowAcceptModal(false)}
-              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="relative w-full max-w-sm flex flex-col items-center p-8 z-10 bg-white rounded-[24px] shadow-xl"
-            >
-              {/* Close Button */}
-              <button
-                onClick={() => setShowAcceptModal(false)}
-                className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-500 hover:bg-gray-100 transition-all z-20"
-              >
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                >
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-              </button>
-
-              {/* Responsive Illustration */}
-              <div className="w-28 sm:w-36 md:w-44 lg:w-56 mt-3 mb-4">
-                <Image
-                  src="/assets/booking-confirm.png"
-                  alt="Accept creator"
-                  width={240}
-                  height={170}
-                  className="w-full h-auto object-contain"
-                />
-              </div>
-
-              {acceptSuccess ? (
-                <>
-                  <h3 className="text-xl sm:text-2xl font-bold text-black mb-2 text-center">
-                    Success!
-                  </h3>
-                  <p className="text-xs sm:text-sm text-gray-500 text-center mb-6">
-                    Creator approved successfully.
-                  </p>
-                  <button
-                    onClick={() => {
-                      setShowAcceptModal(false);
-                      setCreatorToAccept(null);
-                      setAcceptSuccess(false);
-                    }}
-                    className="w-full py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 transition-all"
-                  >
-                    OK
-                  </button>
-                </>
-              ) : (
-                <>
-                  <h3 className="text-xl sm:text-2xl font-bold text-black mb-2 text-center">
-                    Accept Creator
-                  </h3>
-                  <p className="text-xs sm:text-sm text-gray-500 text-center">
-                    Are you sure you want to accept this creator?
-                  </p>
-                  <p className="text-xs sm:text-sm text-gray-500 text-center mb-6">
-                    This action cannot be undone.
-                  </p>
-                  <div className="flex gap-3 w-full">
-                    <button
-                      onClick={() => setShowAcceptModal(false)}
-                      className="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-all bg-white"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleConfirmAccept}
-                      className="flex-1 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 transition-all"
-                    >
-                      Accept Creator
-                    </button>
-                  </div>
-                </>
-              )}
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      <ActionDialog
+        open={showAcceptModal}
+        onOpenChange={setShowAcceptModal}
+        image={{ src: '/assets/booking-confirm-sm.webp', alt: 'Accept creator' }}
+        title={acceptSuccess ? 'Success!' : 'Accept Creator'}
+        description={
+          acceptSuccess
+            ? 'Creator approved successfully.'
+            : ['Are you sure you want to accept this creator?', 'This action cannot be undone.']
+        }
+        actions={
+          acceptSuccess
+            ? [{ label: 'OK', variant: 'success', onClick: () => setShowAcceptModal(false) }]
+            : [
+                { label: 'Cancel', variant: 'outline', onClick: () => setShowAcceptModal(false) },
+                { label: 'Accept Creator', variant: 'success', onClick: handleConfirmAccept },
+              ]
+        }
+      />
 
       {/* Add Category Modal */}
       <AnimatePresence>
         {showAddCategoryModal && (
-          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100] p-4">
+          <div className="fixed inset-0 flex items-center justify-center z-[100] p-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowAddCategoryModal(false)}
-              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+              className="absolute inset-0 bg-black/40"
             />
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
@@ -746,13 +598,15 @@ export default function AdminCreatorsPage() {
               </button>
 
               {/* Responsive Illustration */}
-              <div className="w-28 sm:w-36 md:w-44 lg:w-56 mt-3 mb-4">
+              <div className="w-28 sm:w-36 md:w-44 lg:w-56 aspect-[3/2] mt-3 mb-4">
                 <Image
-                  src="/assets/add-category.png"
+                  src="/assets/add-category-sm.webp"
+                  unoptimized
                   alt="Add category"
-                  width={240}
-                  height={170}
-                  className="w-full h-auto object-contain"
+                  width={480}
+                  height={320}
+                  loading="eager"
+                  className="w-full h-full object-contain"
                 />
               </div>
 

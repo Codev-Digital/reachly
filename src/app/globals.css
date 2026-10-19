@@ -219,3 +219,16 @@ input[type="range"]::-webkit-slider-thumb {
 .welcome-dialog {
   animation: welcome-dialog-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.05s both;
 }
+
+/* shadcn Dialog (src/components/ui/dialog.tsx): fade backdrop + scale-in box.
+   Radix waits for these animations to end before unmounting, so closing is
+   smooth too. Uses the individual scale property so it never fights the
+   translate-based centering. */
+@keyframes ui-dialog-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ui-dialog-fade-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes ui-dialog-pop-in { from { opacity: 0; scale: 0.92; } to { opacity: 1; scale: 1; } }
+@keyframes ui-dialog-pop-out { from { opacity: 1; scale: 1; } to { opacity: 0; scale: 0.95; } }
+.ui-dialog-overlay[data-state='open'] { animation: ui-dialog-fade-in 0.2s ease-out both; }
+.ui-dialog-overlay[data-state='closed'] { animation: ui-dialog-fade-out 0.15s ease-in both; }
+.ui-dialog-content[data-state='open'] { animation: ui-dialog-pop-in 0.22s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.ui-dialog-content[data-state='closed'] { animation: ui-dialog-pop-out 0.15s ease-in both; }
