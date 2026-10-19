@@ -186,16 +186,21 @@ export const sendEmail = async (
   subject: string,
   html: string
 ): Promise<void> => {
-  const host = process.env.SMTP_HOST;
-  const port = parseInt(process.env.SMTP_PORT || '587', 10);
   // Strip any surrounding quotes that .env parsers sometimes leave in
-  const user = (process.env.SMTP_USER || '').replace(/^["']|["']$/g, '');
-  // Gmail app passwords are 16 chars — strip spaces if accidentally included
-  const pass = (process.env.SMTP_PASSWORD || process.env.SMTP_PASS || '').replace(/\s/g, '').replace(/^["']|["']$/g, '');
-  const fromAddress = (process.env.SMTP_FROM || user).replace(/^["']|["']$/g, '');
+  const clean = (value?: string) => (value || '').trim().replace(/^["']|["']$/g, '');
+
+  const host = clean(process.env.EMAIL_HOST);
+  const port = parseInt(clean(process.env.EMAIL_PORT) || '587', 10);
+  // EMAIL_SECURE=true means implicit TLS (port 465). false uses STARTTLS (port 587).
+  const secure = process.env.EMAIL_SECURE
+    ? clean(process.env.EMAIL_SECURE).toLowerCase() === 'true'
+    : port === 465;
+  const user = clean(process.env.EMAIL_USER);
+  const pass = clean(process.env.EMAIL_PASS);
+  const fromAddress = clean(process.env.EMAIL_FROM) || user;
 
   if (!host || !user || !pass) {
-    console.log('------- EMAIL (SMTP not configured) -------');
+    console.log('------- EMAIL (EMAIL_* not configured) -------');
     console.log(`TO:      ${to}`);
     console.log(`SUBJECT: ${subject}`);
     console.log(`BODY:    ${htmlToText(html)}`);
@@ -204,12 +209,12 @@ export const sendEmail = async (
   }
 
   try {
-    const configKey = `${host}:${port}:${user}:${pass}`;
+    const configKey = `${host}:${port}:${secure}:${user}:${pass}`;
     if (!cachedTransporter || lastTransporterConfigKey !== configKey) {
       cachedTransporter = nodemailer.createTransport({
         host,
         port,
-        secure: port === 465,
+        secure,
         auth: { user, pass },
         pool: true,
         maxConnections: 3,
@@ -220,14 +225,14 @@ export const sendEmail = async (
 
     await cachedTransporter.sendMail({
       from: `"Reachly" <${fromAddress}>`,
-      replyTo: process.env.SMTP_REPLY_TO || fromAddress,
+      replyTo: clean(process.env.EMAIL_REPLY_TO) || fromAddress,
       to,
       subject,
       html,
       text: htmlToText(html),
     });
   } catch (error) {
-    console.error('SMTP Email dispatch failed:', error);
+    console.error('Email dispatch failed:', error);
   }
 };
 
