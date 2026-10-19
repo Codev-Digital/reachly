@@ -131,14 +131,12 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/creators/calendar", request.url));
   }
 
-  // Read the JWT session token
+  // Read the JWT session token with resilient fallback across HTTP/HTTPS proxies
   const secret = process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET;
-  const secureCookie =
-    process.env.NEXTAUTH_URL?.startsWith("https://") ||
-    process.env.VERCEL_URL != null ||
-    request.url.startsWith("https://");
-
-  const token = await getToken({ req: request, secret, secureCookie });
+  let token = await getToken({ req: request, secret });
+  if (!token) {
+    token = await getToken({ req: request, secret, secureCookie: true });
+  }
 
   const isLoggedIn = !!token;
   const isComplete = !!(token as any)?.isRegistrationComplete;

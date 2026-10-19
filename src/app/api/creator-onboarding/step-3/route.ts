@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
+import CreatorProfile from '@/models/CreatorProfile';
 import SessionType from '@/models/SessionType';
 
 // ── GET — load all saved session types for this user ─────────────────────────
@@ -72,9 +73,10 @@ export async function PUT(req: NextRequest) {
           { status: 422 }
         );
       }
-      if (![15, 30, 45, 60, 90].includes(Number(s.duration))) {
+      const duration = Number(s.duration);
+      if (isNaN(duration) || duration < 1) {
         return NextResponse.json(
-          { error: `Session ${idx}: duration must be 15, 30, 45, 60, or 90 minutes.` },
+          { error: `Session ${idx}: duration must be at least 1 minute.` },
           { status: 422 }
         );
       }
@@ -96,12 +98,23 @@ export async function PUT(req: NextRequest) {
       description: s.description.trim(),
       duration: Number(s.duration),
       price: Number(s.price),
+      discountedPrice: s.discountedPrice !== undefined && s.discountedPrice !== null && s.discountedPrice !== ''
+        ? Number(s.discountedPrice)
+        : undefined,
+      questions: Array.isArray(s.questions) ? s.questions : [],
       features: (s.features || []).filter((f: string) => f?.trim()),
       maxBookings: s.maxBookings ? Number(s.maxBookings) : undefined,
       order: index,
+      isActive: true,
     }));
 
     const saved = await SessionType.insertMany(docs);
+
+    // ── Ensure creator profile is reactivated if previously deactivated ──
+    await CreatorProfile.updateOne(
+      { userId: user._id, isDeactivated: true },
+      { $set: { isDeactivated: false }, $unset: { deactivatedAt: '' } }
+    );
 
     // ── Bump onboardingStep ───────────────────────────────────────────────
     if (user.onboardingStep < 3) {

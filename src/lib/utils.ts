@@ -219,6 +219,9 @@ export const sendEmail = async (
         pool: true,
         maxConnections: 3,
         maxMessages: 100,
+        tls: {
+          rejectUnauthorized: false,
+        },
       });
       lastTransporterConfigKey = configKey;
     }

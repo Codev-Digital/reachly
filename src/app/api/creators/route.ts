@@ -30,10 +30,16 @@ export async function GET(request: NextRequest) {
         }
 
         const [profiles, sessions] = await Promise.all([
-            CreatorProfile.find({ userId: { $in: creatorUserIds } })
-                .select('userId username displayName shortBio niches profilePhoto')
+            CreatorProfile.find({
+                userId: { $in: creatorUserIds },
+                isDeactivated: { $ne: true },
+            })
+                .select('userId username displayName shortBio niches profilePhoto isDeactivated')
                 .lean(),
-            SessionType.find({ userId: { $in: creatorUserIds } })
+            SessionType.find({
+                userId: { $in: creatorUserIds },
+                isActive: { $ne: false },
+            })
                 .select('userId price')
                 .lean(),
         ]);
@@ -51,7 +57,8 @@ export async function GET(request: NextRequest) {
         const formattedCreators = creators.map((user) => {
             const uIdStr = user._id.toString();
             const profile = profileMap.get(uIdStr);
-            if (!profile) return null;
+            if (!profile || profile.isDeactivated) return null;
+            if (!minPriceMap.has(uIdStr)) return null; // creator has no active sessions
 
             return {
                 id: uIdStr,

@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.AUTH_SECRET || 'fallback-secret-change-me';
+const JWT_SECRET = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || 'reachly-app-secure-jwt-key-2026';
 const JWT_EXPIRES_IN = '7d';
 
 export interface JWTPayload {

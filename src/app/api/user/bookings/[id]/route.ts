@@ -6,6 +6,7 @@ import connectDB from "@/lib/mongodb";
 import Booking from "@/models/Booking";
 import User from "@/models/User";
 import Referral from "@/models/referral.model";
+import { checkSessionModificationWindow, checkNewSessionTime, parseDateToNoonUTC } from "@/lib/time";
 
 export async function PUT(
   request: NextRequest,
@@ -35,7 +36,8 @@ export async function PUT(
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const { status, selectedDate, selectedTime } = await request.json();
+    const body = await request.json();
+    const { status, selectedDate, selectedTime, timeZone: bodyTimeZone, timezone: bodyTimezoneAlt } = body;
 
     if (status && !["confirmed", "cancelled", "completed"].includes(status)) {
       return NextResponse.json({ error: "Invalid status" }, { status: 400 });
@@ -60,6 +62,76 @@ export async function PUT(
       booking.guestDetails?.email?.toLowerCase().trim() !== email
     ) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+
+    // Resolve timezone (browser header -> body timezone -> creator availability timezone -> Asia/Karachi default)
+    const headerTimeZone = request.headers.get("x-timezone");
+    let timeZone = headerTimeZone || bodyTimeZone || bodyTimezoneAlt;
+
+    if (!timeZone && booking.creatorId) {
+      try {
+        const CreatorAvailability = (await import("@/models/CreatorAvailability")).default;
+        const avail = await CreatorAvailability.findOne({ userId: booking.creatorId }).select("timezone").lean();
+        if (avail?.timezone) {
+          timeZone = avail.timezone;
+        }
+      } catch (tzErr) {
+        console.error("Error fetching creator timezone:", tzErr);
+      }
+    }
+    if (!timeZone) {
+      timeZone = "Asia/Karachi";
+    }
+
+    const isCancelling = status === "cancelled";
+    const isRescheduling = Boolean(selectedDate || selectedTime);
+
+    // 1. Cancellation checks (must be at least 24 hours before session start time)
+    if (isCancelling) {
+      if (booking.status === "cancelled") {
+        return NextResponse.json({ error: "Booking is already cancelled." }, { status: 400 });
+      }
+      if (booking.status === "completed") {
+        return NextResponse.json({ error: "Completed bookings cannot be cancelled." }, { status: 400 });
+      }
+
+      const cancelCheck = checkSessionModificationWindow(
+        booking.scheduledDate,
+        booking.scheduledTime,
+        timeZone,
+        "cancel"
+      );
+      if (!cancelCheck.allowed) {
+        return NextResponse.json({ error: cancelCheck.errorMessage }, { status: 400 });
+      }
+    }
+
+    // 2. Rescheduling checks (must be at least 24 hours before session start time)
+    if (isRescheduling) {
+      if (booking.status === "cancelled") {
+        return NextResponse.json({ error: "Cancelled bookings cannot be rescheduled." }, { status: 400 });
+      }
+      if (booking.status === "completed") {
+        return NextResponse.json({ error: "Completed bookings cannot be rescheduled." }, { status: 400 });
+      }
+
+      const rescheduleCheck = checkSessionModificationWindow(
+        booking.scheduledDate,
+        booking.scheduledTime,
+        timeZone,
+        "reschedule"
+      );
+      if (!rescheduleCheck.allowed) {
+        return NextResponse.json({ error: rescheduleCheck.errorMessage }, { status: 400 });
+      }
+
+      // Ensure the new scheduled slot is strictly in the future
+      const targetDate = selectedDate || booking.scheduledDate;
+      const targetTime = selectedTime || booking.scheduledTime;
+      const newSlotCheck = checkNewSessionTime(targetDate, targetTime, timeZone);
+      if (!newSlotCheck.allowed) {
+        return NextResponse.json({ error: newSlotCheck.errorMessage }, { status: 400 });
+      }
     }
 
     const updatePayload: any = {};
@@ -118,7 +190,7 @@ export async function PUT(
       }
     }
     if (selectedDate) {
-      updatePayload.scheduledDate = new Date(selectedDate);
+      updatePayload.scheduledDate = parseDateToNoonUTC(selectedDate, timeZone);
       updatePayload.isRescheduled = true;
     }
     if (selectedTime) {
@@ -139,9 +211,9 @@ export async function PUT(
         user.name || booking.guestDetails?.fullName || "A user";
 
       if (selectedDate || selectedTime) {
-        const formattedDate = new Date(
-          selectedDate || booking.scheduledDate,
-        ).toLocaleDateString("en-US", {
+        const targetDateObj = updatePayload.scheduledDate || booking.scheduledDate;
+        const formattedDate = new Date(targetDateObj).toLocaleDateString("en-US", {
+          timeZone,
           weekday: "short",
           month: "short",
           day: "numeric",
