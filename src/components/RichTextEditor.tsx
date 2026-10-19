@@ -3,9 +3,12 @@
 import { useEffect, useId, type ReactNode } from 'react';
 import { EditorContent, useEditor, useEditorState } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import { Slice, type Fragment } from '@tiptap/pm/model';
+import { toast } from 'sonner';
 import { CharacterCount, Placeholder } from '@tiptap/extensions';
 import {
   Bold,
+  Heading1,
   Heading2,
   Heading3,
   Italic,
@@ -103,6 +106,50 @@ function ToolbarButton({
   );
 }
 
+/** Characters the editor counts for a piece of content (text only; a line break counts as one). */
+const countChars = (fragment: Fragment) => fragment.textBetween(0, fragment.size, undefined, ' ').length;
+
+/** Document position inside `fragment` after `max` countable characters. */
+function positionAfterChars(fragment: Fragment, max: number): number {
+  let remaining = max;
+  let pos = fragment.size;
+  let found = false;
+  fragment.descendants((node, p) => {
+    if (found) return false;
+    if (node.isText) {
+      const len = node.text?.length ?? 0;
+      if (len >= remaining) {
+        pos = p + remaining;
+        found = true;
+        return false;
+      }
+      remaining -= len;
+    } else if (node.isLeaf) {
+      if (remaining <= 0) {
+        pos = p;
+        found = true;
+        return false;
+      }
+      remaining -= 1;
+    }
+    return true;
+  });
+  return pos;
+}
+
+/** Keeps only the first `max` characters of a pasted slice. */
+function truncateSlice(slice: Slice, max: number): Slice {
+  if (max <= 0) return Slice.empty;
+  const cut = slice.content.cut(0, positionAfterChars(slice.content, max));
+  let openEnd = 0;
+  let node = cut.lastChild;
+  while (node && !node.isLeaf) {
+    openEnd += 1;
+    node = node.lastChild;
+  }
+  return new Slice(cut, Math.min(slice.openStart, openEnd), openEnd);
+}
+
 const Divider = () => <span className="w-px h-5 bg-current opacity-15 mx-1" aria-hidden="true" />;
 
 export default function RichTextEditor({
@@ -124,12 +171,21 @@ export default function RichTextEditor({
   const errorId = `${id}-error`;
   const theme = THEME[variant];
 
+  const notifyLimit = (trimmed: boolean) =>
+    toast.warning('Character limit reached', {
+      id: 'rich-text-limit', // one toast at a time, even if the user keeps typing / pasting
+      description: trimmed
+        ? `Your pasted text was trimmed to fit the ${maxLength.toLocaleString()} character limit. The extra text was not added.`
+        : `This field allows up to ${maxLength.toLocaleString()} characters. Remove some text to add more.`,
+      duration: 5000,
+    });
+
   const editor = useEditor({
     // Required for Next.js SSR: render the editor only on the client
     immediatelyRender: false,
     extensions: [
       StarterKit.configure({
-        heading: { levels: [2, 3] },
+        heading: { levels: [1, 2, 3] },
         link: {
           openOnClick: false,
           autolink: true,
@@ -145,6 +201,26 @@ export default function RichTextEditor({
     ],
     content: toEditorHtml(value),
     editorProps: {
+      // Typing past the limit is blocked, and the creator is told why
+      handleTextInput: (view, from, to, text) => {
+        const doc = view.state.doc;
+        const current = countChars(doc.content);
+        const replaced = doc.textBetween(from, to, undefined, ' ').length;
+        if (current - replaced + text.length > maxLength) {
+          notifyLimit(false);
+          return true;
+        }
+        return false;
+      },
+      // Pasting past the limit keeps the first part and ignores the rest
+      transformPasted: (slice, view) => {
+        const { from, to } = view.state.selection;
+        const doc = view.state.doc;
+        const available = maxLength - (countChars(doc.content) - doc.textBetween(from, to, undefined, ' ').length);
+        if (countChars(slice.content) <= available) return slice;
+        notifyLimit(true);
+        return truncateSlice(slice, available);
+      },
       attributes: {
         id,
         'aria-invalid': error ? 'true' : 'false',
@@ -174,6 +250,7 @@ export default function RichTextEditor({
             italic: editor.isActive('italic'),
             underline: editor.isActive('underline'),
             strike: editor.isActive('strike'),
+            h1: editor.isActive('heading', { level: 1 }),
             h2: editor.isActive('heading', { level: 2 }),
             h3: editor.isActive('heading', { level: 3 }),
             bulletList: editor.isActive('bulletList'),
@@ -239,10 +316,13 @@ export default function RichTextEditor({
 
           <Divider />
 
-          <ToolbarButton title="Heading" theme={theme} active={s?.h2} onClick={() => chain()?.toggleHeading({ level: 2 }).run()}>
+          <ToolbarButton title="Heading 1" theme={theme} active={s?.h1} onClick={() => chain()?.toggleHeading({ level: 1 }).run()}>
+            <Heading1 className="w-4 h-4" />
+          </ToolbarButton>
+          <ToolbarButton title="Heading 2" theme={theme} active={s?.h2} onClick={() => chain()?.toggleHeading({ level: 2 }).run()}>
             <Heading2 className="w-4 h-4" />
           </ToolbarButton>
-          <ToolbarButton title="Subheading" theme={theme} active={s?.h3} onClick={() => chain()?.toggleHeading({ level: 3 }).run()}>
+          <ToolbarButton title="Heading 3" theme={theme} active={s?.h3} onClick={() => chain()?.toggleHeading({ level: 3 }).run()}>
             <Heading3 className="w-4 h-4" />
           </ToolbarButton>
 
@@ -298,7 +378,7 @@ export default function RichTextEditor({
         <div className="min-w-0">
           {error && <FormError id={errorId} className={errorClassName}>{error}</FormError>}
         </div>
-        <p className={twMerge('shrink-0 text-xs font-sans', theme.counter)}>
+        <p className={twMerge('shrink-0 text-xs font-sans', theme.counter, (s?.chars ?? 0) >= maxLength && 'text-red-500 font-medium')}>
           {s?.chars ?? 0}/{maxLength}
         </p>
       </div>

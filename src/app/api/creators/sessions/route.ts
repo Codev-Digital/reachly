@@ -5,6 +5,7 @@ import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
 import CreatorProfile from '@/models/CreatorProfile';
 import SessionType from '@/models/SessionType';
+import { cleanSessionDescription } from '@/lib/sanitizeRichText';
 
 // ── GET /api/creators/sessions ───────────────────────────────────────────────
 // Ultra-fast lean fetch of all active session types for the logged-in creator
@@ -76,8 +77,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Session title is required.' }, { status: 400 });
     }
 
-    if (!description || typeof description !== 'string' || !description.trim()) {
-      return NextResponse.json({ error: 'Session description is required.' }, { status: 400 });
+    const cleanDescription = cleanSessionDescription(description);
+    if ('error' in cleanDescription) {
+      return NextResponse.json({ error: cleanDescription.error }, { status: 400 });
     }
 
     const durationNum = Number(duration);
@@ -135,7 +137,7 @@ export async function POST(req: NextRequest) {
     const newSession = await SessionType.create({
       userId: user._id,
       title: title.trim(),
-      description: description.trim(),
+      description: cleanDescription.value,
       duration: durationNum,
       price: priceNum,
       discountedPrice: parsedDiscountedPrice,

@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import CreatorSidebar from '@/components/CreatorSidebar';
 import { useState } from 'react';
 import FormInput from '@/components/FormInput';
+import { richTextToPlain } from '@/lib/richText';
 
 const DARK_LABEL = 'text-sm font-sans font-normal leading-normal text-[#F9F6F2] opacity-70';
 const DARK_INPUT =
@@ -150,7 +151,7 @@ const CreatorSessionTypes = () => {
                     </div>
                   </div>
 
-                  <p className="text-sm font-sans text-[#F9F6F2] opacity-70 mb-4 leading-relaxed">{session.description}...</p>
+                  <p className="text-sm font-sans text-[#F9F6F2] opacity-70 mb-4 leading-relaxed">{richTextToPlain(session.description)}...</p>
 
                   <div className="mb-4">
                     <p className="text-sm font-sans text-[#C8A97E] font-medium mb-2">What is included</p>

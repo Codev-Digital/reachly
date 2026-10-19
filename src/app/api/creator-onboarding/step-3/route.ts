@@ -5,6 +5,7 @@ import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
 import CreatorProfile from '@/models/CreatorProfile';
 import SessionType from '@/models/SessionType';
+import { cleanSessionDescription } from '@/lib/sanitizeRichText';
 
 // ── GET — load all saved session types for this user ─────────────────────────
 export async function GET() {
@@ -67,16 +68,18 @@ export async function PUT(req: NextRequest) {
           { status: 422 }
         );
       }
-      if (!s.description?.trim()) {
+      const cleanDescription = cleanSessionDescription(s.description);
+      if ('error' in cleanDescription) {
         return NextResponse.json(
-          { error: `Session ${idx}: description is required.` },
+          { error: `Session ${idx}: ${cleanDescription.error}` },
           { status: 422 }
         );
       }
+      s.description = cleanDescription.value;
       const duration = Number(s.duration);
-      if (isNaN(duration) || duration < 1) {
+      if (isNaN(duration) || duration < 1 || duration > 1440 || !Number.isInteger(duration)) {
         return NextResponse.json(
-          { error: `Session ${idx}: duration must be at least 1 minute.` },
+          { error: `Session ${idx}: duration must be a whole number of minutes between 1 and 1440.` },
           { status: 422 }
         );
       }
@@ -86,6 +89,24 @@ export async function PUT(req: NextRequest) {
           { error: `Session ${idx}: price must be at least PKR 1.` },
           { status: 422 }
         );
+      }
+      if (s.bufferTime !== undefined && s.bufferTime !== null && s.bufferTime !== '') {
+        const buffer = Number(s.bufferTime);
+        if (!Number.isInteger(buffer) || buffer < 0 || buffer > duration) {
+          return NextResponse.json(
+            { error: `Session ${idx}: buffer time must be a whole number of minutes and no longer than the session duration.` },
+            { status: 422 }
+          );
+        }
+      }
+      if (s.discountedPrice !== undefined && s.discountedPrice !== null && s.discountedPrice !== '') {
+        const discounted = Number(s.discountedPrice);
+        if (isNaN(discounted) || discounted < 1 || discounted >= price) {
+          return NextResponse.json(
+            { error: `Session ${idx}: discounted price must be at least PKR 1 and less than the session price.` },
+            { status: 422 }
+          );
+        }
       }
     }
 
@@ -101,6 +122,7 @@ export async function PUT(req: NextRequest) {
       discountedPrice: s.discountedPrice !== undefined && s.discountedPrice !== null && s.discountedPrice !== ''
         ? Number(s.discountedPrice)
         : undefined,
+      bufferTime: s.bufferTime ? Number(s.bufferTime) : 0,
       questions: Array.isArray(s.questions) ? s.questions : [],
       features: (s.features || []).filter((f: string) => f?.trim()),
       maxBookings: s.maxBookings ? Number(s.maxBookings) : undefined,

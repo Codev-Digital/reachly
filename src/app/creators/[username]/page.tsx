@@ -149,7 +149,7 @@ export default function CreatorProfilePage() {
                   PKR {service.price}
                 </div>
                 <div className="w-full h-px bg-[rgba(255,255,255,0.1)] mb-4"></div>
-                <p className="text-white/80 text-base mb-4 leading-relaxed">{service.description}</p>
+                <RichTextContent value={service.description} className="text-white/80 text-base mb-4 leading-relaxed" />
                 <ul className="space-y-3 mb-8">
                   {service.features.map((feature: string, i: number) => (
                     <li key={i} className="flex items-center gap-3 text-sm text-white/70">

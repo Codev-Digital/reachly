@@ -7,6 +7,7 @@ import User from '@/models/User';
 import CreatorProfile from '@/models/CreatorProfile';
 import SessionType from '@/models/SessionType';
 import Booking from '@/models/Booking';
+import { cleanSessionDescription } from '@/lib/sanitizeRichText';
 
 // ── GET /api/creators/sessions/[id] ──────────────────────────────────────────
 export async function GET(
@@ -106,10 +107,11 @@ export async function PUT(
     }
 
     if (description !== undefined) {
-      if (!description || typeof description !== 'string' || !description.trim()) {
-        return NextResponse.json({ error: 'Session description is required.' }, { status: 400 });
+      const cleanDescription = cleanSessionDescription(description);
+      if ('error' in cleanDescription) {
+        return NextResponse.json({ error: cleanDescription.error }, { status: 400 });
       }
-      updatePayload.description = description.trim();
+      updatePayload.description = cleanDescription.value;
     }
 
     if (duration !== undefined) {

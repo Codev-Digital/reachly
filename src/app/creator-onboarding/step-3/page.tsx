@@ -6,6 +6,7 @@ import { updateSessionTypes } from '@/lib/auth-client';
 import LoadingAnimation from '@/components/LoadingAnimation';
 import { useOnboardingCleanup } from '@/hooks/useOnboardingCleanup';
 import FormInput from '@/components/FormInput';
+import { richTextToPlain } from '@/lib/richText';
 
 /* ─── types ─────────────────────────────────────────────────────────────── */
 interface SessionData {
@@ -259,7 +260,7 @@ export default function CreatorOnboardingStep3() {
                     {session.price} PKR
                   </span>
                 </div>
-                <p className="font-sans text-gray-500 text-xs">{session.description}</p>
+                <p className="font-sans text-gray-500 text-xs">{richTextToPlain(session.description)}</p>
               </div>
             ))}
           </div>

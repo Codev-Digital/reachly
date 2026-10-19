@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { Check, ChevronDown } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
 import { FormError, FormLabel, INPUT_CLASSES } from '@/components/FormInput';
@@ -15,6 +15,8 @@ export interface DropdownProps {
   /** Called when the menu closes / the field loses focus (use it to mark the field as touched). */
   onBlur?: () => void;
   label?: string;
+  /** Small element shown right after the label (e.g. an info tooltip). */
+  labelAddon?: ReactNode;
   required?: boolean;
   placeholder?: string;
   error?: string;
@@ -30,6 +32,10 @@ export interface DropdownProps {
   /** Which option is highlighted as selected. Defaults to `value`. */
   selectedOption?: string;
   inputMaxLength?: number;
+  /** Keyboard type for the text input in `editable` mode (e.g. 'numeric'). */
+  inputMode?: 'text' | 'numeric' | 'decimal' | 'tel' | 'email' | 'url' | 'search';
+  /** Text at the end of the field in its own bordered segment, shown in `editable` mode (e.g. "min"). */
+  suffix?: ReactNode;
   /** Extra classes for the field — merged over the same defaults FormInput uses. */
   className?: string;
   menuClassName?: string;
@@ -59,6 +65,7 @@ export default function Dropdown({
   onChange,
   onBlur,
   label,
+  labelAddon,
   required,
   placeholder = 'Select an option',
   error,
@@ -68,6 +75,8 @@ export default function Dropdown({
   onInputChange,
   selectedOption,
   inputMaxLength,
+  inputMode,
+  suffix,
   className,
   menuClassName,
   labelClassName,
@@ -166,22 +175,42 @@ export default function Dropdown({
     }
   };
 
+  const joined = editable && !!suffix; // input + suffix + chevron read as one bordered field
+
   const fieldClasses = twMerge(
     INPUT_CLASSES,
     'px-4 pr-11',
-    open && 'border-[#0012FF]',
+    joined && 'flex-1 min-w-0 border-0 rounded-none rounded-l-[8px] focus:border-0 pr-4',
+    !joined && open && 'border-[#0012FF]',
     className
   );
 
   return (
     <div className={wrapperClassName}>
-      {label && (
-        <FormLabel htmlFor={id} required={required} className={labelClassName}>
-          {label}
-        </FormLabel>
-      )}
+      {label &&
+        (labelAddon ? (
+          <div className="relative flex items-center gap-1.5 mb-2">
+            <FormLabel htmlFor={id} required={required} className={twMerge('mb-0', labelClassName)}>
+              {label}
+            </FormLabel>
+            {labelAddon}
+          </div>
+        ) : (
+          <FormLabel htmlFor={id} required={required} className={labelClassName}>
+            {label}
+          </FormLabel>
+        ))}
 
-      <div ref={rootRef} className="relative">
+      <div
+        ref={rootRef}
+        className={twMerge(
+          'relative',
+          disabled && 'cursor-not-allowed',
+          joined &&
+            'flex items-stretch bg-white border border-[#e2e2e2] rounded-[8px] focus-within:border-[#0012FF] transition-all',
+          joined && open && 'border-[#0012FF]'
+        )}
+      >
         {editable ? (
           <input
             ref={inputRef}
@@ -190,6 +219,7 @@ export default function Dropdown({
             value={value}
             disabled={disabled}
             maxLength={inputMaxLength}
+            inputMode={inputMode}
             placeholder={placeholder}
             autoComplete="off"
             aria-invalid={error ? true : undefined}
@@ -222,20 +252,31 @@ export default function Dropdown({
         )}
 
         {editable ? (
-          <button
-            type="button"
-            tabIndex={-1}
-            disabled={disabled}
-            aria-label="Show options"
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => (open ? close() : openMenu())}
-            className="absolute right-0 top-0 h-full w-11 flex items-center justify-center cursor-pointer"
-          >
-            <ChevronDown
-              aria-hidden="true"
-              className={twMerge('w-4 h-4 opacity-50 transition-transform', open && 'rotate-180')}
-            />
-          </button>
+          <>
+            {suffix && (
+              <span className="flex items-center pl-4 pr-1 border-l border-[#e2e2e2] bg-gray-50 font-sans text-sm font-medium text-gray-500 select-none">
+                {suffix}
+              </span>
+            )}
+            <button
+              type="button"
+              tabIndex={-1}
+              disabled={disabled}
+              aria-label="Show options"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => (open ? close() : openMenu())}
+              className={
+                suffix
+                  ? 'w-9 shrink-0 flex items-center justify-center bg-gray-50 rounded-r-[7px] cursor-pointer'
+                  : 'absolute right-0 top-0 h-full w-11 flex items-center justify-center cursor-pointer'
+              }
+            >
+              <ChevronDown
+                aria-hidden="true"
+                className={twMerge('w-4 h-4 text-gray-500 transition-transform', open && 'rotate-180')}
+              />
+            </button>
+          </>
         ) : (
           <ChevronDown
             aria-hidden="true"

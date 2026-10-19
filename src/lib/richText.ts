@@ -44,5 +44,26 @@ export const richTextToPlain = (value?: string | null): string => {
 
 export const isRichTextEmpty = (value?: string | null): boolean => richTextToPlain(value).length === 0;
 
+/**
+ * Number of visible characters in a stored value, counted the same way the editor counts them
+ * (text only, tags ignored, a line break counts as one). Use this for server-side limit checks.
+ */
+export const richTextLength = (value?: string | null): number => {
+  if (!value) return 0;
+  if (!looksLikeRichText(value)) return value.trim().length;
+  return value
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, '&').length;
+};
+
 /** Max visible characters allowed in the detailed bio. */
 export const DETAILED_BIO_MAX_LENGTH = 1000;
+
+/** Max visible characters allowed in a session description. */
+export const SESSION_DESCRIPTION_MAX_LENGTH = 5000;

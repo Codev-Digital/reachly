@@ -6,6 +6,7 @@ import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 import BookingProgress from '@/components/booking/BookingProgress';
 import CreatorProfileCard from '@/components/booking/CreatorProfileCard';
 import { useBooking, SessionType } from '../layout';
+import { richTextToPlain } from '@/lib/richText';
 
 export default function BookSessionStep1() {
   const params = useParams();
@@ -245,7 +246,7 @@ export default function BookSessionStep1() {
 
                           {/* Description */}
                           <p className={`text-xs font-medium font-sans leading-relaxed line-clamp-3 ${theme.desc}`}>
-                            {session.description}
+                            {richTextToPlain(session.description)}
                           </p>
 
                           {/* Divider */}

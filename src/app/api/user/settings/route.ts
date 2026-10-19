@@ -6,7 +6,7 @@ import User from '@/models/User';
 import CreatorProfile from '@/models/CreatorProfile';
 import bcrypt from 'bcryptjs';
 import { sanitizeRichText } from '@/lib/sanitizeRichText';
-import { DETAILED_BIO_MAX_LENGTH, richTextToPlain } from '@/lib/richText';
+import { DETAILED_BIO_MAX_LENGTH, richTextLength } from '@/lib/richText';
 
 // GET the current user's profile and account settings
 export async function GET(req: NextRequest) {
@@ -112,7 +112,7 @@ export async function PUT(req: NextRequest) {
       if (shortBio !== undefined) creatorProfile.shortBio = shortBio;
       if (longBio !== undefined) {
         const cleanLongBio = sanitizeRichText(longBio);
-        if (richTextToPlain(cleanLongBio).length > DETAILED_BIO_MAX_LENGTH) {
+        if (richTextLength(cleanLongBio) > DETAILED_BIO_MAX_LENGTH) {
           return NextResponse.json(
             { error: `Detailed bio must be ${DETAILED_BIO_MAX_LENGTH} characters or fewer.` },
             { status: 400 }

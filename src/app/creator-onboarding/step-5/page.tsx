@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import LoadingAnimation from '@/components/LoadingAnimation';
 import { useOnboardingCleanup } from '@/hooks/useOnboardingCleanup';
+import { richTextToPlain } from '@/lib/richText';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface CreatorProfile {
@@ -184,7 +185,7 @@ function PreviewModal({
                   <div key={i} className="flex items-center justify-between gap-3 bg-[#F7F7FA] rounded-xl p-3">
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-black font-sans truncate">{s.title}</p>
-                      <p className="text-[11px] text-gray-400 font-sans mt-0.5">{s.duration} min{s.description ? ` · ${s.description.slice(0, 50)}${s.description.length > 50 ? '…' : ''}` : ''}</p>
+                      <p className="text-[11px] text-gray-400 font-sans mt-0.5">{s.duration} min{richTextToPlain(s.description) ? ` · ${richTextToPlain(s.description).slice(0, 50)}${richTextToPlain(s.description).length > 50 ? '…' : ''}` : ''}</p>
                       {s.features?.length > 0 && (
                         <div className="flex gap-1.5 mt-1.5 flex-wrap">
                           {s.features.slice(0, 3).map((f, fi) => (

@@ -16,6 +16,7 @@ export interface ISessionType extends Document {
   duration: number;   // minutes (supports 15, 30, 45, 60 or custom positive minutes)
   price: number;      // PKR
   discountedPrice?: number; // optional discounted price in PKR
+  bufferTime?: number; // minutes of rest kept free after a session (0 = none, never more than `duration`)
   questions: ISessionQuestion[]; // pre-session intake questions
   features: string[]; // what's included bullets
   maxBookings?: number; // per day cap (optional)
@@ -69,7 +70,7 @@ const SessionTypeSchema = new Schema<ISessionType>(
       type: String,
       required: [true, 'Session description is required'],
       trim: true,
-      maxlength: 5000,
+      maxlength: 50000, // HTML markup; visible text is capped at 5000 by the API
     },
     duration: {
       type: Number,
@@ -85,6 +86,11 @@ const SessionTypeSchema = new Schema<ISessionType>(
     discountedPrice: {
       type: Number,
       min: [0, 'Discounted price cannot be negative'],
+    },
+    bufferTime: {
+      type: Number,
+      min: [0, 'Buffer time cannot be negative'],
+      default: 0,
     },
     questions: {
       type: [SessionQuestionSchema],

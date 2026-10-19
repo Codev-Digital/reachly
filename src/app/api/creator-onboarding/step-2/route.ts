@@ -6,7 +6,7 @@ import User from '@/models/User';
 import CreatorProfile from '@/models/CreatorProfile';
 import { uploadToSupabase } from '@/lib/supabase';
 import { sanitizeRichText } from '@/lib/sanitizeRichText';
-import { DETAILED_BIO_MAX_LENGTH, richTextToPlain } from '@/lib/richText';
+import { DETAILED_BIO_MAX_LENGTH, richTextLength } from '@/lib/richText';
 
 // ─── Required fields for the profile to be considered complete ───────────────
 function checkCompletion(data: {
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
     const username = (formData.get('username') as string) || '';
     const shortBio = (formData.get('shortBio') as string) || '';
     const longBio = sanitizeRichText((formData.get('longBio') as string) || '');
-    if (richTextToPlain(longBio).length > DETAILED_BIO_MAX_LENGTH) {
+    if (richTextLength(longBio) > DETAILED_BIO_MAX_LENGTH) {
       return NextResponse.json(
         { error: `Detailed bio must be ${DETAILED_BIO_MAX_LENGTH} characters or fewer.` },
         { status: 400 }

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import CreatorNavbar from '@/components/CreatorNavbar';
 import LoadingAnimation from '@/components/LoadingAnimation';
 import { useOnboardingCleanup } from '@/hooks/useOnboardingCleanup';
+import { richTextToPlain } from '@/lib/richText';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Checklist {
@@ -295,7 +296,7 @@ export default function CreatorOnboardingStep7() {
                     </div>
                     <div>
                       <p className="font-serif text-xs sm:text-sm font-semibold text-[#C8A97E]">{s.title}</p>
-                      <p className="font-sans text-[#F9F6F2] text-xs opacity-50 line-clamp-1">{s.description}</p>
+                      <p className="font-sans text-[#F9F6F2] text-xs opacity-50 line-clamp-1">{richTextToPlain(s.description)}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0 ml-2">

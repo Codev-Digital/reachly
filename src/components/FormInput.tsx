@@ -67,6 +67,9 @@ export interface FormInputProps extends Omit<InputHTMLAttributes<HTMLInputElemen
   error?: string;
   /** Left icon (e.g. a lucide icon). */
   icon?: ReactNode;
+  /** Text at the end of the field in its own bordered segment (e.g. "PKR", "min"). */
+  suffix?: ReactNode;
+  suffixClassName?: string;
   /** Extra classes for the <input> itself — merged over the defaults. */
   className?: string;
   labelClassName?: string;
@@ -78,6 +81,8 @@ export default function FormInput({
   label,
   error,
   icon,
+  suffix,
+  suffixClassName,
   type = 'text',
   className,
   labelClassName,
@@ -102,7 +107,14 @@ export default function FormInput({
         </label>
       )}
 
-      <div className="relative">
+      <div
+        className={twMerge(
+          'relative',
+          // With a suffix the border moves to the wrapper so input + suffix read as one field
+          suffix &&
+            'flex items-stretch bg-white border border-[#e2e2e2] rounded-[8px] overflow-hidden focus-within:border-[#0012FF] transition-all'
+        )}
+      >
         {icon && (
           <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#0012FF] pointer-events-none flex items-center">
             {icon}
@@ -120,9 +132,21 @@ export default function FormInput({
             INPUT_CLASSES,
             icon ? 'pl-11' : 'pl-4',
             isPassword ? 'pr-12' : 'pr-4',
+            suffix && 'flex-1 min-w-0 border-0 rounded-none focus:border-0',
             className
           )}
         />
+
+        {suffix && (
+          <span
+            className={twMerge(
+              'flex items-center px-4 border-l border-[#e2e2e2] bg-gray-50 font-sans text-sm font-medium text-gray-500 select-none',
+              suffixClassName
+            )}
+          >
+            {suffix}
+          </span>
+        )}
 
         {isPassword && (
           <PasswordToggle visible={showPassword} onToggle={() => setShowPassword((v) => !v)} />

@@ -8,10 +8,12 @@ import CreatorDashboardNav from '@/components/CreatorDashboardNav';
 import LoadingAnimation from '@/components/LoadingAnimation';
 import { signOut } from 'next-auth/react';
 import { User, Briefcase, Clock, Shield, Star, Camera, Plus, Trash2, MapPin, ChevronRight, X, AlertTriangle } from 'lucide-react';
-import FormInput from '@/components/FormInput';
+import FormInput, { FormLabel } from '@/components/FormInput';
 import FormTextarea from '@/components/FormTextarea';
 import CitySelect from '@/components/CitySelect';
 import RichTextEditor from '@/components/RichTextEditor';
+import { isRichTextEmpty } from '@/lib/richText';
+import RichTextContent from '@/components/RichTextContent';
 
 function ModalShell({
   onClose,
@@ -73,6 +75,7 @@ interface DBTypeSession {
   title: string;
   duration: number | string;
   price: number | string;
+  discountedPrice?: number | string | null;
   description: string;
   features: string[];
   maxBookings?: number;
@@ -106,17 +109,6 @@ export default function CreatorSettings() {
   // Sessions State
   const [sessions, setSessions] = useState<DBTypeSession[]>([]);
 
-  // Edit Session Modal Fields
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editSessionId, setEditSessionId] = useState<string | null>(null);
-  const [sessionTitle, setSessionTitle] = useState('');
-  const [sessionDesc, setSessionDesc] = useState('');
-  const [sessionDuration, setSessionDuration] = useState('60');
-  const [sessionPrice, setSessionPrice] = useState('1200');
-  const [sessionFeatures, setSessionFeatures] = useState<string[]>([]);
-  const [newFeatureText, setNewFeatureText] = useState('');
-  const [sessionMaxBookings, setSessionMaxBookings] = useState('4');
-
   // Availability States
   const [enabledDays, setEnabledDays] = useState<Record<string, boolean>>({
     monday: true,
@@ -143,6 +135,9 @@ export default function CreatorSettings() {
 
   const [activeTab, setActiveTab] = useState('Profile');
   const [saving, setSaving] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const clearFieldError = (key: string) =>
+    setFieldErrors((prev) => (prev[key] ? { ...prev, [key]: '' } : prev));
   const [loading, setLoading] = useState(true);
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -178,6 +173,25 @@ export default function CreatorSettings() {
       reader.readAsDataURL(file);
     }
   };
+
+  // Coming back from the add/edit session pages: open the Sessions tab and confirm the save
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get('tab');
+    const saved = params.get('saved');
+    if (tab && ['Profile', 'Sessions', 'Availability', 'Security', 'Reviews'].includes(tab)) {
+      setActiveTab(tab);
+    }
+    if (saved === 'created' || saved === 'updated') {
+      setSuccessModalMessage(
+        saved === 'updated'
+          ? 'Your session details have been updated successfully.'
+          : 'New session type created and saved successfully!'
+      );
+      setShowSuccessModal(true);
+    }
+    if (tab || saved) window.history.replaceState(null, '', window.location.pathname);
+  }, []);
 
   // Load cached settings on mount
   useEffect(() => {
@@ -360,6 +374,23 @@ export default function CreatorSettings() {
   }, []);
 
   const handleSaveProfile = async () => {
+    // Everything on the Profile tab is required except languages, niches and social links.
+    const errors: Record<string, string> = {};
+    if (!displayName.trim()) errors.displayName = 'Display name is required';
+    if (!shortBio.trim()) errors.shortBio = 'Short bio is required';
+    if (isRichTextEmpty(longBio)) errors.longBio = 'Detailed bio is required';
+    if (!city.trim()) errors.city = 'City is required';
+    if (!country.trim()) errors.country = 'Country is required';
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) {
+      setTimeout(() => {
+        document
+          .querySelector('[role="alert"]')
+          ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 50);
+      return;
+    }
+
     setSaving(true);
     try {
       const res = await fetch('/api/user/settings', {
@@ -392,38 +423,11 @@ export default function CreatorSettings() {
     }
   };
 
+  // Creating / editing a session now happens on its own page instead of a popup
+  const handleOpenCreateModal = () => router.push('/creators/settings/sessions/new');
   const handleOpenEditModal = (session: DBTypeSession) => {
-    setEditSessionId(session.id || session._id || null);
-    setSessionTitle(session.title);
-    setSessionDesc(session.description);
-    setSessionDuration(String(session.duration));
-    setSessionPrice(String(session.price));
-    setSessionFeatures(session.features || []);
-    setSessionMaxBookings(String(session.maxBookings || 4));
-    setShowEditModal(true);
-  };
-
-  const handleAddFeature = () => {
-    if (newFeatureText.trim()) {
-      setSessionFeatures((prev) => [...prev, newFeatureText.trim()]);
-      setNewFeatureText('');
-    }
-  };
-
-  const handleRemoveFeature = (idx: number) => {
-    setSessionFeatures((prev) => prev.filter((_, i) => i !== idx));
-  };
-
-  const handleOpenCreateModal = () => {
-    setEditSessionId(null);
-    setSessionTitle('');
-    setSessionDesc('');
-    setSessionDuration('60');
-    setSessionPrice('1200');
-    setSessionFeatures([]);
-    setNewFeatureText('');
-    setSessionMaxBookings('4');
-    setShowEditModal(true);
+    const id = session.id || session._id;
+    if (id) router.push(`/creators/settings/sessions/${id}`);
   };
 
   const handleDeleteSession = async (sessionIdToDelete: string) => {
@@ -442,66 +446,6 @@ export default function CreatorSettings() {
       }
     } catch (err) {
       console.error('Failed to delete session:', err);
-    }
-  };
-
-  const handleSaveSessionEdit = async () => {
-    if (!sessionTitle.trim()) {
-      alert('Session title is required');
-      return;
-    }
-    if (!sessionDesc.trim()) {
-      alert('Session description is required');
-      return;
-    }
-
-    setSaving(true);
-    try {
-      let updatedList: DBTypeSession[] = [];
-      const newSessionObj = {
-        title: sessionTitle.trim(),
-        description: sessionDesc.trim(),
-        duration: Number(sessionDuration),
-        price: Number(sessionPrice),
-        features: sessionFeatures,
-        maxBookings: Number(sessionMaxBookings)
-      };
-
-      if (editSessionId) {
-        updatedList = sessions.map((s) => {
-          if ((s.id || s._id) === editSessionId) {
-            return {
-              ...s,
-              ...newSessionObj
-            };
-          }
-          return s;
-        });
-      } else {
-        updatedList = [...sessions, { ...newSessionObj, id: Date.now().toString() }];
-      }
-
-      const res = await fetch('/api/creator-onboarding/step-3', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sessionTypes: updatedList
-        })
-      });
-
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setSessions(data.sessionTypes || updatedList);
-        setShowEditModal(false);
-        setSuccessModalMessage(editSessionId ? 'Your session details have been updated successfully.' : 'New session type created and saved successfully!');
-        setShowSuccessModal(true);
-      } else {
-        alert(data.error || 'Failed to update session');
-      }
-    } catch (err) {
-      alert('Error saving session settings');
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -809,14 +753,20 @@ export default function CreatorSettings() {
                 <div>
                   <FormInput
                     label="Display Name"
+                    required
                     type="text"
                     value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
+                    error={fieldErrors.displayName}
+                    onChange={(e) => {
+                      setDisplayName(e.target.value);
+                      clearFieldError('displayName');
+                    }}
                   />
                 </div>
                 <div>
                   <FormInput
                     label="Email Address"
+                    required
                     type="email"
                     value={email}
                     disabled
@@ -829,10 +779,15 @@ export default function CreatorSettings() {
               <div className="mb-5">
                 <FormTextarea
                   label="Short Bio"
+                  required
                   rows={2}
                   maxLength={140}
                   value={shortBio}
-                  onChange={(e) => setShortBio(e.target.value)}
+                  error={fieldErrors.shortBio}
+                  onChange={(e) => {
+                    setShortBio(e.target.value);
+                    clearFieldError('shortBio');
+                  }}
                   placeholder="Short bio showing up in search details"
                   footer={
                     <div className="flex justify-between text-gray-400 text-xs mt-1.5">
@@ -847,8 +802,13 @@ export default function CreatorSettings() {
               <div className="mb-5">
                 <RichTextEditor
                   label="Detailed Bio"
+                  required
                   value={longBio}
-                  onChange={setLongBio}
+                  error={fieldErrors.longBio}
+                  onChange={(html) => {
+                    setLongBio(html);
+                    clearFieldError('longBio');
+                  }}
                   placeholder="Tell your clients a little bit about yourself..."
                 />
               </div>
@@ -856,21 +816,35 @@ export default function CreatorSettings() {
               {/* City + Country */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
                 <div>
-                  <CitySelect label="City" value={city} onChange={setCity} />
+                  <CitySelect
+                    label="City"
+                    required
+                    value={city}
+                    error={fieldErrors.city}
+                    onChange={(value) => {
+                      setCity(value);
+                      clearFieldError('city');
+                    }}
+                  />
                 </div>
                 <div>
                   <FormInput
                     label="Country"
+                    required
                     type="text"
                     value={country}
-                    onChange={(e) => setCountry(e.target.value)}
+                    error={fieldErrors.country}
+                    onChange={(e) => {
+                      setCountry(e.target.value);
+                      clearFieldError('country');
+                    }}
                   />
                 </div>
               </div>
 
               {/* Languages */}
               <div className="mb-6">
-                <label className="text-xs font-bold text-gray-700 uppercase tracking-wider block mb-3 font-sans">Languages Spoken</label>
+                <FormLabel className="mb-3">Languages Spoken</FormLabel>
                 <div className="flex flex-wrap gap-2.5">
                   {languages.map((lang) => {
                     const active = selectedLanguages.includes(lang);
@@ -892,7 +866,7 @@ export default function CreatorSettings() {
 
               {/* Niche / Categories */}
               <div className="mb-6">
-                <label className="text-xs font-bold text-gray-700 uppercase tracking-wider block mb-3 font-sans">Niche / Categories (max 3)</label>
+                <FormLabel className="mb-3">Niche / Categories (max 3)</FormLabel>
                 <div className="flex flex-wrap gap-2.5">
                   {niches.map((niche) => {
                     const active = selectedNiches.includes(niche.name);
@@ -917,9 +891,7 @@ export default function CreatorSettings() {
 
               {/* Social Links */}
               <div className="mb-8">
-                <label className="text-xs font-bold text-gray-700 uppercase tracking-wider block mb-3 font-sans">
-                  Social Links <span className="text-red-500">*</span>
-                </label>
+                <FormLabel className="mb-3">Social Links</FormLabel>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   {/* Instagram */}
                   <FormInput
@@ -1034,10 +1006,17 @@ export default function CreatorSettings() {
                           {session.duration} minutes
                         </span>
                         <span className="bg-blue-50 text-[#0012FF] px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap">
-                          {session.price} PKR
+                          {session.discountedPrice ? (
+                            <>
+                              {session.discountedPrice} PKR{' '}
+                              <span className="line-through opacity-60 font-medium">{session.price} PKR</span>
+                            </>
+                          ) : (
+                            <>{session.price} PKR</>
+                          )}
                         </span>
                       </div>
-                      <p className="text-gray-500 text-sm leading-relaxed">{session.description}</p>
+                      <RichTextContent value={session.description} className="text-gray-500 text-sm leading-relaxed" />
 
                       {session.features && session.features.length > 0 && (
                         <div className="flex flex-wrap gap-2 mt-4">
@@ -1352,190 +1331,6 @@ export default function CreatorSettings() {
 
         </div>
       </main>
-
-      {/* ============ EDIT SESSION MODAL ============ */}
-      {showEditModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[100] p-4 overflow-y-auto">
-          <div className="relative bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl border border-gray-100 w-full max-w-[540px] p-6 sm:p-8 flex flex-col overflow-hidden max-h-[90vh] overflow-y-auto no-scrollbar">
-
-            {/* Close Button */}
-            <button
-              onClick={() => setShowEditModal(false)}
-              className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 transition-colors p-1.5 rounded-full hover:bg-gray-100 cursor-pointer z-20"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </button>
-
-            {/* Top Illustration */}
-            <div className="w-40 sm:w-48 h-auto mx-auto mb-2">
-              <Image
-                src="/assets/reschedule.webp"
-                alt="Edit Session"
-                width={220}
-                height={160}
-                className="w-full h-auto object-contain"
-              />
-            </div>
-
-            {/* Header */}
-            <h3 className="text-xl sm:text-2xl font-extrabold text-black text-center mb-1 tracking-tight">
-              Edit Styling Session
-            </h3>
-            <p className="text-xs sm:text-sm text-gray-400 font-medium text-center mb-6">
-              Update your session details and preferences.
-            </p>
-
-            {/* Form Fields */}
-            <div className="space-y-4">
-
-              {/* Title */}
-              <div>
-                <FormInput
-                  label="Title"
-                  type="text"
-                  value={sessionTitle}
-                  onChange={(e) => setSessionTitle(e.target.value)}
-                  placeholder="Style Consultation"
-                />
-              </div>
-
-              {/* Description */}
-              <div>
-                <label className="text-xs font-bold text-black mb-1.5 block">Description</label>
-                <textarea
-                  rows={3}
-                  value={sessionDesc}
-                  onChange={(e) => setSessionDesc(e.target.value)}
-                  placeholder="Personal styling session to revamp your wardrobe and discover your signature look."
-                  className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] transition-all resize-none placeholder:text-gray-300 font-medium leading-relaxed"
-                />
-              </div>
-
-              {/* Duration & Price (2 Columns) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-bold text-black mb-1.5 block">Duration</label>
-                  <div className="relative">
-                    <select
-                      value={sessionDuration}
-                      onChange={(e) => setSessionDuration(e.target.value)}
-                      className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] appearance-none cursor-pointer font-medium"
-                    >
-                      <option value="15">15 mins</option>
-                      <option value="30">30 mins</option>
-                      <option value="45">45 mins</option>
-                      <option value="60">1 hour</option>
-                      <option value="90">90 mins</option>
-                    </select>
-                    <svg className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <polyline points="6 9 12 15 18 9" />
-                    </svg>
-                  </div>
-                </div>
-
-                <div>
-                  <FormInput
-                    label="Price"
-                    type="number"
-                    value={sessionPrice}
-                    onChange={(e) => setSessionPrice(e.target.value)}
-                    placeholder="1200"
-                  />
-                </div>
-              </div>
-
-              {/* What's Included & Max Bookings Per Day (2 Columns) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <FormInput
-                    label="What’s Included"
-                    type="text"
-                    value={newFeatureText}
-                    onChange={(e) => setNewFeatureText(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleAddFeature();
-                      }
-                    }}
-                    placeholder="Feature 1"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddFeature}
-                    className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1 font-medium mt-1.5 cursor-pointer transition-colors"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Add feature</span>
-                  </button>
-
-                  {sessionFeatures.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mt-2 max-h-24 overflow-y-auto no-scrollbar">
-                      {sessionFeatures.map((feat, idx) => (
-                        <span key={idx} className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 text-xs px-2.5 py-1 rounded-full font-medium">
-                          <span>{feat}</span>
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveFeature(idx)}
-                            className="text-gray-400 hover:text-red-500 font-bold ml-0.5 cursor-pointer"
-                          >
-                            ×
-                          </button>
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <FormInput
-                    label="Max Bookings Per Day"
-                    type="number"
-                    value={sessionMaxBookings}
-                    onChange={(e) => setSessionMaxBookings(e.target.value)}
-                    placeholder="4"
-                  />
-                </div>
-              </div>
-
-            </div>
-
-            {/* Add Session Type Dashed Button */}
-            <button
-              type="button"
-              onClick={handleAddFeature}
-              className="w-full py-3.5 border-2 border-dashed border-gray-200 hover:border-gray-300 bg-gray-50/50 hover:bg-gray-50 rounded-2xl text-xs sm:text-sm font-bold text-gray-500 flex items-center justify-center gap-2 transition-all my-5 cursor-pointer"
-            >
-              <Plus className="w-4 h-4 text-gray-400" />
-              <span>Add Session Type</span>
-            </button>
-
-            {/* Bottom Actions Row */}
-            <div className="flex items-center gap-4 w-full">
-              <button
-                type="button"
-                onClick={() => setShowEditModal(false)}
-                className="flex-1 py-3.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-full font-bold text-xs sm:text-sm text-center transition-all cursor-pointer"
-              >
-                Cancel
-              </button>
-
-              <button
-                type="button"
-                onClick={handleSaveSessionEdit}
-                disabled={saving}
-                className="flex-1 py-3.5 bg-[#0012FF] hover:bg-[#0010d0] text-white rounded-full font-bold text-xs sm:text-sm text-center transition-all shadow-md active:scale-98 disabled:bg-gray-200 disabled:text-gray-400 cursor-pointer"
-              >
-                {saving ? 'Saving...' : 'Save Changes'}
-              </button>
-            </div>
-
-          </div>
-        </div>
-      )}
 
       {/* ============ DELETE ACCOUNT MODAL ============ */}
       {showDeleteModal && (
