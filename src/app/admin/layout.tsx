@@ -11,7 +11,8 @@ export default function AdminLayout({
     <div className="min-h-screen bg-[#F8F8FA] text-black">
       <AdminNavbar />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+      {/* Same container as AdminNavbar so the content lines up with the header card */}
+      <div className="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-10 py-8">
         <main className="w-full">
           {children}
         </main>
