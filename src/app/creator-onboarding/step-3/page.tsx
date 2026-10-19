@@ -5,8 +5,19 @@ import { useRouter } from 'next/navigation';
 import { updateSessionTypes } from '@/lib/auth-client';
 import LoadingAnimation from '@/components/LoadingAnimation';
 import { useOnboardingCleanup } from '@/hooks/useOnboardingCleanup';
-import FormInput from '@/components/FormInput';
-import { richTextToPlain } from '@/lib/richText';
+import SessionFields from '@/components/SessionFields';
+import { richTextToPlain, toEditorHtml } from '@/lib/richText';
+import {
+  emptySessionValues,
+  formatDuration,
+  scrollToFirstError,
+  sessionToValues,
+  validateSessionValues,
+  valuesToPayload,
+  type SessionErrorKey,
+  type SessionErrors,
+  type SessionFormValues,
+} from '@/lib/sessionForm';
 
 /* ─── types ─────────────────────────────────────────────────────────────── */
 interface SessionData {
@@ -14,39 +25,17 @@ interface SessionData {
   title: string;
   description: string;
   duration: number;
-  price: string;
-  features: string[];
-  maxBookings: string;
+  price: number;
+  discountedPrice?: number;
+  bufferTime?: number;
+  maxBookings?: number;
+  features?: string[];
+  questions?: unknown[];
 }
-
-const BLANK: SessionData = {
-  title: '', description: '', duration: 30,
-  price: '', features: [''], maxBookings: '',
-};
-
-const DURATION_OPTIONS = [
-  { value: 15, label: '15 mins' },
-  { value: 30, label: '30 mins' },
-  { value: 45, label: '45 mins' },
-  { value: 60, label: '1 hr' },
-  { value: 75, label: '1 hr 15 mins' },
-  { value: 90, label: '1 hr 30 mins' },
-  { value: 105, label: '1 hr 45 mins' },
-  { value: 120, label: '2 hrs' },
-];
 
 // Simple unique id generator for local items
 function generateLocalId() {
   return 'local-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-}
-
-/* ─── helpers ────────────────────────────────────────────────────────────── */
-function validateSession(s: SessionData): string | null {
-  if (!s.title.trim())       return 'Title is required.';
-  if (!s.description.trim()) return 'Description is required.';
-  if (!s.duration) return 'Select a valid duration.';
-  if (!s.price || Number(s.price) < 1) return 'Price must be at least PKR 1.';
-  return null;
 }
 
 /* ─── component ─────────────────────────────────────────────────────────── */
@@ -57,7 +46,6 @@ export default function CreatorOnboardingStep3() {
   const [fetchingData, setFetchingData] = useState(true);
   const [saving, setSaving]             = useState(false);
   const [pageError, setPageError]       = useState('');
-  const [formError, setFormError]       = useState('');
 
   const [isDraftSaved, setIsDraftSaved] = useState(true);
   const [savingDraft, setSavingDraft] = useState(false);
@@ -66,11 +54,16 @@ export default function CreatorOnboardingStep3() {
   // List of persisted sessions shown on screen
   const [sessions, setSessions]         = useState<SessionData[]>([]);
 
-  // The inline add/edit form
+  // The inline add/edit form (same fields as the Add New Session page)
   const [showForm, setShowForm]         = useState(false);
   const [editingIdx, setEditingIdx]     = useState<number | null>(null);
-  const [formData, setFormData]         = useState<SessionData>(BLANK);
-  const [showDurationDropdown, setShowDurationDropdown] = useState(false);
+  const [values, setValues]             = useState<SessionFormValues>(emptySessionValues);
+  const [errors, setErrors]             = useState<SessionErrors>({});
+
+  const updateValues = (patch: Partial<SessionFormValues>) =>
+    setValues(prev => ({ ...prev, ...patch }));
+  const clearError = (key: SessionErrorKey) =>
+    setErrors(prev => (prev[key] ? { ...prev, [key]: '' } : prev));
 
   /* ── Load saved sessions on mount ───────────────────────────────────── */
   useEffect(() => {
@@ -80,15 +73,8 @@ export default function CreatorOnboardingStep3() {
         if (res.ok) {
           const data = await res.json();
           if (Array.isArray(data.sessionTypes)) {
-            setSessions(data.sessionTypes.map((s: any) => ({
-              _id:         s._id,
-              title:       s.title,
-              description: s.description,
-              duration:    s.duration,
-              price:       String(s.price),
-              features:    s.features?.length ? s.features : [''],
-              maxBookings: s.maxBookings ? String(s.maxBookings) : '',
-            })));
+            // keep every stored field (questions, buffer, discounted price...) so saving doesn't drop them
+            setSessions(data.sessionTypes.map((s: any) => ({ ...s, _id: s._id })));
           }
         }
       } catch {
@@ -111,63 +97,46 @@ export default function CreatorOnboardingStep3() {
   }, [sessions]);
 
   /* ── Form helpers ────────────────────────────────────────────────────── */
-  const openNewForm = (prefill?: Partial<SessionData>) => {
+  const openNewForm = () => {
     setEditingIdx(null);
-    setFormData({ ...BLANK, ...prefill });
-    setFormError('');
+    setValues(emptySessionValues());
+    setErrors({});
     setShowForm(true);
   };
 
   const openEditForm = (idx: number) => {
+    const s = sessions[idx];
     setEditingIdx(idx);
-    setFormData({ ...sessions[idx] });
-    setFormError('');
+    setValues(sessionToValues(s, toEditorHtml(s.description)));
+    setErrors({});
     setShowForm(true);
   };
 
   const closeForm = () => {
     setShowForm(false);
     setEditingIdx(null);
-    setFormData(BLANK);
-    setFormError('');
-    setShowDurationDropdown(false);
-  };
-
-  const addFeature    = () => setFormData(f => ({ ...f, features: [...f.features, ''] }));
-  const removeFeature = (i: number) =>
-    setFormData(f => ({ ...f, features: f.features.filter((_, idx) => idx !== i) }));
-  const changeFeature = (i: number, v: string) =>
-    setFormData(f => { const fs = [...f.features]; fs[i] = v; return { ...f, features: fs }; });
-
-  const selectDuration = (value: number) => {
-    setFormData(f => ({ ...f, duration: value }));
-    setShowDurationDropdown(false);
-  };
-
-  const getDurationLabel = (value: number) => {
-    const option = DURATION_OPTIONS.find(o => o.value === value);
-    return option ? option.label : 'Select duration';
+    setValues(emptySessionValues());
+    setErrors({});
   };
 
   /* ── Save session (local only — persisted on "Continue") ────────────── */
   const handleSaveToList = () => {
-    const err = validateSession(formData);
-    if (err) { setFormError(err); return; }
+    const next = validateSessionValues(values);
+    setErrors(next);
+    if (Object.keys(next).length > 0) {
+      scrollToFirstError();
+      return;
+    }
 
-    const clean: SessionData = {
-      ...formData,
-      title:       formData.title.trim(),
-      description: formData.description.trim(),
-      features:    formData.features.filter(f => f.trim()),
-    };
+    const payload = valuesToPayload(values);
 
     setSessions(prev => {
       if (editingIdx !== null) {
-        const next = [...prev];
-        next[editingIdx] = clean;
-        return next;
+        const copy = [...prev];
+        copy[editingIdx] = { ...copy[editingIdx], ...payload };
+        return copy;
       }
-      return [...prev, { ...clean, _id: generateLocalId() }];
+      return [...prev, { ...payload, features: [], _id: generateLocalId() }];
     });
     closeForm();
     setPageError('');
@@ -221,10 +190,6 @@ export default function CreatorOnboardingStep3() {
 
   return (
     <div className="min-h-screen bg-[#F7F7FA]">
-
-
-
-
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
         {/* Heading */}
         <div className="mb-8">
@@ -254,11 +219,23 @@ export default function CreatorOnboardingStep3() {
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                   <span className="font-sans text-sm font-semibold text-black">{session.title}</span>
                   <span className="bg-[#FFF7ED] text-[#C8A97E] text-xs px-3 py-1 rounded-full border border-[#C8A97E]/30">
-                    {getDurationLabel(session.duration)}
+                    {formatDuration(session.duration)}
                   </span>
                   <span className="bg-[#E0E7FF] text-[#0012FF] text-xs px-3 py-1 rounded-full border border-[#0012FF]/30">
-                    {session.price} PKR
+                    {session.discountedPrice ? (
+                      <>
+                        <span className="line-through opacity-60 mr-1">{session.price}</span>
+                        {session.discountedPrice} PKR
+                      </>
+                    ) : (
+                      <>{session.price} PKR</>
+                    )}
                   </span>
+                  {!!session.bufferTime && (
+                    <span className="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full border border-gray-200">
+                      {session.bufferTime} min buffer
+                    </span>
+                  )}
                 </div>
                 <p className="font-sans text-gray-500 text-xs">{richTextToPlain(session.description)}</p>
               </div>
@@ -291,162 +268,29 @@ export default function CreatorOnboardingStep3() {
               </button>
             </div>
 
-            {/* Form-level error */}
-            {formError && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl">
-                <p className="text-xs text-red-600">{formError}</p>
-              </div>
-            )}
+            <SessionFields
+              values={values}
+              onChange={updateValues}
+              errors={errors}
+              clearError={clearError}
+            />
 
-            <div className="space-y-5">
-              {/* Title */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-2">
-                  Title <span className="text-red-500">*</span>
-                </label>
-                <FormInput
-                  type="text"
-                  value={formData.title}
-                  onChange={e => setFormData(f => ({ ...f, title: e.target.value }))}
-                  placeholder="e.g. Career, Strategy, Call"
-                />
-              </div>
-
-              {/* Description */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-2">
-                  Description <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  value={formData.description}
-                  onChange={e => setFormData(f => ({ ...f, description: e.target.value }))}
-                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] placeholder-gray-400 h-28 resize-none"
-                  placeholder="What will followers get from this session?"
-                />
-              </div>
-
-              {/* Duration + Price */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="relative">
-                  <label className="block text-xs font-semibold text-gray-700 mb-2">
-                    Duration <span className="text-red-500">*</span>
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setShowDurationDropdown(!showDurationDropdown)}
-                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-left text-gray-900 focus:outline-none focus:border-[#0012FF] flex items-center justify-between"
-                  >
-                    <span className={formData.duration ? 'text-gray-900' : 'text-gray-400'}>
-                      {getDurationLabel(formData.duration)}
-                    </span>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2">
-                      <path d="M6 9l6 6 6-6" />
-                    </svg>
-                  </button>
-                  
-                  {showDurationDropdown && (
-                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
-                      {DURATION_OPTIONS.map(option => (
-                        <button
-                          key={option.value}
-                          type="button"
-                          onClick={() => selectDuration(option.value)}
-                          className={`w-full px-4 py-3 text-left text-sm transition-colors ${
-                            formData.duration === option.value
-                              ? 'bg-[#0012FF] text-white'
-                              : 'text-gray-500 hover:bg-gray-50'
-                          }`}
-                        >
-                          {option.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-2">
-                    Price (PKR) <span className="text-red-500">*</span>
-                  </label>
-                  <FormInput
-                    type="number"
-                    min="1"
-                    value={formData.price}
-                    onChange={e => setFormData(f => ({ ...f, price: e.target.value }))}
-                    placeholder="e.g. 1200"
-                  />
-                </div>
-              </div>
-
-              {/* What's included */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-2">
-                  What's Included <span className="text-red-500">*</span>
-                </label>
-                <div className="space-y-2">
-                  {formData.features.map((feat, i) => (
-                    <div key={i} className="flex gap-2">
-                      <FormInput
-                        type="text"
-                        value={feat}
-                        onChange={e => changeFeature(i, e.target.value)}
-                        wrapperClassName="flex-1"
-                        placeholder="Feature 1"
-                      />
-                      {formData.features.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeFeature(i)}
-                          className="text-gray-400 hover:text-gray-600 transition-opacity flex-shrink-0 px-2"
-                        >
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M18 6L6 18M6 6l12 12" />
-                          </svg>
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-                <button
-                  type="button"
-                  onClick={addFeature}
-                  className="mt-2 text-gray-500 text-xs font-sans flex items-center gap-1 hover:text-[#0012FF] transition-opacity"
-                >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14" /></svg>
-                  Add feature
-                </button>
-              </div>
-
-              {/* Max bookings */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-2">
-                  Max Bookings Per Day
-                </label>
-                <FormInput
-                  type="number"
-                  min="1"
-                  value={formData.maxBookings}
-                  onChange={e => setFormData(f => ({ ...f, maxBookings: e.target.value }))}
-                  placeholder="e.g. 5"
-                />
-              </div>
-
-              {/* Form actions */}
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={closeForm}
-                  className="border border-gray-200 text-gray-700 px-6 py-2.5 rounded-full font-sans font-semibold text-sm hover:bg-gray-50 transition-all"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSaveToList}
-                  className="bg-[#0012FF] text-white px-6 py-2.5 rounded-full font-sans font-semibold text-sm hover:bg-[#0012FF]/90 transition-all"
-                >
-                  {editingIdx !== null ? 'Save Changes' : 'Add Session'}
-                </button>
-              </div>
+            {/* Form actions */}
+            <div className="flex gap-3 pt-6">
+              <button
+                type="button"
+                onClick={closeForm}
+                className="border border-gray-200 text-gray-700 px-6 py-2.5 rounded-full font-sans font-semibold text-sm hover:bg-gray-50 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveToList}
+                className="bg-[#0012FF] text-white px-6 py-2.5 rounded-full font-sans font-semibold text-sm hover:bg-[#0012FF]/90 transition-all"
+              >
+                {editingIdx !== null ? 'Save Changes' : 'Add Session'}
+              </button>
             </div>
           </div>
         )}
@@ -503,4 +347,3 @@ export default function CreatorOnboardingStep3() {
     </div>
   );
 }
-

@@ -252,12 +252,12 @@ export default function CreatorOnboardingStep4() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-8">
+        <div className="grid grid-cols-1 gap-5 mb-8">
 
           {/* ─── Left: Weekly schedule ───────────────────────────────────────────── */}
           <div className="bg-white border border-gray-200 rounded-xl p-6">
             <div className="border-b border-gray-200 pb-4 mb-6">
-              <h3 className="font-sans text-sm font-semibold text-black">Weekly Schedule</h3>
+              <h3 className="font-sans text-sm font-semibold text-black">Weekly Days & Hours</h3>
             </div>
 
             <div className="space-y-4">
@@ -378,14 +378,14 @@ export default function CreatorOnboardingStep4() {
             </div>
           </div>
 
-          {/* ─── Right: Booking Settings ──────────────────────────────────────────── */}
+          {/* Booking Settings - temporarily commented out
           <div className="bg-white border border-gray-200 rounded-xl p-6">
             <div className="border-b border-gray-200 pb-4 mb-6">
               <h3 className="font-sans text-sm font-semibold text-black">Booking Settings</h3>
             </div>
 
             <div className="space-y-6">
-              {/* Duration */}
+              // Duration
               <div className="space-y-3">
                 <label className="block text-xs font-semibold text-gray-700">Duration</label>
                 <div className="relative">
@@ -433,7 +433,7 @@ export default function CreatorOnboardingStep4() {
                   )}
                 </div>
 
-                {/* Custom duration inputs */}
+                // Custom duration inputs
                 {showCustomDuration && (
                   <div className="grid grid-cols-2 gap-3">
                     <div>
@@ -485,7 +485,7 @@ export default function CreatorOnboardingStep4() {
                 )}
               </div>
 
-              {/* Buffer between bookings */}
+              // Buffer between bookings
               <div className="relative">
                 <label className="block text-xs font-semibold text-gray-700 mb-2">
                   Buffer Between Bookings
@@ -523,7 +523,7 @@ export default function CreatorOnboardingStep4() {
                 )}
               </div>
 
-              {/* Location */}
+              // Location
               <div className="space-y-3">
                 <label className="block text-xs font-semibold text-gray-700">Location</label>
                 {location ? (
@@ -587,7 +587,7 @@ export default function CreatorOnboardingStep4() {
                   </div>
                 )}
 
-                {/* Address field for in-person */}
+                // Address field for in-person
                 {location && location.type === 'in-person' && (
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 mb-2">
@@ -603,7 +603,7 @@ export default function CreatorOnboardingStep4() {
                 )}
               </div>
 
-              {/* Followers can book up to */}
+              // Followers can book up to
               <div className="relative">
                 <label className="block text-xs font-semibold text-gray-700 mb-2">
                   Followers Can Book Up To
@@ -622,7 +622,7 @@ export default function CreatorOnboardingStep4() {
                 </div>
               </div>
 
-              {/* Minimum notice required */}
+              // Minimum notice required
               <div className="relative">
                 <label className="block text-xs font-semibold text-gray-700 mb-2">
                   Minimum Notice Required
@@ -641,7 +641,7 @@ export default function CreatorOnboardingStep4() {
                 </div>
               </div>
 
-              {/* Meeting Limits */}
+              // Meeting Limits
               <div className="relative">
                 <label className="block text-xs font-semibold text-gray-700 mb-2">
                   Meeting Limits
@@ -694,6 +694,7 @@ export default function CreatorOnboardingStep4() {
               </div>
             </div>
           </div>
+          */}
         </div>
 
         {/* Navigation */}

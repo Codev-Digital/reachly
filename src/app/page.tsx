@@ -668,7 +668,7 @@ export default function Home() {
             {/* Right: creators horizontal slider */}
             <div className="lg:col-span-9 overflow-hidden">
               <div className="flex justify-between items-center mb-6">
-                <span className="text-xs font-sans text-gray-400">Use arrows to navigate</span>
+                {/* <span className="text-xs font-sans text-gray-400">Use arrows to navigate</span> */}
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => scrollCategory('left')}
