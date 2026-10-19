@@ -3,6 +3,17 @@ import connectDB from '@/lib/mongodb';
 import CreatorProfile from '@/models/CreatorProfile';
 import CreatorAvailability from '@/models/CreatorAvailability';
 import Booking from '@/models/Booking';
+import SessionType from '@/models/SessionType';
+import mongoose from 'mongoose';
+import {
+    DEFAULT_SLOT_MINUTES,
+    blockedInterval,
+    format12h,
+    generateStarts,
+    intervalsOverlap,
+    parse12h,
+    parse24h,
+} from '@/lib/slots';
 
 const DAY_NAMES: Record<number, keyof typeof defaultDays> = {
     0: 'sunday',
@@ -136,24 +147,27 @@ export async function GET(
             const [nowH, nowM] = nowTimeStr.split(':').map(Number);
             const curTotalMinutes = nowH * 60 + nowM;
 
-            // Generate 30-min intervals from each slot range
-            const slots: string[] = [];
-            for (const slot of daySchedule.slots) {
-                const [startH, startM] = slot.start.split(':').map(Number);
-                const [endH, endM] = slot.end.split(':').map(Number);
-                let cur = startH * 60 + startM;
-                const end = endH * 60 + endM;
+            // The session being booked decides the slot length: duration + buffer apart.
+            // Without a session (calendar views etc.) we keep the old 30-minute grid.
+            let sessionDuration = DEFAULT_SLOT_MINUTES;
+            let sessionBuffer = 0;
+            const sessionIdParam = searchParams.get('sessionId');
+            if (sessionIdParam && mongoose.isValidObjectId(sessionIdParam)) {
+                const st = await SessionType.findOne({ _id: sessionIdParam, userId: profile.userId })
+                    .select('duration bufferTime')
+                    .lean() as any;
+                if (st) {
+                    sessionDuration = Number(st.duration) > 0 ? Number(st.duration) : DEFAULT_SLOT_MINUTES;
+                    sessionBuffer = Number(st.bufferTime) > 0 ? Number(st.bufferTime) : 0;
+                }
+            }
 
-                while (cur + 30 <= end) {
-                    // Only add if it's not a past time for today (with 30 min buffer to avoid immediate bookings)
-                    if (!isToday || cur > curTotalMinutes + 30) {
-                        const h = Math.floor(cur / 60);
-                        const mins = cur % 60;
-                        const suffix = h >= 12 ? 'PM' : 'AM';
-                        const displayH = h > 12 ? h - 12 : h === 0 ? 12 : h;
-                        slots.push(`${String(displayH).padStart(2, '0')}:${String(mins).padStart(2, '0')} ${suffix}`);
-                    }
-                    cur += 30;
+            // Candidate start times from each working range (9:00, then +duration+buffer, ...)
+            const candidateStarts: number[] = [];
+            for (const slot of daySchedule.slots) {
+                for (const cur of generateStarts(parse24h(slot.start), parse24h(slot.end), sessionDuration, sessionBuffer)) {
+                    // Skip past times for today (with 30 min lead time to avoid immediate bookings)
+                    if (!isToday || cur > curTotalMinutes + 30) candidateStarts.push(cur);
                 }
             }
 
@@ -169,26 +183,41 @@ export async function GET(
                 creatorId: profile.userId,
                 scheduledDate: { $gte: searchStart, $lte: searchEnd },
                 status: { $in: ['pending', 'confirmed'] },
-            }).select('scheduledDate scheduledTime').lean();
+            }).select('scheduledDate scheduledTime sessionTypeId').lean();
 
             // Filter manually: match by extracting the UTC date from the stored noon-UTC timestamp
-            const bookedTimes = new Set<string>();
-            existingBookings.forEach((b: any) => {
-                if (b.scheduledDate) {
-                    const d = new Date(b.scheduledDate);
-                    const bYear = d.getUTCFullYear();
-                    const bMonth = String(d.getUTCMonth() + 1).padStart(2, '0');
-                    const bDay = String(d.getUTCDate()).padStart(2, '0');
-                    const intendedDateStr = `${bYear}-${bMonth}-${bDay}`;
-
-                    if (intendedDateStr === dateStr && b.scheduledTime) {
-                        bookedTimes.add(b.scheduledTime);
-                    }
-                }
+            const bookingsToday = existingBookings.filter((b: any) => {
+                if (!b.scheduledDate || !b.scheduledTime) return false;
+                const d = new Date(b.scheduledDate);
+                const bYear = d.getUTCFullYear();
+                const bMonth = String(d.getUTCMonth() + 1).padStart(2, '0');
+                const bDay = String(d.getUTCDate()).padStart(2, '0');
+                return `${bYear}-${bMonth}-${bDay}` === dateStr;
             });
 
-            // Filter out booked slots
-            const availableSlots = slots.filter(slot => !bookedTimes.has(slot));
+            // Each booking blocks its own session's duration + buffer, so look those sessions up
+            const bookedSessionIds = [...new Set(bookingsToday.map((b: any) => String(b.sessionTypeId)))];
+            const bookedSessions = bookedSessionIds.length
+                ? await SessionType.find({ _id: { $in: bookedSessionIds } }).select('duration bufferTime').lean()
+                : [];
+            const sessionById = new Map<string, any>(bookedSessions.map((s: any) => [String(s._id), s]));
+
+            const blocked = bookingsToday.flatMap((b: any) => {
+                const start = parse12h(b.scheduledTime);
+                if (start === null) return [];
+                const st = sessionById.get(String(b.sessionTypeId));
+                const dur = Number(st?.duration) > 0 ? Number(st.duration) : DEFAULT_SLOT_MINUTES;
+                const buf = Number(st?.bufferTime) > 0 ? Number(st.bufferTime) : 0;
+                return [blockedInterval(start, dur, buf)];
+            });
+
+            // A new slot is free when its meeting + buffer doesn't run into any booked time
+            const availableSlots = candidateStarts
+                .filter(start => {
+                    const mine = blockedInterval(start, sessionDuration, sessionBuffer);
+                    return !blocked.some(other => intervalsOverlap(mine, other));
+                })
+                .map(format12h);
 
             return NextResponse.json({
                 success: true,

@@ -10,6 +10,12 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { createMeetingRoom } from "@/lib/daily";
 import Referral from "@/models/referral.model";
 import mongoose from "mongoose";
+import {
+  DEFAULT_SLOT_MINUTES,
+  blockedInterval,
+  intervalsOverlap,
+  parse12h,
+} from "@/lib/slots";
 
 // Helper to generate booking reference
 function generateBookingRef(): string {
@@ -181,6 +187,49 @@ export async function POST(request: NextRequest) {
     const scheduledDateUTC = new Date(
       Date.UTC(dateYear, dateMonth - 1, dateDay, 12, 0, 0),
     );
+
+    // Make sure the chosen time doesn't run into another booking (each blocks duration + buffer)
+    const requestedStart = parse12h(time);
+    if (requestedStart !== null) {
+      const dayBookings = await Booking.find({
+        creatorId: creatorProfile.userId,
+        scheduledDate: scheduledDateUTC,
+        status: { $in: ["pending", "confirmed"] },
+      })
+        .select("scheduledTime sessionTypeId")
+        .lean();
+
+      const otherSessionIds = [...new Set(dayBookings.map((b: any) => String(b.sessionTypeId)))];
+      const otherSessions = otherSessionIds.length
+        ? await SessionType.find({ _id: { $in: otherSessionIds } }).select("duration bufferTime").lean()
+        : [];
+      const otherById = new Map<string, any>(otherSessions.map((s: any) => [String(s._id), s]));
+
+      const myBlock = blockedInterval(
+        requestedStart,
+        Number((sessionType as any).duration) || DEFAULT_SLOT_MINUTES,
+        Number((sessionType as any).bufferTime) || 0,
+      );
+      const clashes = dayBookings.some((b: any) => {
+        const start = parse12h(b.scheduledTime);
+        if (start === null) return false;
+        const other = otherById.get(String(b.sessionTypeId));
+        return intervalsOverlap(
+          myBlock,
+          blockedInterval(
+            start,
+            Number(other?.duration) || DEFAULT_SLOT_MINUTES,
+            Number(other?.bufferTime) || 0,
+          ),
+        );
+      });
+      if (clashes) {
+        return NextResponse.json(
+          { error: "This time slot is no longer available. Please choose another time." },
+          { status: 409 },
+        );
+      }
+    }
 
     // Generate Daily.co meeting room
     let meetingUrl = "";

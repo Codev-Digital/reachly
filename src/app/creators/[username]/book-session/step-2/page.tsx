@@ -21,6 +21,7 @@ export default function BookSessionStep2() {
   const queryStr = fallbackUrl ? `?fallbackUrl=${encodeURIComponent(fallbackUrl)}` : '';
   const { booking, setBooking, nextStep, prevStep, saveDraft, isDraftSaved } = useBooking();
 
+  const sessionId = booking.selectedSession?.id;
   const [slots, setSlots] = useState<string[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [fetchedDate, setFetchedDate] = useState<string | null>(null);
@@ -57,44 +58,27 @@ export default function BookSessionStep2() {
   // Fetch slots (and schedule from same response) with in-memory caching
   const fetchSlots = useCallback(async (date: Date) => {
     const iso = toISO(date);
-    if (iso === fetchedDate && slots.length > 0) return;
+    // Slots depend on the session (duration + buffer), so cache per session and date
+    const cacheKey = `${sessionId || 'default'}_${iso}`;
+    if (cacheKey === fetchedDate && slots.length > 0) return;
 
-    if (slotsCache.current[iso]) {
-      setSlots(slotsCache.current[iso]);
-      setFetchedDate(iso);
+    if (slotsCache.current[cacheKey]) {
+      setSlots(slotsCache.current[cacheKey]);
+      setFetchedDate(cacheKey);
       setLoadingSlots(false);
       return;
     }
 
-    const cacheKey = `reachly_slots_${params.username}_${iso}`;
-    if (typeof window !== 'undefined') {
-      try {
-        const stored = sessionStorage.getItem(cacheKey);
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          slotsCache.current[iso] = parsed;
-          setSlots(parsed);
-          setFetchedDate(iso);
-          setLoadingSlots(false);
-          return;
-        }
-      } catch (e) {}
-    }
-
     setLoadingSlots(true);
     try {
-      const res = await fetch(`/api/creators/${params.username}/availability?date=${iso}`);
+      const sessionQuery = sessionId ? `&sessionId=${encodeURIComponent(sessionId)}` : '';
+      const res = await fetch(`/api/creators/${params.username}/availability?date=${iso}${sessionQuery}`);
       const data = await res.json();
       if (data.success) {
         const availableSlots = data.slots || [];
-        slotsCache.current[iso] = availableSlots;
-        if (typeof window !== 'undefined') {
-          try {
-            sessionStorage.setItem(cacheKey, JSON.stringify(availableSlots));
-          } catch (e) {}
-        }
+        slotsCache.current[cacheKey] = availableSlots;
         setSlots(availableSlots);
-        setFetchedDate(iso);
+        setFetchedDate(cacheKey);
         if (data.schedule) {
           setSchedule(data.schedule);
         }
@@ -107,7 +91,7 @@ export default function BookSessionStep2() {
     } finally {
       setLoadingSlots(false);
     }
-  }, [params.username, fetchedDate, slots.length]);
+  }, [params.username, sessionId, fetchedDate, slots.length]);
 
   useEffect(() => {
     if (params.username) {
