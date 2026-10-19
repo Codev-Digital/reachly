@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import RichTextContent from '@/components/RichTextContent';
 import { AdminDetailSkeleton } from '@/components/admin/AdminSkeletons';
+import CreatorStatusActions from '@/components/admin/CreatorStatusActions';
 
 interface Creator {
   id: string;
@@ -42,29 +43,26 @@ export default function AdminCreatorDetailPage() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch(`/api/admin/creators?id=${id}`);
-        if (cancelled) return;
-        if (res.ok) {
-          const data = await res.json();
-          setCreator(data.creator);
-        } else {
-          setNotFound(true);
-        }
-      } catch (err) {
-        console.error('Failed to load creator:', err);
-        if (!cancelled) setNotFound(true);
-      } finally {
-        if (!cancelled) setLoading(false);
+  const loadCreator = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/admin/creators?id=${id}`);
+      if (res.ok) {
+        setCreator((await res.json()).creator);
+        setNotFound(false);
+      } else {
+        setNotFound(true);
       }
-    })();
-    return () => {
-      cancelled = true;
-    };
+    } catch (err) {
+      console.error('Failed to load creator:', err);
+      setNotFound(true);
+    } finally {
+      setLoading(false);
+    }
   }, [id]);
+
+  useEffect(() => {
+    loadCreator();
+  }, [loadCreator]);
 
   if (loading) return <AdminDetailSkeleton />;
 
@@ -243,10 +241,22 @@ export default function AdminCreatorDetailPage() {
                 </p>
               </div>
 
+
               {/* Joined Timing */}
               <div>
                 <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Joined Timing</p>
                 <p className="text-sm font-bold text-black mt-1">{creator.time}</p>
+              </div>
+
+              {/* Actions */}
+              <div className="col-span-2 sm:col-span-4 pt-5 mt-1 border-t border-gray-50">
+                <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider mb-3">Actions</p>
+                <CreatorStatusActions
+                  solid
+                  userId={creator.dbId || creator.id}
+                  status={creator.status}
+                  onChanged={loadCreator}
+                />
               </div>
             </div>
 

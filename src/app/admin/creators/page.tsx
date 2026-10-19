@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { usePreloadImages } from '@/lib/usePreloadImages';
-import ActionDialog from '@/components/ActionDialog';
+import CreatorStatusActions from '@/components/admin/CreatorStatusActions';
 
 interface Creator {
   id: string;
@@ -45,15 +45,6 @@ export default function AdminCreatorsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<'All Statuses' | 'Active' | 'Pending' | 'Inactive' | 'Suspended'>('All Statuses');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-
-  // Modal states
-  const [showRejectModal, setShowRejectModal] = useState(false);
-  const [creatorToReject, setCreatorToReject] = useState<Creator | null>(null);
-  const [rejectSuccess, setRejectSuccess] = useState(false);
-
-  const [showAcceptModal, setShowAcceptModal] = useState(false);
-  const [creatorToAccept, setCreatorToAccept] = useState<Creator | null>(null);
-  const [acceptSuccess, setAcceptSuccess] = useState(false);
 
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -120,70 +111,6 @@ export default function AdminCreatorsPage() {
 
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedCreators = filteredCreators.slice(startIndex, startIndex + itemsPerPage);
-
-  const handleRejectClick = (creator: Creator) => {
-    setCreatorToReject(creator);
-    setRejectSuccess(false);
-    setShowRejectModal(true);
-  };
-
-  const handleConfirmReject = async () => {
-    if (creatorToReject) {
-      try {
-        const res = await fetch('/api/admin/creators', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: creatorToReject.dbId || creatorToReject.id, action: 'reject' })
-        });
-        if (res.ok) {
-          setRejectSuccess(true);
-          loadCreators();
-        } else {
-          const err = await res.json();
-          alert(err.error || 'Failed to reject creator.');
-          setShowRejectModal(false);
-          setCreatorToReject(null);
-        }
-      } catch (err) {
-        console.error(err);
-        alert('Error rejecting creator.');
-        setShowRejectModal(false);
-        setCreatorToReject(null);
-      }
-    }
-  };
-
-  const handleAcceptClick = (creator: Creator) => {
-    setCreatorToAccept(creator);
-    setAcceptSuccess(false);
-    setShowAcceptModal(true);
-  };
-
-  const handleConfirmAccept = async () => {
-    if (creatorToAccept) {
-      try {
-        const res = await fetch('/api/admin/creators', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: creatorToAccept.dbId || creatorToAccept.id, action: 'approve' })
-        });
-        if (res.ok) {
-          setAcceptSuccess(true);
-          loadCreators();
-        } else {
-          const err = await res.json();
-          alert(err.error || 'Failed to approve creator.');
-          setShowAcceptModal(false);
-          setCreatorToAccept(null);
-        }
-      } catch (err) {
-        console.error(err);
-        alert('Error approving creator.');
-        setShowAcceptModal(false);
-        setCreatorToAccept(null);
-      }
-    }
-  };
 
   const handleAddCategorySubmit = () => {
     if (selectedCategory) {
@@ -447,22 +374,7 @@ export default function AdminCreatorsPage() {
                     {/* Actions */}
                     <td className="py-4 px-4" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center gap-2">
-                        {creator.status === 'Pending' && (
-                          <button
-                            onClick={() => handleAcceptClick(creator)}
-                            className="px-3.5 py-1.5 border border-[#12B76A]/30 bg-[#12B76A]/5 rounded-full text-[10px] font-bold text-[#12B76A] hover:bg-[#12B76A]/10 transition-colors"
-                          >
-                            Accept
-                          </button>
-                        )}
-                        {(creator.status === 'Pending' || creator.status === 'Active') && (
-                          <button
-                            onClick={() => handleRejectClick(creator)}
-                            className="px-3.5 py-1.5 border border-[#EF4444]/30 bg-[#EF4444]/5 rounded-full text-[10px] font-bold text-[#EF4444] hover:bg-[#EF4444]/10 transition-colors"
-                          >
-                            Reject
-                          </button>
-                        )}
+                        <CreatorStatusActions userId={creator.dbId || creator.id} status={creator.status} onChanged={loadCreators} />
                         <button
                           onClick={() => openDetail(creator)}
                           className="px-3.5 py-1.5 border border-gray-200 bg-gray-50 rounded-full text-[10px] font-bold text-gray-500 hover:bg-gray-100 transition-colors"
@@ -523,48 +435,6 @@ export default function AdminCreatorsPage() {
           </div>
         </div>
       </div>
-
-      {/* Reject Confirmation Modal */}
-      <ActionDialog
-        open={showRejectModal}
-        onOpenChange={setShowRejectModal}
-        image={{ src: '/assets/cancel-appointment-sm.webp', alt: 'Reject creator' }}
-        title={rejectSuccess ? 'Success!' : 'Reject Creator'}
-        description={
-          rejectSuccess
-            ? 'Creator rejected successfully.'
-            : ['Are you sure you want to reject this creator?', 'This action cannot be undone.']
-        }
-        actions={
-          rejectSuccess
-            ? [{ label: 'OK', variant: 'destructive', onClick: () => setShowRejectModal(false) }]
-            : [
-                { label: 'Cancel', variant: 'outline', onClick: () => setShowRejectModal(false) },
-                { label: 'Reject Creator', variant: 'destructive', onClick: handleConfirmReject },
-              ]
-        }
-      />
-
-      {/* Accept Confirmation Modal */}
-      <ActionDialog
-        open={showAcceptModal}
-        onOpenChange={setShowAcceptModal}
-        image={{ src: '/assets/booking-confirm-sm.webp', alt: 'Accept creator' }}
-        title={acceptSuccess ? 'Success!' : 'Accept Creator'}
-        description={
-          acceptSuccess
-            ? 'Creator approved successfully.'
-            : ['Are you sure you want to accept this creator?', 'This action cannot be undone.']
-        }
-        actions={
-          acceptSuccess
-            ? [{ label: 'OK', variant: 'success', onClick: () => setShowAcceptModal(false) }]
-            : [
-                { label: 'Cancel', variant: 'outline', onClick: () => setShowAcceptModal(false) },
-                { label: 'Accept Creator', variant: 'success', onClick: handleConfirmAccept },
-              ]
-        }
-      />
 
       {/* Add Category Modal */}
       <AnimatePresence>
