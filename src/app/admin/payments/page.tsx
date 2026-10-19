@@ -1,5 +1,7 @@
 'use client';
 
+import { AdminPaymentsSkeleton } from '@/components/admin/AdminSkeletons';
+
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { CreditCard, DollarSign, Clock, Calendar, ArrowUpRight } from 'lucide-react';
@@ -73,6 +75,8 @@ export default function AdminPaymentsPage() {
 
     return matchesSearch && matchesStatus;
   });
+
+  if (loading) return <AdminPaymentsSkeleton />;
 
   if (activeDetailPayment) {
     return (

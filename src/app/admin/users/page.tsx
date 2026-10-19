@@ -1,5 +1,7 @@
 'use client';
 
+import { AdminListSkeleton } from '@/components/admin/AdminSkeletons';
+
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
@@ -136,6 +138,8 @@ export default function UsersPage() {
 
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedUsers = filteredUsers.slice(startIndex, startIndex + itemsPerPage);
+
+  if (loading) return <AdminListSkeleton />;
 
   if (activeDetailUser) {
     return (

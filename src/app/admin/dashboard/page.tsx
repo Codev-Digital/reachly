@@ -1,5 +1,7 @@
 'use client';
 
+import { AdminDashboardSkeleton } from '@/components/admin/AdminSkeletons';
+
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
@@ -141,13 +143,7 @@ const AdminDashboard = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#0012FF] border-t-transparent"></div>
-      </div>
-    );
-  }
+  if (loading) return <AdminDashboardSkeleton />;
 
   if (error) {
     return (
