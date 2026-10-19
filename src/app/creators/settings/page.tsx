@@ -8,7 +8,10 @@ import CreatorDashboardNav from '@/components/CreatorDashboardNav';
 import LoadingAnimation from '@/components/LoadingAnimation';
 import { signOut } from 'next-auth/react';
 import { User, Briefcase, Clock, Shield, Star, Camera, Plus, Trash2, MapPin, ChevronRight, X, AlertTriangle } from 'lucide-react';
-import PasswordToggle from '@/components/PasswordToggle';
+import FormInput from '@/components/FormInput';
+import FormTextarea from '@/components/FormTextarea';
+import CitySelect from '@/components/CitySelect';
+import RichTextEditor from '@/components/RichTextEditor';
 
 function ModalShell({
   onClose,
@@ -100,10 +103,6 @@ export default function CreatorSettings() {
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showOldPassword, setShowOldPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
   // Sessions State
   const [sessions, setSessions] = useState<DBTypeSession[]>([]);
 
@@ -808,71 +807,63 @@ export default function CreatorSettings() {
               {/* Display Name + Email */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
                 <div>
-                  <label className="text-xs font-bold text-gray-700 uppercase tracking-wider block mb-2 font-sans">Display Name</label>
-                  <input
+                  <FormInput
+                    label="Display Name"
                     type="text"
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
-                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-700 uppercase tracking-wider block mb-2 font-sans">Email Address</label>
-                  <input
+                  <FormInput
+                    label="Email Address"
                     type="email"
                     value={email}
                     disabled
-                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-500 focus:outline-none"
+                    className="disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
                   />
                 </div>
               </div>
 
               {/* Short Bio */}
               <div className="mb-5">
-                <label className="text-xs font-bold text-gray-700 uppercase tracking-wider block mb-2 font-sans">Short Bio</label>
-                <textarea
+                <FormTextarea
+                  label="Short Bio"
                   rows={2}
+                  maxLength={140}
                   value={shortBio}
                   onChange={(e) => setShortBio(e.target.value)}
                   placeholder="Short bio showing up in search details"
-                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] resize-none"
+                  footer={
+                    <div className="flex justify-between text-gray-400 text-xs mt-1.5">
+                      <span>Appears on your cards in search results</span>
+                      <span>{shortBio.length}/140</span>
+                    </div>
+                  }
                 />
-                <div className="flex justify-between text-gray-400 text-xs mt-1.5">
-                  <span>Appears on your cards in search results</span>
-                  <span>{shortBio.length}/140</span>
-                </div>
               </div>
 
-              {/* Long Bio */}
+              {/* Detailed Bio */}
               <div className="mb-5">
-                <label className="text-xs font-bold text-gray-700 uppercase tracking-wider block mb-2 font-sans">Long Bio</label>
-                <textarea
-                  rows={4}
+                <RichTextEditor
+                  label="Detailed Bio"
                   value={longBio}
-                  onChange={(e) => setLongBio(e.target.value)}
+                  onChange={setLongBio}
                   placeholder="Tell your clients a little bit about yourself..."
-                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] resize-none"
                 />
               </div>
 
               {/* City + Country */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
                 <div>
-                  <label className="text-xs font-bold text-gray-700 uppercase tracking-wider block mb-2 font-sans">City</label>
-                  <input
-                    type="text"
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
-                  />
+                  <CitySelect label="City" value={city} onChange={setCity} />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-700 uppercase tracking-wider block mb-2 font-sans">Country</label>
-                  <input
+                  <FormInput
+                    label="Country"
                     type="text"
                     value={country}
                     onChange={(e) => setCountry(e.target.value)}
-                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
                   />
                 </div>
               </div>
@@ -931,70 +922,62 @@ export default function CreatorSettings() {
                 </label>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   {/* Instagram */}
-                  <div className="relative">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#0012FF]">
+                  <FormInput
+                    icon={
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                         <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
                         <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
                         <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
                       </svg>
-                    </div>
-                    <input
-                      type="text"
-                      value={instagram}
-                      onChange={(e) => setInstagram(e.target.value)}
-                      placeholder="instagram.com/yourhandle"
-                      className="w-full bg-white border border-gray-200 rounded-xl pl-12 pr-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
-                    />
-                  </div>
+                    }
+                    type="text"
+                    value={instagram}
+                    onChange={(e) => setInstagram(e.target.value)}
+                    placeholder="instagram.com/yourhandle"
+                    className="pl-12"
+                  />
                   {/* TikTok */}
-                  <div className="relative">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#0012FF]">
+                  <FormInput
+                    icon={
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M12.53 1.5h3.34c.2 1.9 1.28 3.63 2.9 4.63.94.58 2.04.9 3.16.9v3.4c-1.53 0-3.02-.4-4.34-1.15v6.8c0 3.4-2.76 6.17-6.16 6.17S5.27 19.48 5.27 16.08c0-3.4 2.76-6.17 6.16-6.17.35 0 .7.03 1.04.09v3.5a2.72 2.72 0 0 0-1.04-.2 2.78 2.78 0 1 0 2.78 2.78V1.5z" />
                       </svg>
-                    </div>
-                    <input
-                      type="text"
-                      value={tiktok}
-                      onChange={(e) => setTiktok(e.target.value)}
-                      placeholder="tiktok.com/yourhandle"
-                      className="w-full bg-white border border-gray-200 rounded-xl pl-12 pr-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
-                    />
-                  </div>
+                    }
+                    type="text"
+                    value={tiktok}
+                    onChange={(e) => setTiktok(e.target.value)}
+                    placeholder="tiktok.com/yourhandle"
+                    className="pl-12"
+                  />
                   {/* YouTube */}
-                  <div className="relative">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#0012FF]">
+                  <FormInput
+                    icon={
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                         <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z" />
                         <polygon points="9.75,15.02 15.5,11.75 9.75,8.48" />
                       </svg>
-                    </div>
-                    <input
-                      type="text"
-                      value={youtube}
-                      onChange={(e) => setYoutube(e.target.value)}
-                      placeholder="youtube.com/yourhandle"
-                      className="w-full bg-white border border-gray-200 rounded-xl pl-12 pr-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
-                    />
-                  </div>
+                    }
+                    type="text"
+                    value={youtube}
+                    onChange={(e) => setYoutube(e.target.value)}
+                    placeholder="youtube.com/yourhandle"
+                    className="pl-12"
+                  />
                   {/* LinkedIn */}
-                  <div className="relative">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#0012FF]">
+                  <FormInput
+                    icon={
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                         <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
                         <rect x="2" y="9" width="4" height="12" />
                         <circle cx="4" cy="4" r="2" />
                       </svg>
-                    </div>
-                    <input
-                      type="text"
-                      value={linkedin}
-                      onChange={(e) => setLinkedin(e.target.value)}
-                      placeholder="linkedin.com/yourhandle"
-                      className="w-full bg-white border border-gray-200 rounded-xl pl-12 pr-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
-                    />
-                  </div>
+                    }
+                    type="text"
+                    value={linkedin}
+                    onChange={(e) => setLinkedin(e.target.value)}
+                    placeholder="linkedin.com/yourhandle"
+                    className="pl-12"
+                  />
                 </div>
               </div>
 
@@ -1204,13 +1187,12 @@ export default function CreatorSettings() {
 
                     {/* Location */}
                     <div className="mb-4">
-                      <label className="text-xs font-bold text-gray-700 uppercase tracking-wider block mb-2 font-sans">Meeting Location Address</label>
-                      <input
+                      <FormInput
+                        label="Meeting Location Address"
                         type="text"
                         value={locationAddress}
                         onChange={(e) => setLocationAddress(e.target.value)}
                         placeholder="e.g. Google Meet Link, Coffee shop address..."
-                        className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
                       />
                     </div>
                   </div>
@@ -1240,32 +1222,24 @@ export default function CreatorSettings() {
                 </div>
 
                 <div className="mb-5">
-                  <label className="text-xs font-bold text-gray-700 uppercase tracking-wider block mb-2 font-sans">Current Password</label>
-                  <div className="relative">
-                    <input
-                      type={showOldPassword ? 'text' : 'password'}
-                      value={oldPassword}
-                      onChange={(e) => setOldPassword(e.target.value)}
-                      placeholder="••••••••"
-                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 pr-12 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
-                    />
-                    <PasswordToggle visible={showOldPassword} onToggle={() => setShowOldPassword(!showOldPassword)} />
-                  </div>
+                  <FormInput
+                    label="Current Password"
+                    type="password"
+                    value={oldPassword}
+                    onChange={(e) => setOldPassword(e.target.value)}
+                    placeholder="••••••••"
+                  />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
                   <div>
-                    <label className="text-xs font-bold text-gray-700 uppercase tracking-wider block mb-2 font-sans">New Password</label>
-                    <div className="relative">
-                      <input
-                        type={showNewPassword ? 'text' : 'password'}
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        placeholder="Enter new password"
-                        className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 pr-12 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
-                      />
-                      <PasswordToggle visible={showNewPassword} onToggle={() => setShowNewPassword(!showNewPassword)} />
-                    </div>
+                    <FormInput
+                      label="New Password"
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="Enter new password"
+                    />
                     {/* Password Strength Indicator Lines */}
                     <div className="grid grid-cols-4 gap-2 mt-2.5">
                       <div className={`h-1.5 rounded-full transition-all duration-300 ${newPassword.length > 0 ? 'bg-[#0012FF]' : 'bg-gray-200'}`} />
@@ -1275,17 +1249,13 @@ export default function CreatorSettings() {
                     </div>
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-gray-700 uppercase tracking-wider block mb-2 font-sans">Confirm New Password</label>
-                    <div className="relative">
-                      <input
-                        type={showConfirmPassword ? 'text' : 'password'}
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="Confirm new password"
-                        className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 pr-12 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
-                      />
-                      <PasswordToggle visible={showConfirmPassword} onToggle={() => setShowConfirmPassword(!showConfirmPassword)} />
-                    </div>
+                    <FormInput
+                      label="Confirm New Password"
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Confirm new password"
+                    />
                   </div>
                 </div>
 
@@ -1423,13 +1393,12 @@ export default function CreatorSettings() {
 
               {/* Title */}
               <div>
-                <label className="text-xs font-bold text-black mb-1.5 block">Title</label>
-                <input
+                <FormInput
+                  label="Title"
                   type="text"
                   value={sessionTitle}
                   onChange={(e) => setSessionTitle(e.target.value)}
                   placeholder="Style Consultation"
-                  className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] transition-all placeholder:text-gray-300 font-medium"
                 />
               </div>
 
@@ -1468,13 +1437,12 @@ export default function CreatorSettings() {
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-black mb-1.5 block">Price</label>
-                  <input
+                  <FormInput
+                    label="Price"
                     type="number"
                     value={sessionPrice}
                     onChange={(e) => setSessionPrice(e.target.value)}
                     placeholder="1200"
-                    className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] font-medium"
                   />
                 </div>
               </div>
@@ -1482,8 +1450,8 @@ export default function CreatorSettings() {
               {/* What's Included & Max Bookings Per Day (2 Columns) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs font-bold text-black mb-1.5 block">What&rsquo;s Included</label>
-                  <input
+                  <FormInput
+                    label="What’s Included"
                     type="text"
                     value={newFeatureText}
                     onChange={(e) => setNewFeatureText(e.target.value)}
@@ -1494,7 +1462,6 @@ export default function CreatorSettings() {
                       }
                     }}
                     placeholder="Feature 1"
-                    className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] placeholder:text-gray-300 font-medium"
                   />
                   <button
                     type="button"
@@ -1524,13 +1491,12 @@ export default function CreatorSettings() {
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-black mb-1.5 block">Max Bookings Per Day</label>
-                  <input
+                  <FormInput
+                    label="Max Bookings Per Day"
                     type="number"
                     value={sessionMaxBookings}
                     onChange={(e) => setSessionMaxBookings(e.target.value)}
                     placeholder="4"
-                    className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] font-medium"
                   />
                 </div>
               </div>

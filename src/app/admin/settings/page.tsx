@@ -1,6 +1,11 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import FormInput from '@/components/FormInput';
+
+const DARK_LABEL = 'font-sans font-normal text-sm leading-normal text-[#F9F6F2]';
+const DARK_INPUT =
+  'bg-[#0C0C0C] border-[rgba(200,169,126,0.3)] rounded-lg font-sans text-sm text-[#F9F6F2] focus:border-[#C8A97E]';
 
 const SettingsPage = () => {
   return (
@@ -17,36 +22,33 @@ const SettingsPage = () => {
         <div className="bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-xl p-5">
           <h3 className="font-serif text-lg font-semibold text-[#F9F6F2] mb-4">General Settings</h3>
           <div className="space-y-4">
-            <div>
-              <label className="block font-sans text-sm text-[#F9F6F2] mb-2">Platform Name</label>
-              <input
-                type="text"
-                defaultValue="Reachly"
-                className="w-full bg-[#0C0C0C] border border-[rgba(200,169,126,0.3)] rounded-lg px-4 py-3 font-sans text-sm text-[#F9F6F2] focus:outline-none focus:border-[#C8A97E]"
-              />
-            </div>
-            <div>
-              <label className="block font-sans text-sm text-[#F9F6F2] mb-2">Admin Email</label>
-              <input
-                type="email"
-                defaultValue="admin@reachly.com"
-                className="w-full bg-[#0C0C0C] border border-[rgba(200,169,126,0.3)] rounded-lg px-4 py-3 font-sans text-sm text-[#F9F6F2] focus:outline-none focus:border-[#C8A97E]"
-              />
-            </div>
+            <FormInput
+              label="Platform Name"
+              type="text"
+              defaultValue="Reachly"
+              labelClassName={DARK_LABEL}
+              className={DARK_INPUT}
+            />
+            <FormInput
+              label="Admin Email"
+              type="email"
+              defaultValue="admin@reachly.com"
+              labelClassName={DARK_LABEL}
+              className={DARK_INPUT}
+            />
           </div>
         </div>
         
         <div className="bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-xl p-5">
           <h3 className="font-serif text-lg font-semibold text-[#F9F6F2] mb-4">Fee Settings</h3>
           <div className="space-y-4">
-            <div>
-              <label className="block font-sans text-sm text-[#F9F6F2] mb-2">Platform Fee (%)</label>
-              <input
-                type="number"
-                defaultValue="10"
-                className="w-full bg-[#0C0C0C] border border-[rgba(200,169,126,0.3)] rounded-lg px-4 py-3 font-sans text-sm text-[#F9F6F2] focus:outline-none focus:border-[#C8A97E]"
-              />
-            </div>
+            <FormInput
+              label="Platform Fee (%)"
+              type="number"
+              defaultValue="10"
+              labelClassName={DARK_LABEL}
+              className={DARK_INPUT}
+            />
           </div>
         </div>
         

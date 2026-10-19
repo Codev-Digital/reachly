@@ -17,14 +17,17 @@ export async function POST(request: NextRequest) {
 
     if (password !== confirmPassword) {
       return NextResponse.json(
-        { error: 'Passwords do not match' },
+        { error: 'Passwords do not match.', field: 'confirmPassword' },
         { status: 400 }
       );
     }
 
     const strengthCheck = checkPasswordStrength(password);
     if (strengthCheck.strength === 'weak') {
-      return NextResponse.json({ error: strengthCheck.message }, { status: 400 });
+      return NextResponse.json(
+        { error: strengthCheck.message, field: 'password' },
+        { status: 400 }
+      );
     }
 
     const user = await User.findOne({ email: email.toLowerCase().trim() });

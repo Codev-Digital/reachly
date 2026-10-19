@@ -5,26 +5,49 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import Image from 'next/image';
 import HeroImage from '../components/HeroImage';
+import { Mail, Lock } from 'lucide-react';
+import FormInput, { FormError } from '@/components/FormInput';
+import { isValidEmail } from '@/lib/validators';
 import { postAuthRoute } from '@/lib/postAuthRoute';
-import PasswordToggle from '@/components/PasswordToggle';
 
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
   const [loading, setLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const callbackUrl = searchParams.get('callbackUrl') || '/welcome';
-  const signupUrl = `/signup?callbackUrl=${encodeURIComponent(callbackUrl)}`;
+  const signupUrl = callbackUrl.startsWith('/creator-onboarding')
+    ? `/signup?type=creator&callbackUrl=${encodeURIComponent(callbackUrl)}`
+    : `/signup?callbackUrl=${encodeURIComponent(callbackUrl)}`;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
+    setEmailError('');
+    setPasswordError('');
+
+    // Client-side checks so obvious mistakes never hit the server
+    let hasError = false;
+    if (!email.trim()) {
+      setEmailError('Please enter your email address.');
+      hasError = true;
+    } else if (!isValidEmail(email)) {
+      setEmailError('Please enter a valid email address.');
+      hasError = true;
+    }
+    if (!password) {
+      setPasswordError('Please enter your password.');
+      hasError = true;
+    }
+    if (hasError) return;
+
+    setLoading(true);
 
     try {
       const result = await signIn('credentials', {
@@ -34,7 +57,29 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        setError(result.error);
+        // Error codes are thrown from `authorize` in /api/auth/[...nextauth]
+        switch (result.error) {
+          case 'EMAIL_REQUIRED':
+            setEmailError('Please enter your email address.');
+            break;
+          case 'EMAIL_NOT_REGISTERED':
+            setEmailError('The email you entered is not registered, please check again.');
+            break;
+          case 'EMAIL_NOT_VERIFIED':
+            setEmailError('Please verify your email before signing in.');
+            break;
+          case 'PASSWORD_REQUIRED':
+            setPasswordError('Please enter your password.');
+            break;
+          case 'NO_PASSWORD':
+            setPasswordError("This account doesn't have a password yet. Use Google sign-in or reset your password.");
+            break;
+          case 'WRONG_PASSWORD':
+            setPasswordError('The password you provided is incorrect. Please try again.');
+            break;
+          default:
+            setError('Unable to sign in. Please try again.');
+        }
       } else {
         const redirectRes = await fetch('/api/user/login-redirect-info', {
           method: 'POST',
@@ -63,7 +108,8 @@ export default function LoginPage() {
 
   const handleGoogleSignIn = () => {
     setIsGoogleLoading(true);
-    signIn('google', { callbackUrl: '/welcome' });
+    // /welcome looks up the account and sends the user (or creator) to the right place
+    signIn('google', { callbackUrl });
   };
 
   return (
@@ -98,60 +144,76 @@ export default function LoginPage() {
                 </p>
               </div>
 
-              {error && (
-                <div className="mb-4 p-3.5 bg-red-50 border border-red-200 rounded-xl">
-                  <p className="font-sans text-xs text-red-600 font-semibold"> {error}</p>
-                </div>
-              )}
+              {/* Account-type buttons are only needed on signup. On login the role is
+                  detected from the account (email) after sign-in.
+              <div
+                className="grid grid-cols-2 gap-3 mb-6"
+                role="group"
+                aria-label="Choose account type"
+              >
+                <button
+                  type="button"
+                  aria-pressed={userType === 'user'}
+                  onClick={() => setUserType('user')}
+                  className={`rounded-xl border px-4 py-3 text-sm font-bold transition-all ${
+                    userType === 'user'
+                      ? 'border-[#0012FF] bg-[#0012FF] text-white shadow-lg shadow-blue-500/20'
+                      : 'border-gray-200 bg-white text-gray-600 hover:border-[#0012FF]'
+                  }`}
+                >
+                  Continue as User
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={userType === 'creator'}
+                  onClick={() => setUserType('creator')}
+                  className={`rounded-xl border px-4 py-3 text-sm font-bold transition-all ${
+                    userType === 'creator'
+                      ? 'border-[#0012FF] bg-[#0012FF] text-white shadow-lg shadow-blue-500/20'
+                      : 'border-gray-200 bg-white text-gray-600 hover:border-[#0012FF]'
+                  }`}
+                >
+                  Continue as Creator
+                </button>
+              </div>
+              */}
 
-              <form onSubmit={handleSubmit} className="space-y-4">
+              {error && <FormError className="mb-4">{error}</FormError>}
+
+              <form onSubmit={handleSubmit} noValidate className="space-y-4">
                 {/* Email Address */}
-                <div>
-                  <label className="block font-sans text-gray-700 font-semibold text-xs mb-2">
-                    Email Address <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                      {/* Envelope Icon */}
-                      <svg className="w-4 h-4 text-[#0012FF]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                      </svg>
-                    </div>
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className={`w-full bg-white border ${error ? 'border-red-300' : 'border-gray-200'} rounded-xl pl-11 pr-4 py-3 font-sans text-sm text-black placeholder-gray-400 focus:outline-none focus:border-[#0012FF] transition-all`}
-                      placeholder="Enter your email"
-                      required
-                    />
-                  </div>
-                </div>
+                <FormInput
+                  label="Email Address"
+                  type="email"
+                  name="email"
+                  autoComplete="email"
+                  required
+                  placeholder="Enter your email"
+                  icon={<Mail className="w-4 h-4" />}
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (emailError) setEmailError('');
+                  }}
+                  error={emailError}
+                />
 
                 {/* Password */}
-                <div>
-                  <label className="block font-sans text-gray-700 font-semibold text-xs mb-2">
-                    Password <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                      {/* Lock Icon */}
-                      <svg className="w-4 h-4 text-[#0012FF]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                        <rect x="3" y="11" width="18" height="11" rx="2" strokeLinecap="round" strokeLinejoin="round" />
-                        <path d="M7 11V7a5 5 0 0110 0v4" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </div>
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className={`w-full bg-white border ${error ? 'border-red-300' : 'border-gray-200'} rounded-xl pl-11 pr-12 py-3 font-sans text-sm text-black placeholder-gray-400 focus:outline-none focus:border-[#0012FF] transition-all`}
-                      placeholder="Enter your password"
-                      required
-                    />
-                    <PasswordToggle visible={showPassword} onToggle={() => setShowPassword(!showPassword)} />
-                  </div>
-                </div>
+                <FormInput
+                  label="Password"
+                  type="password"
+                  name="password"
+                  autoComplete="current-password"
+                  required
+                  placeholder="Enter your password"
+                  icon={<Lock className="w-4 h-4" />}
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (passwordError) setPasswordError('');
+                  }}
+                  error={passwordError}
+                />
 
                 {/* Remember / Forgot */}
                 <div className="flex items-center justify-between pt-1">

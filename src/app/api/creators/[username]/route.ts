@@ -4,6 +4,7 @@ import User from '@/models/User';
 import CreatorProfile from '@/models/CreatorProfile';
 import SessionType from '@/models/SessionType';
 import Booking from '@/models/Booking';
+import { sanitizeRichText } from '@/lib/sanitizeRichText';
 
 export async function GET(
     request: NextRequest,
@@ -89,7 +90,7 @@ export async function GET(
                 username: profile.username,
                 displayName: profile.displayName,
                 shortBio: profile.shortBio,
-                longBio: profile.longBio,
+                longBio: sanitizeRichText(profile.longBio),
                 profilePhoto: profile.profilePhoto || '/avatar.png',
                 coverPhoto: profile.coverPhoto,
                 city: profile.city,

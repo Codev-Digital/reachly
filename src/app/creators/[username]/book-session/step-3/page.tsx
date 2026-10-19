@@ -4,6 +4,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import BookingProgress from '@/components/booking/BookingProgress';
 import CreatorProfileCard from '@/components/booking/CreatorProfileCard';
+import FormInput from '@/components/FormInput';
 import { useBooking } from '../layout';
 
 export default function BookSessionStep3() {
@@ -165,49 +166,34 @@ export default function BookSessionStep3() {
 
               {/* Form Fields */}
               <div className="space-y-5">
-                <div>
-                  <label className="block text-xs font-bold text-gray-800 mb-2">
-                    Full Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Enter your full name"
-                    value={booking.userDetails.fullName}
-                    onChange={e => updateUserDetails('fullName', e.target.value)}
-                    className="w-full bg-white border border-gray-200 focus:border-gray-300 focus:outline-none rounded-xl px-4 py-3 text-xs font-bold text-gray-800 placeholder-gray-400 transition-all shadow-xs"
-                  />
-                </div>
+                <FormInput
+                  label="Full Name"
+                  required
+                  type="text"
+                  placeholder="Enter your full name"
+                  value={booking.userDetails.fullName}
+                  onChange={e => updateUserDetails('fullName', e.target.value)}
+                />
 
-                <div>
-                  <label className="block text-xs font-bold text-gray-800 mb-2">
-                    Email Address <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="email"
-                    placeholder="Enter your email address"
-                    value={booking.userDetails.email}
-                    onChange={e => updateUserDetails('email', e.target.value)}
-                    className="w-full bg-white border border-gray-200 focus:border-gray-300 focus:outline-none rounded-xl px-4 py-3 text-xs font-bold text-gray-800 placeholder-gray-400 transition-all shadow-xs"
-                  />
-                </div>
+                <FormInput
+                  label="Email Address"
+                  required
+                  type="email"
+                  placeholder="Enter your email address"
+                  value={booking.userDetails.email}
+                  onChange={e => updateUserDetails('email', e.target.value)}
+                />
 
-                <div>
-                  <label className="block text-xs font-bold text-gray-800 mb-2">
-                    Phone Number <span className="text-red-500">*</span>
-                  </label>
-                  <div className="flex gap-2">
-                    <div className="flex items-center justify-center bg-white border border-gray-200 rounded-xl px-4 text-xs font-bold text-gray-500 shadow-xs select-none">
-                      +92
-                    </div>
-                    <input
-                      type="tel"
-                      placeholder="Enter your phone number"
-                      value={booking.userDetails.whatsapp}
-                      onChange={e => updateUserDetails('whatsapp', e.target.value)}
-                      className="flex-grow bg-white border border-gray-200 focus:border-gray-300 focus:outline-none rounded-xl px-4 py-3 text-xs font-bold text-gray-800 placeholder-gray-400 transition-all shadow-xs"
-                    />
-                  </div>
-                </div>
+                <FormInput
+                  label="Phone Number"
+                  required
+                  type="tel"
+                  placeholder="Enter your phone number"
+                  value={booking.userDetails.whatsapp}
+                  onChange={e => updateUserDetails('whatsapp', e.target.value)}
+                  icon={<span className="text-sm font-medium text-gray-500 select-none">+92</span>}
+                  className="pl-14"
+                />
 
                 <div>
                   <label className="block text-xs font-bold text-gray-800 mb-2">

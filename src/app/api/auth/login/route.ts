@@ -7,19 +7,36 @@ export async function POST(request: NextRequest) {
     await connectDB();
     const { email, password } = await request.json();
 
-    if (!email || !password) {
+    // Each error carries a `field` so the UI can show it under the right input.
+    if (!email) {
       return NextResponse.json(
-        { error: 'Email and password are required' },
+        { error: 'Please enter your email address.', field: 'email' },
+        { status: 400 }
+      );
+    }
+
+    if (!password) {
+      return NextResponse.json(
+        { error: 'Please enter your password.', field: 'password' },
         { status: 400 }
       );
     }
 
     const user = await User.findOne({ email: email.toLowerCase().trim() });
 
-    // Use a generic message to prevent user enumeration
-    if (!user || !user.password) {
+    if (!user) {
       return NextResponse.json(
-        { error: 'Invalid email or password' },
+        { error: 'The email you entered is not registered, please check again.', field: 'email' },
+        { status: 401 }
+      );
+    }
+
+    if (!user.password) {
+      return NextResponse.json(
+        {
+          error: "This account doesn't have a password yet. Use Google sign-in or reset your password.",
+          field: 'password',
+        },
         { status: 401 }
       );
     }
@@ -27,14 +44,14 @@ export async function POST(request: NextRequest) {
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       return NextResponse.json(
-        { error: 'Invalid email or password' },
+        { error: 'The password you provided is incorrect. Please try again.', field: 'password' },
         { status: 401 }
       );
     }
 
     if (!user.isVerified) {
       return NextResponse.json(
-        { error: 'Please verify your email before signing in.' },
+        { error: 'Please verify your email before signing in.', field: 'email' },
         { status: 403 }
       );
     }

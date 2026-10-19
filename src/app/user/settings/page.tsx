@@ -6,7 +6,8 @@ import UserNavbar from '@/components/UserNavbar';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { signOut } from 'next-auth/react';
-import PasswordToggle from '@/components/PasswordToggle';
+import FormInput from '@/components/FormInput';
+import CitySelect from '@/components/CitySelect';
 
 export default function UserSettings() {
   const router = useRouter();
@@ -26,10 +27,6 @@ export default function UserSettings() {
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showOldPassword, setShowOldPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
@@ -292,24 +289,19 @@ export default function UserSettings() {
 
               {/* Form Inputs */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div>
-                  <label className="font-bold text-xs text-gray-900 block mb-2 font-sans">Display Name</label>
-                  <input
-                    type="text"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="font-bold text-xs text-gray-900 block mb-2 font-sans">Email Address</label>
-                  <input
-                    type="email"
-                    value={emailAddress}
-                    disabled
-                    className="w-full bg-gray-550 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-600 focus:outline-none cursor-not-allowed"
-                  />
-                </div>
+                <FormInput
+                  label="Display Name"
+                  type="text"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                />
+                <FormInput
+                  label="Email Address"
+                  type="email"
+                  value={emailAddress}
+                  disabled
+                  className="disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed"
+                />
               </div>
 
               {/* Bio */}
@@ -330,27 +322,8 @@ export default function UserSettings() {
 
               {/* City and Country */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <div className="relative">
-                  <label className="font-bold text-xs text-gray-900 block mb-2 font-sans">City</label>
-                  <select
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-700 focus:outline-none appearance-none"
-                  >
-                    <option value="Karachi">Karachi</option>
-                    <option value="Lahore">Lahore</option>
-                    <option value="Islamabad">Islamabad</option>
-                    <option value="Rawalpindi">Rawalpindi</option>
-                    <option value="Faisalabad">Faisalabad</option>
-                    <option value="Multan">Multan</option>
-                    <option value="Peshawar">Peshawar</option>
-                    <option value="Quetta">Quetta</option>
-                  </select>
-                  <div className="absolute right-4 top-[42px] pointer-events-none text-gray-400">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <polyline points="6 9 12 15 18 9" />
-                    </svg>
-                  </div>
+                <div>
+                  <CitySelect label="City" value={city} onChange={setCity} />
                 </div>
                 <div className="relative">
                   <label className="font-bold text-xs text-gray-900 block mb-2 font-sans">Country</label>
@@ -431,45 +404,33 @@ export default function UserSettings() {
 
                 <div className="space-y-6 mb-8">
                   {/* Old Password */}
-                  <div className="relative">
-                    <label className="font-bold text-xs text-gray-900 block mb-2 font-sans">Old Password</label>
-                    <input
-                      type={showOldPassword ? 'text' : 'password'}
-                      placeholder="Enter old password"
-                      value={oldPassword}
-                      onChange={(e) => setOldPassword(e.target.value)}
-                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 pr-12 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] transition-all"
-                    />
-                    <PasswordToggle visible={showOldPassword} onToggle={() => setShowOldPassword(!showOldPassword)} className="top-[38px]" />
-                  </div>
+                  <FormInput
+                    label="Old Password"
+                    type="password"
+                    placeholder="Enter old password"
+                    value={oldPassword}
+                    onChange={(e) => setOldPassword(e.target.value)}
+                  />
 
                   {/* Password Grid */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* New Password */}
-                    <div className="relative">
-                      <label className="font-bold text-xs text-gray-900 block mb-2 font-sans">New Password</label>
-                      <input
-                        type={showNewPassword ? 'text' : 'password'}
-                        placeholder="Enter new password"
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 pr-12 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] transition-all"
-                      />
-                      <PasswordToggle visible={showNewPassword} onToggle={() => setShowNewPassword(!showNewPassword)} className="top-[38px]" />
-                    </div>
+                    <FormInput
+                      label="New Password"
+                      type="password"
+                      placeholder="Enter new password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                    />
 
                     {/* Confirm Password */}
-                    <div className="relative">
-                      <label className="font-bold text-xs text-gray-900 block mb-2 font-sans">Confirm Password</label>
-                      <input
-                        type={showConfirmPassword ? 'text' : 'password'}
-                        placeholder="Confirm new password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 pr-12 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] transition-all"
-                      />
-                      <PasswordToggle visible={showConfirmPassword} onToggle={() => setShowConfirmPassword(!showConfirmPassword)} className="top-[38px]" />
-                    </div>
+                    <FormInput
+                      label="Confirm Password"
+                      type="password"
+                      placeholder="Confirm new password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                    />
                   </div>
                 </div>
 

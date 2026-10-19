@@ -5,6 +5,7 @@ import { AdminListSkeleton } from '@/components/admin/AdminSkeletons';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import RichTextContent from '@/components/RichTextContent';
 
 interface Creator {
   id: string;
@@ -366,9 +367,16 @@ export default function AdminCreatorsPage() {
 
               {/* Bio Field 2 */}
               <div className="pt-2">
-                <p className="text-xs text-gray-500 font-medium leading-relaxed max-w-4xl">
-                  {activeDetailCreator.longBio || 'No detailed bio provided.'}
-                </p>
+                {activeDetailCreator.longBio ? (
+                  <RichTextContent
+                    value={activeDetailCreator.longBio}
+                    className="text-xs text-gray-500 font-medium leading-relaxed max-w-4xl"
+                  />
+                ) : (
+                  <p className="text-xs text-gray-500 font-medium leading-relaxed max-w-4xl">
+                    No detailed bio provided.
+                  </p>
+                )}
               </div>
             </div>
 

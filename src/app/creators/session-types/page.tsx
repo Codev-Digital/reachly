@@ -3,6 +3,11 @@
 import { motion } from 'framer-motion';
 import CreatorSidebar from '@/components/CreatorSidebar';
 import { useState } from 'react';
+import FormInput from '@/components/FormInput';
+
+const DARK_LABEL = 'text-sm font-sans font-normal leading-normal text-[#F9F6F2] opacity-70';
+const DARK_INPUT =
+  'bg-[rgba(255,255,255,0.03)] border-[rgba(200,169,126,0.2)] focus:border-[rgba(200,169,126,0.2)] rounded-xl py-2.5 text-[#F9F6F2]';
 
 const CreatorSessionTypes = () => {
   const [showAddModal, setShowAddModal] = useState(false);
@@ -213,14 +218,13 @@ const CreatorSessionTypes = () => {
             <h3 className="font-serif text-2xl font-bold text-[#F9F6F2] mb-5">Add Session Type</h3>
 
             <div className="space-y-4 mb-6">
-              <div>
-                <label className="text-sm font-sans text-[#F9F6F2] opacity-70 mb-2 block">Title</label>
-                <input
-                  type="text"
-                  className="w-full bg-[rgba(255,255,255,0.03)] border border-[rgba(200,169,126,0.2)] rounded-xl px-4 py-2.5 text-[#F9F6F2] text-sm font-sans outline-none"
-                  placeholder=""
-                />
-              </div>
+              <FormInput
+                type="text"
+                label="Title"
+                className={DARK_INPUT}
+                labelClassName={DARK_LABEL}
+                placeholder=""
+              />
 
               <div>
                 <label className="text-sm font-sans text-[#F9F6F2] opacity-70 mb-2 block">Description</label>
@@ -248,32 +252,31 @@ const CreatorSessionTypes = () => {
                 </div>
               </div>
 
-              <div>
-                <label className="text-sm font-sans text-[#F9F6F2] opacity-70 mb-2 block">Price (PKR)</label>
-                <input
-                  type="text"
-                  defaultValue="1200"
-                  className="w-full bg-[rgba(255,255,255,0.03)] border border-[rgba(200,169,126,0.2)] rounded-xl px-4 py-2.5 text-[#F9F6F2] text-sm font-sans outline-none"
-                  placeholder=""
-                />
-              </div>
+              <FormInput
+                type="text"
+                label="Price (PKR)"
+                defaultValue="1200"
+                className={DARK_INPUT}
+                labelClassName={DARK_LABEL}
+                placeholder=""
+              />
 
-              <div>
-                <label className="text-sm font-sans text-[#F9F6F2] opacity-70 mb-2 block">Max bookings per day</label>
-                <input
-                  type="text"
-                  defaultValue="No limit"
-                  className="w-full bg-[rgba(255,255,255,0.03)] border border-[rgba(200,169,126,0.2)] rounded-xl px-4 py-2.5 text-[#F9F6F2] text-sm font-sans outline-none"
-                  placeholder=""
-                />
-              </div>
+              <FormInput
+                type="text"
+                label="Max bookings per day"
+                defaultValue="No limit"
+                className={DARK_INPUT}
+                labelClassName={DARK_LABEL}
+                placeholder=""
+              />
 
               <div>
                 <label className="text-sm font-sans text-[#F9F6F2] opacity-70 mb-2 block">What is included</label>
                 <div className="flex gap-2">
-                  <input
+                  <FormInput
                     type="text"
-                    className="flex-1 bg-[rgba(255,255,255,0.03)] border border-[rgba(200,169,126,0.2)] rounded-xl px-4 py-2.5 text-[#F9F6F2] text-sm font-sans outline-none"
+                    wrapperClassName="flex-1"
+                    className={DARK_INPUT}
                     placeholder=""
                   />
                   <button className="bg-[rgba(255,255,255,0.05)] border border-[rgba(200,169,126,0.2)] text-[#C8A97E] px-3 rounded-xl">

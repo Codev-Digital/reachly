@@ -6,6 +6,9 @@ import { signIn } from "next-auth/react";
 import Image from "next/image";
 import HeroImage from "../components/HeroImage";
 import { signUp } from "@/lib/auth-client";
+import { User, Mail } from "lucide-react";
+import FormInput, { FormError } from "@/components/FormInput";
+import { isValidEmail } from "@/lib/validators";
 
 function SignupForm() {
   const router = useRouter();
@@ -15,6 +18,8 @@ function SignupForm() {
   const [loading, setLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [error, setError] = useState("");
+  const [nameError, setNameError] = useState("");
+  const [emailError, setEmailError] = useState("");
 
   const [formData, setFormData] = useState({
     name: "",
@@ -24,8 +29,26 @@ function SignupForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
+    setNameError("");
+    setEmailError("");
+
+    // Client-side checks so obvious mistakes never hit the server
+    let hasError = false;
+    if (!formData.name.trim()) {
+      setNameError("Please enter your full name.");
+      hasError = true;
+    }
+    if (!formData.email.trim()) {
+      setEmailError("Please enter your email address.");
+      hasError = true;
+    } else if (!isValidEmail(formData.email)) {
+      setEmailError("Please enter a valid email address.");
+      hasError = true;
+    }
+    if (hasError) return;
+
+    setLoading(true);
 
     try {
       const res = await signUp(formData.name, formData.email, formData.ref);
@@ -35,7 +58,11 @@ function SignupForm() {
           `/verify-email?callbackUrl=${encodeURIComponent(signupCallbackWithRef)}`,
         );
       } else {
-        setError(res.error || "Something went wrong");
+        // The API tells us which field the problem belongs to
+        const message = res.error || "Something went wrong";
+        if (res.field === "name") setNameError(message);
+        else if (res.field === "email") setEmailError(message);
+        else setError(message);
       }
     } catch (err) {
       setError("Network error. Please try again.");
@@ -56,6 +83,8 @@ function SignupForm() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    if (e.target.name === "name" && nameError) setNameError("");
+    if (e.target.name === "email" && emailError) setEmailError("");
   };
 
   return (
@@ -85,82 +114,67 @@ function SignupForm() {
           </p>
         </div>
 
-        {error && (
-          <div className="mb-4 p-3.5 bg-red-50 border border-red-200 rounded-xl">
-            <p className="font-sans text-xs text-red-600 font-semibold">
-              {error}
-            </p>
-          </div>
-        )}
+        {/* <div
+          className="grid grid-cols-2 gap-3 mb-6"
+          role="group"
+          aria-label="Choose account type"
+        >
+          <button
+            type="button"
+            aria-pressed={userType === "user"}
+            onClick={() => setUserType("user")}
+            className={`rounded-xl border px-4 py-3 text-sm font-bold transition-all ${
+              userType === "user"
+                ? "border-[#0012FF] bg-[#0012FF] text-white shadow-lg shadow-blue-500/20"
+                : "border-gray-200 bg-white text-gray-600 hover:border-[#0012FF]"
+            }`}
+          >
+            Create as User
+          </button>
+          <button
+            type="button"
+            aria-pressed={userType === "creator"}
+            onClick={() => setUserType("creator")}
+            className={`rounded-xl border px-4 py-3 text-sm font-bold transition-all ${
+              userType === "creator"
+                ? "border-[#0012FF] bg-[#0012FF] text-white shadow-lg shadow-blue-500/20"
+                : "border-gray-200 bg-white text-gray-600 hover:border-[#0012FF]"
+            }`}
+          >
+            Create as Creator
+          </button>
+        </div> */}
+   
+        {error && <FormError className="mb-4">{error}</FormError>}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} noValidate className="space-y-4">
           {/* Full Name */}
-          <div>
-            <label className="block font-sans text-gray-700 font-semibold text-xs mb-2">
-              Full Name <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                {/* User Icon */}
-                <svg
-                  className="w-4 h-4 text-[#0012FF]"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                  />
-                </svg>
-              </div>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                className="w-full bg-white border border-gray-200 rounded-xl pl-11 pr-4 py-3 font-sans text-sm text-black placeholder-gray-400 focus:outline-none focus:border-[#0012FF] transition-all"
-                placeholder="Enter your full name"
-                required
-              />
-            </div>
-          </div>
+          <FormInput
+            label="Full Name"
+            type="text"
+            name="name"
+            autoComplete="name"
+            required
+            placeholder="Enter your full name"
+            icon={<User className="w-4 h-4" />}
+            value={formData.name}
+            onChange={handleChange}
+            error={nameError}
+          />
 
           {/* Email Address */}
-          <div>
-            <label className="block font-sans text-gray-700 font-semibold text-xs mb-2">
-              Email Address <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                {/* Envelope Icon */}
-                <svg
-                  className="w-4 h-4 text-[#0012FF]"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                  />
-                </svg>
-              </div>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                className="w-full bg-white border border-gray-200 rounded-xl pl-11 pr-4 py-3 font-sans text-sm text-black placeholder-gray-400 focus:outline-none focus:border-[#0012FF] transition-all"
-                placeholder="Enter your email"
-                required
-              />
-            </div>
-          </div>
+          <FormInput
+            label="Email Address"
+            type="email"
+            name="email"
+            autoComplete="email"
+            required
+            placeholder="Enter your email"
+            icon={<Mail className="w-4 h-4" />}
+            value={formData.email}
+            onChange={handleChange}
+            error={emailError}
+          />
 
           {/* Action button */}
           <button

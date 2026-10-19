@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { updateSessionTypes } from '@/lib/auth-client';
 import LoadingAnimation from '@/components/LoadingAnimation';
 import { useOnboardingCleanup } from '@/hooks/useOnboardingCleanup';
+import FormInput from '@/components/FormInput';
 
 /* ─── types ─────────────────────────────────────────────────────────────── */
 interface SessionData {
@@ -302,11 +303,10 @@ export default function CreatorOnboardingStep3() {
                 <label className="block text-xs font-semibold text-gray-700 mb-2">
                   Title <span className="text-red-500">*</span>
                 </label>
-                <input
+                <FormInput
                   type="text"
                   value={formData.title}
                   onChange={e => setFormData(f => ({ ...f, title: e.target.value }))}
-                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] placeholder-gray-400"
                   placeholder="e.g. Career, Strategy, Call"
                 />
               </div>
@@ -366,12 +366,11 @@ export default function CreatorOnboardingStep3() {
                   <label className="block text-xs font-semibold text-gray-700 mb-2">
                     Price (PKR) <span className="text-red-500">*</span>
                   </label>
-                  <input
+                  <FormInput
                     type="number"
                     min="1"
                     value={formData.price}
                     onChange={e => setFormData(f => ({ ...f, price: e.target.value }))}
-                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] placeholder-gray-400"
                     placeholder="e.g. 1200"
                   />
                 </div>
@@ -385,11 +384,11 @@ export default function CreatorOnboardingStep3() {
                 <div className="space-y-2">
                   {formData.features.map((feat, i) => (
                     <div key={i} className="flex gap-2">
-                      <input
+                      <FormInput
                         type="text"
                         value={feat}
                         onChange={e => changeFeature(i, e.target.value)}
-                        className="flex-1 bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] placeholder-gray-400"
+                        wrapperClassName="flex-1"
                         placeholder="Feature 1"
                       />
                       {formData.features.length > 1 && (
@@ -421,12 +420,11 @@ export default function CreatorOnboardingStep3() {
                 <label className="block text-xs font-semibold text-gray-700 mb-2">
                   Max Bookings Per Day
                 </label>
-                <input
+                <FormInput
                   type="number"
                   min="1"
                   value={formData.maxBookings}
                   onChange={e => setFormData(f => ({ ...f, maxBookings: e.target.value }))}
-                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] placeholder-gray-400"
                   placeholder="e.g. 5"
                 />
               </div>

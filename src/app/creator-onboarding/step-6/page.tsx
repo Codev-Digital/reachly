@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import LoadingAnimation from '@/components/LoadingAnimation';
 import { useOnboardingCleanup } from '@/hooks/useOnboardingCleanup';
+import FormInput from '@/components/FormInput';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type PaymentMethod = 'jazzcash' | 'easypaisa' | 'bank';
@@ -37,6 +38,11 @@ const PAYOUT_OPTIONS: { value: PayoutFrequency; label: string; sub: string }[] =
 function isValidPKMobile(n: string) {
   return /^3\d{9}$/.test(n.replace(/\s/g, ''));
 }
+
+// This page is dark/gold themed (unlike the other onboarding steps), so FormInput gets dark overrides.
+const DARK_INPUT =
+  'bg-[#0C0C0C] border-[rgba(200,169,126,0.15)] focus:border-[#C8A97E] rounded-lg py-2.5 sm:py-3 text-white text-xs sm:text-sm';
+const DARK_ERROR = 'text-red-400';
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function CreatorOnboardingStep6() {
@@ -276,37 +282,35 @@ export default function CreatorOnboardingStep6() {
                 <label className="block font-sans text-[#F9F6F2] text-xs font-semibold mb-2">
                   Registered Mobile Number <span className="text-red-400">*</span>
                 </label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 font-sans text-[#F9F6F2] text-xs opacity-50 pointer-events-none select-none">
-                    +92
-                  </span>
-                  <input
-                    type="tel"
-                    value={mobileNumber}
-                    onChange={e => { setMobile(e.target.value); setFieldErrors(fe => { const n = { ...fe }; delete n.mobileNumber; return n; }); }}
-                    className={`w-full bg-[#0C0C0C] border rounded-lg pl-12 pr-4 py-2.5 sm:py-3 font-sans text-white text-xs sm:text-sm focus:outline-none ${fb('mobileNumber')}`}
-                    placeholder="3XX XXXXXXX"
-                    maxLength={10}
-                  />
-                </div>
-                {fieldErrors.mobileNumber
-                  ? <p className="text-red-400 text-xs mt-1">{fieldErrors.mobileNumber}</p>
-                  : <p className="font-sans text-[#F9F6F2] text-xs opacity-40 mt-1">10-digit number registered with your wallet</p>
-                }
+                <FormInput
+                  type="tel"
+                  value={mobileNumber}
+                  onChange={e => { setMobile(e.target.value); setFieldErrors(fe => { const n = { ...fe }; delete n.mobileNumber; return n; }); }}
+                  icon={<span className="font-sans text-[#F9F6F2] text-xs opacity-50 select-none">+92</span>}
+                  className={`${DARK_INPUT} pl-12`}
+                  errorClassName={DARK_ERROR}
+                  placeholder="3XX XXXXXXX"
+                  maxLength={10}
+                  error={fieldErrors.mobileNumber}
+                />
+                {!fieldErrors.mobileNumber && (
+                  <p className="font-sans text-[#F9F6F2] text-xs opacity-40 mt-1">10-digit number registered with your wallet</p>
+                )}
               </div>
               {/* Account title */}
               <div>
                 <label className="block font-sans text-[#F9F6F2] text-xs font-semibold mb-2">
                   Account Title <span className="text-red-400">*</span>
                 </label>
-                <input
+                <FormInput
                   type="text"
                   value={accountTitle}
                   onChange={e => { setAccountTitle(e.target.value); setFieldErrors(fe => { const n = { ...fe }; delete n.accountTitle; return n; }); }}
-                  className={`w-full bg-[#0C0C0C] border rounded-lg px-4 py-2.5 sm:py-3 font-sans text-white text-xs sm:text-sm focus:outline-none ${fb('accountTitle')}`}
+                  className={DARK_INPUT}
+                  errorClassName={DARK_ERROR}
                   placeholder="Full name as on CNIC"
+                  error={fieldErrors.accountTitle}
                 />
-                {fieldErrors.accountTitle && <p className="text-red-400 text-xs mt-1">{fieldErrors.accountTitle}</p>}
               </div>
             </div>
           </div>
@@ -321,14 +325,15 @@ export default function CreatorOnboardingStep6() {
                 <label className="block font-sans text-[#F9F6F2] text-xs font-semibold mb-2">
                   Account Title <span className="text-red-400">*</span>
                 </label>
-                <input
+                <FormInput
                   type="text"
                   value={bankAccountTitle}
                   onChange={e => { setBankAccTitle(e.target.value); setFieldErrors(fe => { const n = { ...fe }; delete n.bankAccountTitle; return n; }); }}
-                  className={`w-full bg-[#0C0C0C] border rounded-lg px-4 py-2.5 sm:py-3 font-sans text-white text-xs sm:text-sm focus:outline-none ${fb('bankAccountTitle')}`}
+                  className={DARK_INPUT}
+                  errorClassName={DARK_ERROR}
                   placeholder="Full name as on bank records"
+                  error={fieldErrors.bankAccountTitle}
                 />
-                {fieldErrors.bankAccountTitle && <p className="text-red-400 text-xs mt-1">{fieldErrors.bankAccountTitle}</p>}
               </div>
               {/* Bank name */}
               <div>
@@ -351,24 +356,25 @@ export default function CreatorOnboardingStep6() {
                   <label className="block font-sans text-[#F9F6F2] text-xs font-semibold mb-2">
                     Account Number <span className="text-red-400">*</span>
                   </label>
-                  <input
+                  <FormInput
                     type="text"
                     value={accountNumber}
                     onChange={e => { setAccountNumber(e.target.value); setFieldErrors(fe => { const n = { ...fe }; delete n.accountNumber; return n; }); }}
-                    className={`w-full bg-[#0C0C0C] border rounded-lg px-4 py-2.5 sm:py-3 font-sans text-white text-xs sm:text-sm focus:outline-none ${fb('accountNumber')}`}
+                    className={DARK_INPUT}
+                    errorClassName={DARK_ERROR}
                     placeholder="Your account number"
+                    error={fieldErrors.accountNumber}
                   />
-                  {fieldErrors.accountNumber && <p className="text-red-400 text-xs mt-1">{fieldErrors.accountNumber}</p>}
                 </div>
                 <div>
                   <label className="block font-sans text-[#F9F6F2] text-xs font-semibold mb-2">
                     IBAN <span className="font-normal opacity-50">(optional)</span>
                   </label>
-                  <input
+                  <FormInput
                     type="text"
                     value={iban}
                     onChange={e => setIban(e.target.value)}
-                    className="w-full bg-[#0C0C0C] border border-[rgba(200,169,126,0.15)] rounded-lg px-4 py-2.5 sm:py-3 font-sans text-white text-xs sm:text-sm focus:outline-none focus:border-[#C8A97E]"
+                    className={DARK_INPUT}
                     placeholder="PK00XXXX0000000000000000"
                   />
                 </div>
@@ -526,11 +532,11 @@ export default function CreatorOnboardingStep6() {
           </h3>
           <div>
             <label className="block font-sans text-[#F9F6F2] text-xs font-semibold mb-2">NTN Number</label>
-            <input
+            <FormInput
               type="text"
               value={ntnNumber}
               onChange={e => setNtn(e.target.value)}
-              className="w-full bg-[#0C0C0C] border border-[rgba(200,169,126,0.15)] rounded-lg px-4 py-2.5 sm:py-3 font-sans text-white text-xs sm:text-sm focus:outline-none focus:border-[#C8A97E]"
+              className={DARK_INPUT}
               placeholder="1234567-8"
             />
             <p className="font-sans text-[#F9F6F2] text-xs opacity-40 mt-1">Provide your NTN for proper tax documentation.</p>

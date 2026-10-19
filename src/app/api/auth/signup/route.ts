@@ -4,14 +4,30 @@ import User from "@/models/User";
 import { generateOTP, sendEmail, generateOTPEmail } from "@/lib/utils";
 import Referral from "@/models/referral.model";
 import mongoose from 'mongoose';
+import { isValidEmail } from "@/lib/validators";
 export async function POST(request: NextRequest) {
   try {
     await connectDB();
     const { name, email, ref } = await request.json();
 
-    if (!name || !email) {
+    // Each error carries a `field` so the UI can show it under the right input.
+    if (!name || !String(name).trim()) {
       return NextResponse.json(
-        { error: "Name and email are required" },
+        { error: "Please enter your full name.", field: "name" },
+        { status: 400 },
+      );
+    }
+
+    if (!email || !String(email).trim()) {
+      return NextResponse.json(
+        { error: "Please enter your email address.", field: "email" },
+        { status: 400 },
+      );
+    }
+
+    if (!isValidEmail(String(email))) {
+      return NextResponse.json(
+        { error: "Please enter a valid email address.", field: "email" },
         { status: 400 },
       );
     }
@@ -31,6 +47,7 @@ export async function POST(request: NextRequest) {
           {
             error:
               "An account with this email already exists. Please log in instead.",
+            field: "email",
           },
           { status: 400 },
         );

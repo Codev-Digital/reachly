@@ -4,6 +4,7 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
 import CreatorProfile from '@/models/CreatorProfile';
+import { sanitizeRichText } from '@/lib/sanitizeRichText';
 import CreatorPayment from '@/models/CreatorPayment';
 import Booking from '@/models/Booking';
 
@@ -95,7 +96,7 @@ export async function GET() {
         country: profile?.country || '',
         languages: profile?.languages?.join(', ') || 'English',
         bio: profile?.shortBio || '',
-        longBio: profile?.longBio || '',
+        longBio: sanitizeRichText(profile?.longBio),
         niches: profile?.niches || [],
         bannerName: profile?.displayName || user.name || 'Creator Name',
         bannerNiche: profile?.niches?.[0] || 'Content Creator',

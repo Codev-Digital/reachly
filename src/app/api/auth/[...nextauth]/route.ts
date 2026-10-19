@@ -30,8 +30,14 @@ export const authOptions: NextAuthOptions = {
       },
 
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error("Invalid email or password");
+        // The thrown message is returned to the client as `result.error` from
+        // signIn(..., { redirect: false }). We use stable codes so the login
+        // form can show the error under the correct field.
+        if (!credentials?.email) {
+          throw new Error("EMAIL_REQUIRED");
+        }
+        if (!credentials?.password) {
+          throw new Error("PASSWORD_REQUIRED");
         }
 
         await connectDB();
@@ -40,18 +46,22 @@ export const authOptions: NextAuthOptions = {
           email: credentials.email.toLowerCase().trim(),
         });
 
-        if (!user || !user.password) {
-          throw new Error("Invalid email or password");
+        if (!user) {
+          throw new Error("EMAIL_NOT_REGISTERED");
+        }
+
+        if (!user.password) {
+          throw new Error("NO_PASSWORD");
         }
 
         const isMatch = await user.comparePassword(credentials.password);
 
         if (!isMatch) {
-          throw new Error("Invalid email or password");
+          throw new Error("WRONG_PASSWORD");
         }
 
         if (!user.isVerified) {
-          throw new Error("Please verify your email before signing in.");
+          throw new Error("EMAIL_NOT_VERIFIED");
         }
 
         return {

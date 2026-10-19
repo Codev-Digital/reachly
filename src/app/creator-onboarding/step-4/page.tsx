@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import LoadingAnimation from '@/components/LoadingAnimation';
 import { useOnboardingCleanup } from '@/hooks/useOnboardingCleanup';
+import FormInput from '@/components/FormInput';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type DayKey = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
@@ -437,11 +438,10 @@ export default function CreatorOnboardingStep4() {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-semibold text-gray-700 mb-2">Time</label>
-                      <input
+                      <FormInput
                         type="number"
                         value={duration.value}
                         onChange={(e) => setDuration({ ...duration, value: Number(e.target.value) })}
-                        className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF]"
                         min="1"
                       />
                     </div>
@@ -610,11 +610,11 @@ export default function CreatorOnboardingStep4() {
                 </label>
                 <div className="flex items-center gap-3">
                   <div className="w-20">
-                    <input
+                    <FormInput
                       type="number"
                       value={bookingWindowDays}
                       onChange={(e) => setWindow(Number(e.target.value))}
-                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] text-center"
+                      className="text-center"
                       min="1"
                     />
                   </div>
@@ -629,11 +629,11 @@ export default function CreatorOnboardingStep4() {
                 </label>
                 <div className="flex items-center gap-3">
                   <div className="w-20">
-                    <input
+                    <FormInput
                       type="number"
                       value={minNoticeHours}
                       onChange={(e) => setNotice(Number(e.target.value))}
-                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] text-center"
+                      className="text-center"
                       min="0"
                     />
                   </div>
@@ -648,11 +648,11 @@ export default function CreatorOnboardingStep4() {
                 </label>
                 <div className="flex items-center gap-3">
                   <div className="w-20">
-                    <input
+                    <FormInput
                       type="number"
                       value={meetingLimits.count}
                       onChange={(e) => setMeetingLimits({ ...meetingLimits, count: Number(e.target.value) })}
-                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] text-center"
+                      className="text-center"
                       min="1"
                     />
                   </div>

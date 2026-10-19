@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
 
     if (password !== confirmPassword) {
       return NextResponse.json(
-        { error: 'Passwords do not match' },
+        { error: 'Passwords do not match.', field: 'confirmPassword' },
         { status: 400 }
       );
     }
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     const strengthCheck = checkPasswordStrength(password);
     if (strengthCheck.strength === 'weak') {
       return NextResponse.json(
-        { error: strengthCheck.message, strength: strengthCheck.strength },
+        { error: strengthCheck.message, strength: strengthCheck.strength, field: 'password' },
         { status: 400 }
       );
     }
