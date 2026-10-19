@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
+import { postAuthRoute } from "@/lib/postAuthRoute";
 
 // ─── Simple In-Memory Rate Limiter ──────────────────────────────────────────
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
@@ -151,11 +152,15 @@ export async function middleware(request: NextRequest) {
   const isCreator = isApprovedCreator(approvalStatus, hasCreatorProfile);
   const isPendingCreator = approvalStatus === "pending";
   const isPendingUser = approvalStatus === "pending" && !hasCreatorProfile;
-  const isInOnboarding =
-    onboardingStep > 0 &&
-    !isCreator &&
-    approvalStatus !== "pending" &&
-    approvalStatus !== "rejected";
+
+  const isRejected = approvalStatus === "rejected";
+  const home = {
+    isAdmin,
+    approvalStatus,
+    onboardingStep,
+    hasSeenWelcome,
+    hasCreatorProfile,
+  };
 
   // ── 1. ADMIN ROUTES — only admin emails allowed ───────────────────────────
   if (pathname.startsWith(ADMIN_PREFIX)) {
@@ -171,14 +176,7 @@ export async function middleware(request: NextRequest) {
       // Logged in but not admin → send to their correct home
       return NextResponse.redirect(
         new URL(
-          getHomeForRole({
-            isAdmin,
-            isCreator,
-            isPendingCreator,
-            isPendingUser,
-            isInOnboarding,
-            hasSeenWelcome,
-          }),
+          postAuthRoute(home),
           request.url,
         ),
       );
@@ -200,6 +198,9 @@ export async function middleware(request: NextRequest) {
       // Admins should not access creator dashboard
       return NextResponse.redirect(new URL("/admin/dashboard", request.url));
     }
+    if (isRejected) {
+      return NextResponse.redirect(new URL("/rejected", request.url));
+    }
     if (pathname === "/creators/pending-approval") {
       return NextResponse.next();
     }
@@ -213,7 +214,7 @@ export async function middleware(request: NextRequest) {
     }
     if (!isCreator && !isPendingCreator) {
       // Regular user or unapproved trying to access creator dashboard
-      return NextResponse.redirect(new URL("/user/dashboard", request.url));
+      return NextResponse.redirect(new URL(postAuthRoute(home), request.url));
     }
     return NextResponse.next();
   }
@@ -230,6 +231,9 @@ export async function middleware(request: NextRequest) {
     }
     if (isAdmin) {
       return NextResponse.redirect(new URL("/admin/dashboard", request.url));
+    }
+    if (isRejected) {
+      return NextResponse.redirect(new URL("/rejected", request.url));
     }
     if (isCreator) {
       // Already approved, no need to onboard again
@@ -265,6 +269,29 @@ export async function middleware(request: NextRequest) {
     if (isPendingUser && pathname !== USER_PENDING_PAGE) {
       return NextResponse.redirect(new URL(USER_PENDING_PAGE, request.url));
     }
+    // Not approved yet (none/rejected): send to the right onboarding step
+    if (!isPendingUser && approvalStatus !== "approved" && approvalStatus !== "active") {
+      return NextResponse.redirect(new URL(postAuthRoute(home), request.url));
+    }
+    return NextResponse.next();
+  }
+
+  // ── 4b. USER ONBOARDING / REJECTED SCREEN — login required ────────────────
+  if (pathname === "/user-onboarding" || pathname === "/rejected") {
+    if (!isLoggedIn) {
+      return NextResponse.redirect(
+        new URL(`/login?callbackUrl=${encodeURIComponent(pathname)}`, request.url),
+      );
+    }
+    const target = postAuthRoute(home);
+    // /user-onboarding: allow none, and pending users without a creator profile
+    // (the page sends them back to pending-approval if their info is complete).
+    const allowed =
+      pathname === "/rejected"
+        ? isRejected
+        : !isAdmin && !isRejected && !hasCreatorProfile && onboardingStep === 0 &&
+          (approvalStatus === "none" || isPendingUser);
+    if (!allowed) return NextResponse.redirect(new URL(target, request.url));
     return NextResponse.next();
   }
 
@@ -273,14 +300,7 @@ export async function middleware(request: NextRequest) {
     if (isLoggedIn && isComplete) {
       return NextResponse.redirect(
         new URL(
-          getHomeForRole({
-            isAdmin,
-            isCreator,
-            isPendingCreator,
-            isPendingUser,
-            isInOnboarding,
-            hasSeenWelcome,
-          }),
+          postAuthRoute(home),
           request.url,
         ),
       );
@@ -304,31 +324,6 @@ export async function middleware(request: NextRequest) {
 
   // ── 7. Everything else is public — allow through ──────────────────────────
   return NextResponse.next();
-}
-
-/** Returns the correct home URL based on the user's role */
-function getHomeForRole({
-  isAdmin,
-  isCreator,
-  isPendingCreator,
-  isPendingUser,
-  isInOnboarding,
-  hasSeenWelcome,
-}: {
-  isAdmin: boolean;
-  isCreator: boolean;
-  isPendingCreator: boolean;
-  isPendingUser: boolean;
-  isInOnboarding: boolean;
-  hasSeenWelcome: boolean;
-}) {
-  if (isAdmin) return "/admin/dashboard";
-  if (isCreator) return "/creators/dashboard";
-  if (isPendingCreator) return "/creators/pending-approval";
-  if (isPendingUser) return "/user/pending-approval";
-  if (isInOnboarding) return "/creator-onboarding/step-1";
-  if (!hasSeenWelcome) return "/welcome";
-  return "/user/dashboard";
 }
 
 export const config = {

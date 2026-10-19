@@ -6,6 +6,7 @@ import { Suspense, useEffect, useState, useRef } from "react";
 import LoadingAnimation from "@/components/LoadingAnimation";
 import WelcomeModal from "@/components/WelcomeModal";
 import Home from "../page";
+import { postAuthRoute } from "@/lib/postAuthRoute";
 
 function WelcomeContent() {
   const router = useRouter();
@@ -35,62 +36,14 @@ function WelcomeContent() {
           const data = await res.json();
           setUserData(data);
 
-          if (
-            data.user.email === "admin@reachly.com" ||
-            data.user.email === "abdullahgotaccess@gmail.com"
-          ) {
+          const target = postAuthRoute({
+            ...data.user,
+            isAdmin: ["admin@reachly.com", "abdullahgotaccess@gmail.com"].includes(data.user.email),
+          });
+          if (target !== "/welcome") {
             setRedirected(true);
             hasSelected.current = true;
-            router.replace("/admin/requests");
-            return;
-          }
-
-          if (
-            data.user.approvalStatus === "pending" &&
-            data.user.hasCreatorProfile
-          ) {
-            setRedirected(true);
-            hasSelected.current = true;
-            router.replace("/creators/pending-approval");
-            return;
-          }
-
-          if (data.user.approvalStatus === "pending") {
-            setRedirected(true);
-            hasSelected.current = true;
-            router.replace("/user/pending-approval");
-            return;
-          }
-
-          if (data.creatorProfile) {
-            setRedirected(true);
-            hasSelected.current = true;
-            if (
-              data.user.approvalStatus === "approved" &&
-              data.creatorProfile.isProfileComplete
-            ) {
-              router.replace("/creators/dashboard");
-            } else if (!data.creatorProfile.isProfileComplete) {
-              router.replace("/creator-onboarding/step-1");
-            } else {
-              router.replace("/creators/pending-approval");
-            }
-            return;
-          }
-
-          if (data.user.onboardingStep > 0) {
-            setRedirected(true);
-            hasSelected.current = true;
-            router.replace(
-              `/creator-onboarding/step-${data.user.onboardingStep}`,
-            );
-            return;
-          }
-
-          if (data.user.hasSeenWelcome) {
-            setRedirected(true);
-            hasSelected.current = true;
-            router.replace("/user/dashboard");
+            router.replace(target);
             return;
           }
         }
@@ -116,14 +69,14 @@ function WelcomeContent() {
       router.push(
         selected === "creator"
           ? "/creator-onboarding/step-1"
-          : "/user/pending-approval",
+          : "/user-onboarding",
       );
     } catch (error) {
       console.error("Error updating onboarding step:", error);
       router.push(
         selected === "creator"
           ? "/creator-onboarding/step-1"
-          : "/user/pending-approval",
+          : "/user-onboarding",
       );
     } finally {
       setIsLoadingButton(false);

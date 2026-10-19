@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { Mail, MapPin, Phone } from "lucide-react";
 import CreatorNavbar from "@/components/CreatorNavbar";
@@ -17,6 +17,16 @@ export default function ContactSupportPage() {
     subject: "",
     message: "",
   });
+  // Prefill from ?fullName=&email=&subject= (used by the /rejected screen)
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    setForm((f) => ({
+      ...f,
+      fullName: q.get("fullName") || f.fullName,
+      email: q.get("email") || f.email,
+      subject: q.get("subject") || f.subject,
+    }));
+  }, []);
   const [status, setStatus] = useState<
     "idle" | "sending" | "success" | "error"
   >("idle");

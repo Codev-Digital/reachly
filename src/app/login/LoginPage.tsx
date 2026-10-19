@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import Image from 'next/image';
 import HeroImage from '../components/HeroImage';
+import { postAuthRoute } from '@/lib/postAuthRoute';
 import PasswordToggle from '@/components/PasswordToggle';
 
 export default function LoginPage() {
@@ -18,14 +19,7 @@ export default function LoginPage() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const callbackUrl = searchParams.get('callbackUrl') || '/welcome';
-  const initialUserType = callbackUrl.startsWith('/creator-onboarding') ? 'creator' : 'user';
-  const [userType, setUserType] = useState<'user' | 'creator'>(initialUserType);
-  const googleCallbackUrl = userType === 'creator'
-    ? '/creator-onboarding/step-1'
-    : '/user/pending-approval';
-  const signupUrl = callbackUrl.startsWith('/creator-onboarding')
-    ? `/signup?type=creator&callbackUrl=${encodeURIComponent(callbackUrl)}`
-    : `/signup?callbackUrl=${encodeURIComponent(callbackUrl)}`;
+  const signupUrl = `/signup?callbackUrl=${encodeURIComponent(callbackUrl)}`;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,28 +44,11 @@ export default function LoginPage() {
 
         if (redirectRes.ok) {
           const redirectInfo = await redirectRes.json();
-          const { onboardingStep, approvalStatus, hasSeenWelcome, hasCreatorProfile } = redirectInfo;
-
-          const isFullyApproved = (approvalStatus === 'approved' || approvalStatus === 'active') && !!hasCreatorProfile;
-          const isInOnboarding = onboardingStep > 0 && !isFullyApproved && approvalStatus !== 'pending';
+          const isAdmin = ['admin@reachly.com', 'abdullahgotaccess@gmail.com'].includes(email.toLowerCase().trim());
           const isBookingPath = callbackUrl.startsWith('/creators/') && callbackUrl.includes('/book-session');
+          const target = postAuthRoute({ ...redirectInfo, isAdmin });
 
-          if (email.toLowerCase().trim() === 'admin@reachly.com' || email.toLowerCase().trim() === 'abdullahgotaccess@gmail.com') {
-            router.replace('/admin/dashboard');
-          } else if (approvalStatus === 'pending') {
-            router.replace(hasCreatorProfile ? '/creators/pending-approval' : '/user/pending-approval');
-          } else if (isBookingPath) {
-            router.replace(callbackUrl);
-          } else if (isFullyApproved) {
-            router.replace('/creators/dashboard');
-          } else if (isInOnboarding) {
-            const resumeStep = Math.max(1, Math.min(onboardingStep, 7));
-            router.replace(`/creator-onboarding/step-${resumeStep}`);
-          } else if (!hasSeenWelcome) {
-            router.replace('/welcome');
-          } else {
-            router.replace('/user/dashboard');
-          }
+          router.replace(isBookingPath && (target === '/user/dashboard' || target === '/creators/dashboard') ? callbackUrl : target);
         } else {
           router.replace('/welcome');
         }
@@ -86,7 +63,7 @@ export default function LoginPage() {
 
   const handleGoogleSignIn = () => {
     setIsGoogleLoading(true);
-    signIn('google', { callbackUrl: googleCallbackUrl });
+    signIn('google', { callbackUrl: '/welcome' });
   };
 
   return (
@@ -119,37 +96,6 @@ export default function LoginPage() {
                 <p className="font-sans text-gray-400 text-sm">
                   Login to your Reachly account to continue
                 </p>
-              </div>
-
-              <div
-                className="grid grid-cols-2 gap-3 mb-6"
-                role="group"
-                aria-label="Choose account type"
-              >
-                <button
-                  type="button"
-                  aria-pressed={userType === 'user'}
-                  onClick={() => setUserType('user')}
-                  className={`rounded-xl border px-4 py-3 text-sm font-bold transition-all ${
-                    userType === 'user'
-                      ? 'border-[#0012FF] bg-[#0012FF] text-white shadow-lg shadow-blue-500/20'
-                      : 'border-gray-200 bg-white text-gray-600 hover:border-[#0012FF]'
-                  }`}
-                >
-                  Continue as User
-                </button>
-                <button
-                  type="button"
-                  aria-pressed={userType === 'creator'}
-                  onClick={() => setUserType('creator')}
-                  className={`rounded-xl border px-4 py-3 text-sm font-bold transition-all ${
-                    userType === 'creator'
-                      ? 'border-[#0012FF] bg-[#0012FF] text-white shadow-lg shadow-blue-500/20'
-                      : 'border-gray-200 bg-white text-gray-600 hover:border-[#0012FF]'
-                  }`}
-                >
-                  Continue as Creator
-                </button>
               </div>
 
               {error && (

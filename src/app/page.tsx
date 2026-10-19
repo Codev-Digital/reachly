@@ -260,7 +260,7 @@ export default function Home() {
                 <Link href="/explore-creators" className="bg-white text-[#001F7D] font-sans font-semibold px-8 py-3 rounded-full text-sm hover:bg-white/90 transition-all">
                   Explore Creators
                 </Link>
-                <Link href="/signup?type=creator" className="border border-white/50 text-white font-sans font-semibold px-8 py-3 rounded-full text-sm hover:bg-white/10 transition-all">
+                <Link href="/signup" className="border border-white/50 text-white font-sans font-semibold px-8 py-3 rounded-full text-sm hover:bg-white/10 transition-all">
                   Become a Creator
                 </Link>
               </div>
@@ -1198,7 +1198,7 @@ export default function Home() {
                 transition={{ duration: 0.4, delay: 0.35 }}
               >
                 <Link
-                  href="/signup?type=creator"
+                  href="/signup"
                   className="inline-block bg-white text-[#1a0aff] font-sans font-semibold px-8 py-3 rounded-full text-sm hover:bg-white/92 active:scale-95 transition-all shadow-lg border border-white/30"
                 >
                   Get Started
