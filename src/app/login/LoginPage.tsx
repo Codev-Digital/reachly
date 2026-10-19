@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import Image from 'next/image';
 import HeroImage from '../components/HeroImage';
@@ -10,9 +10,8 @@ import FormInput, { FormError } from '@/components/FormInput';
 import { isValidEmail } from '@/lib/validators';
 import { postAuthRoute } from '@/lib/postAuthRoute';
 
-export default function LoginPage() {
+export default function LoginPage({ callbackUrl }: { callbackUrl: string }) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -21,7 +20,6 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
-  const callbackUrl = searchParams.get('callbackUrl') || '/welcome';
   const signupUrl = `/signup?callbackUrl=${encodeURIComponent(callbackUrl)}`;
 
   const handleSubmit = async (e: React.FormEvent) => {

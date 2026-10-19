@@ -27,6 +27,13 @@ const REQUIRED: Record<string, string> = {
 export default function CreatorOnboardingStep2() {
   const router = useRouter();
   useOnboardingCleanup();
+  const [canChangeRole, setCanChangeRole] = useState(false);
+  useEffect(() => {
+    fetch('/api/user/me')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setCanChangeRole(!!d && d.user.approvalStatus === 'none' && (d.user.onboardingStep || 0) <= 1))
+      .catch(() => {});
+  }, []);
   const [loading, setLoading] = useState(false);
   const [fetchingData, setFetchingData] = useState(true);
   const [error, setError] = useState('');
@@ -322,6 +329,15 @@ export default function CreatorOnboardingStep2() {
 
 
       <form onSubmit={handleSubmit} noValidate className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
+        {canChangeRole && (
+          <button
+            type="button"
+            onClick={() => router.push('/welcome?change=1')}
+            className="text-sm text-gray-500 hover:text-gray-900 font-semibold mb-4"
+          >
+            ← Change role
+          </button>
+        )}
         <div className="mb-8">
           <h1 className="font-anton text-4xl font-bold text-black mb-2">
             Profile Setup

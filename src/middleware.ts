@@ -241,7 +241,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // ── 4. USER ROUTES — must be logged in (guest bookings exception handled in page) ──
-  if (pathname.startsWith(USER_PREFIX)) {
+  if (pathname === USER_PREFIX || pathname.startsWith(USER_PREFIX + "/")) {
     // Special case: /user/bookings with guestEmail param is allowed without login
     if (
       pathname === "/user/bookings" &&

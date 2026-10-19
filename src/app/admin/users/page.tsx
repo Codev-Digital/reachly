@@ -5,30 +5,14 @@ import { AdminListSkeleton } from '@/components/admin/AdminSkeletons';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 import { usePreloadImages } from '@/lib/usePreloadImages';
 import ActionDialog from '@/components/ActionDialog';
-
-interface User {
-  id: string;
-  dbId?: string;
-  name: string;
-  username: string;
-  email: string;
-  joinedDate: string;
-  time: string;
-  status: 'Active' | 'Pending' | 'Inactive' | 'Suspended';
-  avatar: string;
-  city?: string;
-  country?: string;
-  languages?: string;
-  bio?: string;
-}
+import UserDetailDialog, { AdminUser as User } from '@/components/admin/UserDetailDialog';
 
 export default function UsersPage() {
   usePreloadImages(['/assets/cancel-appointment-sm.webp']);
-  const router = useRouter();
-  const openDetail = (u: User) => router.push(`/admin/users/${u.dbId || u.id}`);
+  const [activeUser, setActiveUser] = useState<User | null>(null);
+  const openDetail = (u: User) => setActiveUser(u);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<'All Statuses' | 'Active' | 'Pending' | 'Inactive' | 'Suspended'>('All Statuses');
@@ -94,6 +78,23 @@ export default function UsersPage() {
         setShowDeleteModal(false);
         setUserToDelete(null);
       }
+    }
+  };
+
+  const handleStatusAction = async (user: User, action: 'approve' | 'reject' | 'suspend' | 'activate') => {
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.dbId || user.id, action }),
+      });
+      if (!res.ok) return (await res.json()).error || 'Failed to update status.';
+      const status = action === 'approve' || action === 'activate' ? 'Active' : 'Suspended';
+      setUsers(prev => prev.map(u => (u.id === user.id ? { ...u, status } : u)));
+      setActiveUser(null);
+      return null;
+    } catch {
+      return 'Error updating status.';
     }
   };
 
@@ -412,6 +413,13 @@ export default function UsersPage() {
           </div>
         </div>
       </div>
+
+      <UserDetailDialog
+        user={activeUser}
+        onClose={() => setActiveUser(null)}
+        onAction={handleStatusAction}
+        onDelete={(u) => { setActiveUser(null); handleDeleteClick(u); }}
+      />
 
       {/* Delete Confirmation Modal */}
       <ActionDialog

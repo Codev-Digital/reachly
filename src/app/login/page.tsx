@@ -1,10 +1,12 @@
-import { Suspense } from 'react';
 import LoginPage from './LoginPage';
 
-export default function Page() {
-  return (
-    <Suspense fallback={null}>
-      <LoginPage />
-    </Suspense>
-  );
+// Reading searchParams on the server lets the whole form render in the first
+// HTML, instead of waiting for client JS behind a Suspense fallback.
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ callbackUrl?: string }>;
+}) {
+  const { callbackUrl } = await searchParams;
+  return <LoginPage callbackUrl={callbackUrl || '/welcome'} />;
 }

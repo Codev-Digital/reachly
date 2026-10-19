@@ -10,14 +10,14 @@ import { postAuthRoute } from "@/lib/postAuthRoute";
 
 function WelcomeContent() {
   const router = useRouter();
-  const { status } = useSession();
+  const { status, update } = useSession();
   const [redirected, setRedirected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingButton, setIsLoadingButton] = useState(false);
   const [userData, setUserData] = useState<any>(null);
-  const [selected, setSelected] = useState<"user" | "creator" | null>(null);
   const searchParams = useSearchParams();
   const ref = searchParams.get("ref");
+  const changing = searchParams.get("change") === "1";
   console.log("Referral Code in Welcome Page:", ref); // Log the referral code to the console
   const hasSelected = useRef(false);
 
@@ -38,9 +38,16 @@ function WelcomeContent() {
 
           const target = postAuthRoute({
             ...data.user,
-            isAdmin: ["admin@reachly.com", "abdullahgotaccess@gmail.com"].includes(data.user.email),
+            isAdmin: [
+              "admin@reachly.com",
+              "abdullahgotaccess@gmail.com",
+            ].includes(data.user.email),
           });
-          if (target !== "/welcome") {
+          const canChange =
+            changing &&
+            data.user.approvalStatus === "none" &&
+            (data.user.onboardingStep || 0) <= 1;
+          if (target !== "/welcome" && !canChange) {
             setRedirected(true);
             hasSelected.current = true;
             router.replace(target);
@@ -94,8 +101,8 @@ function WelcomeContent() {
     return () => clearTimeout(t);
   }, [ready]);
 
-  const handleNext = async () => {
-    if (!selected || hasSelected.current) return;
+  const handleChoose = async (selected: "user" | "creator") => {
+    if (hasSelected.current) return;
     hasSelected.current = true;
     setIsLoadingButton(true);
 
@@ -103,8 +110,13 @@ function WelcomeContent() {
       await fetch("/api/user/update-onboarding-step", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ step: selected === "creator" ? 1 : 0, ref }),
+        body: JSON.stringify({
+          step: selected === "creator" ? 1 : 0,
+          ref,
+          force: true,
+        }),
       });
+      await update(); // refresh the session token so the middleware sees the new state
       router.push(
         selected === "creator"
           ? "/creator-onboarding/step-1"
@@ -126,38 +138,11 @@ function WelcomeContent() {
     (userData?.user?.name || "").trim().split(" ")[0] || "there";
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
-      <div className="pointer-events-none select-none" aria-hidden="true">
-        <Home />
-        <div className="fixed top-[88px] inset-x-0 z-20 px-4 sm:px-6">
-          <div className="max-w-7xl mx-auto flex items-center gap-2 rounded-md bg-[#e6f4ea] text-[#137333] text-sm font-medium px-4 py-2.5 shadow-sm">
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              aria-hidden="true"
-            >
-              <circle cx="12" cy="12" r="10" fill="#137333" />
-              <path
-                d="M8 12.5l2.5 2.5L16 9.5"
-                stroke="white"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            Your account has been created.
-          </div>
-        </div>
-      </div>
-
+    <div className="relative min-h-screen bg-white overflow-hidden">
       {ready && (
         <WelcomeModal
           firstName={firstName}
-          selected={selected}
-          onSelect={setSelected}
-          onNext={handleNext}
+          onChoose={handleChoose}
           loading={isLoadingButton}
         />
       )}

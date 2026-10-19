@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+/* Poppins is the app-wide sans font (font-sans + body) */
+@theme inline {
+  --font-sans: var(--font-poppins), system-ui, sans-serif;
+}
+
 @keyframes checkPop {
   0% { transform: scale(0.5); opacity: 0; }
   60% { transform: scale(1.15); opacity: 1; }
@@ -31,7 +36,7 @@
 body {
   background-color: var(--color-background);
   color: var(--color-text-light);
-  font-family: var(--font-inter);
+  font-family: var(--font-poppins), system-ui, sans-serif;
   margin: 0;
   padding: 0;
   min-height: 100vh;
@@ -60,6 +65,10 @@ a:hover,
 
 .font-inter {
   font-family: var(--font-inter);
+}
+
+.font-poppins {
+  font-family: var(--font-poppins), system-ui, sans-serif;
 }
 
 .font-anton {
