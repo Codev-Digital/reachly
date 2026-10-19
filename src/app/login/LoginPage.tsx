@@ -22,9 +22,7 @@ export default function LoginPage() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const callbackUrl = searchParams.get('callbackUrl') || '/welcome';
-  const signupUrl = callbackUrl.startsWith('/creator-onboarding')
-    ? `/signup?type=creator&callbackUrl=${encodeURIComponent(callbackUrl)}`
-    : `/signup?callbackUrl=${encodeURIComponent(callbackUrl)}`;
+  const signupUrl = `/signup?callbackUrl=${encodeURIComponent(callbackUrl)}`;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -143,40 +141,6 @@ export default function LoginPage() {
                   Login to your Reachly account to continue
                 </p>
               </div>
-
-              {/* Account-type buttons are only needed on signup. On login the role is
-                  detected from the account (email) after sign-in.
-              <div
-                className="grid grid-cols-2 gap-3 mb-6"
-                role="group"
-                aria-label="Choose account type"
-              >
-                <button
-                  type="button"
-                  aria-pressed={userType === 'user'}
-                  onClick={() => setUserType('user')}
-                  className={`rounded-xl border px-4 py-3 text-sm font-bold transition-all ${
-                    userType === 'user'
-                      ? 'border-[#0012FF] bg-[#0012FF] text-white shadow-lg shadow-blue-500/20'
-                      : 'border-gray-200 bg-white text-gray-600 hover:border-[#0012FF]'
-                  }`}
-                >
-                  Continue as User
-                </button>
-                <button
-                  type="button"
-                  aria-pressed={userType === 'creator'}
-                  onClick={() => setUserType('creator')}
-                  className={`rounded-xl border px-4 py-3 text-sm font-bold transition-all ${
-                    userType === 'creator'
-                      ? 'border-[#0012FF] bg-[#0012FF] text-white shadow-lg shadow-blue-500/20'
-                      : 'border-gray-200 bg-white text-gray-600 hover:border-[#0012FF]'
-                  }`}
-                >
-                  Continue as Creator
-                </button>
-              </div>
-              */}
 
               {error && <FormError className="mb-4">{error}</FormError>}
 

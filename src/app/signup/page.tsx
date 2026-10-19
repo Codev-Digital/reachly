@@ -114,37 +114,6 @@ function SignupForm() {
           </p>
         </div>
 
-        {/* <div
-          className="grid grid-cols-2 gap-3 mb-6"
-          role="group"
-          aria-label="Choose account type"
-        >
-          <button
-            type="button"
-            aria-pressed={userType === "user"}
-            onClick={() => setUserType("user")}
-            className={`rounded-xl border px-4 py-3 text-sm font-bold transition-all ${
-              userType === "user"
-                ? "border-[#0012FF] bg-[#0012FF] text-white shadow-lg shadow-blue-500/20"
-                : "border-gray-200 bg-white text-gray-600 hover:border-[#0012FF]"
-            }`}
-          >
-            Create as User
-          </button>
-          <button
-            type="button"
-            aria-pressed={userType === "creator"}
-            onClick={() => setUserType("creator")}
-            className={`rounded-xl border px-4 py-3 text-sm font-bold transition-all ${
-              userType === "creator"
-                ? "border-[#0012FF] bg-[#0012FF] text-white shadow-lg shadow-blue-500/20"
-                : "border-gray-200 bg-white text-gray-600 hover:border-[#0012FF]"
-            }`}
-          >
-            Create as Creator
-          </button>
-        </div> */}
-   
         {error && <FormError className="mb-4">{error}</FormError>}
 
         <form onSubmit={handleSubmit} noValidate className="space-y-4">
