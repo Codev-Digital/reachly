@@ -8,6 +8,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import CreatorNavbar from '@/components/CreatorNavbar';
 import Footer from '@/components/Footer';
+import SmoothScroll from '@/components/SmoothScroll';
 import Image from "next/image";
 
 /* ─── Fade-in-up wrapper for scroll-triggered sections ─── */
@@ -228,6 +229,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen">
+      <SmoothScroll />
       <CreatorNavbar />
 
       {/* ════════════════════════════════════════
