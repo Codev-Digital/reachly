@@ -40,6 +40,16 @@ export async function POST(request: NextRequest) {
     const normalizedEmail = email.toLowerCase().trim();
     const existingUser = await User.findOne({ email: normalizedEmail });
 
+    if (existingUser?.approvalStatus === "deleted") {
+      return NextResponse.json(
+        {
+          error: "This account was deleted. Please contact support.",
+          field: "email",
+        },
+        { status: 400 },
+      );
+    }
+
     if (existingUser) {
       // If registration is fully complete, reject
       if (existingUser.isRegistrationComplete) {

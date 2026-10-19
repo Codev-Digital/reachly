@@ -11,7 +11,7 @@ export interface AdminUser {
   email: string;
   joinedDate: string;
   time: string;
-  status: 'Active' | 'Pending' | 'Inactive' | 'Suspended';
+  status: 'Active' | 'Pending' | 'Inactive' | 'Suspended' | 'Rejected';
   avatar: string;
   city?: string;
   country?: string;
@@ -27,6 +27,7 @@ const statusColor: Record<AdminUser['status'], string> = {
   Pending: 'text-amber-500',
   Inactive: 'text-rose-500',
   Suspended: 'text-gray-500',
+  Rejected: 'text-rose-500',
 };
 
 const Field = ({ label, value, className = '' }: { label: string; value?: string; className?: string }) => (
@@ -115,7 +116,7 @@ export default function UserDetailDialog({
                   Suspend User
                 </button>
               )}
-              {user.status === 'Suspended' && (
+              {(user.status === 'Suspended' || user.status === 'Rejected') && (
                 <button disabled={busy} onClick={() => run('activate')} className={`${btn} bg-emerald-600 hover:bg-emerald-700`}>
                   Re-activate User
                 </button>

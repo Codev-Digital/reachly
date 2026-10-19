@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: 'User not found' }, { status: 404 });
       }
       const single = await User.findById(id).lean();
-      if (!single) {
+      if (!single || (single as any).approvalStatus === 'deleted') {
         return NextResponse.json({ error: 'User not found' }, { status: 404 });
       }
       const reqDoc = await UserApprovalRequest.findOne({ userId: single._id }).lean();
@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Fetch all users who are NOT creators
-    const normalUsers = await User.find({ _id: { $nin: creatorUserIds } }).sort({ createdAt: -1 }).lean();
+    const normalUsers = await User.find({ _id: { $nin: creatorUserIds }, approvalStatus: { $ne: 'deleted' } }).sort({ createdAt: -1 }).lean();
 
     const requests = await UserApprovalRequest.find({ userId: { $in: normalUsers.map((u: any) => u._id) } }).lean();
     const reqByUser = new Map(requests.map((r: any) => [r.userId.toString(), r]));
@@ -73,10 +73,12 @@ function formatUser(user: any, request?: any) {
 
   // Map status
   // Only an admin-approved account is Active; not-yet-applied ('none') is Inactive
-  let status: 'Active' | 'Pending' | 'Inactive' | 'Suspended' = 'Inactive';
+  // Only an admin-approved account is Active; not-yet-applied ('none') is Inactive
+  let status: 'Active' | 'Pending' | 'Inactive' | 'Suspended' | 'Rejected' = 'Inactive';
   if (user.approvalStatus === 'approved') status = 'Active';
   else if (user.approvalStatus === 'pending') status = 'Pending';
-  else if (user.approvalStatus === 'rejected') status = 'Suspended';
+  else if (user.approvalStatus === 'rejected') status = 'Rejected';
+  else if (user.approvalStatus === 'suspended') status = 'Suspended';
 
   return {
     id: `USR-${user._id.toString().slice(-5).toUpperCase()}`,
@@ -121,7 +123,7 @@ export async function PUT(req: NextRequest) {
     } else if (action === 'reject') {
       user.approvalStatus = 'rejected';
     } else if (action === 'suspend') {
-      user.approvalStatus = 'rejected'; // map suspension to rejected state
+      user.approvalStatus = 'suspended';
     } else if (action === 'activate') {
       user.approvalStatus = 'approved';
     }
@@ -129,11 +131,12 @@ export async function PUT(req: NextRequest) {
     await user.save();
 
     // Keep the approval request in sync so /admin/user-requests matches
-    const approved = user.approvalStatus === 'approved';
-    await UserApprovalRequest.updateOne(
-      { userId: user._id },
-      { status: approved ? 'approved' : 'rejected', reviewedAt: new Date() },
-    );
+    if (action === 'approve' || action === 'reject') {
+      await UserApprovalRequest.updateOne(
+        { userId: user._id },
+        { status: action === 'approve' ? 'approved' : 'rejected', reviewedAt: new Date() },
+      );
+    }
 
     return NextResponse.json({ success: true, message: `User status changed to ${action}d successfully` });
   } catch (error: any) {
@@ -158,13 +161,12 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
-    const user = await User.findByIdAndDelete(userId);
+    // Soft delete: keep the data, block the account, hide any creator profile
+    const user = await User.findByIdAndUpdate(userId, { approvalStatus: 'deleted', deletedAt: new Date() });
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
-
-    // Delete creator profile as well if it exists
-    await CreatorProfile.findOneAndDelete({ userId });
+    await CreatorProfile.updateOne({ userId }, { isDeactivated: true });
 
     return NextResponse.json({ success: true, message: 'User deleted successfully' });
   } catch (error: any) {

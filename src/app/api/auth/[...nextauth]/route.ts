@@ -60,6 +60,10 @@ export const authOptions: NextAuthOptions = {
           throw new Error("WRONG_PASSWORD");
         }
 
+        if (user.approvalStatus === "deleted") {
+          throw new Error("ACCOUNT_DELETED");
+        }
+
         if (!user.isVerified) {
           throw new Error("EMAIL_NOT_VERIFIED");
         }
@@ -106,6 +110,9 @@ export const authOptions: NextAuthOptions = {
             onboardingStep: 0,
             hasSeenWelcome: false,
           });
+        } else if (existingUser.approvalStatus === "deleted") {
+          // Soft-deleted account: send them to the contact-support notice
+          return `/account-deleted?email=${encodeURIComponent(user.email)}`;
         } else {
           // Google has verified this email; also covers accounts that started
           // with email signup and never finished it.
@@ -162,6 +169,9 @@ export const authOptions: NextAuthOptions = {
           await connectDB();
           const dbUser = await User.findOne({ email: String(token.email).toLowerCase().trim() }).lean();
           if (dbUser) {
+            if (dbUser.approvalStatus === 'deleted') {
+              return {} as any; // Soft-deleted account: end the session
+            }
             if (dbUser.isVerified === false) {
               return {} as any; // Invalidate unverified/revoked session
             }

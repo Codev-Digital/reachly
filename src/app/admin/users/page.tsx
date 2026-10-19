@@ -15,7 +15,7 @@ export default function UsersPage() {
   const openDetail = (u: User) => setActiveUser(u);
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedStatusFilter, setSelectedStatusFilter] = useState<'All Statuses' | 'Active' | 'Pending' | 'Inactive' | 'Suspended'>('All Statuses');
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState<'All Statuses' | 'Active' | 'Pending' | 'Inactive' | 'Suspended' | 'Rejected'>('All Statuses');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
@@ -89,7 +89,7 @@ export default function UsersPage() {
         body: JSON.stringify({ userId: user.dbId || user.id, action }),
       });
       if (!res.ok) return (await res.json()).error || 'Failed to update status.';
-      const status = action === 'approve' || action === 'activate' ? 'Active' : 'Suspended';
+      const status = action === 'approve' || action === 'activate' ? 'Active' : action === 'reject' ? 'Rejected' : 'Suspended';
       setUsers(prev => prev.map(u => (u.id === user.id ? { ...u, status } : u)));
       setActiveUser(null);
       return null;
@@ -168,7 +168,7 @@ export default function UsersPage() {
           </div>
           <div>
             <p className="text-[11px] text-white/90 font-semibold mb-0.5">Suspended & Inactive</p>
-            <p className="text-3xl font-black text-[#EF4444] leading-none mb-1">{users.filter(u => u.status === 'Inactive' || u.status === 'Suspended').length}</p>
+            <p className="text-3xl font-black text-[#EF4444] leading-none mb-1">{users.filter(u => u.status === 'Inactive' || u.status === 'Suspended' || u.status === 'Rejected').length}</p>
             <p className="text-[10px] text-white/90">Inactive or blocked users</p>
           </div>
         </div>
@@ -249,7 +249,7 @@ export default function UsersPage() {
                       exit={{ opacity: 0, y: 10 }}
                       className="absolute right-0 mt-2 bg-white border border-gray-100 rounded-2xl shadow-xl z-20 py-1.5 min-w-[170px] overflow-hidden"
                     >
-                      {(['All Statuses', 'Active', 'Pending', 'Inactive', 'Suspended'] as const).map((filter) => {
+                      {(['All Statuses', 'Active', 'Pending', 'Inactive', 'Suspended', 'Rejected'] as const).map((filter) => {
                         const isSelected = selectedStatusFilter === filter;
                         return (
                           <button

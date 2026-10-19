@@ -204,11 +204,11 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Delete Creator Profile if exists
-    await CreatorProfile.deleteOne({ userId: user._id });
-
-    // Delete User
-    await User.deleteOne({ _id: user._id });
+    // Soft delete: keep the data, block the account, hide any creator profile
+    await CreatorProfile.updateOne({ userId: user._id }, { isDeactivated: true });
+    user.approvalStatus = 'deleted';
+    user.deletedAt = new Date();
+    await user.save();
 
     return NextResponse.json({ success: true, message: 'Account deleted successfully' });
   } catch (error: any) {

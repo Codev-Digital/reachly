@@ -4,7 +4,7 @@ import { useState } from 'react';
 import ActionDialog from '@/components/ActionDialog';
 
 type Action = 'approve' | 'reject' | 'suspend' | 'activate';
-type Status = 'Active' | 'Pending' | 'Inactive' | 'Suspended';
+type Status = 'Active' | 'Pending' | 'Inactive' | 'Suspended' | 'Rejected';
 
 const COPY: Record<Action, { button: string; title: string; ok: string; ask: string; variant: 'success' | 'destructive'; img: string; style: string; solid: string }> = {
   approve: {
@@ -42,6 +42,7 @@ const BY_STATUS: Record<Status, Action[]> = {
   Pending: ['approve', 'reject'],
   Active: ['suspend'],
   Suspended: ['activate'],
+  Rejected: ['activate'],
   Inactive: [],
 };
 

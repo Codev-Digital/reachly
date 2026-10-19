@@ -36,7 +36,7 @@ export async function GET(
 
         // Fetch User, Sessions, and Bookings concurrently in parallel
         const [user, sessions, allBookings] = (await Promise.all([
-            User.findById(profile.userId).select('name isVerified email').lean(),
+            User.findById(profile.userId).select('name isVerified email approvalStatus').lean(),
             SessionType.find({ userId: profile.userId }).sort({ order: 1 }).lean(),
             Booking.find({ creatorId: profile.userId, status: { $ne: 'cancelled' } })
                 .select('scheduledDate scheduledTime guestDetails.email')
@@ -45,6 +45,11 @@ export async function GET(
 
         if (!user) {
             return NextResponse.json({ error: 'User data not found' }, { status: 404 });
+        }
+
+        // Deleted / suspended / rejected creators are not publicly bookable
+        if (['deleted', 'suspended', 'rejected'].includes(user.approvalStatus)) {
+            return NextResponse.json({ error: 'Creator not found' }, { status: 404 });
         }
 
         // Total session types this creator offers

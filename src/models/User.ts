@@ -15,7 +15,8 @@ export interface IUser extends Document {
   newEmail?: string;
   onboardingStep: number;
   hasSeenWelcome: boolean;
-  approvalStatus: 'none' | 'pending' | 'approved' | 'rejected';
+  approvalStatus: 'none' | 'pending' | 'approved' | 'rejected' | 'suspended' | 'deleted';
+  deletedAt?: Date;
   lastActiveAt?: Date;
   createdAt: Date;
   profilePhoto?: string;
@@ -55,9 +56,10 @@ const UserSchema = new Schema<IUser>(
     hasSeenWelcome: { type: Boolean, default: false },
     approvalStatus: { 
       type: String, 
-      enum: ['none', 'pending', 'approved', 'rejected'], 
+      enum: ['none', 'pending', 'approved', 'rejected', 'suspended', 'deleted'], 
       default: 'none' 
     },
+    deletedAt: { type: Date },
     lastActiveAt: { type: Date },
     profilePhoto: { type: String },
     savedCreators: { type: [String], default: [] },

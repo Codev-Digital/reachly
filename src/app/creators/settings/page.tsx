@@ -553,7 +553,7 @@ export default function CreatorSettings() {
         sessionStorage.clear();
 
         alert('Account deleted successfully');
-        logout('/signup');
+        logout('/account-deleted');
       } else {
         alert(data.error || 'Failed to delete account');
       }

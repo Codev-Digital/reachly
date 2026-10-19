@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     const user = await User.findOne({ email: email.toLowerCase().trim() });
 
     // Always respond with success to avoid leaking whether an email exists
-    if (!user || !user.isRegistrationComplete) {
+    if (!user || !user.isRegistrationComplete || user.approvalStatus === 'deleted') {
       return NextResponse.json({
         success: true,
         message: 'If that email is registered, you will receive a reset code.',

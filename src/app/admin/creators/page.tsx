@@ -18,7 +18,7 @@ interface Creator {
   joinedDate: string;
   time: string;
   eventsCreated: string;
-  status: 'Active' | 'Pending' | 'Inactive' | 'Suspended';
+  status: 'Active' | 'Pending' | 'Inactive' | 'Suspended' | 'Rejected';
   avatar: string;
   city?: string;
   country?: string;
@@ -43,7 +43,7 @@ export default function AdminCreatorsPage() {
   const openDetail = (c: Creator) => router.push(`/admin/creators/${c.dbId || c.id}`);
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedStatusFilter, setSelectedStatusFilter] = useState<'All Statuses' | 'Active' | 'Pending' | 'Inactive' | 'Suspended'>('All Statuses');
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState<'All Statuses' | 'Active' | 'Pending' | 'Inactive' | 'Suspended' | 'Rejected'>('All Statuses');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
@@ -68,7 +68,7 @@ export default function AdminCreatorsPage() {
   // Dynamic stats
   const totalCreators = creators.length;
   const activeCreators = creators.filter(c => c.status === 'Active').length;
-  const inactiveCreators = creators.filter(c => c.status === 'Inactive' || c.status === 'Suspended').length;
+  const inactiveCreators = creators.filter(c => c.status === 'Inactive' || c.status === 'Suspended' || c.status === 'Rejected').length;
   const pendingCreators = creators.filter(c => c.status === 'Pending').length;
 
   const loadCreators = async () => {
@@ -192,7 +192,7 @@ export default function AdminCreatorsPage() {
           <div>
             <p className="text-[11px] text-white/90 font-semibold mb-0.5">Inactive Creators</p>
             <p className="text-3xl font-black text-[#EF4444] leading-none mb-1">{inactiveCreators}</p>
-            <p className="text-[10px] text-white flex items-center gap-1">Suspended or incomplete</p>
+            <p className="text-[10px] text-white flex items-center gap-1">Suspended, rejected or incomplete</p>
           </div>
         </div>
 
@@ -272,7 +272,7 @@ export default function AdminCreatorsPage() {
                       exit={{ opacity: 0, y: 10 }}
                       className="absolute right-0 mt-2 bg-white border border-gray-100 rounded-2xl shadow-xl z-20 py-1.5 min-w-[170px] overflow-hidden"
                     >
-                      {(['All Statuses', 'Active', 'Pending', 'Inactive', 'Suspended'] as const).map((filter) => {
+                      {(['All Statuses', 'Active', 'Pending', 'Inactive', 'Suspended', 'Rejected'] as const).map((filter) => {
                         const isSelected = selectedStatusFilter === filter;
                         return (
                           <button

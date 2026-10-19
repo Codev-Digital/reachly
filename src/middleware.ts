@@ -151,7 +151,10 @@ export async function middleware(request: NextRequest) {
   const isPendingCreator = approvalStatus === "pending";
   const isPendingUser = approvalStatus === "pending" && !hasCreatorProfile;
 
-  const isRejected = approvalStatus === "rejected";
+  // Rejected / suspended accounts are locked out to a notice page
+  const blockedPath =
+    approvalStatus === "rejected" ? "/rejected" : approvalStatus === "suspended" ? "/suspended" : null;
+  const isRejected = !!blockedPath;
   const home = {
     isAdmin,
     approvalStatus,
@@ -197,7 +200,7 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL("/admin/dashboard", request.url));
     }
     if (isRejected) {
-      return NextResponse.redirect(new URL("/rejected", request.url));
+      return NextResponse.redirect(new URL(blockedPath!, request.url));
     }
     if (pathname === "/creators/pending-approval") {
       return NextResponse.next();
@@ -231,7 +234,7 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL("/admin/dashboard", request.url));
     }
     if (isRejected) {
-      return NextResponse.redirect(new URL("/rejected", request.url));
+      return NextResponse.redirect(new URL(blockedPath!, request.url));
     }
     if (isCreator) {
       // Already approved, no need to onboard again
@@ -275,7 +278,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // ── 4b. USER ONBOARDING / REJECTED SCREEN — login required ────────────────
-  if (pathname === "/user-onboarding" || pathname === "/rejected") {
+  if (pathname === "/user-onboarding" || pathname === "/rejected" || pathname === "/suspended") {
     if (!isLoggedIn) {
       return NextResponse.redirect(
         new URL(`/login?callbackUrl=${encodeURIComponent(pathname)}`, request.url),
@@ -285,8 +288,8 @@ export async function middleware(request: NextRequest) {
     // /user-onboarding: allow none, and pending users without a creator profile
     // (the page sends them back to pending-approval if their info is complete).
     const allowed =
-      pathname === "/rejected"
-        ? isRejected
+      pathname === "/rejected" || pathname === "/suspended"
+        ? pathname === blockedPath
         : !isAdmin && !isRejected && !hasCreatorProfile && onboardingStep === 0 &&
           (approvalStatus === "none" || isPendingUser);
     if (!allowed) return NextResponse.redirect(new URL(target, request.url));

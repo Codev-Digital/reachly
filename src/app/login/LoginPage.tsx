@@ -61,6 +61,9 @@ export default function LoginPage({ callbackUrl }: { callbackUrl: string }) {
           case 'EMAIL_NOT_REGISTERED':
             setEmailError('The email you entered is not registered, please check again.');
             break;
+          case 'ACCOUNT_DELETED':
+            router.push(`/account-deleted?email=${encodeURIComponent(email)}`);
+            break;
           case 'EMAIL_NOT_VERIFIED':
             setEmailError('Please verify your email before signing in.');
             break;

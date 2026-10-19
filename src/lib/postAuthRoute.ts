@@ -12,6 +12,8 @@ export function postAuthRoute(s: RouteState): string {
   const status = s.approvalStatus || 'none';
   if (s.isAdmin) return '/admin/dashboard';
   if (status === 'rejected') return '/rejected';
+  if (status === 'suspended') return '/suspended';
+  if (status === 'deleted') return '/account-deleted';
   if (status === 'approved' || status === 'active') {
     return s.hasCreatorProfile ? '/creators/dashboard' : '/user/dashboard';
   }

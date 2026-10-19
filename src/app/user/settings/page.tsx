@@ -177,7 +177,7 @@ export default function UserSettings() {
         sessionStorage.clear();
 
         alert('Account deleted successfully.');
-        logout('/signup');
+        logout('/account-deleted');
       } else {
         const err = await res.json();
         alert(err.error || 'Failed to delete account');
