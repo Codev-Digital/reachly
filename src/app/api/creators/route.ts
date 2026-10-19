@@ -4,8 +4,19 @@ import User from '@/models/User';
 import CreatorProfile from '@/models/CreatorProfile';
 import SessionType from '@/models/SessionType';
 
+// Public listing data: cache briefly so repeat visits don't pay for 3 DB round-trips each time.
+const CACHE_TTL_MS = 60 * 1000;
+const CACHE_HEADERS = {
+    'Cache-Control': 'public, max-age=0, s-maxage=60, stale-while-revalidate=300',
+};
+let cachedResponse: { at: number; body: unknown } | null = null;
+
 export async function GET(request: NextRequest) {
     try {
+        if (cachedResponse && Date.now() - cachedResponse.at < CACHE_TTL_MS) {
+            return NextResponse.json(cachedResponse.body, { headers: CACHE_HEADERS });
+        }
+
         await connectDB();
 
         // Only show approved creators on the public explore page
@@ -62,7 +73,9 @@ export async function GET(request: NextRequest) {
             };
         }).filter(Boolean); // Remove nulls
 
-        return NextResponse.json({ success: true, creators: formattedCreators });
+        const body = { success: true, creators: formattedCreators };
+        cachedResponse = { at: Date.now(), body };
+        return NextResponse.json(body, { headers: CACHE_HEADERS });
     } catch (error: any) {
         console.error('Fetch creators error:', error);
         return NextResponse.json(

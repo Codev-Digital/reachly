@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import LoadingAnimation from '@/components/LoadingAnimation';
+import { AdminRequestsSkeleton } from '@/components/admin/AdminSkeletons';
 
 interface UserRequest {
   _id: string;
@@ -55,7 +55,7 @@ export default function AdminUserRequestsPage() {
     }
   };
 
-  if (loading) return <LoadingAnimation />;
+  if (loading) return <AdminRequestsSkeleton />;
 
   return (
     <div className="space-y-6">

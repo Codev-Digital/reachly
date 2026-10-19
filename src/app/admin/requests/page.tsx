@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import LoadingAnimation from '@/components/LoadingAnimation';
+import { AdminRequestsSkeleton } from '@/components/admin/AdminSkeletons';
 
 interface RequestItem {
   _id: string;
@@ -63,7 +63,7 @@ export default function AdminRequestsPage() {
     }
   };
 
-  if (loading) return <LoadingAnimation />;
+  if (loading) return <AdminRequestsSkeleton />;
 
   return (
     <div>

@@ -5,6 +5,8 @@ import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
 import CreatorProfile from '@/models/CreatorProfile';
 import { uploadToSupabase } from '@/lib/supabase';
+import { sanitizeRichText } from '@/lib/sanitizeRichText';
+import { DETAILED_BIO_MAX_LENGTH, richTextToPlain } from '@/lib/richText';
 
 // ─── Required fields for the profile to be considered complete ───────────────
 function checkCompletion(data: {
@@ -82,7 +84,13 @@ export async function POST(request: NextRequest) {
     const displayName = (formData.get('displayName') as string) || '';
     const username = (formData.get('username') as string) || '';
     const shortBio = (formData.get('shortBio') as string) || '';
-    const longBio = (formData.get('longBio') as string) || '';
+    const longBio = sanitizeRichText((formData.get('longBio') as string) || '');
+    if (richTextToPlain(longBio).length > DETAILED_BIO_MAX_LENGTH) {
+      return NextResponse.json(
+        { error: `Detailed bio must be ${DETAILED_BIO_MAX_LENGTH} characters or fewer.` },
+        { status: 400 }
+      );
+    }
     const city = (formData.get('city') as string) || '';
     const country = (formData.get('country') as string) || 'Pakistan';
     const languages: string[] = JSON.parse(

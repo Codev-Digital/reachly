@@ -4,6 +4,7 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
 import CreatorProfile from '@/models/CreatorProfile';
+import { richTextToPlain } from '@/lib/richText';
 import Booking from '@/models/Booking';
 
 function isAdmin(email?: string | null) {
@@ -176,7 +177,7 @@ export async function GET() {
           tag: p.isApproved ? 'Verified' : 'Sponsored',
           img: p.profilePhoto || user?.profilePhoto || '/avatar.png',
           rating: '4.9', // default stellar rating
-          description: p.shortBio || p.longBio || 'Content creator on Reachly.',
+          description: p.shortBio || richTextToPlain(p.longBio) || 'Content creator on Reachly.',
           price: p.startingPrice ? `${p.startingPrice} PKR` : '1000 PKR',
           isVerified: !!p.isApproved,
           completedCount,

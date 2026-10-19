@@ -1,8 +1,11 @@
 'use client';
 
+import { AdminListSkeleton } from '@/components/admin/AdminSkeletons';
+
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import RichTextContent from '@/components/RichTextContent';
 
 interface Creator {
   id: string;
@@ -188,6 +191,8 @@ export default function AdminCreatorsPage() {
     }
   };
 
+  if (loading) return <AdminListSkeleton />;
+
   if (activeDetailCreator) {
     return (
       <motion.div
@@ -214,11 +219,11 @@ export default function AdminCreatorsPage() {
 
         {/* Premium Creator Detail Card with creator-detail-card.svg background */}
         <div className="relative bg-white rounded-[32px] p-8 border border-gray-100 shadow-sm overflow-hidden z-10">
-          <img
+          {/* <img
             src="/assets/creator-detail-card.svg"
             alt=""
             className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10"
-          />
+          /> */}
 
           {/* Banner Graphic Header */}
           <div className="relative w-full aspect-[1140/320] rounded-2xl overflow-visible mb-12 flex items-center justify-end p-8 sm:p-12 text-white">
@@ -362,9 +367,16 @@ export default function AdminCreatorsPage() {
 
               {/* Bio Field 2 */}
               <div className="pt-2">
-                <p className="text-xs text-gray-500 font-medium leading-relaxed max-w-4xl">
-                  {activeDetailCreator.longBio || 'No detailed bio provided.'}
-                </p>
+                {activeDetailCreator.longBio ? (
+                  <RichTextContent
+                    value={activeDetailCreator.longBio}
+                    className="text-xs text-gray-500 font-medium leading-relaxed max-w-4xl"
+                  />
+                ) : (
+                  <p className="text-xs text-gray-500 font-medium leading-relaxed max-w-4xl">
+                    No detailed bio provided.
+                  </p>
+                )}
               </div>
             </div>
 

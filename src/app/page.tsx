@@ -8,6 +8,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import CreatorNavbar from '@/components/CreatorNavbar';
 import Footer from '@/components/Footer';
+import SmoothScroll from '@/components/SmoothScroll';
 import Image from "next/image";
 
 /* ─── Fade-in-up wrapper for scroll-triggered sections ─── */
@@ -228,17 +229,23 @@ export default function Home() {
 
   return (
     <div className="min-h-screen">
+      <SmoothScroll />
       <CreatorNavbar />
 
       {/* ════════════════════════════════════════
             HERO SECTION
         ════════════════════════════════════════ */}
       <section className="relative overflow-hidden flex items-center [@media(min-height:900px)]:h-screen [@media(min-height:900px)]:min-h-screen">
-        <img
-          src="/assets/new-bg-image.png"
-          alt=""
-          className="fixed inset-0 w-screen h-screen object-cover object-top -z-10"
-        />
+        <div className="fixed inset-0 w-screen h-screen -z-10">
+          <Image
+            src="/assets/new-bg-image.png"
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover object-top"
+          />
+        </div>
 
         <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 pt-28 pb-16 [@media(min-height:900px)]:pt-24 [@media(min-height:900px)]:pb-8 relative z-10">
           <div className="text-center">
@@ -253,7 +260,7 @@ export default function Home() {
                 <Link href="/explore-creators" className="bg-white text-[#001F7D] font-sans font-semibold px-8 py-3 rounded-full text-sm hover:bg-white/90 transition-all">
                   Explore Creators
                 </Link>
-                <Link href="/signup?type=creator" className="border border-white/50 text-white font-sans font-semibold px-8 py-3 rounded-full text-sm hover:bg-white/10 transition-all">
+                <Link href="/signup" className="border border-white/50 text-white font-sans font-semibold px-8 py-3 rounded-full text-sm hover:bg-white/10 transition-all">
                   Become a Creator
                 </Link>
               </div>
@@ -457,7 +464,7 @@ export default function Home() {
                     {/* Top Image Container */}
                     <div className="relative w-full h-[300px] sm:h-[330px] rounded-[24px] overflow-hidden bg-gray-100 mb-3 shadow-xs transition-transform duration-300 group-hover:scale-[1.01]">
                       <img
-                        src={creator.profilePhoto || '/merium.png'}
+                        src={creator.profilePhoto || '/merium.png'} loading="lazy" decoding="async"
                         alt={creator.displayName}
                         className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
                       />
@@ -575,7 +582,7 @@ export default function Home() {
                   transition={{ type: 'spring', stiffness: 260, damping: 25 }}
                   className={`absolute w-[200px] h-[260px] sm:w-[280px] sm:h-[350px] rounded-3xl overflow-hidden shadow-xl ${bg}`}
                 >
-                  <img src={src} alt="How it works" className="w-full h-full object-cover" />
+                  <img src={src} alt="How it works" loading="lazy" decoding="async" className="w-full h-full object-cover" />
                 </motion.div>
               ))}
             </FadeUp>
@@ -707,7 +714,7 @@ export default function Home() {
                         {/* Top Image Container */}
                         <div className="relative w-full h-[300px] sm:h-[330px] rounded-[24px] overflow-hidden bg-gray-100 mb-3 shadow-xs transition-transform duration-300 group-hover:scale-[1.01]">
                           <img
-                            src={creator.profilePhoto || '/merium.png'}
+                            src={creator.profilePhoto || '/merium.png'} loading="lazy" decoding="async"
                             alt={creator.displayName}
                             className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
                           />
@@ -838,7 +845,7 @@ export default function Home() {
                 transition={{ duration: 0.5, delay: index * 0.15 }}
                 className="relative h-[300px] sm:h-[350px] rounded-[30px] overflow-hidden group shadow-lg"
               >
-                <img src={event.img} alt={event.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                <img src={event.img} alt={event.title} loading="lazy" decoding="async" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent" />
                 <button
                   onClick={() => toggleSaveEvent(event.id)}
@@ -924,7 +931,7 @@ export default function Home() {
                 >
                   {[...allCreators, ...allCreators].map((c, i) => (
                     <div key={i} className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden shrink-0 border-2 border-gray-100 shadow-sm">
-                      <img src={c.img} alt={c.name} className="w-full h-full object-cover" />
+                      <img src={c.img} alt={c.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                     </div>
                   ))}
                 </motion.div>
@@ -937,7 +944,7 @@ export default function Home() {
                 >
                   {[...allCreators.slice().reverse(), ...allCreators.slice().reverse()].map((c, i) => (
                     <div key={i} className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden shrink-0 border-2 border-gray-100 shadow-sm">
-                      <img src={c.img} alt={c.name} className="w-full h-full object-cover" />
+                      <img src={c.img} alt={c.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                     </div>
                   ))}
                 </motion.div>
@@ -956,11 +963,11 @@ export default function Home() {
               <div className="flex items-center gap-4 my-6">
                 <div className="flex items-center justify-center h-16 px-5 rounded-2xl border border-red-400 scale-105 transition-all duration-300 bg-white shadow-[0_0_20px_rgba(239,68,68,0.45)]">
 
-                  <img src="/assets/jazzcash.png" alt="JazzCash" className="h-10 object-contain" />
+                  <img src="/assets/jazzcash.png" alt="JazzCash" loading="lazy" decoding="async" className="h-10 object-contain" />
                 </div>
                 <br />
                 <div className="flex items-center justify-center h-16 px-5 rounded-2xl border border-green-400 bg-white shadow-lg shadow-green-500/40 transition-all duration-300">
-                  <img src="/assets/easypaisa (2).png" alt="EasyPaisa" className="h-10 object-contain" />
+                  <img src="/assets/easypaisa (2).png" alt="EasyPaisa" loading="lazy" decoding="async" className="h-10 object-contain" />
                 </div>
               </div>
               <p className="font-sans text-sm text-gray-500 leading-relaxed">Pay with JazzCash, EasyPaisa, or your bank card. Your money is held securely until the session is completed. Full refunds if a creator cancels. Safe, secure, and hassle-free payments every time.</p>
@@ -1049,7 +1056,7 @@ export default function Home() {
                   {/* Avatar + name */}
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 border border-gray-100 shadow-sm bg-gray-100">
-                      <img src={t.avatar || '/Avatars/8.jpg'} alt={t.name} className="w-full h-full object-cover" />
+                      <img src={t.avatar || '/Avatars/8.jpg'} alt={t.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                     </div>
                     <div>
                       <p className="font-sans font-bold text-sm text-black leading-tight">{t.name}</p>
@@ -1087,7 +1094,7 @@ export default function Home() {
                   {/* Avatar + name */}
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 border border-gray-100 shadow-sm bg-gray-100">
-                      <img src={t.avatar || '/Avatars/2.jpg'} alt={t.name} className="w-full h-full object-cover" />
+                      <img src={t.avatar || '/Avatars/2.jpg'} alt={t.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                     </div>
                     <div>
                       <p className="font-sans font-bold text-sm text-black leading-tight">{t.name}</p>
@@ -1125,7 +1132,7 @@ export default function Home() {
               transition={{ duration: 0.5 }}
               whileHover={{ scale: 1.04, rotate: '-2deg' }}
             >
-              <img src="/Avatars/5.jpg" alt="Creator" className="w-full h-full object-cover object-top" />
+              <img src="/Avatars/5.jpg" alt="Creator" loading="lazy" decoding="async" className="w-full h-full object-cover object-top" />
             </motion.div>
 
             {/* Bottom-left: dure (salmon bg) - smaller, bottom-left overlapping */}
@@ -1137,7 +1144,7 @@ export default function Home() {
               transition={{ duration: 0.5, delay: 0.1 }}
               whileHover={{ scale: 1.04, rotate: '0deg' }}
             >
-              <img src="/Avatars/6.jpg" alt="Creator" className="w-full h-full object-cover object-top" />
+              <img src="/Avatars/6.jpg" alt="Creator" loading="lazy" decoding="async" className="w-full h-full object-cover object-top" />
             </motion.div>
 
             {/* Top-right: feroz (peach bg) - smaller, top-right overlapping */}
@@ -1149,7 +1156,7 @@ export default function Home() {
               transition={{ duration: 0.5, delay: 0.15 }}
               whileHover={{ scale: 1.04, rotate: '2deg' }}
             >
-              <img src="/Avatars/3.jpg" alt="Creator" className="w-full h-full object-cover object-top" />
+              <img src="/Avatars/3.jpg" alt="Creator" loading="lazy" decoding="async" className="w-full h-full object-cover object-top" />
             </motion.div>
 
             {/* Bottom-right: mahira (blue bg) - large, right side mid-height */}
@@ -1161,7 +1168,7 @@ export default function Home() {
               transition={{ duration: 0.5, delay: 0.2 }}
               whileHover={{ scale: 1.04, rotate: '0deg' }}
             >
-              <img src="/Avatars/2.jpg" alt="Creator" className="w-full h-full object-cover object-top" />
+              <img src="/Avatars/2.jpg" alt="Creator" loading="lazy" decoding="async" className="w-full h-full object-cover object-top" />
             </motion.div>
 
             {/* Center text */}
@@ -1191,7 +1198,7 @@ export default function Home() {
                 transition={{ duration: 0.4, delay: 0.35 }}
               >
                 <Link
-                  href="/signup?type=creator"
+                  href="/signup"
                   className="inline-block bg-white text-[#1a0aff] font-sans font-semibold px-8 py-3 rounded-full text-sm hover:bg-white/92 active:scale-95 transition-all shadow-lg border border-white/30"
                 >
                   Get Started

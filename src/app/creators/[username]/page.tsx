@@ -6,6 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import CreatorNavbar from '@/components/CreatorNavbar';
 import Footer from '@/components/Footer';
 import LoadingAnimation from '@/components/LoadingAnimation';
+import RichTextContent from '@/components/RichTextContent';
 
 export default function CreatorProfilePage() {
   const params = useParams();
@@ -112,9 +113,11 @@ export default function CreatorProfilePage() {
         {/* About Section */}
         <section className="mb-16">
           <h2 className="font-serif text-2xl font-bold mb-4">About</h2>
-          <p className="text-white/70 text-sm mb-4">
-            {creator.longBio || creator.shortBio}
-          </p>
+          {creator.longBio ? (
+            <RichTextContent value={creator.longBio} className="text-white/70 text-sm mb-4" />
+          ) : (
+            <p className="text-white/70 text-sm mb-4">{creator.shortBio}</p>
+          )}
           <div className="flex flex-wrap gap-2 mb-4">
             {creator.niches && creator.niches.map((niche: string, idx: number) => (
               <span key={idx} className="bg-[rgba(200,169,126,0.2)] text-[#C8A97E] px-4 py-1 rounded-full text-xs font-semibold border border-[rgba(200,169,126,0.3)] capitalize">{niche}</span>

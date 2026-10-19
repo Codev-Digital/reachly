@@ -6,16 +6,19 @@ import { signIn } from 'next-auth/react';
 import Image from 'next/image';
 import HeroImage from '../components/HeroImage';
 import { setPassword, checkPasswordStrength, requestChangeEmail, verifyChangeEmail } from '@/lib/auth-client';
-import PasswordToggle from '@/components/PasswordToggle';
+import { Lock } from 'lucide-react';
+import FormInput, { FormError } from '@/components/FormInput';
+import { isValidEmail } from '@/lib/validators';
 
 function SetPasswordForm() {
   const router = useRouter();
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [password, setPasswordState] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  // `error` is the form-level message; the others belong to a specific field
   const [error, setError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [confirmError, setConfirmError] = useState('');
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') || '/welcome';
   const [email, setEmail] = useState('');
@@ -65,17 +68,28 @@ function SetPasswordForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
-      return;
+    setError('');
+    setPasswordError('');
+    setConfirmError('');
+
+    let hasError = false;
+    if (!password) {
+      setPasswordError('Please enter a password.');
+      hasError = true;
+    } else if (strength.strength === 'weak') {
+      setPasswordError('Please choose a stronger password.');
+      hasError = true;
     }
-    if (strength.strength === 'weak') {
-      setError('Please choose a stronger password');
-      return;
+    if (!confirmPassword) {
+      setConfirmError('Please confirm your password.');
+      hasError = true;
+    } else if (password && password !== confirmPassword) {
+      setConfirmError('Passwords do not match.');
+      hasError = true;
     }
+    if (hasError) return;
 
     setLoading(true);
-    setError('');
 
     try {
       const res = await setPassword(email, password, confirmPassword);
@@ -87,7 +101,10 @@ function SetPasswordForm() {
         });
         router.push(callbackUrl);
       } else {
-        setError(res.error || 'Failed to set password');
+        const message = res.error || 'Failed to set password';
+        if (res.field === 'password') setPasswordError(message);
+        else if (res.field === 'confirmPassword') setConfirmError(message);
+        else setError(message);
       }
     } catch (err) {
       setError('Network error. Please try again.');
@@ -97,8 +114,16 @@ function SetPasswordForm() {
   };
 
   const handleRequestChangeEmail = async () => {
-    setChangeEmailLoading(true);
     setChangeEmailError('');
+    if (!newEmail.trim()) {
+      setChangeEmailError('Please enter your new email address.');
+      return;
+    }
+    if (!isValidEmail(newEmail)) {
+      setChangeEmailError('Please enter a valid email address.');
+      return;
+    }
+    setChangeEmailLoading(true);
     try {
       const res = await requestChangeEmail(email, newEmail);
       if (res.success) {
@@ -195,25 +220,22 @@ function SetPasswordForm() {
           </p>
         </div>
 
-        {changeEmailError && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl">
-            <p className="font-sans text-xs text-red-600 font-semibold">{changeEmailError}</p>
-          </div>
-        )}
-
         {changeEmailStep === 'request' ? (
           <div className="space-y-4">
-            <div>
-              <label className="block font-sans text-gray-700 font-semibold text-xs mb-2">New Email Address</label>
-              <input
-                type="email"
-                value={newEmail}
-                onChange={(e) => setNewEmail(e.target.value)}
-                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 font-sans text-sm text-black placeholder-gray-400 focus:outline-none focus:border-[#0012FF] transition-all"
-                placeholder="you@example.com"
-                required
-              />
-            </div>
+            <FormInput
+              label="New Email Address"
+              type="email"
+              name="newEmail"
+              autoComplete="email"
+              required
+              placeholder="you@example.com"
+              value={newEmail}
+              onChange={(e) => {
+                setNewEmail(e.target.value);
+                if (changeEmailError) setChangeEmailError('');
+              }}
+              error={changeEmailError}
+            />
 
             <button
               type="button"
@@ -226,20 +248,21 @@ function SetPasswordForm() {
           </div>
         ) : (
           <div className="space-y-4">
-            <div>
-              <label className="block font-sans text-gray-700 font-semibold text-xs mb-2">
-                Enter code sent to {newEmail}
-              </label>
-              <input
-                type="text"
-                value={changeEmailOTP}
-                onChange={(e) => setChangeEmailOTP(e.target.value)}
-                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 font-sans text-sm text-black placeholder-gray-400 focus:outline-none focus:border-[#0012FF] transition-all"
-                placeholder="000000"
-                maxLength={6}
-                required
-              />
-            </div>
+            <FormInput
+              label={`Enter code sent to ${newEmail}`}
+              type="text"
+              name="changeEmailOTP"
+              inputMode="numeric"
+              required
+              placeholder="000000"
+              maxLength={6}
+              value={changeEmailOTP}
+              onChange={(e) => {
+                setChangeEmailOTP(e.target.value);
+                if (changeEmailError) setChangeEmailError('');
+              }}
+              error={changeEmailError}
+            />
 
             <button
               type="button"
@@ -269,34 +292,26 @@ function SetPasswordForm() {
         </p>
       </div>
 
-      {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl">
-          <p className="font-sans text-xs text-red-600 font-semibold">{error}</p>
-        </div>
-      )}
+      {error && <FormError className="mb-4">{error}</FormError>}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} noValidate className="space-y-4">
         {/* Password */}
         <div>
-          <label className="block font-sans text-gray-700 font-semibold text-xs mb-2">Password <span className="text-red-500">*</span></label>
-          <div className="relative">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-              {/* Lock Icon */}
-              <svg className="w-4 h-4 text-[#0012FF]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <rect x="3" y="11" width="18" height="11" rx="2" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M7 11V7a5 5 0 0110 0v4" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </div>
-            <input
-              type={showPassword ? 'text' : 'password'}
-              value={password}
-              onChange={(e) => setPasswordState(e.target.value)}
-              className="w-full bg-white border border-gray-200 rounded-xl pl-11 pr-12 py-3 font-sans text-sm text-black placeholder-gray-400 focus:outline-none focus:border-[#0012FF] transition-all"
-              placeholder="••••••••"
-              required
-            />
-            <PasswordToggle visible={showPassword} onToggle={() => setShowPassword(!showPassword)} />
-          </div>
+          <FormInput
+            label="Password"
+            type="password"
+            name="password"
+            autoComplete="new-password"
+            required
+            placeholder="Enter your password"
+            icon={<Lock className="w-4 h-4" />}
+            value={password}
+            onChange={(e) => {
+              setPasswordState(e.target.value);
+              if (passwordError) setPasswordError('');
+            }}
+            error={passwordError}
+          />
           
           {/* Password Strength Indicator */}
           {password && (
@@ -320,27 +335,21 @@ function SetPasswordForm() {
         </div>
 
         {/* Confirm Password */}
-        <div>
-          <label className="block font-sans text-gray-700 font-semibold text-xs mb-2">Confirm Password <span className="text-red-500">*</span></label>
-          <div className="relative">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-              {/* Lock Icon */}
-              <svg className="w-4 h-4 text-[#0012FF]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <rect x="3" y="11" width="18" height="11" rx="2" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M7 11V7a5 5 0 0110 0v4" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </div>
-            <input
-              type={showConfirmPassword ? 'text' : 'password'}
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full bg-white border border-gray-200 rounded-xl pl-11 pr-12 py-3 font-sans text-sm text-black placeholder-gray-400 focus:outline-none focus:border-[#0012FF] transition-all"
-              placeholder="••••••••"
-              required
-            />
-            <PasswordToggle visible={showConfirmPassword} onToggle={() => setShowConfirmPassword(!showConfirmPassword)} />
-          </div>
-        </div>
+        <FormInput
+          label="Confirm Password"
+          type="password"
+          name="confirmPassword"
+          autoComplete="new-password"
+          required
+          placeholder="Confirm your password"
+          icon={<Lock className="w-4 h-4" />}
+          value={confirmPassword}
+          onChange={(e) => {
+            setConfirmPassword(e.target.value);
+            if (confirmError) setConfirmError('');
+          }}
+          error={confirmError}
+        />
 
         {/* Action button */}
         <button

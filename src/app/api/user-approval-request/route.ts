@@ -43,11 +43,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'User is already approved' }, { status: 400 });
     }
 
+    if (user.approvalStatus === 'rejected') {
+      return NextResponse.json({ error: 'Your request was rejected. Please contact support.' }, { status: 403 });
+    }
+
     let body: any = {};
     try {
       body = await req.json();
     } catch {}
     const { phone, city, country, reason } = body;
+    if (!phone?.toString().trim() || !city?.toString().trim() || !country?.toString().trim()) {
+      return NextResponse.json({ error: 'Phone, city and country are required' }, { status: 400 });
+    }
 
     const request = await UserApprovalRequest.findOneAndUpdate(
       { userId: user._id },

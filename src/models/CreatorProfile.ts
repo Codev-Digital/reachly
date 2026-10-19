@@ -55,7 +55,9 @@ const CreatorProfileSchema = new Schema<ICreatorProfile>(
       },
     },
     shortBio: { type: String, default: '', maxlength: 140 },
-    longBio: { type: String, default: '', maxlength: 1000 },
+    // Stored as sanitized HTML (rich text). The 1000 character limit applies to the visible text
+    // and is enforced in the API routes, so this only guards against huge payloads.
+    longBio: { type: String, default: '', maxlength: 10000 },
     city: { type: String, default: '' },
     country: { type: String, default: 'Pakistan' },
     languages: { type: [String], default: [] },

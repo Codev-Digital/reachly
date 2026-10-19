@@ -1,10 +1,11 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { Mail, MapPin, Phone } from "lucide-react";
 import CreatorNavbar from "@/components/CreatorNavbar";
 import Footer from "@/components/Footer";
+import FormInput from "@/components/FormInput";
 // import Footer from "@/components/Footer";
 const contactEmail = "support@reachly.pk";
 const contactPhone = "+92 331 0448857";
@@ -17,6 +18,16 @@ export default function ContactSupportPage() {
     subject: "",
     message: "",
   });
+  // Prefill from ?fullName=&email=&subject= (used by the /rejected screen)
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    setForm((f) => ({
+      ...f,
+      fullName: q.get("fullName") || f.fullName,
+      email: q.get("email") || f.email,
+      subject: q.get("subject") || f.subject,
+    }));
+  }, []);
   const [status, setStatus] = useState<
     "idle" | "sending" | "success" | "error"
   >("idle");
@@ -143,44 +154,35 @@ export default function ContactSupportPage() {
 
               <form onSubmit={handleSubmit} className="mt-8 space-y-5">
                 <div className="grid gap-5 sm:grid-cols-2">
-                  <label className="text-xs font-medium text-gray-700">
-                    Full Name <span className="text-red-500">*</span>
-                    <input
-                      required
-                      value={form.fullName}
-                      onChange={(event) =>
-                        updateField("fullName", event.target.value)
-                      }
-                      placeholder="Enter your full name"
-                      className="mt-2 w-full border-b border-gray-200 bg-white px-3 py-3 text-sm outline-none transition focus:border-[#087b70]"
-                    />
-                  </label>
-                  <label className="text-xs font-medium text-gray-700">
-                    Email <span className="text-red-500">*</span>
-                    <input
-                      required
-                      type="email"
-                      value={form.email}
-                      onChange={(event) =>
-                        updateField("email", event.target.value)
-                      }
-                      placeholder="Enter your email"
-                      className="mt-2 w-full border-b border-gray-200 bg-white px-3 py-3 text-sm outline-none transition focus:border-[#087b70]"
-                    />
-                  </label>
-                </div>
-                <label className="block text-xs font-medium text-gray-700">
-                  Subject <span className="text-red-500">*</span>
-                  <input
+                  <FormInput
+                    label="Full Name"
                     required
-                    value={form.subject}
+                    value={form.fullName}
                     onChange={(event) =>
-                      updateField("subject", event.target.value)
+                      updateField("fullName", event.target.value)
                     }
-                    placeholder="Enter your subject"
-                    className="mt-2 w-full border-b border-gray-200 bg-white px-3 py-3 text-sm outline-none transition focus:border-[#087b70]"
+                    placeholder="Enter your full name"
                   />
-                </label>
+                  <FormInput
+                    label="Email"
+                    required
+                    type="email"
+                    value={form.email}
+                    onChange={(event) =>
+                      updateField("email", event.target.value)
+                    }
+                    placeholder="Enter your email"
+                  />
+                </div>
+                <FormInput
+                  label="Subject"
+                  required
+                  value={form.subject}
+                  onChange={(event) =>
+                    updateField("subject", event.target.value)
+                  }
+                  placeholder="Enter your subject"
+                />
                 <label className="block text-xs font-medium text-gray-700">
                   Message <span className="text-red-500">*</span>
                   <textarea

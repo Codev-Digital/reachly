@@ -5,7 +5,9 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import HeroImage from '../components/HeroImage';
 import { useLoading } from '@/contexts/LoadingContext';
-import PasswordToggle from '@/components/PasswordToggle';
+import { Mail, Lock } from 'lucide-react';
+import FormInput, { FormError } from '@/components/FormInput';
+import { isValidEmail } from '@/lib/validators';
 
 type Step = 'request' | 'verify' | 'setpassword' | 'done';
 
@@ -17,17 +19,28 @@ export default function ForgotPasswordPage() {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
+  // `error` is the form-level message; the others belong to a specific field
   const [error, setError] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [confirmError, setConfirmError] = useState('');
 
   /* ── Step 1: Request OTP ── */
   const handleRequestReset = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
+    setEmailError('');
+    if (!email.trim()) {
+      setEmailError('Please enter your email address.');
+      return;
+    }
+    if (!isValidEmail(email)) {
+      setEmailError('Please enter a valid email address.');
+      return;
+    }
+    setLoading(true);
     try {
       const res = await fetch('/api/auth/forgot-password', {
         method: 'POST',
@@ -38,7 +51,7 @@ export default function ForgotPasswordPage() {
       if (data.success) {
         setStep('verify');
       } else {
-        setError(data.error || 'Something went wrong');
+        setEmailError(data.error || 'Something went wrong');
       }
     } catch {
       setError('Network error. Please try again.');
@@ -64,20 +77,28 @@ export default function ForgotPasswordPage() {
   /* ── Step 3: Set New Password (sends OTP + password together) ── */
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!password || !confirmPassword) {
-      setError('All fields are required');
-      return;
-    }
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters');
-      return;
-    }
-    setLoading(true);
     setError('');
+    setPasswordError('');
+    setConfirmError('');
+
+    let hasError = false;
+    if (!password) {
+      setPasswordError('Please enter a new password.');
+      hasError = true;
+    } else if (password.length < 8) {
+      setPasswordError('Password must be at least 8 characters.');
+      hasError = true;
+    }
+    if (!confirmPassword) {
+      setConfirmError('Please confirm your password.');
+      hasError = true;
+    } else if (password && password !== confirmPassword) {
+      setConfirmError('Passwords do not match.');
+      hasError = true;
+    }
+    if (hasError) return;
+
+    setLoading(true);
     try {
       const res = await fetch('/api/auth/reset-password', {
         method: 'POST',
@@ -88,7 +109,10 @@ export default function ForgotPasswordPage() {
       if (data.success) {
         setStep('done');
       } else {
-        setError(data.error || 'Something went wrong');
+        const message = data.error || 'Something went wrong';
+        if (data.field === 'password') setPasswordError(message);
+        else if (data.field === 'confirmPassword') setConfirmError(message);
+        else setError(message);
       }
     } catch {
       setError('Network error. Please try again.');
@@ -226,60 +250,42 @@ export default function ForgotPasswordPage() {
           </p>
         </div>
 
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl">
-            <p className="font-sans text-xs text-red-600 font-semibold"> {error}</p>
-          </div>
-        )}
+        {error && <FormError className="mb-4">{error}</FormError>}
 
-        <form onSubmit={handleResetPassword} className="space-y-4">
+        <form onSubmit={handleResetPassword} noValidate className="space-y-4">
           {/* New Password */}
-          <div>
-            <label className="block font-sans text-gray-700 font-semibold text-xs mb-2">
-              Password <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2">
-                <svg className="w-4 h-4 text-[#0012FF]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <rect x="3" y="11" width="18" height="11" rx="2" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M7 11V7a5 5 0 0110 0v4" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </div>
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-white border border-gray-200 rounded-xl pl-11 pr-12 py-3 font-sans text-sm text-black placeholder-gray-400 focus:outline-none focus:border-[#0012FF] transition-all"
-                placeholder="••••••••"
-                required
-              />
-              <PasswordToggle visible={showPassword} onToggle={() => setShowPassword(!showPassword)} />
-            </div>
-          </div>
+          <FormInput
+            label="Password"
+            type="password"
+            name="password"
+            autoComplete="new-password"
+            required
+            placeholder="Enter new password"
+            icon={<Lock className="w-4 h-4" />}
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              if (passwordError) setPasswordError('');
+            }}
+            error={passwordError}
+          />
 
           {/* Confirm Password */}
-          <div>
-            <label className="block font-sans text-gray-700 font-semibold text-xs mb-2">
-              Confirm Password <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2">
-                <svg className="w-4 h-4 text-[#0012FF]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <rect x="3" y="11" width="18" height="11" rx="2" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M7 11V7a5 5 0 0110 0v4" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </div>
-              <input
-                type={showConfirm ? 'text' : 'password'}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full bg-white border border-gray-200 rounded-xl pl-11 pr-12 py-3 font-sans text-sm text-black placeholder-gray-400 focus:outline-none focus:border-[#0012FF] transition-all"
-                placeholder="••••••••"
-                required
-              />
-              <PasswordToggle visible={showConfirm} onToggle={() => setShowConfirm(!showConfirm)} />
-            </div>
-          </div>
+          <FormInput
+            label="Confirm Password"
+            type="password"
+            name="confirmPassword"
+            autoComplete="new-password"
+            required
+            placeholder="Confirm new password"
+            icon={<Lock className="w-4 h-4" />}
+            value={confirmPassword}
+            onChange={(e) => {
+              setConfirmPassword(e.target.value);
+              if (confirmError) setConfirmError('');
+            }}
+            error={confirmError}
+          />
 
           <button
             type="submit"
@@ -321,11 +327,7 @@ export default function ForgotPasswordPage() {
           </p>
         </div>
 
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl">
-            <p className="font-sans text-xs text-red-600 font-semibold"> {error}</p>
-          </div>
-        )}
+        {error && <FormError className="mb-4">{error}</FormError>}
 
         <form onSubmit={handleVerifyOtp} className="space-y-6">
           {/* OTP inputs */}
@@ -398,33 +400,24 @@ export default function ForgotPasswordPage() {
         </p>
       </div>
 
-      {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl">
-          <p className="font-sans text-xs text-red-600 font-semibold"> {error}</p>
-        </div>
-      )}
+      {error && <FormError className="mb-4">{error}</FormError>}
 
-      <form onSubmit={handleRequestReset} className="space-y-4">
-        <div>
-          <label className="block font-sans text-gray-700 font-semibold text-xs mb-2">
-            Email Address <span className="text-red-500">*</span>
-          </label>
-          <div className="relative">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2">
-              <svg className="w-4 h-4 text-[#0012FF]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-            </div>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-white border border-gray-200 rounded-xl pl-11 pr-4 py-3 font-sans text-sm text-black placeholder-gray-400 focus:outline-none focus:border-[#0012FF] transition-all"
-              placeholder="Enter your email"
-              required
-            />
-          </div>
-        </div>
+      <form onSubmit={handleRequestReset} noValidate className="space-y-4">
+        <FormInput
+          label="Email Address"
+          type="email"
+          name="email"
+          autoComplete="email"
+          required
+          placeholder="Enter your email"
+          icon={<Mail className="w-4 h-4" />}
+          value={email}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            if (emailError) setEmailError('');
+          }}
+          error={emailError}
+        />
 
         <button
           type="submit"

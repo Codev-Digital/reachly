@@ -5,6 +5,11 @@ import { useRouter } from 'next/navigation';
 import { updateCreatorProfile, getCurrentUser } from '@/lib/auth-client';
 import LoadingAnimation from '@/components/LoadingAnimation';
 import { useOnboardingCleanup } from '@/hooks/useOnboardingCleanup';
+import FormInput, { FormError, FormLabel } from '@/components/FormInput';
+import FormTextarea from '@/components/FormTextarea';
+import CitySelect from '@/components/CitySelect';
+import RichTextEditor from '@/components/RichTextEditor';
+import { isRichTextEmpty } from '@/lib/richText';
 
 // ─── Required fields (must all be non-empty to continue) ───────────────────────
 const REQUIRED: Record<string, string> = {
@@ -13,7 +18,7 @@ const REQUIRED: Record<string, string> = {
   displayName: 'Display Name',
   username: 'Username / Handle',
   shortBio: 'Short Bio',
-  longBio: 'Long Bio',
+  longBio: 'Detailed Bio',
   city: 'City',
   languages: 'Languages Spoken (at least one)',
   niches: 'Niche / Category (at least one)',
@@ -27,7 +32,6 @@ export default function CreatorOnboardingStep2() {
   const [error, setError] = useState('');
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [bioCount, setBioCount] = useState(0);
-  const [longBioCount, setLongBioCount] = useState(0);
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
   const [selectedNiches, setSelectedNiches] = useState<string[]>([]);
   const [profilePhotoFile, setProfilePhotoFile] = useState<File | null>(null);
@@ -80,7 +84,6 @@ export default function CreatorOnboardingStep2() {
             setSelectedLanguages(profile.languages || []);
             setSelectedNiches(profile.niches || []);
             setBioCount(profile.shortBio?.length || 0);
-            setLongBioCount(profile.longBio?.length || 0);
             if (profile.profilePhoto) setProfilePhotoPreview(profile.profilePhoto);
             if (profile.coverPhoto) setCoverPhotoPreview(profile.coverPhoto);
           }
@@ -194,7 +197,7 @@ export default function CreatorOnboardingStep2() {
     if (!formData.displayName.trim()) missing.push('displayName');
     if (!formData.username.trim()) missing.push('username');
     if (!formData.shortBio.trim()) missing.push('shortBio');
-    if (!formData.longBio.trim()) missing.push('longBio');
+    if (isRichTextEmpty(formData.longBio)) missing.push('longBio');
     if (!formData.city || formData.city === 'Choose your city') missing.push('city');
     if (selectedLanguages.length === 0) missing.push('languages');
     if (selectedNiches.length === 0) missing.push('niches');
@@ -318,7 +321,7 @@ export default function CreatorOnboardingStep2() {
 
 
 
-      <form onSubmit={handleSubmit} className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
+      <form onSubmit={handleSubmit} noValidate className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
         <div className="mb-8">
           <h1 className="font-anton text-4xl font-bold text-black mb-2">
             Profile Setup
@@ -329,14 +332,11 @@ export default function CreatorOnboardingStep2() {
         </div>
 
         {/* Error banner */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
-            <p className="text-sm text-red-600">{error}</p>
-          </div>
-        )}
+        {error && <FormError className="mb-6">{error}</FormError>}
 
         {/* ─── Cover and Profile Photos ───────────────────────────────────────────────── */}
         <div className="bg-white rounded-2xl p-4 sm:p-8 mb-6">
+          <FormLabel required className="mb-3">Cover &amp; Profile Photo</FormLabel>
           {/* Cover Photo */}
           <div className="relative mb-16 sm:mb-20">
             <label className="block">
@@ -389,31 +389,32 @@ export default function CreatorOnboardingStep2() {
               </div>
             </div>
           </div>
+          {(isFieldInvalid('coverPhoto') || isFieldInvalid('profilePhoto')) && (
+            <div className="space-y-2">
+              {isFieldInvalid('coverPhoto') && <FormError>Cover photo is required</FormError>}
+              {isFieldInvalid('profilePhoto') && <FormError>Profile photo is required</FormError>}
+            </div>
+          )}
         </div>
 
         {/* ─── Display Name & Username ───────────────────────────────────────────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-2">
-              Display Name <span className="text-red-500">*</span>
-            </label>
-            <input type="text" value={formData.displayName}
+            <FormInput label="Display Name" required type="text" value={formData.displayName}
               onChange={(e) => { setFormData({ ...formData, displayName: e.target.value }); setTouched(t => ({ ...t, displayName: true })); }}
               onBlur={() => setTouched(t => ({ ...t, displayName: true }))}
-              className={`w-full bg-white border rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none placeholder-gray-400 ${borderClass('displayName')}`}
               placeholder="e.g. username"
+              error={isFieldInvalid('displayName') ? 'Display name is required' : undefined}
             />
-            {isFieldInvalid('displayName') && <p className="text-red-500 text-xs mt-1">Display name is required</p>}
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-2">
-              Username / Handle <span className="text-red-500">*</span>
-            </label>
+            <FormLabel htmlFor="username" required>Username / Handle</FormLabel>
             <div className="relative">
-              <input type="text" value={formData.username}
+              {/* No label/error passed so FormInput's root height === input height and the right adornment below stays centred */}
+              <FormInput id="username" type="text" value={formData.username}
                 onChange={(e) => { setFormData({ ...formData, username: e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, '') }); setTouched(t => ({ ...t, username: true })); }}
                 onBlur={() => setTouched(t => ({ ...t, username: true }))}
-                className={`w-full bg-white border rounded-xl px-4 py-3 pr-10 text-sm text-gray-900 focus:outline-none placeholder-gray-400 ${borderClass('username')}`}
+                className={`pr-10 ${isFieldInvalid('username') ? 'border-red-500/70 focus:border-red-500' : ''}`}
                 placeholder="e.g. @username"
               />
 
@@ -432,88 +433,75 @@ export default function CreatorOnboardingStep2() {
 
             <div className="flex justify-between items-start mt-1">
               <p className="text-xs text-gray-400">reachly.pk/{formData.username || 'yourhandle'}</p>
-              {usernameMessage && (
-                <p className={`text-xs ${usernameStatus === 'taken' ? 'text-red-500' : usernameStatus === 'available' ? 'text-green-600' : 'text-gray-400'}`}>
+              {usernameMessage && usernameStatus !== 'taken' && (
+                <p className={`text-xs ${usernameStatus === 'available' ? 'text-green-600' : 'text-gray-400'}`}>
                   {usernameMessage}
                 </p>
               )}
             </div>
-            {isFieldInvalid('username') && <p className="text-red-500 text-xs mt-1">Username is required</p>}
+            {usernameMessage && usernameStatus === 'taken' && (
+              <FormError className="mt-2">{usernameMessage}</FormError>
+            )}
+            {isFieldInvalid('username') && <FormError className="mt-2">Username is required</FormError>}
           </div>
         </div>
 
         {/* ─── Short Bio ─────────────────────────────────────────────────────────────── */}
         <div className="mb-6">
-          <label className="block text-xs font-semibold text-gray-700 mb-2">
-            Short Bio / Tagline <span className="text-red-500">*</span>
-          </label>
-          <textarea maxLength={140} value={formData.shortBio}
+          <FormTextarea
+            label="Short Bio / Tagline"
+            required
+            maxLength={140}
+            rows={3}
+            value={formData.shortBio}
             onChange={(e) => { setFormData({ ...formData, shortBio: e.target.value }); setBioCount(e.target.value.length); setTouched(t => ({ ...t, shortBio: true })); }}
             onBlur={() => setTouched(t => ({ ...t, shortBio: true }))}
-            className={`w-full bg-white border rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none h-24 resize-none placeholder-gray-400 ${borderClass('shortBio')}`}
             placeholder="A one-line summary of who you are and what you do."
+            error={isFieldInvalid('shortBio') ? 'Short bio is required' : undefined}
+            footer={
+              <div className="flex justify-between mt-1">
+                <p className="text-xs text-gray-400">Appears on your cards in search results</p>
+                <p className="text-xs text-gray-400">{bioCount}/140</p>
+              </div>
+            }
           />
-          <div className="flex justify-between mt-1">
-            <p className="text-xs text-gray-400">Appears on your cards in search results</p>
-            <p className="text-xs text-gray-400">{bioCount}/140</p>
-          </div>
-          {isFieldInvalid('shortBio') && <p className="text-red-500 text-xs mt-1">Short bio is required</p>}
         </div>
 
-        {/* ─── Long Bio ──────────────────────────────────────────────────────────────── */}
+        {/* ─── Detailed Bio ──────────────────────────────────────────────────────────── */}
         <div className="mb-6">
-          <label className="block text-xs font-semibold text-gray-700 mb-2">
-            Long Bio <span className="text-red-500">*</span>
-          </label>
-          <textarea maxLength={1000} value={formData.longBio}
-            onChange={(e) => { setFormData({ ...formData, longBio: e.target.value }); setLongBioCount(e.target.value.length); setTouched(t => ({ ...t, longBio: true })); }}
+          <RichTextEditor
+            label="Detailed Bio"
+            required
+            value={formData.longBio}
+            onChange={(html) => { setFormData({ ...formData, longBio: html }); setTouched(t => ({ ...t, longBio: true })); }}
             onBlur={() => setTouched(t => ({ ...t, longBio: true }))}
-            className={`w-full bg-white border rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none h-32 resize-none placeholder-gray-400 ${borderClass('longBio')}`}
             placeholder="Tell followers your story, your expertise, and what they can expect from your sessions."
+            error={isFieldInvalid('longBio') ? 'Detailed bio is required' : undefined}
           />
-          <div className="flex justify-between mt-1">
-            <p className="text-xs text-gray-400">Up to 1000 characters</p>
-            <p className="text-xs text-gray-400">{longBioCount}/1000</p>
-          </div>
-          {isFieldInvalid('longBio') && <p className="text-red-500 text-xs mt-1">Long bio is required</p>}
         </div>
 
         {/* ─── City & Country ───────────────────────────────────────────────────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-2">
-              City <span className="text-red-500">*</span>
-            </label>
-            <select value={formData.city}
-              onChange={(e) => { setFormData({ ...formData, city: e.target.value }); setTouched(t => ({ ...t, city: true })); }}
+            <CitySelect
+              label="City"
+              required
+              value={formData.city}
+              onChange={(city) => { setFormData({ ...formData, city }); setTouched(t => ({ ...t, city: true })); }}
               onBlur={() => setTouched(t => ({ ...t, city: true }))}
-              className={`w-full bg-white border rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none ${borderClass('city')}`}
-            >
-              <option value="">Select your city</option>
-              <option>Karachi</option>
-              <option>Lahore</option>
-              <option>Islamabad</option>
-              <option>Rawalpindi</option>
-              <option>Faisalabad</option>
-              <option>Peshawar</option>
-              <option>Quetta</option>
-              <option>Multan</option>
-            </select>
-            {isFieldInvalid('city') && <p className="text-red-500 text-xs mt-1">Please select your city</p>}
+              error={isFieldInvalid('city') ? 'Please select your city' : undefined}
+            />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-2">Country <span className="text-red-500">*</span></label>
-            <input type="text" value="Pakistan" readOnly
-              className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-500 cursor-not-allowed"
+            <FormInput label="Country" required type="text" value="Pakistan" readOnly
+              className="bg-gray-50 text-gray-500 cursor-not-allowed"
             />
           </div>
         </div>
 
         {/* ─── Languages ────────────────────────────────────────────────────────────── */}
         <div className="mb-6">
-          <label className="block text-xs font-semibold text-gray-700 mb-3">
-            Languages Spoken <span className="text-red-500">*</span>
-          </label>
+          <FormLabel required className="mb-3">Languages Spoken</FormLabel>
           <div className="flex flex-wrap gap-2">
             {languages.map(lang => (
               <button key={lang} type="button" onClick={() => toggleLanguage(lang)}
@@ -523,14 +511,12 @@ export default function CreatorOnboardingStep2() {
               </button>
             ))}
           </div>
-          {isFieldInvalid('languages') && <p className="text-red-500 text-xs mt-2">Select at least one language</p>}
+          {isFieldInvalid('languages') && <FormError className="mt-3">Select at least one language</FormError>}
         </div>
 
         {/* ─── Niches ───────────────────────────────────────────────────────────────── */}
         <div className="mb-8">
-          <label className="block text-xs font-semibold text-gray-700 mb-3">
-            Niche / Categories (max 3) <span className="text-red-500">*</span>
-          </label>
+          <FormLabel required className="mb-3">Niche / Categories (max 3)</FormLabel>
           <div className="flex flex-wrap gap-2">
             {niches.map(niche => (
               <button key={niche} type="button" onClick={() => toggleNiche(niche)}
@@ -540,12 +526,14 @@ export default function CreatorOnboardingStep2() {
               </button>
             ))}
           </div>
-          {isFieldInvalid('niches') && <p className="text-red-500 text-xs mt-2">Select at least one niche</p>}
+          {isFieldInvalid('niches') && <FormError className="mt-3">Select at least one niche</FormError>}
         </div>
 
         {/* ─── Social Links (optional) ───────────────────────────────────────────────── */}
         <div className="mb-10">
-          <label className="block text-xs font-semibold text-gray-700 mb-1">Social Links</label>
+          <FormLabel className="mb-3">
+            Social Links <span className="font-normal text-gray-400">(optional)</span>
+          </FormLabel>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {([
               {
@@ -584,16 +572,12 @@ export default function CreatorOnboardingStep2() {
                 )
               },
             ] as const).map(({ key, placeholder, icon }) => (
-              <div key={key} className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2">
-                  {icon}
-                </span>
-                <input type="text" value={(formData as any)[key]}
-                  onChange={(e) => setFormData({ ...formData, [key]: e.target.value })}
-                  className="w-full bg-white border border-gray-200 rounded-xl pl-12 pr-4 py-3 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] placeholder-gray-400"
-                  placeholder={placeholder}
-                />
-              </div>
+              <FormInput key={key} type="text" value={(formData as any)[key]}
+                onChange={(e) => setFormData({ ...formData, [key]: e.target.value })}
+                icon={icon}
+                className="pl-12"
+                placeholder={placeholder}
+              />
             ))}
           </div>
         </div>

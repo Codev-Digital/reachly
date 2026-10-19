@@ -186,17 +186,21 @@ export const sendEmail = async (
   subject: string,
   html: string
 ): Promise<void> => {
-  const host = process.env.EMAIL_HOST || process.env.SMTP_HOST;
-  const port = parseInt(process.env.EMAIL_PORT || process.env.SMTP_PORT || '587', 10);
-  const secureEnv = process.env.EMAIL_SECURE ?? process.env.SMTP_SECURE;
-  const secure = secureEnv !== undefined ? secureEnv === 'true' : port === 465;
   // Strip any surrounding quotes that .env parsers sometimes leave in
-  const user = (process.env.EMAIL_USER || process.env.SMTP_USER || '').replace(/^["']|["']$/g, '');
-  const pass = (process.env.EMAIL_PASS || process.env.SMTP_PASSWORD || process.env.SMTP_PASS || '').replace(/^["']|["']$/g, '');
-  const fromAddress = (process.env.EMAIL_FROM || process.env.SMTP_FROM || user).replace(/^["']|["']$/g, '');
+  const clean = (value?: string) => (value || '').trim().replace(/^["']|["']$/g, '');
+
+  const host = clean(process.env.EMAIL_HOST);
+  const port = parseInt(clean(process.env.EMAIL_PORT) || '587', 10);
+  // EMAIL_SECURE=true means implicit TLS (port 465). false uses STARTTLS (port 587).
+  const secure = process.env.EMAIL_SECURE
+    ? clean(process.env.EMAIL_SECURE).toLowerCase() === 'true'
+    : port === 465;
+  const user = clean(process.env.EMAIL_USER);
+  const pass = clean(process.env.EMAIL_PASS);
+  const fromAddress = clean(process.env.EMAIL_FROM) || user;
 
   if (!host || !user || !pass) {
-    console.log('------- EMAIL (SMTP not configured) -------');
+    console.log('------- EMAIL (EMAIL_* not configured) -------');
     console.log(`TO:      ${to}`);
     console.log(`SUBJECT: ${subject}`);
     console.log(`BODY:    ${htmlToText(html)}`);
@@ -224,14 +228,14 @@ export const sendEmail = async (
 
     await cachedTransporter.sendMail({
       from: `"Reachly" <${fromAddress}>`,
-      replyTo: process.env.EMAIL_REPLY_TO || process.env.SMTP_REPLY_TO || fromAddress,
+      replyTo: clean(process.env.EMAIL_REPLY_TO) || fromAddress,
       to,
       subject,
       html,
       text: htmlToText(html),
     });
   } catch (error) {
-    console.error('SMTP Email dispatch failed:', error);
+    console.error('Email dispatch failed:', error);
   }
 };
 

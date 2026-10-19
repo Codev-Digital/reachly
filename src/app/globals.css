@@ -142,3 +142,65 @@ input[type="range"]::-webkit-slider-thumb {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
+
+/* ── Rich text (Detailed bio): editor + rendered content ── */
+.rich-text p,
+.rich-text-editor .ProseMirror p {
+  margin: 0.5rem 0;
+}
+.rich-text > :first-child,
+.rich-text-editor .ProseMirror > :first-child {
+  margin-top: 0;
+}
+.rich-text > :last-child,
+.rich-text-editor .ProseMirror > :last-child {
+  margin-bottom: 0;
+}
+.rich-text ul,
+.rich-text-editor .ProseMirror ul {
+  list-style: disc;
+  padding-left: 1.25rem;
+  margin: 0.5rem 0;
+}
+.rich-text ol,
+.rich-text-editor .ProseMirror ol {
+  list-style: decimal;
+  padding-left: 1.25rem;
+  margin: 0.5rem 0;
+}
+.rich-text h2,
+.rich-text-editor .ProseMirror h2 {
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin: 0.75rem 0 0.5rem;
+}
+.rich-text h3,
+.rich-text-editor .ProseMirror h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0.75rem 0 0.5rem;
+}
+.rich-text blockquote,
+.rich-text-editor .ProseMirror blockquote {
+  border-left: 3px solid currentColor;
+  opacity: 0.8;
+  padding-left: 0.75rem;
+  margin: 0.5rem 0;
+}
+.rich-text a,
+.rich-text-editor .ProseMirror a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.rich-text strong,
+.rich-text-editor .ProseMirror strong {
+  font-weight: 700;
+}
+.rich-text-editor .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  opacity: 0.5;
+}

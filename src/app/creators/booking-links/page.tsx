@@ -3,6 +3,11 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import CreatorSidebar from '@/components/CreatorSidebar';
+import FormInput from '@/components/FormInput';
+
+const DARK_LABEL = 'font-sans text-sm font-normal leading-normal text-[#F9F6F2] opacity-70';
+const DARK_INPUT =
+  'bg-[#0C0C0C] border-[rgba(255,255,255,0.1)] focus:border-[rgba(255,255,255,0.1)] rounded-lg py-3 text-[#F9F6F2] opacity-50';
 
 export default function CreatorBookingLinks() {
   const [activeTab, setActiveTab] = useState('All Types');
@@ -339,14 +344,14 @@ export default function CreatorBookingLinks() {
                     )}
                   </div>
                 </div>
-                <div className="flex-1 min-w-[200px]">
-                  <label className="font-sans text-xs text-[#F9F6F2] opacity-60 block mb-2">Campaign Name (optional)</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. summer 2026"
-                    className="w-full bg-[#0C0C0C] border border-[rgba(255,255,255,0.1)] rounded-lg px-4 py-3 text-sm font-sans text-[#F9F6F2] placeholder-[#F9F6F2] opacity-50"
-                  />
-                </div>
+                <FormInput
+                  type="text"
+                  label="Campaign Name (optional)"
+                  placeholder="e.g. summer 2026"
+                  wrapperClassName="flex-1 min-w-[200px]"
+                  className={DARK_INPUT}
+                  labelClassName="font-sans text-xs font-normal leading-normal text-[#F9F6F2] opacity-60"
+                />
                 <button className="bg-[#C8A97E] text-[#0C0C0C] px-5 py-3 rounded-lg text-sm font-sans font-semibold">
                   Generate link
                 </button>
@@ -445,15 +450,14 @@ export default function CreatorBookingLinks() {
                   <h2 className="font-serif text-2xl font-bold text-[#F9F6F2] mb-6">Create Promo Code</h2>
 
                   <div className="space-y-4">
-                    <div>
-                      <label className="font-sans text-sm text-[#F9F6F2] opacity-70 mb-2 block">Code</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. STYLE20"
-                        defaultValue="STYLE20"
-                        className="w-full bg-[#0C0C0C] border border-[rgba(255,255,255,0.1)] rounded-lg px-4 py-3 text-sm font-sans text-[#F9F6F2] placeholder-[#F9F6F2] opacity-50"
-                      />
-                    </div>
+                    <FormInput
+                      type="text"
+                      label="Code"
+                      placeholder="e.g. STYLE20"
+                      defaultValue="STYLE20"
+                      className={DARK_INPUT}
+                      labelClassName={DARK_LABEL}
+                    />
 
                     <div>
                       <label className="font-sans text-sm text-[#F9F6F2] opacity-70 mb-2 block">Type</label>
@@ -463,15 +467,14 @@ export default function CreatorBookingLinks() {
                       </select>
                     </div>
 
-                    <div>
-                      <label className="font-sans text-sm text-[#F9F6F2] opacity-70 mb-2 block">Value</label>
-                      <input
-                        type="text"
-                        placeholder="10"
-                        defaultValue="10"
-                        className="w-full bg-[#0C0C0C] border border-[rgba(255,255,255,0.1)] rounded-lg px-4 py-3 text-sm font-sans text-[#F9F6F2] placeholder-[#F9F6F2] opacity-50"
-                      />
-                    </div>
+                    <FormInput
+                      type="text"
+                      label="Value"
+                      placeholder="10"
+                      defaultValue="10"
+                      className={DARK_INPUT}
+                      labelClassName={DARK_LABEL}
+                    />
 
                     <div>
                       <label className="font-sans text-sm text-[#F9F6F2] opacity-70 mb-2 block">Expiry Date</label>
@@ -481,15 +484,14 @@ export default function CreatorBookingLinks() {
                       />
                     </div>
 
-                    <div>
-                      <label className="font-sans text-sm text-[#F9F6F2] opacity-70 mb-2 block">Usage Limit</label>
-                      <input
-                        type="text"
-                        placeholder="50"
-                        defaultValue="50"
-                        className="w-full bg-[#0C0C0C] border border-[rgba(255,255,255,0.1)] rounded-lg px-4 py-3 text-sm font-sans text-[#F9F6F2] placeholder-[#F9F6F2] opacity-50"
-                      />
-                    </div>
+                    <FormInput
+                      type="text"
+                      label="Usage Limit"
+                      placeholder="50"
+                      defaultValue="50"
+                      className={DARK_INPUT}
+                      labelClassName={DARK_LABEL}
+                    />
 
                     <div>
                       <label className="font-sans text-sm text-[#F9F6F2] opacity-70 mb-2 block">Applicable Sessions</label>

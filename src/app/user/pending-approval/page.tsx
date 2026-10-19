@@ -8,7 +8,6 @@ import OnboardingNavbar from "@/components/OnboardingNavbar";
 export default function UserPendingApprovalPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [creatingRequest, setCreatingRequest] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -38,15 +37,17 @@ export default function UserPendingApprovalPage() {
           return;
         }
 
-        if (data.user?.approvalStatus !== "pending") {
-          setCreatingRequest(true);
-          await fetch("/api/user-approval-request", { method: "POST" });
+        // No (or incomplete) request yet → collect the required info first
+        const reqRes = await fetch("/api/user-approval-request");
+        const { request } = reqRes.ok ? await reqRes.json() : { request: null };
+        if (!request?.phone) {
+          router.replace("/user-onboarding");
+          return;
         }
       } catch (err) {
         console.error(err);
       } finally {
         setLoading(false);
-        setCreatingRequest(false);
       }
     };
 
@@ -123,10 +124,9 @@ export default function UserPendingApprovalPage() {
 
           <button
             onClick={() => window.location.reload()}
-            disabled={creatingRequest}
-            className="w-full bg-[#0012FF] text-white hover:bg-[#0010d0] font-bold py-2.5 px-8 rounded-full text-xs transition-colors shadow-sm disabled:opacity-50"
+            className="w-full bg-[#0012FF] text-white hover:bg-[#0010d0] font-bold py-2.5 px-8 rounded-full text-xs transition-colors shadow-sm"
           >
-            {creatingRequest ? "Sending Request..." : "Refresh Status"}
+            Refresh Status
           </button>
         </div>
       </div>
