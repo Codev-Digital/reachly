@@ -4,6 +4,7 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
 import CreatorProfile from '@/models/CreatorProfile';
+import UserApprovalRequest from '@/models/UserApprovalRequest';
 import mongoose from 'mongoose';
 
 // Helper to verify admin session
@@ -38,13 +39,16 @@ export async function GET(req: NextRequest) {
       if (!single) {
         return NextResponse.json({ error: 'User not found' }, { status: 404 });
       }
-      return NextResponse.json({ success: true, user: formatUser(single) });
+      const reqDoc = await UserApprovalRequest.findOne({ userId: single._id }).lean();
+      return NextResponse.json({ success: true, user: formatUser(single, reqDoc) });
     }
 
     // Fetch all users who are NOT creators
     const normalUsers = await User.find({ _id: { $nin: creatorUserIds } }).sort({ createdAt: -1 }).lean();
 
-    const formattedUsers = normalUsers.map(formatUser);
+    const requests = await UserApprovalRequest.find({ userId: { $in: normalUsers.map((u: any) => u._id) } }).lean();
+    const reqByUser = new Map(requests.map((r: any) => [r.userId.toString(), r]));
+    const formattedUsers = normalUsers.map((u: any) => formatUser(u, reqByUser.get(u._id.toString())));
 
     return NextResponse.json({ success: true, users: formattedUsers });
   } catch (error: any) {
@@ -54,7 +58,7 @@ export async function GET(req: NextRequest) {
 }
 
 // Map database user data to table/detail shape
-function formatUser(user: any) {
+function formatUser(user: any, request?: any) {
   const d = new Date(user.createdAt);
   const joinedDate = d.toLocaleDateString('en-GB', {
     day: 'numeric',
@@ -87,10 +91,11 @@ function formatUser(user: any) {
     time,
     status,
     avatar: user.profilePhoto || '/avatar.png',
-    city: '',
-    country: '',
+    city: request?.city || '',
+    country: request?.country || '',
+    phone: request?.phone || '',
     languages: 'English',
-    bio: ''
+    bio: request?.reason || ''
   };
 }
 
@@ -125,6 +130,13 @@ export async function PUT(req: NextRequest) {
     }
 
     await user.save();
+
+    // Keep the approval request in sync so /admin/user-requests matches
+    const approved = user.approvalStatus === 'approved';
+    await UserApprovalRequest.updateOne(
+      { userId: user._id },
+      { status: approved ? 'approved' : 'rejected', reviewedAt: new Date() },
+    );
 
     return NextResponse.json({ success: true, message: `User status changed to ${action}d successfully` });
   } catch (error: any) {

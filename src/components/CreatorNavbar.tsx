@@ -263,7 +263,7 @@ export default function CreatorNavbar() {
                   <Link
                     href="/explore-creators"
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className={`block font-inter text-base font-medium ${
+                    className={`block font-poppins text-base font-medium ${
                       pathname === "/explore-creators"
                         ? "text-[#C8A97E]"
                         : "text-[#0C0C0C]"
@@ -277,7 +277,7 @@ export default function CreatorNavbar() {
                   <Link
                     href="/how-it-works"
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className={`block font-inter text-base font-medium ${
+                    className={`block font-poppins text-base font-medium ${
                       pathname === "/how-it-works"
                         ? "text-[#C8A97E]"
                         : "text-[#0C0C0C]"
@@ -291,7 +291,7 @@ export default function CreatorNavbar() {
                   <Link
                     href="/for-creators"
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className={`block font-inter text-base font-medium ${
+                    className={`block font-poppins text-base font-medium ${
                       pathname === "/for-creators"
                         ? "text-[#C8A97E]"
                         : "text-[#0C0C0C]"
@@ -305,7 +305,7 @@ export default function CreatorNavbar() {
                   <Link
                     href="/about"
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className={`block font-inter text-base font-medium ${
+                    className={`block font-poppins text-base font-medium ${
                       pathname === "/about"
                         ? "text-[#C8A97E]"
                         : "text-[#0C0C0C]"
@@ -319,7 +319,7 @@ export default function CreatorNavbar() {
                   <Link
                     href="/contact-support"
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className={`block font-inter text-base font-medium ${
+                    className={`block font-poppins text-base font-medium ${
                       pathname === "/contact-support"
                         ? "text-[#C8A97E]"
                         : "text-[#0C0C0C]"
