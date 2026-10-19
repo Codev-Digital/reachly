@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import UserNavbar from '@/components/UserNavbar';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { signOut } from 'next-auth/react';
+import { logout } from '@/lib/logout';
 import FormInput from '@/components/FormInput';
 import CitySelect from '@/components/CitySelect';
 
@@ -177,7 +177,7 @@ export default function UserSettings() {
         sessionStorage.clear();
 
         alert('Account deleted successfully.');
-        signOut({ callbackUrl: '/signup' });
+        logout('/signup');
       } else {
         const err = await res.json();
         alert(err.error || 'Failed to delete account');

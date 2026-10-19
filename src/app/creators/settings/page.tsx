@@ -6,7 +6,7 @@ import Link from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import CreatorDashboardNav from '@/components/CreatorDashboardNav';
 import LoadingAnimation from '@/components/LoadingAnimation';
-import { signOut } from 'next-auth/react';
+import { logout } from '@/lib/logout';
 import { User, Briefcase, Clock, Shield, Star, Camera, Plus, Trash2, MapPin, ChevronRight, X, AlertTriangle } from 'lucide-react';
 import FormInput, { FormLabel } from '@/components/FormInput';
 import FormTextarea from '@/components/FormTextarea';
@@ -553,7 +553,7 @@ export default function CreatorSettings() {
         sessionStorage.clear();
 
         alert('Account deleted successfully');
-        signOut({ callbackUrl: '/signup' });
+        logout('/signup');
       } else {
         alert(data.error || 'Failed to delete account');
       }

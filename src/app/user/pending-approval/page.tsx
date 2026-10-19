@@ -4,10 +4,13 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import LoadingAnimation from "@/components/LoadingAnimation";
 import OnboardingNavbar from "@/components/OnboardingNavbar";
+import { useApprovalRefresh } from "@/lib/useApprovalRefresh";
 
 export default function UserPendingApprovalPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const { refresh, checking } = useApprovalRefresh();
+  const [stillPending, setStillPending] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -27,9 +30,8 @@ export default function UserPendingApprovalPage() {
             body: JSON.stringify({ step: 0, ref }),
           });
         }
-        if (data.user?.approvalStatus === "approved") {
-          router.push("/user/dashboard");
-          return;
+        if (data.user?.approvalStatus === "approved" || data.user?.approvalStatus === "rejected") {
+          if (await refresh()) return;
         }
 
         if (data.user?.hasCreatorProfile) {
@@ -52,7 +54,7 @@ export default function UserPendingApprovalPage() {
     };
 
     void load();
-  }, [router]);
+  }, [router, refresh]);
 
   if (loading) return <LoadingAnimation />;
 
@@ -123,11 +125,15 @@ export default function UserPendingApprovalPage() {
           </div>
 
           <button
-            onClick={() => window.location.reload()}
-            className="w-full bg-[#0012FF] text-white hover:bg-[#0010d0] font-bold py-2.5 px-8 rounded-full text-xs transition-colors shadow-sm"
+            onClick={async () => setStillPending(!(await refresh()))}
+            disabled={checking}
+            className="w-full bg-[#0012FF] text-white hover:bg-[#0010d0] font-bold py-2.5 px-8 rounded-full text-xs transition-colors shadow-sm disabled:opacity-50"
           >
-            Refresh Status
+            {checking ? "Checking..." : "Refresh Status"}
           </button>
+          {stillPending && !checking && (
+            <p className="mt-3 text-xs font-semibold text-gray-400">Still waiting for admin approval.</p>
+          )}
         </div>
       </div>
 

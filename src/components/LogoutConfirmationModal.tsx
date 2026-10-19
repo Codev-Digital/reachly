@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { signOut } from 'next-auth/react';
+import { logout } from '@/lib/logout';
 
 export default function LogoutConfirmationModal({
   isOpen,
@@ -68,7 +68,7 @@ export default function LogoutConfirmationModal({
                 localStorage.clear();
                 sessionStorage.clear();
               }
-              signOut({ callbackUrl: '/' });
+              logout('/');
             }}
             className="flex-1 py-3.5 bg-[#0012FF] hover:bg-[#0010d0] text-white rounded-full font-bold text-xs sm:text-sm text-center transition-all shadow-md active:scale-98 cursor-pointer"
           >

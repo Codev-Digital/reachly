@@ -1,6 +1,6 @@
 'use client';
 
-import { signOut } from 'next-auth/react';
+import { logout } from '@/lib/logout';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
@@ -47,7 +47,7 @@ export default function OnboardingNavbar({ showAuthButtons = false }: { showAuth
     });
     localStorage.clear();
     sessionStorage.clear();
-    await signOut({ callbackUrl: '/login' });
+    await logout('/login');
   };
 
   const handleNavClick = async (url: string) => {
@@ -59,7 +59,7 @@ export default function OnboardingNavbar({ showAuthButtons = false }: { showAuth
       });
       localStorage.clear();
       sessionStorage.clear();
-      await signOut({ callbackUrl: url });
+      await logout(url);
     } else {
       router.push(url);
     }

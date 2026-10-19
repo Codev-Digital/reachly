@@ -369,7 +369,7 @@ export default function CreatorOnboardingStep2() {
                       </svg>
                     </div>
                     <p className="text-sm font-medium text-gray-600">Upload Cover photo</p>
-                    <p className="text-xs text-gray-400">16:9 ratio recommended, drag to reposition (coming soon)</p>
+                    <p className="text-xs text-gray-400">16:9 ratio recommended</p>
                   </div>
                 )}
               </div>
@@ -377,7 +377,7 @@ export default function CreatorOnboardingStep2() {
             </label>
 
             {/* Profile Photo - Overlapping the cover photo */}
-            <div className="absolute -bottom-12 sm:-bottom-16 left-4 sm:left-8 flex flex-row items-end gap-3 sm:gap-6">
+            <div className="absolute -bottom-12 sm:-bottom-20 left-4 sm:left-8 flex flex-row items-end gap-3 sm:gap-6">
               <div className="relative">
                 <label className="block">
                   <div className={`w-24 h-24 sm:w-36 sm:h-36 rounded-full bg-[#FAFAFA] border-[4px] sm:border-[5px] border-white shadow-md flex items-center justify-center cursor-pointer overflow-hidden ${isFieldInvalid('profilePhoto') ? 'border-red-500' : 'border-white'}`}>
@@ -393,8 +393,8 @@ export default function CreatorOnboardingStep2() {
                   <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleProfilePhotoChange} className="hidden" />
                 </label>
               </div>
-              <div className="flex flex-col gap-1 pb-1 sm:pb-3">
-                <label className="bg-[#0012FF] text-white px-3 py-1.5 sm:px-5 sm:py-2 rounded-full text-[10px] sm:text-sm font-bold hover:bg-[#0010d0] transition-all shadow-md active:scale-95 w-fit flex items-center gap-2 cursor-pointer whitespace-nowrap">
+              <div className="flex flex-col gap-1 pb-1  sm:pb-3">
+                <label className="bg-[#0012FF]  text-white px-3 py-1.5 sm:px-5 sm:py-2 rounded-full text-[10px] sm:text-sm font-bold hover:bg-[#0010d0] transition-all shadow-md active:scale-95 w-fit flex items-center gap-2 cursor-pointer whitespace-nowrap">
                   <span className="hidden sm:inline">Upload Profile Photo</span>
                   <span className="sm:hidden">Upload Photo</span>
                   <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleProfilePhotoChange} className="hidden" />

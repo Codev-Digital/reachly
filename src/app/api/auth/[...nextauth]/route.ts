@@ -107,8 +107,12 @@ export const authOptions: NextAuthOptions = {
             hasSeenWelcome: false,
           });
         } else {
-          if (!existingUser.googleId) {
-            existingUser.googleId = account.providerAccountId;
+          // Google has verified this email; also covers accounts that started
+          // with email signup and never finished it.
+          if (!existingUser.googleId || !existingUser.isVerified || !existingUser.isRegistrationComplete) {
+            existingUser.googleId = existingUser.googleId || account.providerAccountId;
+            existingUser.isVerified = true;
+            existingUser.isRegistrationComplete = true;
             await existingUser.save();
           }
           // Mutate user object to pass DB fields to jwt callback
@@ -141,13 +145,17 @@ export const authOptions: NextAuthOptions = {
           token.approvalStatus = (user as any).approvalStatus;
           token.hasSeenWelcome = (user as any).hasSeenWelcome;
         }
-        (token as any).lastChecked = Date.now();
+        // No lastChecked here: a fresh sign-in must always sync from the DB below,
+        // otherwise hasCreatorProfile is missing for the first 5 minutes.
+        delete (token as any).lastChecked;
       }
 
       // Check DB periodically or on explicit update, preventing unthrottled sequential Atlas calls on every micro-request
       const now = Date.now();
       const lastChecked = (token as any).lastChecked || 0;
-      const shouldRefreshFromDB = trigger === "update" || !lastChecked || (now - lastChecked > 5 * 60 * 1000);
+      // Users still waiting on approval re-sync every 15s so a decision shows up quickly
+      const maxAge = token.approvalStatus === 'approved' ? 5 * 60 * 1000 : 15 * 1000;
+      const shouldRefreshFromDB = trigger === "update" || !lastChecked || (now - lastChecked > maxAge);
 
       if (token?.email && shouldRefreshFromDB) {
         try {

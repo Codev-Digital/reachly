@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getRelativeTime } from '@/lib/time';
-import { signOut } from 'next-auth/react';
+import { logout } from '@/lib/logout';
 
 export default function AdminNavbar() {
   const router = useRouter();
@@ -454,7 +454,7 @@ export default function AdminNavbar() {
                   });
                   localStorage.clear();
                   sessionStorage.clear();
-                  signOut({ callbackUrl: "/login" });
+                  logout("/login");
                 }}
                 className="flex-1 py-3.5 bg-[#0012FF] hover:bg-[#0010d0] text-white rounded-full font-bold text-xs sm:text-sm text-center transition-all shadow-md active:scale-98 cursor-pointer"
               >
