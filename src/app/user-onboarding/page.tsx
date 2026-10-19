@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import LoadingAnimation from "@/components/LoadingAnimation";
 import OnboardingNavbar from "@/components/OnboardingNavbar";
 
@@ -10,6 +11,7 @@ const inputClass =
 
 export default function UserOnboardingPage() {
   const router = useRouter();
+  const { update } = useSession();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -40,7 +42,8 @@ export default function UserOnboardingPage() {
         body: JSON.stringify(form),
       });
       if (res.ok) {
-        window.location.href = "/user/pending-approval"; // full reload refreshes the session token
+        await update(); // refresh the session token (status is now pending) before navigating
+        window.location.href = "/user/pending-approval";
         return;
       }
       setError((await res.json()).error || "Something went wrong");
@@ -63,6 +66,13 @@ export default function UserOnboardingPage() {
           onSubmit={handleSubmit}
           className="bg-white border border-gray-200/80 rounded-3xl p-8 sm:p-12 max-w-xl w-full shadow-sm space-y-5"
         >
+          <button
+            type="button"
+            onClick={() => router.push("/welcome?change=1")}
+            className="text-sm text-gray-500 hover:text-gray-900 font-semibold"
+          >
+            ← Change role
+          </button>
           <div className="text-center mb-2">
             <h1 className="font-anton text-2xl sm:text-3xl text-gray-950 uppercase tracking-wide mb-2">
               Tell us about you

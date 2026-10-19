@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
 
     await connectDB();
     const body = await request.json();
-    const { step, ref } = body;
+    const { step, ref, force } = body;
 
     if (typeof step !== "number") {
       return NextResponse.json(
@@ -49,7 +49,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    user.onboardingStep = Math.max(user.onboardingStep || 0, step);
+    // Role can be changed until the first step is finished (status none, step <= 1)
+    const canReset = force && user.approvalStatus === 'none' && (user.onboardingStep || 0) <= 1;
+    user.onboardingStep = canReset ? step : Math.max(user.onboardingStep || 0, step);
     user.hasSeenWelcome = true;
     await user.save();
 
