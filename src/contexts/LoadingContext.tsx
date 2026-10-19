@@ -1,6 +1,7 @@
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
 import LoadingAnimation from '@/components/LoadingAnimation';
 
 interface LoadingContextType {
@@ -12,14 +13,23 @@ interface LoadingContextType {
 const LoadingContext = createContext<LoadingContextType | undefined>(undefined);
 
 export function LoadingProvider({ children }: { children: ReactNode }) {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
-  const navigateWithLoading = async (path: string) => {
-    setIsLoading(true);
-    // Small delay to ensure the loading animation is visible
-    await new Promise(resolve => setTimeout(resolve, 500));
-    window.location.href = path;
+  // Instant client-side navigation: no artificial delay, no spinner, no full page reload.
+  const navigateWithLoading = (path: string) => {
+    router.push(path);
   };
+
+  // If the browser restores this page from its back/forward cache, make sure a
+  // stale spinner state is never shown.
+  useEffect(() => {
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) setIsLoading(false);
+    };
+    window.addEventListener('pageshow', handlePageShow);
+    return () => window.removeEventListener('pageshow', handlePageShow);
+  }, []);
 
   return (
     <LoadingContext.Provider value={{ isLoading, setLoading: setIsLoading, navigateWithLoading }}>

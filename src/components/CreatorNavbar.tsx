@@ -15,6 +15,12 @@ export default function CreatorNavbar() {
   const [userData, setUserData] = useState<any>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  // Warm up auth pages so switching to them is instant.
+  useEffect(() => {
+    router.prefetch("/login");
+    router.prefetch("/signup");
+  }, [router]);
+
   useEffect(() => {
     if (status === "authenticated") {
       fetch("/api/user/me")
