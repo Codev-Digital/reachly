@@ -6,10 +6,13 @@ import Image from 'next/image';
 import LoadingAnimation from '@/components/LoadingAnimation';
 
 import OnboardingNavbar from '@/components/OnboardingNavbar';
+import { useApprovalRefresh } from '@/lib/useApprovalRefresh';
 
 export default function CreatorPendingApproval() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const { refresh, checking } = useApprovalRefresh();
+  const [stillPending, setStillPending] = useState(false);
 
   useEffect(() => {
     const checkUserStatus = async () => {
@@ -21,13 +24,10 @@ export default function CreatorPendingApproval() {
         }
         const data = await res.json();
         
-        // If user is not pending, redirect appropriately
+        // Approved/rejected → refresh the session first, then do a full navigation
         if (data.user.approvalStatus !== 'pending') {
-          if (data.user.approvalStatus === 'approved') {
-            router.push('/creators/dashboard');
-          } else {
-            router.push('/');
-          }
+          if (await refresh()) return;
+          router.push('/');
         }
       } catch (err) {
         console.error(err);
@@ -37,7 +37,7 @@ export default function CreatorPendingApproval() {
     };
 
     checkUserStatus();
-  }, [router]);
+  }, [router, refresh]);
 
   if (loading) return <LoadingAnimation />;
 
@@ -97,11 +97,15 @@ export default function CreatorPendingApproval() {
 
           {/* Button to Refresh Status */}
           <button
-            onClick={() => window.location.reload()}
-            className="w-full bg-[#0012FF] text-white hover:bg-[#0010d0] font-bold py-2.5 px-8 rounded-full text-xs transition-colors shadow-sm"
+            onClick={async () => setStillPending(!(await refresh()))}
+            disabled={checking}
+            className="w-full bg-[#0012FF] text-white hover:bg-[#0010d0] font-bold py-2.5 px-8 rounded-full text-xs transition-colors shadow-sm disabled:opacity-50"
           >
-            Refresh Status
+            {checking ? 'Checking...' : 'Refresh Status'}
           </button>
+          {stillPending && !checking && (
+            <p className="mt-3 text-xs font-semibold text-gray-400">Still waiting for admin approval.</p>
+          )}
         </div>
       </div>
 

@@ -72,14 +72,11 @@ export async function GET(req: NextRequest) {
       });
 
       // Map status
-      let status: 'Active' | 'Pending' | 'Inactive' | 'Suspended' = 'Active';
-      if (user.approvalStatus === 'pending') {
-        status = 'Pending';
-      } else if (user.approvalStatus === 'rejected') {
-        status = 'Suspended';
-      } else if (!user.isRegistrationComplete && user.onboardingStep === 0) {
-        status = 'Inactive';
-      }
+      // Only an admin-approved account is Active; not-yet-applied ('none') is Inactive
+      let status: 'Active' | 'Pending' | 'Inactive' | 'Suspended' = 'Inactive';
+      if (user.approvalStatus === 'approved') status = 'Active';
+      else if (user.approvalStatus === 'pending') status = 'Pending';
+      else if (user.approvalStatus === 'rejected') status = 'Suspended';
 
       // Build contact details
       const contactInfo = [
@@ -146,6 +143,10 @@ export async function PUT(req: NextRequest) {
     const user = await User.findById(userId);
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    if (action === 'approve' && user.approvalStatus !== 'pending') {
+      return NextResponse.json({ error: 'This creator has not submitted their application yet.' }, { status: 400 });
     }
 
     if (action === 'approve') {

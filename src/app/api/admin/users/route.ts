@@ -72,14 +72,11 @@ function formatUser(user: any, request?: any) {
   });
 
   // Map status
-  let status: 'Active' | 'Pending' | 'Inactive' | 'Suspended' = 'Active';
-  if (user.approvalStatus === 'pending') {
-    status = 'Pending';
-  } else if (user.approvalStatus === 'rejected') {
-    status = 'Suspended';
-  } else if (!user.isRegistrationComplete && user.onboardingStep === 0) {
-    status = 'Inactive';
-  }
+  // Only an admin-approved account is Active; not-yet-applied ('none') is Inactive
+  let status: 'Active' | 'Pending' | 'Inactive' | 'Suspended' = 'Inactive';
+  if (user.approvalStatus === 'approved') status = 'Active';
+  else if (user.approvalStatus === 'pending') status = 'Pending';
+  else if (user.approvalStatus === 'rejected') status = 'Suspended';
 
   return {
     id: `USR-${user._id.toString().slice(-5).toUpperCase()}`,

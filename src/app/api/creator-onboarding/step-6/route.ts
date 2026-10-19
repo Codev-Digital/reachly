@@ -4,6 +4,9 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
 import CreatorPayment from '@/models/CreatorPayment';
+import CreatorProfile from '@/models/CreatorProfile';
+import SessionType from '@/models/SessionType';
+import CreatorAvailability from '@/models/CreatorAvailability';
 import { uploadToSupabase } from '@/lib/supabase';
 
 export async function GET() {
@@ -35,7 +38,17 @@ export async function PUT(req: NextRequest) {
     if (contentType.includes('application/json')) {
       const body = await req.json();
       if (body.isActive) {
-        // Go Live — submit for admin review
+        // Go Live — only a complete application can be sent for admin review
+        const [profile, sessionTypes, availability] = await Promise.all([
+          CreatorProfile.findOne({ userId: user._id }).select('isProfileComplete').lean() as any,
+          SessionType.countDocuments({ userId: user._id }),
+          CreatorAvailability.findOne({ userId: user._id }).select('isAvailabilityComplete').lean() as any,
+        ]);
+        if (!profile?.isProfileComplete) return NextResponse.json({ error: 'Complete your profile first.' }, { status: 422 });
+        if (!sessionTypes) return NextResponse.json({ error: 'Add at least one session type.' }, { status: 422 });
+        if (!availability?.isAvailabilityComplete) return NextResponse.json({ error: 'Set your availability.' }, { status: 422 });
+
+        // Submit for admin review
         user.approvalStatus = 'pending';
         if (user.onboardingStep < 5) user.onboardingStep = 5;
         await user.save();

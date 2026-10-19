@@ -447,18 +447,22 @@ export default function AdminCreatorsPage() {
                     {/* Actions */}
                     <td className="py-4 px-4" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleAcceptClick(creator)}
-                          className="px-3.5 py-1.5 border border-[#12B76A]/30 bg-[#12B76A]/5 rounded-full text-[10px] font-bold text-[#12B76A] hover:bg-[#12B76A]/10 transition-colors"
-                        >
-                          Accept
-                        </button>
-                        <button
-                          onClick={() => handleRejectClick(creator)}
-                          className="px-3.5 py-1.5 border border-[#EF4444]/30 bg-[#EF4444]/5 rounded-full text-[10px] font-bold text-[#EF4444] hover:bg-[#EF4444]/10 transition-colors"
-                        >
-                          Reject
-                        </button>
+                        {creator.status === 'Pending' && (
+                          <button
+                            onClick={() => handleAcceptClick(creator)}
+                            className="px-3.5 py-1.5 border border-[#12B76A]/30 bg-[#12B76A]/5 rounded-full text-[10px] font-bold text-[#12B76A] hover:bg-[#12B76A]/10 transition-colors"
+                          >
+                            Accept
+                          </button>
+                        )}
+                        {(creator.status === 'Pending' || creator.status === 'Active') && (
+                          <button
+                            onClick={() => handleRejectClick(creator)}
+                            className="px-3.5 py-1.5 border border-[#EF4444]/30 bg-[#EF4444]/5 rounded-full text-[10px] font-bold text-[#EF4444] hover:bg-[#EF4444]/10 transition-colors"
+                          >
+                            Reject
+                          </button>
+                        )}
                         <button
                           onClick={() => openDetail(creator)}
                           className="px-3.5 py-1.5 border border-gray-200 bg-gray-50 rounded-full text-[10px] font-bold text-gray-500 hover:bg-gray-100 transition-colors"
