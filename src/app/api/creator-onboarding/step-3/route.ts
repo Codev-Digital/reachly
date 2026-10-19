@@ -52,7 +52,7 @@ export async function PUT(req: NextRequest) {
     // ── Validate: at least one session required ───────────────────────────
     if (!sessionTypes || !Array.isArray(sessionTypes) || sessionTypes.length === 0) {
       return NextResponse.json(
-        { error: 'Add at least one session type before continuing.' },
+        { error: 'Add at least one session type before continuing.', code: 'NO_SESSIONS' },
         { status: 422 }
       );
     }

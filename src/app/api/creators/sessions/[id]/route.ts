@@ -260,6 +260,23 @@ export async function DELETE(
       return NextResponse.json({ error: 'Session not found or unauthorized' }, { status: 404 });
     }
 
+    // A creator must always keep at least one active session - the last one can't be deleted
+    if (sessionDoc.isActive !== false) {
+      const activeCount = await SessionType.countDocuments({
+        userId: user._id,
+        isActive: { $ne: false },
+      });
+      if (activeCount <= 1) {
+        return NextResponse.json(
+          {
+            error: "Your last session can't be deleted. Add another session first, then delete this one.",
+            code: 'LAST_SESSION',
+          },
+          { status: 409 }
+        );
+      }
+    }
+
     // Check if bookings exist referencing this session
     const hasBookings = await Booking.exists({ sessionTypeId: id });
 

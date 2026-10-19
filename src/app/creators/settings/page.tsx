@@ -14,6 +14,8 @@ import CitySelect from '@/components/CitySelect';
 import RichTextEditor from '@/components/RichTextEditor';
 import { isRichTextEmpty } from '@/lib/richText';
 import RichTextContent from '@/components/RichTextContent';
+import ActionDialog from '@/components/ActionDialog';
+import { usePreloadImages } from '@/lib/usePreloadImages';
 
 function ModalShell({
   onClose,
@@ -140,7 +142,11 @@ export default function CreatorSettings() {
     setFieldErrors((prev) => (prev[key] ? { ...prev, [key]: '' } : prev));
   const [loading, setLoading] = useState(true);
 
+  usePreloadImages(['/assets/cancel-appointment-sm.webp']);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
+  const [deletingSession, setDeletingSession] = useState(false);
+  const [showLastSessionModal, setShowLastSessionModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successModalMessage, setSuccessModalMessage] = useState('');
 
@@ -430,22 +436,53 @@ export default function CreatorSettings() {
     if (id) router.push(`/creators/settings/sessions/${id}`);
   };
 
-  const handleDeleteSession = async (sessionIdToDelete: string) => {
-    if (!confirm('Are you sure you want to delete this session type?')) return;
+  // A creator must always keep at least one session, so the last one can't be deleted.
+  const handleDeleteSession = (sessionIdToDelete: string) => {
+    if (sessions.length <= 1) {
+      setShowLastSessionModal(true);
+      return;
+    }
+    setSessionToDelete(sessionIdToDelete);
+  };
+
+  const confirmDeleteSession = async () => {
+    const sessionIdToDelete = sessionToDelete;
+    if (!sessionIdToDelete) return;
+
+    // Re-check in case the list changed while the popup was open
+    if (sessions.length <= 1) {
+      setSessionToDelete(null);
+      setShowLastSessionModal(true);
+      return;
+    }
+
     const updatedList = sessions.filter(s => (s.id || s._id) !== sessionIdToDelete);
+    setDeletingSession(true);
     try {
       const res = await fetch('/api/creator-onboarding/step-3', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionTypes: updatedList })
       });
+      setSessionToDelete(null);
       if (res.ok) {
         setSessions(updatedList);
         setSuccessModalMessage('Session type deleted successfully.');
         setShowSuccessModal(true);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        if (data?.code === 'LAST_SESSION' || data?.code === 'NO_SESSIONS') {
+          setShowLastSessionModal(true);
+        } else {
+          setSuccessModalMessage(data?.error || 'Could not delete the session. Please try again.');
+          setShowSuccessModal(true);
+        }
       }
     } catch (err) {
       console.error('Failed to delete session:', err);
+      setSessionToDelete(null);
+    } finally {
+      setDeletingSession(false);
     }
   };
 
@@ -1384,6 +1421,39 @@ export default function CreatorSettings() {
           </div>
         </div>
       )}
+
+      {/* ============ DELETE SESSION CONFIRM ============ */}
+      <ActionDialog
+        open={!!sessionToDelete}
+        onOpenChange={(open) => {
+          if (!open && !deletingSession) setSessionToDelete(null);
+        }}
+        image={{ src: '/assets/cancel-appointment-sm.webp', alt: 'Delete session' }}
+        title="Delete this session?"
+        description="This session type will be removed from your profile and followers will no longer be able to book it."
+        actions={[
+          { label: 'Cancel', variant: 'outline', onClick: () => setSessionToDelete(null), disabled: deletingSession },
+          { label: deletingSession ? 'Deleting...' : 'Delete Session', variant: 'destructive', onClick: confirmDeleteSession, disabled: deletingSession },
+        ]}
+      />
+
+      {/* ============ LAST SESSION CAN'T BE DELETED ============ */}
+      <ActionDialog
+        open={showLastSessionModal}
+        onOpenChange={setShowLastSessionModal}
+        image={{ src: '/assets/cancel-appointment-sm.webp', alt: 'Cannot delete session' }}
+        title="Last session can't be deleted"
+        actions={[
+          { label: 'Got it', variant: 'outline', onClick: () => setShowLastSessionModal(false) },
+          {
+            label: 'Add New Session',
+            onClick: () => {
+              setShowLastSessionModal(false);
+              handleOpenCreateModal();
+            },
+          },
+        ]}
+      />
 
       {showSuccessModal && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[150] p-4">
