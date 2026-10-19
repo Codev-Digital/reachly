@@ -5,43 +5,22 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import CreatorDashboardNav from '@/components/CreatorDashboardNav';
-import FormInput, { FormError } from '@/components/FormInput';
-import Dropdown from '@/components/Dropdown';
-import { InfoTooltip } from '@/components/ui/tooltip';
-import RichTextEditor from '@/components/RichTextEditor';
-import { SESSION_DESCRIPTION_MAX_LENGTH, isRichTextEmpty, toEditorHtml } from '@/lib/richText';
+import { FormError } from '@/components/FormInput';
+import SessionFields from '@/components/SessionFields';
+import { toEditorHtml } from '@/lib/richText';
+import {
+  emptySessionValues,
+  scrollToFirstError,
+  sessionToValues,
+  validateSessionValues,
+  valuesToPayload,
+  type SessionErrorKey,
+  type SessionErrors,
+  type SessionFormValues,
+} from '@/lib/sessionForm';
 
 const SETTINGS_SESSIONS_URL = '/creators/settings?tab=Sessions';
 const SETTINGS_CACHE_KEY = 'reachly_creator_settings_cache';
-
-const PRESET_DURATIONS = [
-  { label: '15 mins', value: '15' },
-  { label: '30 mins', value: '30' },
-  { label: '45 mins', value: '45' },
-  { label: '1 hour', value: '60' },
-  { label: '90 mins', value: '90' },
-];
-const CUSTOM_DURATION_OPTION = 'Custom Duration';
-const DURATION_OPTIONS = [...PRESET_DURATIONS.map((d) => d.label), CUSTOM_DURATION_OPTION];
-const MAX_DURATION_MINUTES = 1440;
-
-// Buffer time (rest after a session) can never be longer than the session itself.
-// Short sessions: 5-minute steps (5, 10, 15 ...). From 1 hour up: 15-minute steps (15, 30, 45, 60 ...).
-const NO_BUFFER_OPTION = 'No buffer';
-const MAX_BUFFER_MINUTES = 120;
-const bufferChoicesFor = (durationMinutes: number): number[] => {
-  if (!Number.isInteger(durationMinutes) || durationMinutes < 1) return [];
-  const step = durationMinutes >= 60 ? 15 : 5;
-  const max = Math.min(durationMinutes, MAX_BUFFER_MINUTES);
-  const choices: number[] = [];
-  for (let m = step; m <= max; m += step) choices.push(m);
-  return choices;
-};
-const bufferLabel = (minutes: number) => (minutes === 0 ? NO_BUFFER_OPTION : `${minutes} mins`);
-
-const isPresetDuration = (value: string) => PRESET_DURATIONS.some((d) => d.value === value);
-/** Digits only - no decimals, signs or letters. */
-const digitsOnly = (value: string) => value.replace(/\D/g, '');
 
 interface DBTypeSession {
   _id?: string;
@@ -55,9 +34,6 @@ interface DBTypeSession {
   features?: string[];
   maxBookings?: number;
 }
-
-type ErrorKey = 'title' | 'description' | 'duration' | 'price' | 'discountedPrice' | 'maxBookings';
-type Errors = Partial<Record<ErrorKey, string>>;
 
 /**
  * Full-page form to create (no `sessionId`) or edit (with `sessionId`) a session type.
@@ -75,18 +51,12 @@ export default function SessionForm({ sessionId }: { sessionId?: string }) {
   const [notFound, setNotFound] = useState(false);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
-  const [errors, setErrors] = useState<Errors>({});
+  const [errors, setErrors] = useState<SessionErrors>({});
+  const [values, setValues] = useState<SessionFormValues>(emptySessionValues);
 
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [duration, setDuration] = useState('60'); // minutes, as typed
-  const [customDuration, setCustomDuration] = useState(false);
-  const [bufferTime, setBufferTime] = useState(0); // minutes
-  const [price, setPrice] = useState('1200');
-  const [discountedPrice, setDiscountedPrice] = useState('');
-  const [maxBookings, setMaxBookings] = useState('4');
-
-  const clearError = (key: ErrorKey) =>
+  const updateValues = (patch: Partial<SessionFormValues>) =>
+    setValues((prev) => ({ ...prev, ...patch }));
+  const clearError = (key: SessionErrorKey) =>
     setErrors((prev) => (prev[key] ? { ...prev, [key]: '' } : prev));
 
   // Header (photo / name) comes from the settings cache, falling back to the API
@@ -130,19 +100,7 @@ export default function SessionForm({ sessionId }: { sessionId?: string }) {
           if (!current) {
             setNotFound(true);
           } else {
-            const dur = String(current.duration || '60');
-            setTitle(current.title || '');
-            setDescription(toEditorHtml(current.description));
-            setDuration(dur);
-            setCustomDuration(!isPresetDuration(dur));
-            setBufferTime(Number(current.bufferTime) || 0);
-            setPrice(String(current.price ?? ''));
-            setDiscountedPrice(
-              current.discountedPrice !== undefined && current.discountedPrice !== null
-                ? String(current.discountedPrice)
-                : ''
-            );
-            setMaxBookings(String(current.maxBookings || 4));
+            setValues(sessionToValues(current, toEditorHtml(current.description)));
           }
         }
       } catch (err) {
@@ -159,75 +117,18 @@ export default function SessionForm({ sessionId }: { sessionId?: string }) {
     };
   }, [sessionId, isEdit]);
 
-  const handleDurationSelect = (option: string) => {
-    if (option === CUSTOM_DURATION_OPTION) {
-      if (!customDuration) {
-        setCustomDuration(true);
-        setDuration(''); // start empty so the creator can type their own minutes
-      }
-    } else {
-      setCustomDuration(false);
-      setDuration(PRESET_DURATIONS.find((d) => d.label === option)?.value ?? '');
-    }
-    clearError('duration');
-  };
-
-  // Buffer options follow the chosen duration; an old choice that no longer fits snaps to the closest valid one
-  const bufferChoices = bufferChoicesFor(Number(duration));
-  const effectiveBuffer = bufferChoices.filter((m) => m <= bufferTime).pop() ?? 0;
-  const bufferOptions = [NO_BUFFER_OPTION, ...bufferChoices.map(bufferLabel)];
-
   const handleSave = async () => {
     setFormError('');
-    const next: Errors = {};
-
-    if (!title.trim()) next.title = 'Session title is required';
-    if (isRichTextEmpty(description)) next.description = 'Session description is required';
-
-    const durationNum = Number(duration);
-    if (!duration || !Number.isInteger(durationNum) || durationNum < 1 || durationNum > MAX_DURATION_MINUTES) {
-      next.duration = customDuration
-        ? `Enter a duration between 1 and ${MAX_DURATION_MINUTES} minutes`
-        : 'Please choose a duration';
-    }
-
-    const priceNum = Number(price);
-    if (!price || !(priceNum >= 1)) next.price = 'Enter a price of at least 1 PKR';
-
-    if (discountedPrice) {
-      const discountNum = Number(discountedPrice);
-      if (!(discountNum >= 1)) next.discountedPrice = 'Enter a discounted price of at least 1 PKR';
-      else if (!next.price && discountNum >= priceNum) {
-        next.discountedPrice = 'Discounted price must be less than the session price';
-      }
-    }
-
-    const maxNum = Number(maxBookings);
-    if (!maxBookings || !Number.isInteger(maxNum) || maxNum < 1) {
-      next.maxBookings = 'Enter at least 1 booking per day';
-    }
-
+    const next = validateSessionValues(values);
     setErrors(next);
     if (Object.keys(next).length > 0) {
-      setTimeout(() => {
-        document
-          .querySelector('[role="alert"]')
-          ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 50);
+      scrollToFirstError();
       return;
     }
 
     setSaving(true);
     try {
-      const payload = {
-        title: title.trim(),
-        description,
-        duration: durationNum,
-        price: priceNum,
-        discountedPrice: discountedPrice ? Number(discountedPrice) : undefined,
-        bufferTime: effectiveBuffer,
-        maxBookings: maxNum,
-      };
+      const payload = valuesToPayload(values);
 
       // Editing keeps whatever else is stored on the session (questions, older "included" bullets...)
       const updatedList: DBTypeSession[] = isEdit
@@ -325,133 +226,12 @@ export default function SessionForm({ sessionId }: { sessionId?: string }) {
           <div className="bg-white rounded-3xl border border-gray-200 p-6 sm:p-8 shadow-sm">
             {formError && <FormError className="mb-5">{formError}</FormError>}
 
-            <div className="space-y-5">
-              <FormInput
-                label="Title"
-                required
-                type="text"
-                value={title}
-                onChange={(e) => {
-                  setTitle(e.target.value);
-                  clearError('title');
-                }}
-                error={errors.title}
-                placeholder="Style Consultation"
-              />
-
-              <RichTextEditor
-                label="Description"
-                required
-                value={description}
-                onChange={(html) => {
-                  setDescription(html);
-                  clearError('description');
-                }}
-                maxLength={SESSION_DESCRIPTION_MAX_LENGTH}
-                error={errors.description}
-                placeholder="Personal styling session to revamp your wardrobe and discover your signature look."
-              />
-
-              {/* Duration: presets, or "Custom Duration" which turns the field into a minutes input */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <Dropdown
-                  label="Duration"
-                  required
-                  options={DURATION_OPTIONS}
-                  value={
-                    customDuration
-                      ? duration
-                      : (PRESET_DURATIONS.find((d) => d.value === duration)?.label ?? '')
-                  }
-                  selectedOption={
-                    customDuration
-                      ? CUSTOM_DURATION_OPTION
-                      : PRESET_DURATIONS.find((d) => d.value === duration)?.label
-                  }
-                  onChange={handleDurationSelect}
-                  editable={customDuration}
-                  onInputChange={(text) => {
-                    setDuration(digitsOnly(text));
-                    clearError('duration');
-                  }}
-                  inputMode="numeric"
-                  inputMaxLength={4}
-                  suffix={customDuration ? 'min' : undefined}
-                  placeholder={customDuration ? 'Enter duration' : 'Select duration'}
-                  error={errors.duration}
-                />
-
-                <Dropdown
-                  label="Buffer Time"
-                  labelAddon={
-                    <InfoTooltip title="Buffer time">
-                      A short break kept free after each session, before the next booking can start. It can&apos;t
-                      be longer than the session duration, so enter a duration first.
-                    </InfoTooltip>
-                  }
-                  options={bufferOptions}
-                  value={bufferLabel(effectiveBuffer)}
-                  onChange={(label) =>
-                    setBufferTime(
-                      label === NO_BUFFER_OPTION ? 0 : Number(label.replace(/\D/g, '')) || 0
-                    )
-                  }
-                  disabled={bufferChoices.length === 0}
-                  placeholder={bufferChoices.length === 0 ? 'Choose a duration first' : 'Select buffer time'}
-                />
-              </div>
-
-              {/* Session price next to the discounted price */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <FormInput
-                  label="Session Price"
-                  required
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={8}
-                  suffix="PKR"
-                  value={price}
-                  onChange={(e) => {
-                    setPrice(digitsOnly(e.target.value));
-                    clearError('price');
-                    clearError('discountedPrice');
-                  }}
-                  error={errors.price}
-                  placeholder="1200"
-                />
-                <FormInput
-                  label="Discounted Price"
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={8}
-                  suffix="PKR"
-                  value={discountedPrice}
-                  onChange={(e) => {
-                    setDiscountedPrice(digitsOnly(e.target.value));
-                    clearError('discountedPrice');
-                  }}
-                  error={errors.discountedPrice}
-                  placeholder="Optional"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <FormInput
-                  label="Max Bookings Per Day"
-                  required
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={3}
-                  value={maxBookings}
-                  onChange={(e) => {
-                    setMaxBookings(digitsOnly(e.target.value));
-                    clearError('maxBookings');
-                  }}
-                  error={errors.maxBookings}
-                  placeholder="4"
-                />
-              </div>
-            </div>
+            <SessionFields
+              values={values}
+              onChange={updateValues}
+              errors={errors}
+              clearError={clearError}
+            />
 
             <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-3 mt-8">
               <Link
