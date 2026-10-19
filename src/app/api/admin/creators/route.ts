@@ -7,6 +7,7 @@ import CreatorProfile from '@/models/CreatorProfile';
 import { sanitizeRichText } from '@/lib/sanitizeRichText';
 import CreatorPayment from '@/models/CreatorPayment';
 import Booking from '@/models/Booking';
+import mongoose from 'mongoose';
 
 // Helper to verify admin session
 function isAdmin(email?: string | null) {
@@ -15,8 +16,8 @@ function isAdmin(email?: string | null) {
   return adminEmails.includes(email.toLowerCase());
 }
 
-// GET all creators
-export async function GET() {
+// GET all creators, or a single creator with ?id=<userId>
+export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email || !isAdmin(session.user.email)) {
@@ -25,11 +26,16 @@ export async function GET() {
 
     await connectDB();
 
-    // Fetch all creator profiles, payments, and bookings
+    const id = new URL(req.url).searchParams.get('id');
+    if (id && !mongoose.isValidObjectId(id)) {
+      return NextResponse.json({ error: 'Creator not found' }, { status: 404 });
+    }
+
+    // Fetch creator profiles, payments, and bookings (only this creator's when ?id= is given)
     const [profiles, payments, allBookings] = await Promise.all([
-      CreatorProfile.find({}).lean(),
-      CreatorPayment.find({}).lean(),
-      Booking.find({}).lean(),
+      CreatorProfile.find(id ? { userId: id } : {}).lean(),
+      CreatorPayment.find(id ? { userId: id } : {}).lean(),
+      Booking.find(id ? { creatorId: id } : {}).lean(),
     ]);
 
     const creatorUserIds = profiles.map((p: any) => p.userId.toString());
@@ -106,6 +112,14 @@ export async function GET() {
         totalCategories: totalCategories
       };
     });
+
+    if (id) {
+      const creator = formattedCreators[0];
+      if (!creator) {
+        return NextResponse.json({ error: 'Creator not found' }, { status: 404 });
+      }
+      return NextResponse.json({ success: true, creator });
+    }
 
     return NextResponse.json({ success: true, creators: formattedCreators });
   } catch (error: any) {

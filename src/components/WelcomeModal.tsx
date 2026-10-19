@@ -40,13 +40,13 @@ export default function WelcomeModal({
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6">
-      <div className="absolute inset-0 bg-black/50" />
+      <div className="welcome-backdrop absolute inset-0 bg-black/50" />
 
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="welcome-modal-title"
-        className="relative w-full max-w-[920px] bg-white rounded-xl sm:rounded-2xl shadow-2xl px-6 py-8 sm:px-10 sm:py-10"
+        className="welcome-dialog relative w-full max-w-[920px] bg-white rounded-xl sm:rounded-2xl shadow-2xl px-6 py-8 sm:px-10 sm:py-10"
       >
         <h1
           id="welcome-modal-title"

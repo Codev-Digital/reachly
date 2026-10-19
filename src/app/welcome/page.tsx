@@ -55,6 +55,45 @@ function WelcomeContent() {
     }
   }, [status, redirected, router]);
 
+  // The homepage behind the modal mounts under the loader. We keep the loader
+  // up until its hero background has painted, so the modal never opens on top
+  // of a white / half-rendered page.
+  const [bgReady, setBgReady] = useState(false);
+  const [showLoader, setShowLoader] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout>;
+    const start = Date.now();
+    const check = () => {
+      if (cancelled) return;
+      const img = document.querySelector(
+        'img[src*="new-bg-image"]',
+      ) as HTMLImageElement | null;
+      const loaded = !!img && img.complete && img.naturalWidth > 0;
+      const elapsed = Date.now() - start;
+      // 800ms lets the hero entrance animation finish behind the loader.
+      if ((loaded && elapsed >= 800) || elapsed >= 3000) {
+        setBgReady(true);
+      } else {
+        timer = setTimeout(check, 100);
+      }
+    };
+    check();
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, []);
+
+  const ready = !isLoading && status !== "loading" && bgReady;
+
+  useEffect(() => {
+    if (!ready) return;
+    const t = setTimeout(() => setShowLoader(false), 500);
+    return () => clearTimeout(t);
+  }, [ready]);
+
   const handleNext = async () => {
     if (!selected || hasSelected.current) return;
     hasSelected.current = true;
@@ -82,8 +121,6 @@ function WelcomeContent() {
       setIsLoadingButton(false);
     }
   };
-
-  if (isLoading || status === "loading") return <LoadingAnimation />;
 
   const firstName =
     (userData?.user?.name || "").trim().split(" ")[0] || "there";
@@ -115,13 +152,25 @@ function WelcomeContent() {
         </div>
       </div>
 
-      <WelcomeModal
-        firstName={firstName}
-        selected={selected}
-        onSelect={setSelected}
-        onNext={handleNext}
-        loading={isLoadingButton}
-      />
+      {ready && (
+        <WelcomeModal
+          firstName={firstName}
+          selected={selected}
+          onSelect={setSelected}
+          onNext={handleNext}
+          loading={isLoadingButton}
+        />
+      )}
+
+      {showLoader && (
+        <div
+          className={`fixed inset-0 z-[9999] transition-opacity duration-500 ease-out ${
+            ready ? "opacity-0 pointer-events-none" : "opacity-100"
+          }`}
+        >
+          <LoadingAnimation />
+        </div>
+      )}
     </div>
   );
 }

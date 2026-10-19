@@ -206,7 +206,7 @@ export default function AdminNavbar() {
           {/* Center: Navigation Links */}
           <div className="hidden md:flex items-center gap-2 lg:gap-4">
             {navItems.map((item) => {
-              const isActive = pathname === item.href;
+              const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
               return (
                 <Link
                   key={item.name}
@@ -360,7 +360,7 @@ export default function AdminNavbar() {
               className="w-full overflow-hidden flex flex-col gap-2 mt-4 pt-4 border-t border-gray-100 md:hidden"
             >
               {navItems.map((item) => {
-                const isActive = pathname === item.href;
+                const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
                 return (
                   <Link
                     key={item.name}

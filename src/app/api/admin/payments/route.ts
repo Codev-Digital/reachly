@@ -6,6 +6,7 @@ import Booking from '@/models/Booking';
 import User from '@/models/User';
 import CreatorProfile from '@/models/CreatorProfile';
 import { autoSettleEarnings } from '@/lib/autoSettleEarnings';
+import mongoose from 'mongoose';
 
 function isAdmin(email?: string | null) {
   if (!email) return false;
@@ -13,7 +14,8 @@ function isAdmin(email?: string | null) {
   return adminEmails.includes(email.toLowerCase());
 }
 
-export async function GET() {
+// GET all payments, or a single payment with ?id=<bookingId>
+export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email || !isAdmin(session.user.email)) {
@@ -22,11 +24,16 @@ export async function GET() {
 
     await connectDB();
 
+    const id = new URL(req.url).searchParams.get('id');
+    if (id && !mongoose.isValidObjectId(id)) {
+      return NextResponse.json({ error: 'Payment not found' }, { status: 404 });
+    }
+
     // Auto-settle all creators: mark past-due pending earnings as paid
     await autoSettleEarnings();
 
-    // Fetch all bookings sorted by newest first
-    const bookings = await Booking.find({}).sort({ createdAt: -1 }).lean();
+    // Fetch all bookings sorted by newest first (or just the requested one)
+    const bookings = await Booking.find(id ? { _id: id } : {}).sort({ createdAt: -1 }).lean();
 
     // Fetch all users and creators for fast lookup
     const users = await User.find({}).lean();
@@ -92,6 +99,14 @@ export async function GET() {
         status: displayStatus
       };
     });
+
+    if (id) {
+      const payment = enrichedPayments[0];
+      if (!payment) {
+        return NextResponse.json({ error: 'Payment not found' }, { status: 404 });
+      }
+      return NextResponse.json({ success: true, payment });
+    }
 
     return NextResponse.json({ success: true, payments: enrichedPayments });
   } catch (error: any) {

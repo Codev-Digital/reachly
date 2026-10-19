@@ -5,7 +5,7 @@ import { AdminListSkeleton } from '@/components/admin/AdminSkeletons';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import RichTextContent from '@/components/RichTextContent';
+import { useRouter } from 'next/navigation';
 
 interface Creator {
   id: string;
@@ -36,6 +36,9 @@ interface Creator {
 }
 
 export default function AdminCreatorsPage() {
+  const router = useRouter();
+  const openDetail = (c: Creator) => router.push(`/admin/creators/${c.dbId || c.id}`);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<'All Statuses' | 'Active' | 'Pending' | 'Inactive' | 'Suspended'>('All Statuses');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -54,9 +57,6 @@ export default function AdminCreatorsPage() {
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
-
-  // Track selected creator for full detail view
-  const [activeDetailCreator, setActiveDetailCreator] = useState<Creator | null>(null);
 
   const categories = [
     'Software Engineering',
@@ -134,7 +134,6 @@ export default function AdminCreatorsPage() {
         if (res.ok) {
           setRejectSuccess(true);
           loadCreators();
-          setActiveDetailCreator(null);
         } else {
           const err = await res.json();
           alert(err.error || 'Failed to reject creator.');
@@ -167,7 +166,6 @@ export default function AdminCreatorsPage() {
         if (res.ok) {
           setAcceptSuccess(true);
           loadCreators();
-          setActiveDetailCreator(null);
         } else {
           const err = await res.json();
           alert(err.error || 'Failed to approve creator.');
@@ -192,258 +190,6 @@ export default function AdminCreatorsPage() {
   };
 
   if (loading) return <AdminListSkeleton />;
-
-  if (activeDetailCreator) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 15 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 15 }}
-        className="pb-12"
-      >
-        {/* Back Link */}
-        <button
-          onClick={() => setActiveDetailCreator(null)}
-          className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors mb-4 font-semibold"
-        >
-          <span>←</span> Back to Creators
-        </button>
-
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl sm:text-4xl font-bold font-sans text-black">
-            <span className="text-[#0012FF] font-black">Creator</span> Details{' '}
-            <span className="text-gray-400 font-normal text-sm sm:text-base">Account Overview</span>
-          </h1>
-        </div>
-
-        {/* Premium Creator Detail Card with creator-detail-card.svg background */}
-        <div className="relative bg-white rounded-[32px] p-8 border border-gray-100 shadow-sm overflow-hidden z-10">
-          {/* <img
-            src="/assets/creator-detail-card.svg"
-            alt=""
-            className="absolute inset-0 w-full h-full object-fill pointer-events-none -z-10"
-          /> */}
-
-          {/* Banner Graphic Header */}
-          <div className="relative w-full aspect-[1140/320] rounded-2xl overflow-visible mb-12 flex items-center justify-end p-8 sm:p-12 text-white">
-            {/* Background Graphic Mockup */}
-            <div className="absolute inset-0 bg-black/45 z-0" />
-            <img
-              src={activeDetailCreator.coverPhoto || "/welcome-creator.png"}
-              alt=""
-              className="absolute inset-0 w-full h-full object-cover"
-              onError={(e) => {
-                // Fallback neutral dark gradient if image doesn't load
-                (e.target as HTMLImageElement).className = "absolute inset-0 w-full h-full bg-gradient-to-r from-neutral-800 to-neutral-950 z-[-1]";
-              }}
-            />
-
-            {/* Profile circular overlay positioned inside the banner layout */}
-            <div className="absolute left-8 sm:left-1 -bottom-16 w-32 h-32 sm:w-40 sm:h-40 rounded-full border-[6px] border-white shadow-lg bg-white z-20 flex-shrink-0">
-              <img
-                src={activeDetailCreator.avatar}
-                alt={activeDetailCreator.name}
-                className="w-full h-full object-cover rounded-full"
-              />
-            </div>
-
-            {/* Text Overlay Details */}
-            <div className="relative z-10 text-right max-w-xl">
-              <h2 className="text-3xl sm:text-4xl md:text-5xl font-black font-sans leading-tight">
-                {activeDetailCreator.bannerName || activeDetailCreator.name}
-              </h2>
-              <div className="mt-2.5 inline-block px-5 py-1.5 border border-white/40 rounded-full text-xs sm:text-sm font-semibold bg-white/10 backdrop-blur-sm">
-                {activeDetailCreator.bannerNiche || 'Content Creator'}
-              </div>
-              <p className="mt-4 text-[10px] sm:text-xs text-white/80 font-bold uppercase tracking-wider">
-                {activeDetailCreator.bannerContact || activeDetailCreator.email}
-              </p>
-            </div>
-          </div>
-
-          {/* Profile Name & Social Pills (Aligned below banner) */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between mt-20 gap-4 border-b border-gray-50 pb-6 mb-8">
-            <div>
-              <div className="flex items-center gap-3 flex-wrap">
-                <h3 className="text-2xl font-black text-black leading-none">{activeDetailCreator.name}</h3>
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-[#0012FF] capitalize">
-                  Influencer
-                </span>
-              </div>
-              <p className="text-sm text-gray-400 font-bold mt-1.5">{activeDetailCreator.username}</p>
-            </div>
-
-            {/* Niches List */}
-            {activeDetailCreator.niches && activeDetailCreator.niches.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {activeDetailCreator.niches.map((n, i) => {
-                  const colors = [
-                    'bg-rose-50 text-rose-500 border border-rose-100',
-                    'bg-emerald-50 text-emerald-500 border border-emerald-100',
-                    'bg-amber-50 text-amber-500 border border-amber-100'
-                  ];
-                  return (
-                    <span
-                      key={i}
-                      className={`px-3 py-1 rounded-full text-[10px] font-bold capitalize ${colors[i % colors.length]}`}
-                    >
-                      {n}
-                    </span>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Main Layout Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            {/* Left Block (Details Grid & Bio) */}
-            <div className="lg:col-span-3 flex flex-col gap-6">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-y-6 gap-x-6">
-                {/* Display Name */}
-                <div>
-                  <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Display Name</p>
-                  <p className="text-sm font-bold text-black mt-1">{activeDetailCreator.name}</p>
-                </div>
-
-                {/* City */}
-                <div>
-                  <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">City</p>
-                  <p className="text-sm font-bold text-black mt-1">{activeDetailCreator.city || 'N/A'}</p>
-                </div>
-
-                {/* Languages Spoken */}
-                <div>
-                  <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Languages Spoken</p>
-                  <p className="text-sm font-bold text-black mt-1">{activeDetailCreator.languages || 'N/A'}</p>
-                </div>
-
-                {/* Joined Date */}
-                <div>
-                  <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Joined Date</p>
-                  <p className="text-sm font-bold text-black mt-1">{activeDetailCreator.joinedDate}</p>
-                </div>
-
-                {/* Email */}
-                <div>
-                  <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Email</p>
-                  <p className="text-sm font-bold text-black mt-1 break-all">{activeDetailCreator.email}</p>
-                </div>
-
-                {/* Country */}
-                <div>
-                  <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Country</p>
-                  <p className="text-sm font-bold text-black mt-1">{activeDetailCreator.country || 'N/A'}</p>
-                </div>
-
-                {/* Status */}
-                <div>
-                  <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Status</p>
-                  <p className={`text-sm font-black mt-1 ${activeDetailCreator.status === 'Active'
-                    ? 'text-[#10B981]'
-                    : activeDetailCreator.status === 'Pending'
-                      ? 'text-[#F59E0B]'
-                      : 'text-rose-500'
-                    }`}>
-                    {activeDetailCreator.status}
-                  </p>
-                </div>
-
-                {/* Joined Timing */}
-                <div>
-                  <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Joined Timing</p>
-                  <p className="text-sm font-bold text-black mt-1">{activeDetailCreator.time}</p>
-                </div>
-              </div>
-
-              {/* Bio Field 1 */}
-              <div className="mt-4 pt-4 border-t border-gray-50">
-                <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Short Bio</p>
-                <p className="text-sm text-gray-500 font-bold mt-2">
-                  {activeDetailCreator.bio || 'No bio provided.'}
-                </p>
-              </div>
-
-              {/* Bio Field 2 */}
-              <div className="pt-2">
-                {activeDetailCreator.longBio ? (
-                  <RichTextContent
-                    value={activeDetailCreator.longBio}
-                    className="text-xs text-gray-500 font-medium leading-relaxed max-w-4xl"
-                  />
-                ) : (
-                  <p className="text-xs text-gray-500 font-medium leading-relaxed max-w-4xl">
-                    No detailed bio provided.
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Right Block (Vertical Stats) */}
-            <div className="lg:col-span-1 border-t lg:border-t-0 lg:border-l border-gray-100 pt-6 lg:pt-0 lg:pl-8 flex flex-col justify-between items-center gap-6">
-              {/* Stat 1 */}
-              <div className="text-center w-full">
-                <p className="text-4xl font-black text-[#0012FF] leading-none mb-1">{activeDetailCreator.sessionsCompleted ?? 0}</p>
-                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Sessions completed</p>
-              </div>
-
-              {/* Divider */}
-              <div className="w-16 h-[1px] bg-gray-50" />
-
-              {/* Stat 2 */}
-              <div className="text-center w-full">
-                <p className="text-4xl font-black text-[#10B981] leading-none mb-1">{activeDetailCreator.happyUsers ?? 0}</p>
-                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Happy Users</p>
-              </div>
-
-              {/* Divider */}
-              <div className="w-16 h-[1px] bg-gray-50" />
-
-              {/* Stat 3 */}
-              <div className="text-center w-full">
-                <p className="text-4xl font-black text-[#F59E0B] leading-none mb-1">{activeDetailCreator.totalCategories ?? 0}</p>
-                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Total Categories</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Social Icons Row */}
-          <div className="mt-12 flex justify-center items-center gap-4">
-            {/* Facebook */}
-            <a href="#" className="w-10 h-10 rounded-full bg-[#1877F2] flex items-center justify-center text-white shadow-sm hover:opacity-90 transition-opacity">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.8c4.56-.93 8-4.96 8-9.8z" />
-              </svg>
-            </a>
-
-            {/* Instagram */}
-            <a href="#" className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#FFB13B] via-[#DD2A7B] to-[#8134AF] flex items-center justify-center text-white shadow-sm hover:opacity-90 transition-opacity">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
-                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
-              </svg>
-            </a>
-
-            {/* YouTube */}
-            <a href="#" className="w-10 h-10 rounded-full bg-[#FF0000] flex items-center justify-center text-white shadow-sm hover:opacity-90 transition-opacity">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M23.498 6.163a3.003 3.003 0 0 0-2.11-2.107C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.388.511a3.002 3.002 0 0 0-2.11 2.107C0 8.053 0 12 0 12s0 3.947.502 5.837a3.003 3.003 0 0 0 2.11 2.107C4.495 20.455 12 20.455 12 20.455s7.505 0 9.388-.511a3.002 3.002 0 0 0 2.11-2.107C24 15.947 24 12 24 12s0-3.947-.502-5.837zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
-              </svg>
-            </a>
-
-            {/* TikTok */}
-            <a href="#" className="w-10 h-10 rounded-full bg-black flex items-center justify-center text-white shadow-sm hover:opacity-90 transition-opacity">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.59-.99v6.5c0 1.9-.53 3.86-1.67 5.37-1.43 1.93-3.86 3.1-6.27 3.09-2.91.02-5.74-1.53-7.07-4.12-1.47-2.77-1.12-6.39.88-8.8 1.58-1.94 4.09-2.97 6.57-2.77V11.3c-1.04-.11-2.13.08-3.03.65-.96.6-1.6 1.66-1.72 2.78-.17 1.29.35 2.63 1.34 3.44.96.8 2.29 1.11 3.52.82.99-.21 1.89-.83 2.4-1.71.4-.66.58-1.44.57-2.22V.02z" />
-              </svg>
-            </a>
-          </div>
-        </div>
-      </motion.div>
-    );
-  }
 
   return (
     <motion.div
@@ -647,7 +393,7 @@ export default function AdminCreatorsPage() {
                 paginatedCreators.map((creator) => (
                   <tr
                     key={creator.id}
-                    onClick={() => setActiveDetailCreator(creator)}
+                    onClick={() => openDetail(creator)}
                     className="hover:bg-gray-50/50 transition-colors cursor-pointer"
                   >
                     {/* Creator ID */}
@@ -710,7 +456,7 @@ export default function AdminCreatorsPage() {
                           Reject
                         </button>
                         <button
-                          onClick={() => setActiveDetailCreator(creator)}
+                          onClick={() => openDetail(creator)}
                           className="px-3.5 py-1.5 border border-gray-200 bg-gray-50 rounded-full text-[10px] font-bold text-gray-500 hover:bg-gray-100 transition-colors"
                         >
                           View Details

@@ -4,6 +4,7 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
 import CreatorProfile from '@/models/CreatorProfile';
+import mongoose from 'mongoose';
 
 // Helper to verify admin session
 function isAdmin(email?: string | null) {
@@ -12,8 +13,8 @@ function isAdmin(email?: string | null) {
   return adminEmails.includes(email.toLowerCase());
 }
 
-// GET all users (who are not creators)
-export async function GET() {
+// GET all users (who are not creators), or a single user with ?id=<userId>
+export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email || !isAdmin(session.user.email)) {
@@ -22,59 +23,75 @@ export async function GET() {
 
     await connectDB();
 
+    const id = new URL(req.url).searchParams.get('id');
+
     // Fetch all creator profiles to identify creator IDs
     const profiles = await CreatorProfile.find({}).lean();
     const creatorUserIds = profiles.map((p: any) => p.userId.toString());
 
+    // Single user (detail page)
+    if (id) {
+      if (!mongoose.isValidObjectId(id) || creatorUserIds.includes(id)) {
+        return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      }
+      const single = await User.findById(id).lean();
+      if (!single) {
+        return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      }
+      return NextResponse.json({ success: true, user: formatUser(single) });
+    }
+
     // Fetch all users who are NOT creators
     const normalUsers = await User.find({ _id: { $nin: creatorUserIds } }).sort({ createdAt: -1 }).lean();
 
-    // Map database user data to table shape
-    const formattedUsers = normalUsers.map((user: any) => {
-      const d = new Date(user.createdAt);
-      const joinedDate = d.toLocaleDateString('en-GB', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric'
-      });
-      const time = d.toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
-      });
-
-      // Map status
-      let status: 'Active' | 'Pending' | 'Inactive' | 'Suspended' = 'Active';
-      if (user.approvalStatus === 'pending') {
-        status = 'Pending';
-      } else if (user.approvalStatus === 'rejected') {
-        status = 'Suspended';
-      } else if (!user.isRegistrationComplete && user.onboardingStep === 0) {
-        status = 'Inactive';
-      }
-
-      return {
-        id: `USR-${user._id.toString().slice(-5).toUpperCase()}`,
-        dbId: user._id.toString(),
-        name: user.name || 'User',
-        username: `@${user.name.toLowerCase().replace(/\s+/g, '')}`,
-        email: user.email,
-        joinedDate,
-        time,
-        status,
-        avatar: user.profilePhoto || '/avatar.png',
-        city: '',
-        country: '',
-        languages: 'English',
-        bio: ''
-      };
-    });
+    const formattedUsers = normalUsers.map(formatUser);
 
     return NextResponse.json({ success: true, users: formattedUsers });
   } catch (error: any) {
     console.error('Admin users GET error:', error);
     return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });
   }
+}
+
+// Map database user data to table/detail shape
+function formatUser(user: any) {
+  const d = new Date(user.createdAt);
+  const joinedDate = d.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  });
+  const time = d.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  });
+
+  // Map status
+  let status: 'Active' | 'Pending' | 'Inactive' | 'Suspended' = 'Active';
+  if (user.approvalStatus === 'pending') {
+    status = 'Pending';
+  } else if (user.approvalStatus === 'rejected') {
+    status = 'Suspended';
+  } else if (!user.isRegistrationComplete && user.onboardingStep === 0) {
+    status = 'Inactive';
+  }
+
+  return {
+    id: `USR-${user._id.toString().slice(-5).toUpperCase()}`,
+    dbId: user._id.toString(),
+    name: user.name || 'User',
+    username: `@${(user.name || 'user').toLowerCase().replace(/\s+/g, '')}`,
+    email: user.email,
+    joinedDate,
+    time,
+    status,
+    avatar: user.profilePhoto || '/avatar.png',
+    city: '',
+    country: '',
+    languages: 'English',
+    bio: ''
+  };
 }
 
 // POST/PUT to approve, reject, or suspend a user

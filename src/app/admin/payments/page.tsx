@@ -4,6 +4,7 @@ import { AdminPaymentsSkeleton } from '@/components/admin/AdminSkeletons';
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { CreditCard, DollarSign, Clock, Calendar, ArrowUpRight } from 'lucide-react';
 
 interface Payment {
@@ -28,13 +29,13 @@ interface Payment {
 }
 
 export default function AdminPaymentsPage() {
+  const router = useRouter();
+  const openDetail = (p: any) => router.push(`/admin/payments/${p.dbId || p.id}`);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<'All Statuses' | 'Completed' | 'Pending' | 'Refunded'>('All Statuses');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-
-  // Track selected payment for detailed view
-  const [activeDetailPayment, setActiveDetailPayment] = useState<Payment | null>(null);
 
   const [payments, setPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -77,115 +78,6 @@ export default function AdminPaymentsPage() {
   });
 
   if (loading) return <AdminPaymentsSkeleton />;
-
-  if (activeDetailPayment) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 15 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 15 }}
-        className="pb-12"
-      >
-        {/* Back Link */}
-        <button
-          onClick={() => setActiveDetailPayment(null)}
-          className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors mb-4 font-semibold"
-        >
-          <span>←</span> Back to Payments
-        </button>
-
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl sm:text-4xl font-bold font-sans text-black">
-            <span className="text-[#0012FF] font-black">Payment</span> Details{' '}
-            <span className="text-gray-400 font-normal text-sm sm:text-base">Overview</span>
-          </h1>
-        </div>
-
-        {/* Payment Detail Card */}
-        <div className="bg-white rounded-[32px] p-8 border border-gray-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-8">
-
-          {/* Creator Profile (Left) */}
-          <div className="flex flex-col items-center text-center md:border-r md:border-gray-100 md:pr-12 flex-shrink-0 w-full md:w-auto">
-            <div className="w-28 h-28 rounded-full overflow-hidden border border-gray-100 mb-4 shadow-sm">
-              <img
-                src={activeDetailPayment.creator.avatar}
-                alt={activeDetailPayment.creator.name}
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <h2 className="text-lg font-bold text-black">{activeDetailPayment.creator.name}</h2>
-            <p className="text-xs text-gray-400 font-medium mt-0.5">{activeDetailPayment.creator.username}</p>
-            <span className="mt-3 px-3 py-1 rounded-full text-[10px] font-bold bg-blue-50 text-blue-600">
-              Creator
-            </span>
-          </div>
-
-          {/* Details (Middle) */}
-          <div className="flex-1 w-full grid grid-cols-2 sm:grid-cols-3 gap-6 pt-2">
-            <div>
-              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Payment Method</p>
-              <p className="text-sm font-bold text-black mt-1">{activeDetailPayment.paymentMethod}</p>
-            </div>
-
-            <div>
-              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Platform Fee</p>
-              <p className="text-sm font-bold text-black mt-1">{activeDetailPayment.platformFee}</p>
-            </div>
-
-            <div>
-              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Status</p>
-              <p className={`text-sm font-black mt-1 ${activeDetailPayment.status === 'Completed'
-                ? 'text-emerald-500'
-                : activeDetailPayment.status === 'Pending'
-                  ? 'text-amber-500'
-                  : 'text-rose-500'
-                }`}>
-                {activeDetailPayment.status}
-              </p>
-            </div>
-
-            <div>
-              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Amount</p>
-              <p className="text-sm font-bold text-black mt-1">{activeDetailPayment.amount}</p>
-            </div>
-
-            <div>
-              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Date</p>
-              <p className="text-sm font-bold text-black mt-1">{activeDetailPayment.date}</p>
-            </div>
-
-            <div>
-              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Creator Earnings</p>
-              <p className="text-sm font-bold text-black mt-1">{activeDetailPayment.creatorEarnings}</p>
-            </div>
-
-            <div>
-              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Time</p>
-              <p className="text-sm font-bold text-black mt-1">{activeDetailPayment.time}</p>
-            </div>
-          </div>
-
-          {/* User Profile (Right) */}
-          <div className="flex flex-col items-center text-center md:border-l md:border-gray-100 md:pl-12 flex-shrink-0 w-full md:w-auto">
-            <div className="w-28 h-28 rounded-full overflow-hidden border border-gray-100 mb-4 shadow-sm">
-              <img
-                src={activeDetailPayment.user.avatar}
-                alt={activeDetailPayment.user.name}
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <h2 className="text-lg font-bold text-black">{activeDetailPayment.user.name}</h2>
-            <p className="text-xs text-gray-400 font-medium mt-0.5">{activeDetailPayment.user.username}</p>
-            <span className="mt-3 px-3 py-1 rounded-full text-[10px] font-bold bg-[#E6F0FA] text-blue-500">
-              User
-            </span>
-          </div>
-
-        </div>
-      </motion.div>
-    );
-  }
 
   return (
     <motion.div
@@ -390,7 +282,7 @@ export default function AdminPaymentsPage() {
                 filteredPayments.map((payment) => (
                   <tr
                     key={payment.id}
-                    onClick={() => setActiveDetailPayment(payment)}
+                    onClick={() => openDetail(payment)}
                     className="hover:bg-gray-50/50 transition-colors cursor-pointer"
                   >
                     {/* ID */}
@@ -452,7 +344,7 @@ export default function AdminPaymentsPage() {
                     <td className="py-4 px-4" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-center">
                         <button
-                          onClick={() => setActiveDetailPayment(payment)}
+                          onClick={() => openDetail(payment)}
                           className="px-4 py-1.5 bg-gray-100 rounded-full text-xs font-bold text-gray-400 hover:bg-gray-200 hover:text-gray-500 transition-colors"
                         >
                           View Details

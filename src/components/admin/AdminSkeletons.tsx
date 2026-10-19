@@ -83,6 +83,19 @@ export function AdminListSkeleton() {
   );
 }
 
+// Detail pages (user / creator / payment): back link, title, one big card.
+export function AdminDetailSkeleton() {
+  return (
+    <div className="pb-12">
+      <Bar className="h-4 w-32 rounded-md mb-4" />
+      <div className="mb-8 space-y-2">
+        <Bar className="h-9 w-80 max-w-full rounded-lg" />
+      </div>
+      <Bar className="h-[360px] w-full rounded-[32px]" />
+    </div>
+  );
+}
+
 export function AdminRequestsSkeleton() {
   return (
     <div className="space-y-6">
