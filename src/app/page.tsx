@@ -41,6 +41,21 @@ export default function Home() {
   const [categoryIndex, setCategoryIndex] = useState(0);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [loginModalMode, setLoginModalMode] = useState<'booking' | 'favourite'>('booking');
+  const [loginCallbackUrl, setLoginCallbackUrl] = useState('');
+
+  const handleCreatorBooking = (e: React.MouseEvent, username: string) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const destination = `/creators/${username}/book-session`;
+    if (status !== 'authenticated') {
+      setLoginCallbackUrl(destination);
+      setLoginModalMode('booking');
+      setShowLoginModal(true);
+      return;
+    }
+    router.push(destination);
+  };
 
   const [dbCreators, setDbCreators] = useState<any[]>([]);
   const [loadingDbCreators, setLoadingDbCreators] = useState(true);
@@ -169,6 +184,8 @@ export default function Home() {
 
   const toggleFavorite = (name: string) => {
     if (status !== 'authenticated') {
+      setLoginCallbackUrl('');
+      setLoginModalMode('favourite');
       setShowLoginModal(true);
       return;
     }
@@ -416,6 +433,10 @@ export default function Home() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: index * 0.04 }}
                 whileHover={{ y: -6, scale: 1.02 }}
+                onClick={(e) => {
+                  const targetUsername = (creator as any).username || creator.name.toLowerCase().replace(/\s+/g, '');
+                  handleCreatorBooking(e, targetUsername);
+                }}
                 className="w-[275px] h-[275px] rounded-[24px] overflow-hidden relative group shadow-md hover:shadow-xl transition-all duration-300 bg-white shrink-0 cursor-pointer"
               >
                 <img
@@ -480,7 +501,7 @@ export default function Home() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.5, delay: index * 0.05 }}
-                    onClick={() => router.push(`/creators/${creator.username}/book-session`)}
+                    onClick={(e) => handleCreatorBooking(e, creator.username)}
                     className="flex flex-col w-[290px] sm:w-[325px] shrink-0 group cursor-pointer"
                   >
                     {/* Top Image Container */}
@@ -556,7 +577,8 @@ export default function Home() {
                       {/* Book Now Link */}
                       <div>
                         <span
-                          className="text-xs sm:text-sm font-bold text-[#0012FF] underline hover:text-[#0010d0] font-sans pt-1 inline-block"
+                          onClick={(e) => handleCreatorBooking(e, creator.username)}
+                          className="text-xs sm:text-sm font-bold text-[#0012FF] underline hover:text-[#0010d0] font-sans pt-1 inline-block cursor-pointer"
                         >
                           Book Now
                         </span>
@@ -773,7 +795,7 @@ export default function Home() {
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ duration: 0.5, delay: index * 0.05 }}
-                        onClick={() => router.push(`/creators/${creator.username}/book-session`)}
+                        onClick={(e) => handleCreatorBooking(e, creator.username)}
                         className="flex flex-col w-[290px] sm:w-[325px] shrink-0 group cursor-pointer"
                       >
                         {/* Top Image Container */}
@@ -848,12 +870,12 @@ export default function Home() {
 
                           {/* Book Now Link */}
                           <div>
-                            <Link
-                              href={`/creators/${creator.username}/book-session`}
-                              className="text-xs sm:text-sm font-bold text-[#0012FF] underline hover:text-[#0010d0] font-sans pt-1 inline-block"
+                            <span
+                              onClick={(e) => handleCreatorBooking(e, creator.username)}
+                              className="text-xs sm:text-sm font-bold text-[#0012FF] underline hover:text-[#0010d0] font-sans pt-1 inline-block cursor-pointer"
                             >
                               Book Now
-                            </Link>
+                            </span>
                           </div>
                         </div>
                       </motion.div>
@@ -1339,7 +1361,7 @@ export default function Home() {
 
       <Footer />
 
-      {/* ── Login Required Modal (Favourites) ── */}
+      {/* ── Login Required / Save to Favourites Modal ── */}
       <AnimatePresence>
         {showLoginModal && (
           <div 
@@ -1358,6 +1380,7 @@ export default function Home() {
               <button
                 onClick={() => setShowLoginModal(false)}
                 className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 transition-colors p-1.5 rounded-full hover:bg-gray-100 cursor-pointer z-10"
+                aria-label="Close"
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <line x1="18" y1="6" x2="6" y2="18" />
@@ -1368,32 +1391,44 @@ export default function Home() {
               {/* Illustration */}
               <div className="w-40 sm:w-52 h-auto my-2">
                 <img
-                  src="/assets/favourites.png"
-                  alt="Save to Favourites"
+                  src={loginModalMode === 'booking' ? '/assets/login.png' : '/assets/favourites.png'}
+                  alt={loginModalMode === 'booking' ? 'Login Required' : 'Save to Favourites'}
                   className="w-full h-auto object-contain"
                 />
               </div>
 
               {/* Title */}
               <h3 className="text-xl sm:text-2xl font-extrabold text-black mb-2 tracking-tight">
-                Save to Favourites
+                {loginModalMode === 'booking' ? 'Login Required' : 'Save to Favourites'}
               </h3>
 
               {/* Description */}
               <p className="text-xs sm:text-sm text-gray-400 font-medium leading-relaxed mb-6 max-w-[260px] sm:max-w-[280px]">
-                Create a free account or log in to save your favourite creators and get personalised recommendations.
+                {loginModalMode === 'booking'
+                  ? 'Please log in or sign up to continue booking this session with the creator.'
+                  : 'Create a free account or log in to save your favourite creators and get personalised recommendations.'}
               </p>
 
               {/* Action Buttons */}
               <div className="flex flex-col gap-3 w-full max-w-[280px]">
                 <button
-                  onClick={() => router.push('/login')}
+                  onClick={() => {
+                    const loginUrl = loginCallbackUrl
+                      ? `/login?callbackUrl=${encodeURIComponent(loginCallbackUrl)}`
+                      : '/login';
+                    router.push(loginUrl);
+                  }}
                   className="w-full py-3.5 bg-[#0012FF] hover:bg-[#0010d0] text-white rounded-full font-bold text-sm sm:text-base transition-all shadow-md active:scale-98 cursor-pointer"
                 >
                   Log In
                 </button>
                 <button
-                  onClick={() => router.push('/signup')}
+                  onClick={() => {
+                    const signupUrl = loginCallbackUrl
+                      ? `/signup?callbackUrl=${encodeURIComponent(loginCallbackUrl)}`
+                      : '/signup';
+                    router.push(signupUrl);
+                  }}
                   className="w-full py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full font-bold text-xs sm:text-sm transition-all cursor-pointer"
                 >
                   Create Account

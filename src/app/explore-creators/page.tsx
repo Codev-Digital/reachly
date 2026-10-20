@@ -30,6 +30,22 @@ export default function ExploreCreatorsPage() {
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [minRating, setMinRating] = useState<number | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [loginModalMode, setLoginModalMode] = useState<'booking' | 'favourite'>('booking');
+  const [loginCallbackUrl, setLoginCallbackUrl] = useState('');
+
+  const handleCreatorBooking = (e: React.MouseEvent, username: string) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (isAdmin) return;
+    const destination = `/creators/${username}/book-session`;
+    if (!isAuthenticated) {
+      setLoginCallbackUrl(destination);
+      setLoginModalMode('booking');
+      setShowLoginModal(true);
+      return;
+    }
+    router.push(destination);
+  };
   const [favLoading, setFavLoading] = useState<string | null>(null); // username being toggled
 
   // Hydrate from cache immediately on mount to prevent loading flashes
@@ -142,7 +158,12 @@ export default function ExploreCreatorsPage() {
   }, []);
 
   const toggleFavourite = useCallback(async (creatorUsername: string) => {
-    if (!isAuthenticated) { setShowLoginModal(true); return; }
+    if (!isAuthenticated) {
+      setLoginCallbackUrl('');
+      setLoginModalMode('favourite');
+      setShowLoginModal(true);
+      return;
+    }
     if (favLoading === creatorUsername) return;
     setFavLoading(creatorUsername);
     const isFav = favourites.includes(creatorUsername);
@@ -167,7 +188,12 @@ export default function ExploreCreatorsPage() {
   }, [isAuthenticated, favourites, favLoading]);
 
   const toggleSaved = useCallback(async (creatorUsername: string) => {
-    if (!isAuthenticated) { setShowLoginModal(true); return; }
+    if (!isAuthenticated) {
+      setLoginCallbackUrl('');
+      setLoginModalMode('favourite');
+      setShowLoginModal(true);
+      return;
+    }
     if (favLoading === creatorUsername) return;
     setFavLoading(creatorUsername);
     const wasSaved = saved.includes(creatorUsername);
@@ -280,6 +306,7 @@ export default function ExploreCreatorsPage() {
               <button
                 onClick={() => setShowLoginModal(false)}
                 className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 transition-colors p-1.5 rounded-full hover:bg-gray-100 cursor-pointer z-10"
+                aria-label="Close"
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <line x1="18" y1="6" x2="6" y2="18" />
@@ -290,32 +317,44 @@ export default function ExploreCreatorsPage() {
               {/* Illustration */}
               <div className="w-40 sm:w-52 h-auto my-2">
                 <img
-                  src="/assets/favourites.png"
-                  alt="Save to Favourites"
+                  src={loginModalMode === 'booking' ? '/assets/login.png' : '/assets/favourites.png'}
+                  alt={loginModalMode === 'booking' ? 'Login Required' : 'Save to Favourites'}
                   className="w-full h-auto object-contain"
                 />
               </div>
 
               {/* Title */}
               <h3 className="text-xl sm:text-2xl font-extrabold text-black mb-2 tracking-tight">
-                Save to Favourites
+                {loginModalMode === 'booking' ? 'Login Required' : 'Save to Favourites'}
               </h3>
 
               {/* Description */}
               <p className="text-xs sm:text-sm text-gray-400 font-medium leading-relaxed mb-6 max-w-[260px] sm:max-w-[280px]">
-                Create a free account or log in to save your favourite creators and get personalised recommendations.
+                {loginModalMode === 'booking'
+                  ? 'Please log in or sign up to continue booking this session with the creator.'
+                  : 'Create a free account or log in to save your favourite creators and get personalised recommendations.'}
               </p>
 
               {/* Action Buttons */}
               <div className="flex flex-col gap-3 w-full max-w-[280px]">
                 <button
-                  onClick={() => router.push('/login')}
+                  onClick={() => {
+                    const loginUrl = loginCallbackUrl
+                      ? `/login?callbackUrl=${encodeURIComponent(loginCallbackUrl)}`
+                      : '/login';
+                    router.push(loginUrl);
+                  }}
                   className="w-full py-3.5 bg-[#0012FF] hover:bg-[#0010d0] text-white rounded-full font-bold text-sm sm:text-base transition-all shadow-md active:scale-98 cursor-pointer"
                 >
                   Log In
                 </button>
                 <button
-                  onClick={() => router.push('/signup')}
+                  onClick={() => {
+                    const signupUrl = loginCallbackUrl
+                      ? `/signup?callbackUrl=${encodeURIComponent(loginCallbackUrl)}`
+                      : '/signup';
+                    router.push(signupUrl);
+                  }}
                   className="w-full py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full font-bold text-xs sm:text-sm transition-all cursor-pointer"
                 >
                   Create Account
@@ -354,7 +393,13 @@ export default function ExploreCreatorsPage() {
           {/* Favourites tab — heart */}
           <button
             onClick={() => {
-              if (!isAuthenticated) { setShowLoginModal(true); return; }
+              if (!isAuthenticated) {
+                setLoginCallbackUrl('');
+                setLoginModalMode('favourite');
+                setShowLoginModal(true);
+                return;
+              }
+
               const next = !showFavouritesOnly;
               setShowFavouritesOnly(next);
               if (next) setShowSavedOnly(false);
@@ -378,7 +423,13 @@ export default function ExploreCreatorsPage() {
           {/* Saved tab — bookmark */}
           <button
             onClick={() => {
-              if (!isAuthenticated) { setShowLoginModal(true); return; }
+              if (!isAuthenticated) {
+                setLoginCallbackUrl('');
+                setLoginModalMode('favourite');
+                setShowLoginModal(true);
+                return;
+              }
+
               const next = !showSavedOnly;
               setShowSavedOnly(next);
               if (next) setShowFavouritesOnly(false);
@@ -505,7 +556,7 @@ export default function ExploreCreatorsPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.4, delay: index * 0.04 }}
-                  onClick={() => !isAdmin && router.push(`/creators/${creator.username}/book-session`)}
+                  onClick={(e) => handleCreatorBooking(e, creator.username)}
                   className={`flex flex-col w-full group ${isAdmin ? 'cursor-default' : 'cursor-pointer'}`}
                 >
                   {/* Top Image Container */}
@@ -584,12 +635,12 @@ export default function ExploreCreatorsPage() {
                     {/* Book Now Link */}
                     {!isAdmin && (
                       <div>
-                        <Link
-                          href={`/creators/${creator.username}/book-session`}
-                          className="text-xs sm:text-sm font-bold text-[#0012FF] underline hover:text-[#0010d0] font-sans pt-1 inline-block"
+                        <span
+                          onClick={(e) => handleCreatorBooking(e, creator.username)}
+                          className="text-xs sm:text-sm font-bold text-[#0012FF] underline hover:text-[#0010d0] font-sans pt-1 inline-block cursor-pointer"
                         >
                           Book Now
-                        </Link>
+                        </span>
                       </div>
                     )}
                   </div>
