@@ -5,7 +5,7 @@ const platformLinks = [
   { name: "Explore", href: "/explore-creators" },
   { name: "How it Works", href: "/#how-it-works" },
   { name: "For Creators", href: "/for-creators" },
-  { name: "Pricing", href: "/#pricing" },
+  { name: "Pricing", href: "/pricing" },
 ];
 
 const companyLinks = [

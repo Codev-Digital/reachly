@@ -1,59 +1,44 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import CreatorNavbar from '@/components/CreatorNavbar';
-import Footer from '@/components/Footer';
+import Link from "next/link";
+import CreatorNavbar from "@/components/CreatorNavbar";
 
 interface ComingSoonProps {
   title: string;
-  subtitle?: string;
-  badge?: string;
 }
 
-export default function ComingSoon({
-  title,
-  subtitle = 'Something amazing is coming soon. Stay tuned!',
-  badge = 'Reachly',
-}: ComingSoonProps) {
+export default function ComingSoon({ title }: ComingSoonProps) {
   return (
-    <div className="min-h-screen flex flex-col justify-between bg-[#040924]">
+    <div className="min-h-screen">
       <CreatorNavbar />
 
-      <section className="relative flex-1 min-h-[75vh] flex items-center justify-center overflow-hidden pt-28 pb-16">
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         <img
           src="/assets/new-bg-image.png"
-          alt="Reachly Background"
-          className="fixed inset-0 w-screen h-screen object-cover object-top -z-10 opacity-90"
+          alt=""
+          className="fixed inset-0 w-screen h-screen object-cover object-top -z-10"
         />
 
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 relative z-10 text-center">
-          <p className="font-sans text-xs sm:text-sm text-white/80 tracking-widest uppercase mb-4 font-semibold">
-            {badge}
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 relative z-10 text-center mt-20">
+          <p className="font-sans text-xs sm:text-sm text-white/80 tracking-widest uppercase mb-4">
+            Reachly
           </p>
-          <h1 className="font-anton text-5xl sm:text-7xl font-bold text-white mb-6 leading-tight uppercase tracking-tight">
+          <h1 className="font-anton text-5xl sm:text-7xl font-black text-white mb-6 leading-tight">
             {title}
           </h1>
-          <h2 className="font-sans text-lg sm:text-2xl text-white/90 mb-8 font-light max-w-xl mx-auto leading-relaxed">
-            {subtitle}
+          <h2 className="font-sans text-xl sm:text-2xl text-white/90 mb-8 font-light">
+            Something amazing is coming soon. Stay tuned!
           </h2>
-          <div className="flex flex-wrap items-center justify-center gap-4">
+          <div className="flex items-center justify-center">
             <Link
               href="/"
-              className="bg-white text-[#001F7D] font-sans font-semibold px-8 py-3 rounded-full text-sm hover:bg-white/90 transition-all shadow-lg active:scale-95 cursor-pointer"
+              className="bg-white text-[#001F7D] font-sans font-semibold px-8 py-3 rounded-full text-sm hover:bg-white/90 transition-all"
             >
               Back to Home
-            </Link>
-            <Link
-              href="/explore-creators"
-              className="bg-[#0012FF] text-white border border-white/20 font-sans font-semibold px-8 py-3 rounded-full text-sm hover:bg-[#0010d0] transition-all shadow-lg active:scale-95 cursor-pointer"
-            >
-              Explore Creators
             </Link>
           </div>
         </div>
       </section>
-
-      <Footer />
     </div>
   );
 }
