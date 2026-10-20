@@ -7,6 +7,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import { getRelativeTime } from '@/lib/time';
 import { logout } from '@/lib/logout';
+import { notificationHref } from '@/lib/notificationLinks';
 
 const NAV_ITEMS = [
   { name: 'Dashboard', href: '/creators/dashboard', icon: 'dashboard' },
@@ -233,7 +234,6 @@ export default function CreatorDashboardNav({
       if (res.ok) {
         const data = await res.json();
         if (data.success) {
-          console.log('[CREATOR NOTIFICATIONS DEBUG]', JSON.stringify(data.notifications?.[0], null, 2));
           setNotifications(data.notifications || []);
         }
       }
@@ -250,7 +250,9 @@ export default function CreatorDashboardNav({
     eventSource.onmessage = (event) => {
       try {
         const newNotification = JSON.parse(event.data);
-        setNotifications((prev) => [newNotification, ...prev]);
+        setNotifications((prev) =>
+          prev.some((x) => x._id === newNotification._id) ? prev : [newNotification, ...prev]
+        );
       } catch (err) {
         console.error('Error parsing SSE notification:', err);
       }
@@ -299,6 +301,14 @@ export default function CreatorDashboardNav({
     } catch (err) {
       console.error(err);
     }
+  };
+
+  // Click a notification: mark it read, close the panel and open the page it is about
+  const openNotification = (n: any) => {
+    if (!n.read) handleMarkRead(n._id);
+    const href = notificationHref(n, 'creator');
+    setNotificationsOpen(false);
+    if (href) router.push(href);
   };
 
   // Close notifications and profile dropdown on click outside
@@ -438,7 +448,7 @@ export default function CreatorDashboardNav({
                             return (
                               <div
                                 key={n._id}
-                                onClick={() => handleMarkRead(n._id)}
+                                onClick={() => openNotification(n)}
                                 className="flex items-start justify-between gap-3 py-3 border-b border-gray-100/70 last:border-0 hover:bg-gray-50/70 rounded-xl px-1.5 transition-all cursor-pointer"
                               >
                                 <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -491,7 +501,8 @@ export default function CreatorDashboardNav({
                             return (
                               <div
                                 key={n._id}
-                                className="flex items-start justify-between gap-3 py-3 border-b border-gray-100/70 last:border-0 hover:bg-gray-50/70 rounded-xl px-1.5 transition-all opacity-85"
+                                onClick={() => openNotification(n)}
+                                className="flex items-start justify-between gap-3 py-3 border-b border-gray-100/70 last:border-0 hover:bg-gray-50/70 rounded-xl px-1.5 transition-all opacity-85 cursor-pointer"
                               >
                                 <div className="flex items-start gap-3 flex-1 min-w-0">
                                   {/* Left Icon Container */}

@@ -1,11 +1,11 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import FormInput, { FormError } from '@/components/FormInput';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 
-interface Block {
+export interface OutsideBlock {
   id: string;
   date: string;
   startTime: string;
@@ -16,32 +16,27 @@ interface Block {
 const emptyForm = { date: '', time: '', durationMinutes: '60', title: '' };
 
 /**
- * Sessions the creator booked outside Reachly. They are removed from the slots users
- * can book, so they can never clash with a Reachly booking.
+ * Modal to add a session the creator booked outside Reachly. Those times are removed from the
+ * slots users can book, so they can never clash with a Reachly booking.
  */
-export default function OutsideSessions() {
-  const [blocks, setBlocks] = useState<Block[]>([]);
-  const [open, setOpen] = useState(false);
+export default function OutsideSessionModal({
+  open,
+  onClose,
+  onSaved,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  const load = useCallback(async () => {
-    try {
-      const res = await fetch('/api/creators/calendar-blocks');
-      if (res.ok) setBlocks((await res.json()).blocks || []);
-    } catch {}
-  }, []);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
   const handleOpenChange = (next: boolean) => {
-    setOpen(next);
     if (!next) {
       setForm(emptyForm);
       setError('');
+      onClose();
     }
   };
 
@@ -64,7 +59,7 @@ export default function OutsideSessions() {
       });
       if (res.ok) {
         handleOpenChange(false);
-        load();
+        onSaved();
       } else {
         setError((await res.json()).error || 'Could not save.');
       }
@@ -75,44 +70,8 @@ export default function OutsideSessions() {
     }
   };
 
-  const remove = async (id: string) => {
-    setBlocks((prev) => prev.filter((b) => b.id !== id));
-    await fetch(`/api/creators/calendar-blocks?id=${id}`, { method: 'DELETE' }).catch(() => {});
-  };
-
   return (
     <>
-      <div className="w-full bg-white rounded-2xl border border-gray-100 p-4 sm:p-5 mb-8 shadow-xs">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="text-sm font-bold text-black">Sessions booked outside Reachly</h2>
-            <p className="text-xs text-gray-400">Add them here so those times are hidden from your booking slots.</p>
-          </div>
-          <Button onClick={() => setOpen(true)} className="rounded-full px-5 py-2 text-xs">
-            + Add outside session
-          </Button>
-        </div>
-
-        {blocks.length > 0 && (
-          <ul className="mt-4 divide-y divide-gray-50">
-            {blocks.map((b) => (
-              <li key={b.id} className="flex items-center justify-between py-2 text-sm">
-                <span className="text-gray-700">
-                  <span className="font-semibold">
-                    {new Date(b.date + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}
-                  </span>{' '}
-                  · {b.startTime} · {b.durationMinutes} min
-                  {b.title && <span className="text-gray-400"> · {b.title}</span>}
-                </span>
-                <button onClick={() => remove(b.id)} className="text-xs font-bold text-rose-600 hover:underline cursor-pointer">
-                  Remove
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent className="max-w-lg rounded-3xl p-6 sm:p-8">
           <DialogTitle className="text-left text-xl sm:text-2xl font-bold text-black">Add outside session</DialogTitle>

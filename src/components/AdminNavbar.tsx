@@ -16,6 +16,26 @@ export default function AdminNavbar() {
   const [notificationsDropdownOpen, setNotificationsDropdownOpen] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
 
+  // Admin notifications are computed from the database (no stored "read" flag), so which ones the
+  // admin has already opened is remembered in this browser.
+  const [readIds, setReadIds] = useState<string[]>([]);
+  useEffect(() => {
+    try {
+      setReadIds(JSON.parse(localStorage.getItem('admin_read_notifications') || '[]'));
+    } catch {}
+  }, []);
+  const persistRead = (ids: string[]) => {
+    setReadIds(ids);
+    try {
+      localStorage.setItem('admin_read_notifications', JSON.stringify(ids));
+    } catch {}
+  };
+  const unreadCount = notifications.filter((n) => !readIds.includes(n.id)).length;
+  const markRead = (id: string) => {
+    if (id && !readIds.includes(id)) persistRead([...readIds, id]);
+  };
+  const markAllRead = () => persistRead(Array.from(new Set([...readIds, ...notifications.map((n) => n.id)])));
+
   useEffect(() => {
     async function fetchNotifications() {
       try {
@@ -260,7 +280,7 @@ export default function AdminNavbar() {
                   <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
                   <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                 </svg>
-                {notifications.length > 0 && (
+                {unreadCount > 0 && (
                   <span className="absolute top-2.5 right-2.5 w-2.5 h-2.5 rounded-full bg-rose-500 border-2 border-white" />
                 )}
               </button>
@@ -276,12 +296,20 @@ export default function AdminNavbar() {
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
                         <h3 className="text-xl sm:text-2xl font-extrabold text-black font-sans tracking-tight">Notifications</h3>
-                        {notifications.length > 0 && (
+                        {unreadCount > 0 && (
                           <span className="bg-[#E6F9EE] text-[#12B76A] text-xs font-bold px-2.5 py-0.5 rounded-full">
-                            {notifications.length} New
+                            {unreadCount} New
                           </span>
                         )}
                       </div>
+                      {unreadCount > 0 && (
+                        <button
+                          onClick={markAllRead}
+                          className="border border-gray-200 bg-white hover:bg-gray-50 transition-colors text-gray-500 rounded-full px-3 py-1 text-xs font-bold cursor-pointer shrink-0"
+                        >
+                          Mark all read
+                        </button>
+                      )}
                     </div>
 
                     <p className="text-xs text-gray-400 font-medium mb-4">Never miss an update from your account</p>
@@ -294,8 +322,13 @@ export default function AdminNavbar() {
                             <Link
                               key={notif.id || idx}
                               href={notif.link || '#'}
-                              onClick={() => setNotificationsDropdownOpen(false)}
-                              className="flex items-start justify-between gap-3 py-3 border-b border-gray-100/70 last:border-0 hover:bg-gray-50/70 rounded-xl px-1.5 transition-all cursor-pointer"
+                              onClick={() => {
+                                markRead(notif.id);
+                                setNotificationsDropdownOpen(false);
+                              }}
+                              className={`flex items-start justify-between gap-3 py-3 border-b border-gray-100/70 last:border-0 hover:bg-gray-50/70 rounded-xl px-1.5 transition-all cursor-pointer ${
+                                readIds.includes(notif.id) ? 'opacity-70' : ''
+                              }`}
                             >
                               <div className="flex items-start gap-3 flex-1 min-w-0">
                                 <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5 bg-[#EEF2FF] text-[#0012FF]">
@@ -304,7 +337,10 @@ export default function AdminNavbar() {
                                   </svg>
                                 </div>
                                 <div className="flex flex-col min-w-0 pr-1">
-                                  <h4 className="font-bold text-sm text-black leading-snug">{notif.title}</h4>
+                                  <h4 className={`text-sm leading-snug ${readIds.includes(notif.id) ? 'font-semibold text-gray-700' : 'font-bold text-black'}`}>
+                                    {!readIds.includes(notif.id) && <span className="inline-block w-2 h-2 rounded-full bg-[#0012FF] mr-1.5 align-middle" />}
+                                    {notif.title}
+                                  </h4>
                                   <p className="text-xs text-gray-400 font-normal mt-0.5 leading-relaxed">{notif.message}</p>
                                 </div>
                               </div>

@@ -6,6 +6,7 @@ import { useState, useEffect, useLayoutEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getRelativeTime } from '@/lib/time';
 import { logout } from '@/lib/logout';
+import { notificationHref } from '@/lib/notificationLinks';
 
 interface UserNavbarProps {
   displayName?: string;
@@ -139,7 +140,9 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
       try {
         const newNotification = JSON.parse(event.data);
         // Prepend the new real-time notification
-        setNotifications((prev) => [newNotification, ...prev]);
+        setNotifications((prev) =>
+          prev.some((x) => x._id === newNotification._id) ? prev : [newNotification, ...prev]
+        );
       } catch (err) {
         console.error('Error parsing SSE notification:', err);
       }
@@ -185,6 +188,14 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
     } catch (err) {
       console.error(err);
     }
+  };
+
+  // Click a notification: mark it read, close the panel and open the page it is about
+  const openNotification = (n: any) => {
+    if (!n.read) handleMarkRead(n._id);
+    const href = notificationHref(n, 'user');
+    setNotificationsOpen(false);
+    if (href) router.push(href);
   };
 
   // Close notifications and profile dropdown on click outside
@@ -469,7 +480,7 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
                           return (
                             <div
                               key={n._id}
-                              onClick={() => handleMarkRead(n._id)}
+                              onClick={() => openNotification(n)}
                               className="flex items-start justify-between gap-3 py-3 border-b border-gray-100/70 last:border-0 hover:bg-gray-50/70 rounded-xl px-1.5 transition-all cursor-pointer"
                             >
                               <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -522,7 +533,8 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
                           return (
                             <div
                               key={n._id}
-                              className="flex items-start justify-between gap-3 py-3 border-b border-gray-100/70 last:border-0 hover:bg-gray-50/70 rounded-xl px-1.5 transition-all opacity-85"
+                              onClick={() => openNotification(n)}
+                                className="flex items-start justify-between gap-3 py-3 border-b border-gray-100/70 last:border-0 hover:bg-gray-50/70 rounded-xl px-1.5 transition-all opacity-85 cursor-pointer"
                             >
                               <div className="flex items-start gap-3 flex-1 min-w-0">
                                 {/* Left Icon Container */}

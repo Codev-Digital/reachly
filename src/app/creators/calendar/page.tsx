@@ -9,7 +9,8 @@ import CreatorDashboardNav from '@/components/CreatorDashboardNav';
 import LoadingAnimation from '@/components/LoadingAnimation';
 import { Calendar, Clock, Video, MapPin, MessageSquare, AlertTriangle, CheckCircle, ArrowUpRight, X } from 'lucide-react';
 import DailyCall from '@/components/DailyCall';
-import OutsideSessions from '@/components/creator/OutsideSessions';
+import OutsideSessionModal, { type OutsideBlock } from '@/components/creator/OutsideSessions';
+import { format12h, parse12h } from '@/lib/slots';
 import { isMeetingPassed } from '@/lib/time';
 
 function getGreeting() {
@@ -263,6 +264,32 @@ export default function CreatorCalendar() {
     fetchRescheduleSlots();
   }, [rescheduleDate, showRescheduleModal, username]);
 
+  // Sessions the creator booked outside Reachly: shown in the day's list and hidden from booking slots
+  const [outsideBlocks, setOutsideBlocks] = useState<OutsideBlock[]>([]);
+  const [showOutsideModal, setShowOutsideModal] = useState(false);
+  const loadOutsideBlocks = useCallback(async () => {
+    try {
+      const res = await fetch('/api/creators/calendar-blocks');
+      if (res.ok) setOutsideBlocks((await res.json()).blocks || []);
+    } catch {}
+  }, []);
+  useEffect(() => {
+    loadOutsideBlocks();
+  }, [loadOutsideBlocks]);
+  const removeOutsideBlock = async (id: string) => {
+    setOutsideBlocks((prev) => prev.filter((b) => b.id !== id));
+    await fetch(`/api/creators/calendar-blocks?id=${id}`, { method: 'DELETE' }).catch(() => {});
+  };
+
+  const dayOutsideBlocks = useMemo(() => {
+    const y = currentDate.getFullYear();
+    const m = String(currentDate.getMonth() + 1).padStart(2, '0');
+    const d = String(currentDate.getDate()).padStart(2, '0');
+    return outsideBlocks
+      .filter((b) => b.date === `${y}-${m}-${d}`)
+      .sort((a, b) => (parse12h(a.startTime) ?? 0) - (parse12h(b.startTime) ?? 0));
+  }, [outsideBlocks, currentDate]);
+
   // Group and filter bookings for currently selected day (memoized)
   const currentBookings = useMemo(() => {
     const curDate = currentDate.getDate();
@@ -304,8 +331,12 @@ export default function CreatorCalendar() {
         set.add(d.getDate());
       }
     }
+    for (const ob of outsideBlocks) {
+      const [y, m, d] = ob.date.split('-').map(Number);
+      if (m - 1 === curMonth && y === curYear) set.add(d);
+    }
     return set;
-  }, [bookings, currentDate]);
+  }, [bookings, outsideBlocks, currentDate]);
 
   const handleCancelClick = (booking: BookingType) => {
     setBookingToCancel(booking);
@@ -466,6 +497,13 @@ export default function CreatorCalendar() {
             </h1>
           </div>
 
+          <div className="flex flex-wrap items-center gap-3">
+          <button
+            onClick={() => setShowOutsideModal(true)}
+            className="flex items-center gap-2 bg-white text-gray-700 border border-gray-200 px-6 py-3 rounded-full font-bold text-sm sm:text-base hover:bg-gray-50 transition-all shadow-sm active:scale-95 w-fit cursor-pointer"
+          >
+            + Outside session
+          </button>
           <button
             onClick={() => {
               const linkStr = window.location.origin + `/creators/${username || displayName.toLowerCase().replace(/\s+/g, '-')}`;
@@ -477,9 +515,14 @@ export default function CreatorCalendar() {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
             Copy Booking Link
           </button>
+          </div>
         </div>
 
-        <OutsideSessions />
+        <OutsideSessionModal
+          open={showOutsideModal}
+          onClose={() => setShowOutsideModal(false)}
+          onSaved={loadOutsideBlocks}
+        />
 
         {/* Date Filter Strip Bar */}
         <div className="w-full bg-white rounded-2xl border border-gray-100 p-3 sm:p-4 mb-8 flex flex-wrap items-center justify-between gap-y-4 gap-x-2 shadow-xs">
@@ -573,7 +616,7 @@ export default function CreatorCalendar() {
         </div>
 
         {/* Bookings Grid or Empty State */}
-        {currentBookings.length > 0 ? (
+        {currentBookings.length > 0 || dayOutsideBlocks.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {currentBookings.map((booking, index) => (
               <motion.div
@@ -732,6 +775,63 @@ export default function CreatorCalendar() {
                 </div>
               </motion.div>
             ))}
+
+            {/* Sessions booked outside Reachly */}
+            {dayOutsideBlocks.map((ob, index) => {
+              const start = parse12h(ob.startTime);
+              const endLabel = start === null ? '' : format12h((start + ob.durationMinutes) % 1440);
+              return (
+                <motion.div
+                  key={ob.id}
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: (currentBookings.length + index) * 0.05 }}
+                  className="relative w-full bg-white rounded-[20px] p-5 border border-gray-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between min-h-[220px]"
+                >
+                  <div>
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 bg-gray-100 text-gray-500 border border-gray-100">
+                          <Calendar className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <h3 className="font-extrabold text-sm text-black leading-tight">{ob.title || 'Outside session'}</h3>
+                          <p className="text-xs text-gray-400 font-medium">Booked outside Reachly</p>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-bold text-gray-600 bg-gray-100 border border-gray-200 px-2.5 py-1 rounded-full leading-none whitespace-nowrap">
+                        Outside session
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col gap-2 text-xs text-gray-500">
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+                        <span className="font-medium text-gray-700">
+                          {ob.startTime}
+                          {endLabel && ` – ${endLabel}`}
+                        </span>
+                        <span className="text-gray-400">· {ob.durationMinutes} min</span>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-gray-400 leading-relaxed mt-4">
+                      This time is blocked, so no one can book it on Reachly.
+                    </p>
+                  </div>
+
+                  <div>
+                    <div className="w-full h-px bg-gray-100 mb-4"></div>
+                    <button
+                      onClick={() => removeOutsideBlock(ob.id)}
+                      className="w-full py-2.5 border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-full text-xs font-semibold text-center transition-all cursor-pointer"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
         ) : (
           <div className="bg-white rounded-3xl border border-gray-200 shadow-sm p-16 flex flex-col items-center justify-center text-center">
