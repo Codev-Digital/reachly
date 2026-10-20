@@ -573,7 +573,7 @@ export default function Home() {
                     bg: 'bg-[#FFD6E8]',
                     left: 0,
                     top: 0,
-                    angle: -10,
+                    angle: 10,
                     defaultZ: 10,
                   },
                   {
@@ -582,7 +582,7 @@ export default function Home() {
                     bg: 'bg-[#FFE699]',
                     left: 119,
                     top: 13.78,
-                    angle: 10,
+                    angle: -10,
                     defaultZ: 20,
                   },
                   {
@@ -591,7 +591,7 @@ export default function Home() {
                     bg: 'bg-[#C0E5FA]',
                     left: 237.27,
                     top: 0,
-                    angle: -10,
+                    angle: 10,
                     defaultZ: 30,
                   },
                 ].map((card) => {
