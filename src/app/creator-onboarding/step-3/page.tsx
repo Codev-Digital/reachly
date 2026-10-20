@@ -6,7 +6,8 @@ import { updateSessionTypes } from '@/lib/auth-client';
 import LoadingAnimation from '@/components/LoadingAnimation';
 import { useOnboardingCleanup } from '@/hooks/useOnboardingCleanup';
 import SessionFields from '@/components/SessionFields';
-import { richTextToPlain, toEditorHtml } from '@/lib/richText';
+import PriceTag from '@/components/PriceTag';
+import { richTextPreview, toEditorHtml } from '@/lib/richText';
 import {
   emptySessionValues,
   formatDuration,
@@ -221,23 +222,14 @@ export default function CreatorOnboardingStep3() {
                   <span className="bg-[#FFF7ED] text-[#C8A97E] text-xs px-3 py-1 rounded-full border border-[#C8A97E]/30">
                     {formatDuration(session.duration)}
                   </span>
-                  <span className="bg-[#E0E7FF] text-[#0012FF] text-xs px-3 py-1 rounded-full border border-[#0012FF]/30">
-                    {session.discountedPrice ? (
-                      <>
-                        <span className="line-through opacity-60 mr-1">{session.price}</span>
-                        {session.discountedPrice} PKR
-                      </>
-                    ) : (
-                      <>{session.price} PKR</>
-                    )}
-                  </span>
+                  <PriceTag price={session.price} discountedPrice={session.discountedPrice} />
                   {!!session.bufferTime && (
                     <span className="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full border border-gray-200">
                       {session.bufferTime} min buffer
                     </span>
                   )}
                 </div>
-                <p className="font-sans text-gray-500 text-xs">{richTextToPlain(session.description)}</p>
+                <p className="font-sans text-gray-500 text-xs">{richTextPreview(session.description, 300)}</p>
               </div>
             ))}
           </div>

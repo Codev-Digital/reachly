@@ -48,6 +48,12 @@ export const isRichTextEmpty = (value?: string | null): boolean => richTextToPla
  * Number of visible characters in a stored value, counted the same way the editor counts them
  * (text only, tags ignored, a line break counts as one). Use this for server-side limit checks.
  */
+/** Plain-text preview of a description: the first `max` characters, with "…" when it was cut. */
+export const richTextPreview = (value?: string | null, max = 300): string => {
+  const plain = richTextToPlain(value);
+  return plain.length > max ? `${plain.slice(0, max).trimEnd()}…` : plain;
+};
+
 export const richTextLength = (value?: string | null): number => {
   if (!value) return 0;
   if (!looksLikeRichText(value)) return value.trim().length;

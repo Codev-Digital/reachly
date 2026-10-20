@@ -18,9 +18,17 @@ export interface PanelItem {
   index: number;
 }
 
-const COPY: Record<QuestionType, { title: string; subtitle: string }> = {
-  multiple_choice: { title: 'Multiple Choice', subtitle: 'Select from predefined answer options' },
-  short_answer: { title: 'Short Answer', subtitle: 'Type their own answer in a text field' },
+const COPY: Record<QuestionType, { title: string; subtitle: string; addLabel: string }> = {
+  multiple_choice: {
+    title: 'Multiple Choice',
+    subtitle: 'Select from predefined answer options',
+    addLabel: 'Add Multiple Choice',
+  },
+  short_answer: {
+    title: 'Short Answer',
+    subtitle: 'Type their own answer in a text field',
+    addLabel: 'Add Short Answer',
+  },
 };
 
 /**
@@ -115,7 +123,7 @@ export default function SessionQuestionsPanel({
             className="w-full flex items-center justify-center gap-2 rounded-[8px] border border-dashed border-[#0012FF]/40 bg-[#0012FF]/5 py-3 text-xs font-semibold text-[#0012FF] transition-colors hover:bg-[#0012FF]/10 cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" aria-hidden="true" />
-            Add Question
+            {COPY[type].addLabel}
           </button>
         ) : (
           <p className="text-center text-xs text-gray-500">

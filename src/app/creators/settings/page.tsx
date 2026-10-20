@@ -12,9 +12,9 @@ import FormInput, { FormLabel } from '@/components/FormInput';
 import FormTextarea from '@/components/FormTextarea';
 import CitySelect from '@/components/CitySelect';
 import RichTextEditor from '@/components/RichTextEditor';
-import { isRichTextEmpty } from '@/lib/richText';
-import RichTextContent from '@/components/RichTextContent';
+import { isRichTextEmpty, richTextPreview } from '@/lib/richText';
 import ActionDialog from '@/components/ActionDialog';
+import PriceTag from '@/components/PriceTag';
 import { usePreloadImages } from '@/lib/usePreloadImages';
 
 function ModalShell({
@@ -142,8 +142,12 @@ export default function CreatorSettings() {
     setFieldErrors((prev) => (prev[key] ? { ...prev, [key]: '' } : prev));
   const [loading, setLoading] = useState(true);
 
-  usePreloadImages(['/assets/cancel-appointment-sm.webp']);
+  usePreloadImages(['/assets/cancel-appointment-sm.webp', '/assets/booking-confirm-sm.webp']);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  // Reviews tab: which review the report popup is for, and which ones were already reported (UI only)
+  const [reviewToReport, setReviewToReport] = useState<number | null>(null);
+  const [reportSubmitted, setReportSubmitted] = useState(false);
+  const [reportedReviews, setReportedReviews] = useState<number[]>([]);
   const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
   const [deletingSession, setDeletingSession] = useState(false);
   const [showLastSessionModal, setShowLastSessionModal] = useState(false);
@@ -1042,18 +1046,11 @@ export default function CreatorSettings() {
                         <span className="bg-[#FEF3E2] text-[#E8940C] px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap">
                           {session.duration} minutes
                         </span>
-                        <span className="bg-blue-50 text-[#0012FF] px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap">
-                          {session.discountedPrice ? (
-                            <>
-                              {session.discountedPrice} PKR{' '}
-                              <span className="line-through opacity-60 font-medium">{session.price} PKR</span>
-                            </>
-                          ) : (
-                            <>{session.price} PKR</>
-                          )}
-                        </span>
+                        <PriceTag price={session.price} discountedPrice={session.discountedPrice} />
                       </div>
-                      <RichTextContent value={session.description} className="text-gray-500 text-sm leading-relaxed" />
+                      <p className="text-gray-500 text-sm leading-relaxed break-words">
+                        {richTextPreview(session.description, 300)}
+                      </p>
 
                       {session.features && session.features.length > 0 && (
                         <div className="flex flex-wrap gap-2 mt-4">
@@ -1353,12 +1350,19 @@ export default function CreatorSettings() {
 
                     {/* Report Action */}
                     <div className="flex justify-end pt-2">
-                      <button
-                        onClick={() => alert('Review reported')}
-                        className="text-xs text-[#FF3B3B] hover:underline font-bold cursor-pointer"
-                      >
-                        Report
-                      </button>
+                      {reportedReviews.includes(i) ? (
+                        <span className="text-xs text-gray-400 font-bold">Reported</span>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            setReportSubmitted(false);
+                            setReviewToReport(i);
+                          }}
+                          className="text-xs text-[#FF3B3B] hover:underline font-bold cursor-pointer"
+                        >
+                          Report
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -1421,6 +1425,42 @@ export default function CreatorSettings() {
           </div>
         </div>
       )}
+
+      {/* ============ REPORT REVIEW POPUP (UI only) ============ */}
+      <ActionDialog
+        open={reviewToReport !== null}
+        onOpenChange={(open) => {
+          if (!open) setReviewToReport(null);
+        }}
+        image={
+          reportSubmitted
+            ? { src: '/assets/booking-confirm-sm.webp', alt: 'Review reported' }
+            : { src: '/assets/cancel-appointment-sm.webp', alt: 'Report review' }
+        }
+        title={reportSubmitted ? 'Review Reported' : 'Report this review?'}
+        description={
+          reportSubmitted
+            ? 'Thanks for letting us know. Our team will look into this review within 24 hours.'
+            : 'If this review is abusive, fake or breaks our guidelines, report it and our team will review it within 24 hours.'
+        }
+        actions={
+          reportSubmitted
+            ? [{ label: 'Done', onClick: () => setReviewToReport(null) }]
+            : [
+                { label: 'Cancel', variant: 'outline', onClick: () => setReviewToReport(null) },
+                {
+                  label: 'Report',
+                  variant: 'destructive',
+                  onClick: () => {
+                    if (reviewToReport !== null) {
+                      setReportedReviews((prev) => [...prev, reviewToReport]);
+                    }
+                    setReportSubmitted(true);
+                  },
+                },
+              ]
+        }
+      />
 
       {/* ============ DELETE SESSION CONFIRM ============ */}
       <ActionDialog
