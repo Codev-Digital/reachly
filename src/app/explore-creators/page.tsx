@@ -705,8 +705,7 @@ export default function ExploreCreatorsPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.4, delay: index * 0.04 }}
-                  onClick={(e) => handleCreatorBooking(e, creator.username)}
-                  className={`flex flex-col w-full group ${isAdmin ? 'cursor-default' : 'cursor-pointer'}`}
+                  className="flex flex-col w-full group"
                 >
                   {/* Top Image Container */}
                   <div className="relative w-full aspect-[4/4.2] rounded-[20px] overflow-hidden bg-gray-100 mb-3.5 shadow-xs transition-transform duration-300 group-hover:scale-[1.01]">

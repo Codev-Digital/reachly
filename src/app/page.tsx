@@ -501,8 +501,7 @@ export default function Home() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.5, delay: index * 0.05 }}
-                    onClick={(e) => handleCreatorBooking(e, creator.username)}
-                    className="flex flex-col w-[290px] sm:w-[325px] shrink-0 group cursor-pointer"
+                    className="flex flex-col w-[290px] sm:w-[325px] shrink-0 group"
                   >
                     {/* Top Image Container */}
                     <div className="relative w-full h-[300px] sm:h-[330px] rounded-[24px] overflow-hidden bg-gray-100 mb-3 shadow-xs transition-transform duration-300 group-hover:scale-[1.01]">
@@ -800,8 +799,7 @@ export default function Home() {
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ duration: 0.5, delay: index * 0.05 }}
-                        onClick={(e) => handleCreatorBooking(e, creator.username)}
-                        className="flex flex-col w-[290px] sm:w-[325px] shrink-0 group cursor-pointer"
+                        className="flex flex-col w-[290px] sm:w-[325px] shrink-0 group"
                       >
                         {/* Top Image Container */}
                         <div className="relative w-full h-[300px] sm:h-[330px] rounded-[24px] overflow-hidden bg-gray-100 mb-3 shadow-xs transition-transform duration-300 group-hover:scale-[1.01]">
