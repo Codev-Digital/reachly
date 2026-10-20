@@ -563,28 +563,71 @@ export default function Home() {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="grid md:grid-cols-2 gap-12 lg:gap-16 items-center">
-            {/* Left: animated card stack */}
-            <FadeUp className="relative h-[360px] sm:h-[400px] flex items-center justify-center pl-16 sm:pl-20 md:pl-24">
-              {[
-                { src: '/assets/how_it_works_3.png', bg: 'bg-[#FFD6E8]', step: 2 },
-                { src: '/assets/how_it_works_2.jpg', bg: 'bg-[#FFE699]', step: 1 },
-                { src: '/assets/how_it-works_1.png', bg: 'bg-[#C0E5FA]', step: 0 },
-              ].map(({ src, bg, step }) => (
-                <motion.div
-                  key={step}
-                  animate={{
-                    zIndex: activeStep === step ? 3 : activeStep === (step + 1) % 3 ? 2 : 1,
-                    x: activeStep === step ? 0 : activeStep === (step + 1) % 3 ? -40 : -80,
-                    y: activeStep === step ? 0 : activeStep === (step + 1) % 3 ? 15 : 30,
-                    rotate: activeStep === step ? -5 : activeStep === (step + 1) % 3 ? -15 : -25,
-                    scale: activeStep === step ? 1 : activeStep === (step + 1) % 3 ? 0.95 : 0.9,
-                  }}
-                  transition={{ type: 'spring', stiffness: 260, damping: 25 }}
-                  className={`absolute w-[200px] h-[260px] sm:w-[280px] sm:h-[350px] rounded-3xl overflow-hidden shadow-xl ${bg}`}
-                >
-                  <img src={src} alt="How it works" loading="lazy" decoding="async" className="w-full h-full object-cover" />
-                </motion.div>
-              ))}
+            {/* Left: animated card stack matching exact Figma positions and angles */}
+            <FadeUp className="relative h-[380px] sm:h-[420px] w-full flex items-center justify-center overflow-visible">
+              <div className="relative w-[498px] h-[360px] scale-[0.62] xs:scale-[0.72] sm:scale-[0.85] md:scale-95 lg:scale-100 origin-center transition-transform">
+                {[
+                  {
+                    step: 2,
+                    src: '/assets/how_it_works_3.png',
+                    bg: 'bg-[#FFD6E8]',
+                    left: 0,
+                    top: 0,
+                    angle: -10,
+                    defaultZ: 10,
+                  },
+                  {
+                    step: 1,
+                    src: '/assets/how_it_works_2.jpg',
+                    bg: 'bg-[#FFE699]',
+                    left: 119,
+                    top: 13.78,
+                    angle: 10,
+                    defaultZ: 20,
+                  },
+                  {
+                    step: 0,
+                    src: '/assets/how_it-works_1.png',
+                    bg: 'bg-[#C0E5FA]',
+                    left: 237.27,
+                    top: 0,
+                    angle: -10,
+                    defaultZ: 30,
+                  },
+                ].map((card) => {
+                  const isActive = activeStep === card.step;
+                  return (
+                    <motion.div
+                      key={card.step}
+                      onClick={() => setActiveStep(card.step)}
+                      animate={{
+                        x: card.left,
+                        y: card.top + (isActive ? -8 : 0),
+                        rotate: card.angle,
+                        scale: isActive ? 1.03 : 1,
+                        zIndex: isActive ? 40 : card.defaultZ,
+                      }}
+                      transition={{ type: 'spring', stiffness: 280, damping: 26 }}
+                      style={{
+                        width: '260px',
+                        height: '344px',
+                        position: 'absolute',
+                        left: 0,
+                        top: 0,
+                      }}
+                      className={`rounded-[32px] overflow-hidden shadow-2xl cursor-pointer select-none ${card.bg}`}
+                    >
+                      <img
+                        src={card.src}
+                        alt="How it works"
+                        loading="lazy"
+                        decoding="async"
+                        className="w-full h-full object-cover pointer-events-none"
+                      />
+                    </motion.div>
+                  );
+                })}
+              </div>
             </FadeUp>
 
             {/* Right: step text */}
