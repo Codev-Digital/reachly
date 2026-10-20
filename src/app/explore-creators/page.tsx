@@ -32,6 +32,7 @@ export default function ExploreCreatorsPage() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [loginModalMode, setLoginModalMode] = useState<'booking' | 'favourite'>('booking');
   const [loginCallbackUrl, setLoginCallbackUrl] = useState('');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleCreatorBooking = (e: React.MouseEvent, username: string) => {
     e.stopPropagation();
@@ -265,24 +266,172 @@ export default function ExploreCreatorsPage() {
         )
       ) : (
         <div className="px-4 sm:px-6 pt-4">
-          <nav className="bg-white shadow-sm border border-gray-100 max-w-[1536px] mx-auto rounded-3xl px-6 py-4 flex items-center justify-between">
-            {/* Logo */}
-            <Link href="/" className="flex items-center gap-2">
-              <img src="/assets/logo1.png" alt="Reachly" className="h-10 w-auto object-contain" />
-            </Link>
+          <nav className="bg-white shadow-sm border border-gray-100 max-w-[1536px] mx-auto rounded-3xl px-6 sm:px-8 py-3.5 sm:py-4 relative flex flex-col">
+            <div className="relative flex justify-between items-center w-full">
+              {/* Logo */}
+              <Link href="/" className="flex items-center gap-2 z-10 flex-shrink-0">
+                <img src="/assets/logo1.png" alt="Reachly" className="h-10 w-auto object-contain" />
+              </Link>
 
-            {/* Right side — all links + buttons grouped together like homepage */}
-            <div className="flex items-center gap-8">
-              <div className="hidden lg:flex items-center gap-8 font-medium text-sm text-gray-600">
-                <Link href="/explore-creators" className="text-[#0012FF] font-bold transition-colors">Explore Creators</Link>
-                <Link href="/for-creators" className="hover:text-black transition-colors">For Creators</Link>
-                <Link href="/about" className="hover:text-black transition-colors">About</Link>
+              {/* Desktop Nav - Central */}
+              <div className="hidden lg:flex items-center gap-7 xl:gap-9 absolute left-1/2 -translate-x-1/2">
+                <Link
+                  href="/"
+                  className="font-sans text-sm font-medium text-gray-600 hover:text-black transition-colors"
+                >
+                  Home
+                </Link>
+                <Link
+                  href="/explore-creators"
+                  className="font-sans text-sm font-bold text-[#0012FF] transition-colors"
+                >
+                  Explore Creators
+                </Link>
+                <Link
+                  href="/events"
+                  className="font-sans text-sm font-medium text-gray-600 hover:text-black transition-colors"
+                >
+                  Events
+                </Link>
+                <Link
+                  href="/for-creators"
+                  className="font-sans text-sm font-medium text-gray-600 hover:text-black transition-colors"
+                >
+                  For Creators
+                </Link>
+                <Link
+                  href="/about"
+                  className="font-sans text-sm font-medium text-gray-600 hover:text-black transition-colors"
+                >
+                  About
+                </Link>
               </div>
-              <div className="flex items-center gap-3">
-                <button onClick={() => router.push('/login')} className="text-gray-700 font-semibold text-sm hover:text-black transition-all cursor-pointer">Login</button>
-                <button onClick={() => router.push('/signup')} className="border border-gray-300 text-gray-700 px-5 py-2 rounded-full font-semibold text-sm hover:bg-gray-50 transition-all cursor-pointer">Sign up</button>
+
+              {/* Right Auth Buttons */}
+              <div className="hidden lg:flex items-center gap-4 z-10">
+                <button
+                  onClick={() => router.push('/login')}
+                  className="text-gray-700 font-sans font-medium text-sm hover:text-black transition-all cursor-pointer"
+                >
+                  Login
+                </button>
+                <button
+                  onClick={() => router.push('/signup')}
+                  className="border border-gray-300 text-gray-700 px-5 py-2 rounded-full font-sans font-medium text-sm hover:border-black hover:text-black transition-all cursor-pointer"
+                >
+                  Sign up
+                </button>
               </div>
+
+              {/* Mobile Hamburger */}
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="lg:hidden w-10 h-10 flex items-center justify-center focus:outline-none z-10"
+                aria-label="Toggle menu"
+              >
+                <div className="relative w-6 h-6">
+                  <motion.span
+                    animate={
+                      isMobileMenuOpen
+                        ? { rotate: 45, top: 12 }
+                        : { rotate: 0, top: 4 }
+                    }
+                    transition={{ duration: 0.3 }}
+                    className="absolute left-0 w-6 h-[2px] bg-black rounded-full"
+                  />
+                  <motion.span
+                    animate={{
+                      opacity: isMobileMenuOpen ? 0 : 1,
+                      x: isMobileMenuOpen ? -10 : 0,
+                    }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute left-0 top-3 w-6 h-[2px] bg-black rounded-full"
+                  />
+                  <motion.span
+                    animate={
+                      isMobileMenuOpen
+                        ? { rotate: -45, top: 12 }
+                        : { rotate: 0, top: 20 }
+                    }
+                    transition={{ duration: 0.3 }}
+                    className="absolute left-0 w-6 h-[2px] bg-black rounded-full"
+                  />
+                </div>
+              </motion.button>
             </div>
+
+            {/* Mobile Menu */}
+            <AnimatePresence>
+              {isMobileMenuOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10, height: 0 }}
+                  animate={{ opacity: 1, y: 0, height: 'auto' }}
+                  exit={{ opacity: 0, y: -10, height: 0 }}
+                  transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                  className="lg:hidden overflow-hidden mt-4 pt-4 border-t border-gray-100"
+                >
+                  <div className="flex flex-col gap-4 pb-4">
+                    <Link
+                      href="/"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="block font-sans text-base font-medium text-gray-700 hover:text-black"
+                    >
+                      Home
+                    </Link>
+                    <Link
+                      href="/explore-creators"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="block font-sans text-base font-bold text-[#0012FF]"
+                    >
+                      Explore Creators
+                    </Link>
+                    <Link
+                      href="/events"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="block font-sans text-base font-medium text-gray-700 hover:text-black"
+                    >
+                      Events
+                    </Link>
+                    <Link
+                      href="/for-creators"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="block font-sans text-base font-medium text-gray-700 hover:text-black"
+                    >
+                      For Creators
+                    </Link>
+                    <Link
+                      href="/about"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="block font-sans text-base font-medium text-gray-700 hover:text-black"
+                    >
+                      About
+                    </Link>
+                  </div>
+                  <div className="pt-4 border-t border-gray-100 flex flex-col gap-3">
+                    <button
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        router.push('/login');
+                      }}
+                      className="w-full py-2.5 rounded-full text-center text-sm font-semibold text-gray-700 hover:text-black bg-gray-50 hover:bg-gray-100 transition-all cursor-pointer"
+                    >
+                      Login
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        router.push('/signup');
+                      }}
+                      className="w-full py-2.5 rounded-full text-center text-sm font-semibold text-white bg-[#0012FF] hover:bg-[#0010d0] transition-all cursor-pointer shadow-sm"
+                    >
+                      Sign up
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </nav>
         </div>
       )}
