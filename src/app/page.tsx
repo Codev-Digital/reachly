@@ -612,44 +612,49 @@ export default function Home() {
               <div className="relative w-[498px] h-[360px] scale-[0.62] xs:scale-[0.72] sm:scale-[0.85] md:scale-95 lg:scale-100 origin-center transition-transform">
                 {[
                   {
-                    step: 2,
-                    src: '/assets/how_it_works_3.png',
-                    bg: 'bg-[#FFD6E8]',
-                    left: 0,
-                    top: 0,
-                    angle: 10,
-                    defaultZ: 10,
+                    step: 0,
+                    src: '/assets/how_it-works_1.png',
+                    bg: 'bg-[#C0E5FA]',
                   },
                   {
                     step: 1,
                     src: '/assets/how_it_works_2.jpg',
                     bg: 'bg-[#FFE699]',
-                    left: 119,
-                    top: 13.78,
-                    angle: -10,
-                    defaultZ: 20,
                   },
                   {
-                    step: 0,
-                    src: '/assets/how_it-works_1.png',
-                    bg: 'bg-[#C0E5FA]',
-                    left: 237.27,
-                    top: 0,
-                    angle: 10,
-                    defaultZ: 30,
+                    step: 2,
+                    src: '/assets/how_it_works_3.png',
+                    bg: 'bg-[#FFD6E8]',
                   },
                 ].map((card) => {
                   const isActive = activeStep === card.step;
+                  // Fixed slots matching Picture 1:
+                  // Slot 0 (Back, Left), Slot 1 (Mid, Center), Slot 2 (Front, Right - Active)
+                  const slotIndex =
+                    card.step === activeStep
+                      ? 2
+                      : card.step === (activeStep + 1) % 3
+                        ? 1
+                        : 0;
+
+                  const slots = [
+                    { x: 0, y: 0, rotate: 10, zIndex: 10, scale: 1 },
+                    { x: 119, y: 13.78, rotate: -10, zIndex: 20, scale: 1 },
+                    { x: 237.27, y: -8, rotate: 10, zIndex: 40, scale: 1.03 },
+                  ];
+
+                  const slot = slots[slotIndex];
+
                   return (
                     <motion.div
                       key={card.step}
                       onClick={() => setActiveStep(card.step)}
                       animate={{
-                        x: card.left,
-                        y: card.top + (isActive ? -8 : 0),
-                        rotate: card.angle,
-                        scale: isActive ? 1.03 : 1,
-                        zIndex: isActive ? 40 : card.defaultZ,
+                        x: slot.x,
+                        y: slot.y,
+                        rotate: slot.rotate,
+                        scale: slot.scale,
+                        zIndex: slot.zIndex,
                       }}
                       transition={{ type: 'spring', stiffness: 280, damping: 26 }}
                       style={{
