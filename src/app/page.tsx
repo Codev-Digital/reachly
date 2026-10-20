@@ -353,65 +353,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ════════════════════════════════════════
-            PAKISTAN'S TOP CREATORS — auto marquee
-        ════════════════════════════════════════ */}
-      {/* <section className="py-20 bg-[#F7F7FA] text-[#0C0C0C]">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6">
-            <FadeUp className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
-              <div>
-                <h2 className="font-anton font-bold text-5xl sm:text-6xl md:text-7xl text-black leading-tight uppercase tracking-tight">
-                  Pakistan's <span className="text-[#0012FF]">Top Creators</span>
-                </h2>
-                <p className="font-sans text-sm sm:text-base text-gray-500 mt-2">
-                  Connect, Collaborate and create with the most trusted voices across Pakistan
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setCreatorPage(prev => (prev > 0 ? prev - 1 : 1))}
-                  className="w-12 h-12 rounded-full border border-[#0012FF] flex items-center justify-center text-[#0012FF] hover:bg-[#0012FF]/5 transition-all active:scale-95"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
-                </button>
-                <button
-                  onClick={() => setCreatorPage(prev => (prev < 1 ? prev + 1 : 0))}
-                  className="w-12 h-12 rounded-full bg-[#0012FF] flex items-center justify-center text-white hover:bg-[#0012FF]/95 transition-all active:scale-95 shadow-md shadow-[#0012FF]/20"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
-                </button>
-              </div>
-            </FadeUp>
-
-            <motion.div
-              animate={{ x: creatorPage === 0 ? 0 : -20 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-6"
-            >
-              {allCreators.map((creator, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.08 }}
-                  whileHover={{ y: -8, scale: 1.02 }}
-                  className="relative h-[360px] w-full rounded-3xl overflow-hidden shadow-lg group bg-white cursor-pointer"
-                >
-                <img
-    src={creator.img}
-    alt={creator.name}
-    className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
-  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end justify-center pb-6">
-                    <span className="text-white font-sans font-bold text-lg tracking-wide drop-shadow-md">{creator.name}</span>
-                  </div>
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-        </section> */}
-
 
 
       {/* ════════════════════════════════════════
@@ -548,6 +489,49 @@ export default function Home() {
                 No featured creators found.
               </div>
             )}
+          </div>
+        </div>
+      </section>
+
+      {/* ════════════════════════════════════════
+            PAKISTAN'S TOP CREATORS
+        ════════════════════════════════════════ */}
+      <section className="py-20 bg-white text-[#0C0C0C] border-t border-gray-100">
+        <div className="max-w-[1160px] mx-auto px-4 sm:px-6">
+          <FadeUp className="mb-10 text-left">
+            <h2 className="font-anton font-normal text-4xl sm:text-5xl md:text-[70px] text-black leading-tight md:leading-[70px] uppercase tracking-normal">
+              Pakistan&apos;s <span className="text-[#0012FF]">Top Creators</span>
+            </h2>
+            <p className="font-sans text-sm sm:text-base text-gray-500 mt-3">
+              Connect, collaborate and create with the most trusted voices across Pakistan
+            </p>
+          </FadeUp>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 justify-items-center">
+            {allCreators.map((creator, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: index * 0.06 }}
+                whileHover={{ y: -6, scale: 1.02 }}
+                className="w-[275px] h-[275px] rounded-[24px] overflow-hidden relative group shadow-md hover:shadow-xl transition-all duration-300 bg-white shrink-0 cursor-pointer"
+              >
+                <img
+                  src={creator.img}
+                  alt={creator.name}
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent flex items-end p-5">
+                  <span className="text-white font-sans font-bold text-lg tracking-wide drop-shadow-md">
+                    {creator.name}
+                  </span>
+                </div>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
