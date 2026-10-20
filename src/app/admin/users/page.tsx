@@ -349,7 +349,7 @@ export default function UsersPage() {
                       <div className="flex items-center justify-center gap-2">
                         <button
                           onClick={() => handleDeleteClick(user)}
-                          className="px-4 py-1.5 border border-rose-100 rounded-full text-xs font-bold text-rose-600 hover:bg-rose-50 hover:border-rose-200 transition-colors"
+                          className="px-4 py-1.5 bg-red-50 border border-red-200 rounded-full text-xs font-bold text-red-600 hover:bg-red-100 hover:border-red-300 transition-colors"
                         >
                           Delete
                         </button>
