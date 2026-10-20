@@ -189,6 +189,17 @@ export default function Home() {
     { name: 'Ahsan Khan', img: '/Avatars/7.jpg' },
     { name: 'Sajal Ali', img: '/Avatars/8.jpg' },
   ];
+
+  const topCreatorsPage2 = [
+    { name: 'Fawad Khan', img: '/Avatars/15.jpg' },
+    { name: 'Ayeza Khan', img: '/Avatars/9.jpg' },
+    { name: 'Humayun Saeed', img: '/Avatars/10.jpg' },
+    { name: 'Yumna Zaidi', img: '/Avatars/11.jpg' },
+    { name: 'Hamza Ali Abbasi', img: '/Avatars/12.jpg' },
+    { name: 'Iqra Aziz', img: '/Avatars/13.jpg' },
+    { name: 'Ahad Raza Mir', img: '/Avatars/14.jpg' },
+    { name: 'Saba Qamar', img: '/Avatars/16.jpg' },
+  ];
   /* duplicate for seamless loop */
   const marqueeCreators = [...allCreators, ...allCreators];
 
@@ -360,26 +371,50 @@ export default function Home() {
         ════════════════════════════════════════ */}
       <section className="py-20 bg-white text-[#0C0C0C] border-t border-gray-100">
         <div className="max-w-[1160px] mx-auto px-4 sm:px-6">
-          <FadeUp className="mb-10 text-left">
-            <h2 
-              className="font-anton font-normal text-4xl sm:text-5xl md:text-[70px] text-black leading-tight md:leading-[70px] uppercase tracking-normal"
-              style={{ letterSpacing: '0%' }}
-            >
-              Pakistan&apos;s <span className="text-[#0012FF]">Top Creators</span>
-            </h2>
-            <p className="font-sans text-sm sm:text-base text-gray-500 mt-3">
-              Connect, collaborate and create with the most trusted voices across Pakistan
-            </p>
+          <FadeUp className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+            <div>
+              <h2 className="font-anton font-bold text-5xl sm:text-6xl md:text-7xl text-black leading-tight uppercase tracking-tight">
+                Pakistan&apos;s <span className="text-[#0012FF]">Top Creators</span>
+              </h2>
+              <p className="font-sans text-sm sm:text-base text-gray-500 mt-2">
+                Connect, collaborate and create with the most trusted voices across Pakistan
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setCreatorPage(prev => (prev > 0 ? prev - 1 : 1))}
+                className="w-12 h-12 rounded-full border border-[#0012FF] flex items-center justify-center text-[#0012FF] hover:bg-[#0012FF]/5 transition-all active:scale-95 cursor-pointer"
+                aria-label="Previous creators"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <button
+                onClick={() => setCreatorPage(prev => (prev < 1 ? prev + 1 : 0))}
+                className="w-12 h-12 rounded-full bg-[#0012FF] flex items-center justify-center text-white shadow-md shadow-[#0012FF]/20 hover:bg-[#0010d0] transition-all active:scale-95 cursor-pointer"
+                aria-label="Next creators"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
           </FadeUp>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 justify-items-center">
-            {allCreators.map((creator, index) => (
+          <motion.div
+            key={creatorPage}
+            initial={{ opacity: 0, x: creatorPage === 0 ? -20 : 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.35, ease: 'easeOut' }}
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 justify-items-center"
+          >
+            {(creatorPage === 0 ? allCreators : topCreatorsPage2).map((creator, index) => (
               <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.06 }}
+                key={creator.name}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: index * 0.04 }}
                 whileHover={{ y: -6, scale: 1.02 }}
                 className="w-[275px] h-[275px] rounded-[24px] overflow-hidden relative group shadow-md hover:shadow-xl transition-all duration-300 bg-white shrink-0 cursor-pointer"
               >
@@ -397,7 +432,7 @@ export default function Home() {
                 </div>
               </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 
