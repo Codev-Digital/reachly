@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { packageLabels } from '@/lib/packageLabels';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
@@ -76,6 +77,7 @@ export async function GET(request: NextRequest) {
         }
 
         const allBookingIds = rawAllBookings.map((b: any) => b._id);
+        const pkgLabels = await packageLabels(rawAllBookings);
         const allUserIds = Array.from(new Set([
             ...rawAllBookings.map((b: any) => b.userId?.toString()),
             ...outgoingBookings.map((b: any) => b.creatorId?.toString())
@@ -205,7 +207,7 @@ export async function GET(request: NextRequest) {
                 shortDate: formattedShortDate,
                 time: booking.scheduledTime,
                 duration: `${booking.sessionTypeId?.duration || 0} min`,
-                amount: `PKR ${booking.finalPrice.toLocaleString()}`,
+                amount: pkgLabels.get(bookingIdStr) || `PKR ${booking.finalPrice.toLocaleString()}`,
                 status: displayStatus,
                 statusRaw: booking.status,
                 paymentStatus: booking.paymentStatus,
@@ -216,6 +218,9 @@ export async function GET(request: NextRequest) {
                 bookedOn: bookedOn,
                 scheduledDate: booking.scheduledDate,
                 isRescheduled: booking.isRescheduled || false,
+                isPackage: !!booking.packagePurchaseId,
+                sessionNumber: booking.sessionNumber,
+                rescheduleStatus: booking.rescheduleRequest?.status,
                 isLocked: booking.isLocked !== undefined ? booking.isLocked : !lastMsgDoc,
                 meetingUrl: booking.meetingUrl,
                 lastMessage: lastMsgDoc ? lastMsgDoc.content : '',

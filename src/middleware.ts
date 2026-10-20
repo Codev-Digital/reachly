@@ -67,6 +67,7 @@ const CREATOR_PROTECTED_PREFIXES = [
   "/creators/notifications",
   "/creators/settings",
   "/creators/wallet",
+  "/creators/packages",
   "/creators/pending-approval",
 ];
 

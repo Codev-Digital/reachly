@@ -1,6 +1,6 @@
 'use client';
 
-import { useBooking } from '@/app/creators/[username]/book-session/layout';
+import { useBooking, sessionPrice } from '@/app/creators/[username]/book-session/layout';
 
 const formatDate = (date: Date) => {
   return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
@@ -57,7 +57,7 @@ export default function BookingSummary() {
           </div>
           <div className="flex justify-between items-center border-t border-[rgba(255,255,255,0.1)] pt-3">
             <span className="font-sans text-sm text-[#F9F6F2] opacity-80">Total</span>
-            <span className="font-serif text-lg font-bold text-[#C8A97E]">PKR {booking.selectedSession.price.toLocaleString()}</span>
+            <span className="font-serif text-lg font-bold text-[#C8A97E]">PKR {sessionPrice(booking.selectedSession).toLocaleString()}</span>
           </div>
         </>
       )}

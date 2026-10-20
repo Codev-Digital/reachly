@@ -79,6 +79,11 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
         const isCancelling = status === 'cancelled';
         const isRescheduling = Boolean(selectedDate || selectedTime);
 
+        // Package sessions can be rescheduled but never cancelled
+        if (isCancelling && booking.packagePurchaseId) {
+            return NextResponse.json({ error: 'Package sessions cannot be cancelled. Reschedule it instead.' }, { status: 403 });
+        }
+
         // 1. Cancellation checks (must be at least 24 hours before session start time)
         if (isCancelling) {
             if (booking.status === 'cancelled') {

@@ -123,6 +123,9 @@ export async function GET(
                     discountedPrice: s.discountedPrice,
                     questions: s.questions || [],
                     features: s.features,
+                    isPackage: !!s.isPackage,
+                    packageSessions: s.packageSessions,
+                    packagePeriod: s.packagePeriod,
                 })),
         });
     } catch (error: any) {

@@ -43,6 +43,7 @@ export default function CreatorLayout({
   const isDashboardRoute = 
     pathname.startsWith('/creators/dashboard') ||
     pathname.startsWith('/creators/chats') ||
+    pathname.startsWith('/creators/packages') ||
     pathname.startsWith('/creators/calendar') ||
     pathname.startsWith('/creators/wallet') ||
     pathname.startsWith('/creators/settings');

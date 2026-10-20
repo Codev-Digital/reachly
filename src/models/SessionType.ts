@@ -20,6 +20,9 @@ export interface ISessionType extends Document {
   questions: ISessionQuestion[]; // pre-session intake questions
   features: string[]; // what's included bullets
   maxBookings?: number; // per day cap (optional)
+  isPackage?: boolean; // a bundle of N sessions sold for one price (`price` is the whole package)
+  packageSessions?: number; // how many sessions the package includes
+  packagePeriod?: 'week' | 'month'; // display label only ("5 sessions per week")
   order: number;      // display order
   isActive: boolean;
   createdAt: Date;
@@ -104,6 +107,9 @@ const SessionTypeSchema = new Schema<ISessionType>(
       type: Number,
       min: [1, 'Max bookings must be at least 1'],
     },
+    isPackage: { type: Boolean, default: false },
+    packageSessions: { type: Number, min: [2, 'A package needs at least 2 sessions'], max: 100 },
+    packagePeriod: { type: String, enum: ['week', 'month'] },
     order: {
       type: Number,
       default: 0,

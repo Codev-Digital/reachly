@@ -66,6 +66,10 @@ export interface SessionFormValues {
   maxBookings: string;
   /** Intake questions (multiple choice and/or short answer). */
   questions: SessionQuestion[];
+  /** Package = N sessions sold for one total price. */
+  isPackage: boolean;
+  packageSessions: string;
+  packagePeriod: 'week' | 'month';
 }
 
 export type SessionErrorKey =
@@ -75,6 +79,7 @@ export type SessionErrorKey =
   | 'price'
   | 'discountedPrice'
   | 'maxBookings'
+  | 'packageSessions'
   | 'questions';
 export type SessionErrors = Partial<Record<SessionErrorKey, string>>;
 
@@ -88,6 +93,9 @@ export const emptySessionValues = (): SessionFormValues => ({
   discountedPrice: '',
   maxBookings: '4',
   questions: [],
+  isPackage: false,
+  packageSessions: '5',
+  packagePeriod: 'week',
 });
 
 /** Build form values from a stored session (description must already be editor HTML). */
@@ -100,6 +108,9 @@ export const sessionToValues = (
     discountedPrice?: number | string | null;
     maxBookings?: number | string;
     questions?: unknown;
+    isPackage?: boolean;
+    packageSessions?: number | string;
+    packagePeriod?: 'week' | 'month';
   },
   description: string
 ): SessionFormValues => {
@@ -115,6 +126,9 @@ export const sessionToValues = (
       s.discountedPrice !== undefined && s.discountedPrice !== null ? String(s.discountedPrice) : '',
     maxBookings: String(s.maxBookings || 4),
     questions: normalizeStoredQuestions(s.questions).map(withOptionSlots),
+    isPackage: !!s.isPackage,
+    packageSessions: String(s.packageSessions || 5),
+    packagePeriod: s.packagePeriod === 'month' ? 'month' : 'week',
   };
 };
 
@@ -153,6 +167,11 @@ export const validateSessionValues = (v: SessionFormValues): SessionErrors => {
     next.maxBookings = 'Enter at least 1 booking per day';
   }
 
+  if (v.isPackage) {
+    const n = Number(v.packageSessions);
+    if (!Number.isInteger(n) || n < 2 || n > 100) next.packageSessions = 'Enter between 2 and 100 sessions';
+  }
+
   if (!questionsAreValid(v.questions)) {
     next.questions = 'Finish or delete the incomplete questions';
   }
@@ -170,6 +189,9 @@ export const valuesToPayload = (v: SessionFormValues) => ({
   bufferTime: effectiveBufferFor(v),
   maxBookings: Number(v.maxBookings),
   questions: cleanQuestionsForSave(v.questions),
+  isPackage: v.isPackage,
+  packageSessions: v.isPackage ? Number(v.packageSessions) : undefined,
+  packagePeriod: v.isPackage ? v.packagePeriod : undefined,
 });
 
 /** Scroll the first inline error into view after a failed validation. */

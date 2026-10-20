@@ -1056,7 +1056,7 @@ export default function CreatorSettings() {
                       <div className="flex items-center gap-3 flex-wrap mb-3">
                         <h3 className="text-lg sm:text-xl font-bold text-black">{session.title}</h3>
                         <span className="bg-[#FEF3E2] text-[#E8940C] px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap">
-                          {session.duration} minutes
+                          {session.duration} minutes{(session as any).isPackage ? ` · Package: ${(session as any).packageSessions} sessions per ${(session as any).packagePeriod}` : ''}
                         </span>
                         <PriceTag price={session.price} discountedPrice={session.discountedPrice} />
                       </div>

@@ -86,6 +86,7 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
   // Determine active nav item from pathname
   const getActiveNavItem = () => {
     if (pathname === '/user/bookings') return 'Bookings';
+    if (pathname === '/user/packages') return 'Packages';
     if (pathname === '/user/chats') return 'Chats';
     if (pathname === '/user/dashboard' || pathname === '/explore-creators') return 'Dashboard';
     if (pathname === '/user/payments') return 'Wallet';
@@ -249,6 +250,7 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
     { name: 'Dashboard', href: '/user/dashboard', icon: 'dashboard' },
     // { name: 'Events', href: '/explore-creators', icon: 'events' },
     { name: 'Bookings', href: '/user/bookings', icon: 'bookings' },
+    { name: 'Packages', href: '/user/packages', icon: 'bookings' },
     { name: 'Chats', href: '/user/chats', icon: 'chats' },
     { name: 'Referrals', href: '/user/referrals', icon: 'referrals' },
     { name: 'Wallet', href: '/user/payments', icon: 'wallet' },

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, createContext, useContext, ReactNode, useEffect, useRef } from 'react';
+import { useState, createContext, useContext, ReactNode, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import Footer from '@/components/Footer';
@@ -14,8 +14,12 @@ export interface SessionType {
   title: string;
   duration: string;
   price: number;
+  discountedPrice?: number | null;
   description: string;
   features: string[];
+  isPackage?: boolean;
+  packageSessions?: number;
+  packagePeriod?: 'week' | 'month';
 }
 
 interface UserDetails {
@@ -213,7 +217,9 @@ export default function BookSessionLayout({ children }: { children: ReactNode })
     checkAuth();
   }, []);
 
-  const setBooking: React.Dispatch<React.SetStateAction<BookingState>> = (action) => {
+  // Stable identity: pages list it in effect dependencies, and a new function every render made
+  // the step-1 effect refetch the creator in a loop.
+  const setBooking: React.Dispatch<React.SetStateAction<BookingState>> = useCallback((action) => {
     setBookingRaw(prev => {
       const next = typeof action === 'function' ? action(prev) : action;
       // If booking data changed after a draft was saved, mark draft as unsaved
@@ -223,7 +229,7 @@ export default function BookSessionLayout({ children }: { children: ReactNode })
       }
       return next;
     });
-  };
+  }, []);
 
   const saveToStorage = () => {
     try {
@@ -315,3 +321,7 @@ export default function BookSessionLayout({ children }: { children: ReactNode })
     </BookingContext.Provider>
   );
 }
+
+/** What the user actually pays: the discounted price when the creator set one. */
+export const sessionPrice = (s: { price: number; discountedPrice?: number | null }) =>
+  s.discountedPrice && s.discountedPrice > 0 && s.discountedPrice < s.price ? s.discountedPrice : s.price;

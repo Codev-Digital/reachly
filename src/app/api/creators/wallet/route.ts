@@ -76,7 +76,11 @@ export async function GET(req: NextRequest) {
 
       return {
         id: b.bookingRef || `TXN-${b._id.toString().slice(-5).toUpperCase()}`,
-        type: bookingStatus === 'refunded' ? 'Refund' : 'Booking Earning',
+        type: bookingStatus === 'refunded'
+          ? 'Refund'
+          : b.packagePurchaseId
+            ? `Package Earning · session ${b.sessionNumber}${payStatus === 'pending' ? ' (on hold until the package is complete)' : ''}`
+            : 'Booking Earning',
         date: formattedDate,
         time: formattedTime,
         amount: `${amount.toLocaleString()} PKR`,

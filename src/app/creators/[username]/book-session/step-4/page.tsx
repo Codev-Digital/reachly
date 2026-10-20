@@ -4,7 +4,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import BookingProgress from '@/components/booking/BookingProgress';
 import CreatorProfileCard from '@/components/booking/CreatorProfileCard';
-import { useBooking } from '../layout';
+import { useBooking, sessionPrice } from '../layout';
 
 export default function BookSessionStep4() {
   const params = useParams();
@@ -21,6 +21,21 @@ export default function BookSessionStep4() {
   const [isLoadingContinue, setIsLoadingContinue] = useState(false);
   const [errorModalOpen, setErrorModalOpen] = useState(false);
   const [errorModalMsg, setErrorModalMsg] = useState('');
+
+  // Packages are paid once: later sessions of an existing package cost nothing more
+  const pkg = booking.selectedSession?.isPackage ? booking.selectedSession : null;
+  const [paidPackage, setPaidPackage] = useState<{ number: number; total: number } | null>(null);
+  useEffect(() => {
+    if (!pkg) return;
+    fetch('/api/user/packages')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        const mine = (d?.packages || []).find((p: any) => p.sessionTypeId === pkg.id && p.status === 'active');
+        if (mine) setPaidPackage({ number: mine.sessionsBooked + 1, total: mine.sessionsTotal });
+      })
+      .catch(() => {});
+  }, [pkg?.id]);
+  const amountDue = pkg && paidPackage ? 0 : booking.selectedSession ? sessionPrice(booking.selectedSession) : 0;
 
   // Reset loading states when switching between payment views
   useEffect(() => {
@@ -58,7 +73,7 @@ export default function BookSessionStep4() {
         proceedAs: booking.userDetails.proceedAs || 'guest',
         paymentMethod,
         promoApplied: null,
-        finalPrice: booking.selectedSession?.price || 0,
+        finalPrice: booking.selectedSession ? sessionPrice(booking.selectedSession) : 0,
         originalPrice: booking.selectedSession?.price || 0
       };
 
@@ -141,15 +156,24 @@ export default function BookSessionStep4() {
               {/* Order breakdown */}
               <div className="bg-white border border-gray-100 rounded-2xl p-4 mb-6 space-y-3">
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-gray-500 font-medium">Session price</span>
+                  <span className="text-gray-500 font-medium">
+                    {pkg ? `Package (${pkg.packageSessions} sessions)` : 'Session price'}
+                  </span>
                   <span className="text-gray-900 font-bold">
-                    PKR {booking.selectedSession?.price.toLocaleString()}
+                    PKR {booking.selectedSession ? sessionPrice(booking.selectedSession).toLocaleString() : ''}
                   </span>
                 </div>
+                {pkg && (
+                  <p className="text-[11px] text-gray-500">
+                    {paidPackage
+                      ? `This is session ${paidPackage.number} of ${paidPackage.total}. Your package is already paid.`
+                      : 'You pay for the whole package once. Book the remaining sessions one by one from My packages.'}
+                  </p>
+                )}
                 <div className="border-t border-gray-100 pt-3 flex justify-between items-center text-sm font-bold">
                   <span className="text-gray-800">Total Amount</span>
                   <span className="text-[#0012FF] text-lg font-black leading-none">
-                    PKR {booking.selectedSession?.price.toLocaleString()}
+                    PKR {amountDue.toLocaleString()}
                   </span>
                 </div>
               </div>
@@ -254,13 +278,13 @@ export default function BookSessionStep4() {
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-gray-500 font-medium">Session price</span>
                   <span className="text-gray-800 font-bold">
-                    PKR {booking.selectedSession?.price.toLocaleString()}
+                    PKR {booking.selectedSession ? sessionPrice(booking.selectedSession).toLocaleString() : ''}
                   </span>
                 </div>
                 <div className="border-t border-gray-200/50 pt-2.5 flex justify-between items-center text-xs font-bold">
                   <span className="text-gray-800">Total Amount</span>
                   <span className="text-[#0012FF] text-sm font-black">
-                    PKR {booking.selectedSession?.price.toLocaleString()}
+                    PKR {booking.selectedSession ? sessionPrice(booking.selectedSession).toLocaleString() : ''}
                   </span>
                 </div>
               </div>

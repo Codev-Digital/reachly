@@ -108,6 +108,15 @@ export async function PUT(req: NextRequest) {
           );
         }
       }
+      if (s.isPackage) {
+        const n = Number(s.packageSessions);
+        if (!Number.isInteger(n) || n < 2 || n > 100) {
+          return NextResponse.json(
+            { error: `Session ${idx}: a package needs between 2 and 100 sessions.` },
+            { status: 422 }
+          );
+        }
+      }
       if (s.discountedPrice !== undefined && s.discountedPrice !== null && s.discountedPrice !== '') {
         const discounted = Number(s.discountedPrice);
         if (isNaN(discounted) || discounted < 1 || discounted >= price) {
@@ -119,11 +128,9 @@ export async function PUT(req: NextRequest) {
       }
     }
 
-    // ── Full replace: delete old, insert new ─────────────────────────────
-    await SessionType.deleteMany({ userId: user._id });
-
-    const docs = sessionTypes.map((s: any, index: number) => ({
-      userId: user._id,
+    // ── Sync: update existing sessions in place (ids must survive: bookings and
+    //    package purchases point at them), insert new ones, remove the rest ────
+    const toDoc = (s: any, index: number) => ({
       title: s.title.trim(),
       description: s.description.trim(),
       duration: Number(s.duration),
@@ -135,11 +142,31 @@ export async function PUT(req: NextRequest) {
       questions: Array.isArray(s.questions) ? s.questions : [],
       features: (s.features || []).filter((f: string) => f?.trim()),
       maxBookings: s.maxBookings ? Number(s.maxBookings) : undefined,
+      isPackage: !!s.isPackage,
+      packageSessions: s.isPackage ? Number(s.packageSessions) : undefined,
+      packagePeriod: (s.isPackage ? (s.packagePeriod === 'month' ? 'month' : 'week') : undefined) as 'week' | 'month' | undefined,
       order: index,
       isActive: true,
-    }));
+    });
 
-    const saved = await SessionType.insertMany(docs);
+    const existing = await SessionType.find({ userId: user._id }).select('_id').lean();
+    const existingIds = new Set(existing.map((e: any) => String(e._id)));
+    const keptIds = new Set<string>();
+    const saved: any[] = [];
+
+    for (let i = 0; i < sessionTypes.length; i++) {
+      const s = sessionTypes[i];
+      const id = String(s._id || s.id || '');
+      if (existingIds.has(id)) {
+        keptIds.add(id);
+        saved.push(await SessionType.findByIdAndUpdate(id, { $set: toDoc(s, i) }, { new: true, runValidators: true }));
+      } else {
+        saved.push(await SessionType.create({ userId: user._id, ...toDoc(s, i) }));
+      }
+    }
+
+    const removedIds = [...existingIds].filter((id) => !keptIds.has(id));
+    if (removedIds.length) await SessionType.deleteMany({ _id: { $in: removedIds } });
 
     // ── Ensure creator profile is reactivated if previously deactivated ──
     await CreatorProfile.updateOne(

@@ -4,6 +4,7 @@ import CreatorProfile from '@/models/CreatorProfile';
 import CreatorAvailability from '@/models/CreatorAvailability';
 import Booking from '@/models/Booking';
 import SessionType from '@/models/SessionType';
+import CalendarBlock from '@/models/CalendarBlock';
 import mongoose from 'mongoose';
 import {
     DEFAULT_SLOT_MINUTES,
@@ -210,6 +211,17 @@ export async function GET(
                 const buf = Number(st?.bufferTime) > 0 ? Number(st.bufferTime) : 0;
                 return [blockedInterval(start, dur, buf)];
             });
+
+            // Time the creator booked outside Reachly is blocked too
+            const outsideBlocks = await CalendarBlock.find({
+                creatorId: profile.userId,
+                scheduledDate: { $gte: searchStart, $lte: searchEnd },
+            }).select('scheduledDate startTime durationMinutes').lean();
+            for (const ob of outsideBlocks as any[]) {
+                if (new Date(ob.scheduledDate).toISOString().slice(0, 10) !== dateStr) continue;
+                const start = parse12h(ob.startTime);
+                if (start !== null) blocked.push({ start, end: start + ob.durationMinutes });
+            }
 
             // A new slot is free when its meeting + buffer doesn't run into any booked time
             const availableSlots = candidateStarts

@@ -62,6 +62,20 @@ export async function GET() {
       }
     }
 
+
+    // Creators asking for a chat unlock so a package session can be rescheduled
+    const rescheduleReqs = await Booking.find({ 'rescheduleRequest.status': 'pending' }).lean() as any[];
+    for (const r of rescheduleReqs) {
+      notifications.push({
+        id: `rsr-${r._id}`,
+        type: 'reschedule_request',
+        title: 'Reschedule Request',
+        message: `A creator asked to unlock the chat for session ${r.bookingRef} so it can be rescheduled.`,
+        date: r.rescheduleRequest?.requestedAt || r.updatedAt || new Date(),
+        link: '/admin/reschedule-requests',
+      });
+    }
+
     // Sort by date descending
     notifications.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 

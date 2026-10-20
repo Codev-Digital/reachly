@@ -10,6 +10,9 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { createMeetingRoom } from "@/lib/daily";
 import Referral from "@/models/referral.model";
 import mongoose from "mongoose";
+import PackagePurchase from "@/models/PackagePurchase";
+import CalendarBlock from "@/models/CalendarBlock";
+import { autoSettleEarnings } from "@/lib/autoSettleEarnings";
 import {
   DEFAULT_SLOT_MINUTES,
   blockedInterval,
@@ -40,7 +43,7 @@ export async function POST(request: NextRequest) {
     let loggedInUserId: string | undefined;
 
     const payload = await request.json();
-    const {
+    let {
       username,
       sessionId,
       date,
@@ -49,10 +52,39 @@ export async function POST(request: NextRequest) {
       proceedAs,
       paymentMethod,
       promoApplied,
-      finalPrice,
-      originalPrice,
+      finalPrice: clientFinalPrice,
+      originalPrice: clientOriginalPrice,
       answers,
     } = payload;
+    let finalPrice = clientFinalPrice;
+    let originalPrice = clientOriginalPrice;
+
+    // "Book next session" on a package: everything except the date and time is taken
+    // from the user's previous session, so nothing else is asked.
+    if (payload.packagePurchaseId) {
+      if (!session?.user?.email) {
+        return NextResponse.json({ error: "Please log in to book your next session." }, { status: 401 });
+      }
+      const buyer = await User.findOne({ email: session.user.email }).select("_id").lean() as any;
+      const purchase =
+        buyer && mongoose.isValidObjectId(payload.packagePurchaseId)
+          ? ((await PackagePurchase.findOne({ _id: payload.packagePurchaseId, userId: buyer._id }).lean()) as any)
+          : null;
+      if (!purchase) {
+        return NextResponse.json({ error: "Package not found." }, { status: 404 });
+      }
+      const previous = (await Booking.findOne({ packagePurchaseId: purchase._id })
+        .sort({ sessionNumber: -1 })
+        .lean()) as any;
+      if (!previous?.guestDetails) {
+        return NextResponse.json({ error: "Could not find your previous session details." }, { status: 400 });
+      }
+      sessionId = String(purchase.sessionTypeId);
+      userDetails = { ...previous.guestDetails };
+      answers = previous.answers;
+      paymentMethod = previous.paymentMethod;
+      proceedAs = "login";
+    }
 
     if (!username || !sessionId || !date || !time) {
       return NextResponse.json(
@@ -102,6 +134,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Price comes from the session itself (never from the client): the discounted price when set
+    const listPrice = Number((sessionType as any).price);
+    const discounted = Number((sessionType as any).discountedPrice);
+    const unitPrice = discounted > 0 && discounted < listPrice ? discounted : listPrice;
+    originalPrice = listPrice;
+    finalPrice = unitPrice;
+
     // 2. Identify the user
     let userToAttachId = null;
     let u;
@@ -109,8 +148,64 @@ export async function POST(request: NextRequest) {
       u = await User.findOne({ email: session.user.email });
       if (u) userToAttachId = u._id;
     }
+    // ── Package handling ──────────────────────────────────────────────────────
+    // A package is bought once (the first booking creates the purchase); every later
+    // session is booked against it, one at a time, only after the previous one is completed.
+    const isPackage = !!(sessionType as any).isPackage;
+    let packagePurchase: any = null;
+    let packageNumber = 0;
+    let packageTotal = 0;
+    let packageSessions = 0;
+    if (isPackage) {
+      if (!userToAttachId) {
+        return NextResponse.json(
+          { error: "Please log in or sign up to buy a package." },
+          { status: 401 },
+        );
+      }
+      packageSessions = Number((sessionType as any).packageSessions) || 0;
+      packageTotal = unitPrice; // the discounted package price when the creator set one
+      if (packageSessions < 2 || !(packageTotal > 0)) {
+        return NextResponse.json({ error: "This package is not set up correctly." }, { status: 400 });
+      }
+
+      await autoSettleEarnings(); // marks sessions whose time has passed as completed
+      packagePurchase = await PackagePurchase.findOne({
+        userId: userToAttachId,
+        sessionTypeId: sessionId,
+        status: "active",
+      });
+
+      if (packagePurchase) {
+        if (packagePurchase.sessionsBooked >= packagePurchase.sessionsTotal) {
+          return NextResponse.json({ error: "All sessions in this package are already booked." }, { status: 400 });
+        }
+        const notDone = await Booking.countDocuments({
+          packagePurchaseId: packagePurchase._id,
+          status: { $ne: "completed" },
+        });
+        if (notDone > 0) {
+          return NextResponse.json(
+            { error: "Complete your current session before booking the next one." },
+            { status: 400 },
+          );
+        }
+        packageNumber = packagePurchase.sessionsBooked + 1;
+      } else {
+        packageNumber = 1;
+      }
+
+      // Each session carries an equal share of the package price; the last one takes the remainder.
+      const shareOf = (total: number) => {
+        const share = Math.round(total / packageSessions);
+        return packageNumber === packageSessions ? total - share * (packageSessions - 1) : share;
+      };
+      originalPrice = shareOf(listPrice);
+      finalPrice = shareOf(packageTotal);
+    }
+
     // check if the user  is refered person
-    if (u?.isReferred) {
+    if (u?.isReferred && (!isPackage || packageNumber === 1)) {
       //now check who referred this user
       const referrerID = u.whoReferred;
       const [referralDoc, referrerUser] = await Promise.all([
@@ -127,7 +222,7 @@ export async function POST(request: NextRequest) {
       if (referralDoc && referralDoc.totalBuyActivities === 1) {
         //so if there 1 mean they not buy anything yet so we can add the amount to referrer
         //calculate referral reward
-        referralReward = (0.05 * finalPrice).toFixed(2); // 5% of the final price
+        referralReward = (0.05 * (isPackage ? packageTotal : finalPrice)).toFixed(2); // 5% of the final (or whole package) price
         //update the referrer user totalAmountEarnedFromReferrals
         referrerUser!.totalAmountEarnedFromReferrals =
           (Number(referrerUser!.totalAmountEarnedFromReferrals) || 0) + Number(referralReward);
@@ -223,7 +318,17 @@ export async function POST(request: NextRequest) {
           ),
         );
       });
-      if (clashes) {
+      const outside = await CalendarBlock.find({
+        creatorId: creatorProfile.userId,
+        scheduledDate: scheduledDateUTC,
+      })
+        .select("startTime durationMinutes")
+        .lean();
+      const clashesOutside = outside.some((ob: any) => {
+        const start = parse12h(ob.startTime);
+        return start !== null && intervalsOverlap(myBlock, { start, end: start + ob.durationMinutes });
+      });
+      if (clashes || clashesOutside) {
         return NextResponse.json(
           { error: "This time slot is no longer available. Please choose another time." },
           { status: 409 },
@@ -244,6 +349,18 @@ export async function POST(request: NextRequest) {
       meetingRoomName = meetingDetails.name;
     } catch (err) {
       console.error("Error generating meeting room:", err);
+    }
+
+    if (isPackage && !packagePurchase) {
+      packagePurchase = await PackagePurchase.create({
+        userId: userToAttachId as any,
+        creatorId: creatorProfile.userId,
+        sessionTypeId: sessionId,
+        title: (sessionType as any).title,
+        sessionsTotal: packageSessions,
+        sessionsBooked: 0,
+        price: packageTotal,
+      });
     }
 
     const booking = new Booking({
@@ -271,9 +388,13 @@ export async function POST(request: NextRequest) {
       finalPrice: finalPrice,
       meetingUrl,
       meetingRoomName,
+      ...(isPackage ? { packagePurchaseId: packagePurchase._id, sessionNumber: packageNumber } : {}),
     });
 
     await booking.save();
+    if (isPackage) {
+      await PackagePurchase.updateOne({ _id: packagePurchase._id }, { $inc: { sessionsBooked: 1 } });
+    }
 
     // Perform conversation check, notification, and email asynchronously without blocking HTTP response
     (async () => {
@@ -302,8 +423,8 @@ export async function POST(request: NextRequest) {
           const Notification = (await import("@/models/Notification")).default;
           await new Notification({
             userId: creatorProfile.userId,
-            title: "New Session Booked",
-            message: `${userDetails.fullName} booked a "${sessionType.title}" session on ${formatDate(new Date(date))} at ${time}.`,
+            title: isPackage ? "New Package Session Booked" : "New Session Booked",
+            message: `${userDetails.fullName} booked ${isPackage ? `session ${packageNumber} of ${packageSessions} of the "${sessionType.title}" package` : `a "${sessionType.title}" session`} on ${formatDate(new Date(date))} at ${time}.`,
             type: "booking",
             read: false,
             time: "Just now",
@@ -347,6 +468,7 @@ export async function POST(request: NextRequest) {
       success: true,
       bookingId: booking._id,
       bookingRef,
+      ...(isPackage ? { packageSession: packageNumber, packageSessions } : {}),
     });
   } catch (error: any) {
     console.error("Booking POST error:", error);

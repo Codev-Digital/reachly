@@ -54,6 +54,68 @@ export default function SessionFields({ values, onChange, errors, clearError }: 
 
   return (
     <div className="space-y-5">
+      {/* Single session or a package of several sessions sold together */}
+      <div>
+        <p className="block mb-2 font-medium text-[12px] text-black">Session type</p>
+        <div className="grid grid-cols-2 gap-3" role="group" aria-label="Session type">
+          {([['Single session', false], ['Package', true]] as const).map(([label, pkg]) => (
+            <button
+              key={label}
+              type="button"
+              aria-pressed={values.isPackage === pkg}
+              onClick={() => onChange({ isPackage: pkg })}
+              className={`rounded-xl border px-4 py-3 text-sm font-semibold transition-colors ${
+                values.isPackage === pkg
+                  ? 'border-[#0012FF] bg-[#0012FF] text-white'
+                  : 'border-gray-200 bg-white text-gray-600 hover:border-[#0012FF]/50'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {values.isPackage && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <FormInput
+            label="Number of sessions"
+            required
+            type="text"
+            inputMode="numeric"
+            maxLength={3}
+            suffix="sessions"
+            value={values.packageSessions}
+            onChange={(e) => {
+              onChange({ packageSessions: digitsOnly(e.target.value) });
+              clearError('packageSessions');
+            }}
+            error={errors.packageSessions}
+            placeholder="5"
+          />
+          <div>
+            <p className="block mb-2 font-medium text-[12px] text-black">Per</p>
+            <div className="grid grid-cols-2 gap-3" role="group" aria-label="Package period">
+              {(['week', 'month'] as const).map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  aria-pressed={values.packagePeriod === p}
+                  onClick={() => onChange({ packagePeriod: p })}
+                  className={`rounded-xl border px-4 py-3 text-sm font-semibold capitalize transition-colors ${
+                    values.packagePeriod === p
+                      ? 'border-[#0012FF] bg-[#0012FF]/5 text-[#0012FF]'
+                      : 'border-gray-200 bg-white text-gray-600 hover:border-[#0012FF]/50'
+                  }`}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       <FormInput
         label="Title"
         required
@@ -133,7 +195,7 @@ export default function SessionFields({ values, onChange, errors, clearError }: 
       {/* Session price, discounted price and max bookings on one line */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
         <FormInput
-          label="Session Price"
+          label={values.isPackage ? 'Package Price (total)' : 'Session Price'}
           required
           type="text"
           inputMode="numeric"

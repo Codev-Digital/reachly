@@ -42,6 +42,8 @@ interface Booking {
   isRescheduled: boolean;
   meetingUrl?: string;
   bookingRef?: string;
+  isPackage?: boolean;
+  sessionNumber?: number;
 }
 
 export default function UserBookingsPage() {
@@ -156,6 +158,8 @@ export default function UserBookingsPage() {
               isRescheduled: b.isRescheduled || false,
               meetingUrl: b.meetingUrl,
               bookingRef: b.bookingRef,
+              isPackage: b.isPackage || false,
+              sessionNumber: b.sessionNumber,
             };
           });
           setBookings(list);
@@ -471,6 +475,11 @@ export default function UserBookingsPage() {
                             <polyline points="12 6 12 12 16 14" />
                           </svg>
                           <span>{booking.date} at {booking.time}</span>
+                          {booking.isPackage && (
+                            <span className="text-[10px] font-bold text-[#0012FF] bg-[#EEF2FF] px-2 py-0.5 rounded-full shrink-0 leading-none">
+                              Package · session {booking.sessionNumber}
+                            </span>
+                          )}
                           {booking.isRescheduled && (
                             <span className="text-[10px] font-bold text-[#0012FF] bg-[#EEF2FF] px-2 py-0.5 rounded-full shrink-0 leading-none">
                               Rescheduled
@@ -551,6 +560,12 @@ export default function UserBookingsPage() {
                             >
                               Join Meeting
                             </button>
+                            {booking.isPackage ? (
+                              <p className="text-[11px] text-gray-400 font-medium text-center">
+                                Package sessions can&apos;t be cancelled or rescheduled by you. Your creator can
+                                reschedule if needed.
+                              </p>
+                            ) : (
                             <div className="flex items-center gap-3">
                               <button
                                 onClick={() => handleRescheduleClick(booking)}
@@ -565,6 +580,7 @@ export default function UserBookingsPage() {
                                 Cancel Appointment
                               </button>
                             </div>
+                            )}
                           </>
                         );
                       })()}

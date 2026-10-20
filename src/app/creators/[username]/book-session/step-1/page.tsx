@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 import BookingProgress from '@/components/booking/BookingProgress';
 import CreatorProfileCard from '@/components/booking/CreatorProfileCard';
-import { useBooking, SessionType } from '../layout';
+import { useBooking, SessionType, sessionPrice } from '../layout';
 import { richTextToPlain } from '@/lib/richText';
 
 export default function BookSessionStep1() {
@@ -13,6 +13,7 @@ export default function BookSessionStep1() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const fallbackUrl = searchParams.get('fallbackUrl');
+  const wantedSessionId = searchParams.get('session');
   const queryStr = fallbackUrl ? `?fallbackUrl=${encodeURIComponent(fallbackUrl)}` : '';
   const { booking, setBooking, nextStep } = useBooking();
   const [sessions, setSessions] = useState<SessionType[]>([]);
@@ -64,7 +65,7 @@ export default function BookSessionStep1() {
           const parsed = JSON.parse(cached);
           if (parsed && parsed.length > 0) {
             setSessions(parsed);
-            setLoading(false);
+            if (!wantedSessionId) setLoading(false);
           }
         }
       } catch (e) {}
@@ -99,10 +100,19 @@ export default function BookSessionStep1() {
               socialLinks: data.creator.socialLinks || {},
               stats: data.creator.stats,
             },
-            selectedSession: b.selectedSession
-              ? (data.sessions.find((s: SessionType) => s.id === b.selectedSession?.id) || null)
-              : null,
+            // ?session=<id> (from "My packages") preselects that session
+            selectedSession: (() => {
+              const wanted = new URLSearchParams(window.location.search).get('session') || b.selectedSession?.id;
+              return wanted ? (data.sessions.find((s: SessionType) => s.id === wanted) || null) : null;
+            })(),
           }));
+
+          // Coming from "My packages": the session is already chosen, go straight to date & time
+          if (wantedSessionId && (data.sessions || []).some((x: SessionType) => x.id === wantedSessionId)) {
+            nextStep();
+            router.replace(`/creators/${params.username}/book-session/step-2${queryStr}`);
+            return; // keep the loader up until the next page takes over
+          }
         }
       } catch (err) {
         console.error('Failed to fetch creator sessions:', err);
@@ -268,7 +278,17 @@ export default function BookSessionStep1() {
 
                         {/* Price */}
                         <div className={`text-2xl sm:text-3xl font-black font-sans uppercase tracking-tight mt-6 leading-none ${theme.text}`}>
-                          {session.price.toLocaleString()} PKR
+                          {sessionPrice(session).toLocaleString()} PKR
+                          {sessionPrice(session) < session.price && (
+                            <span className="ml-2 text-sm font-semibold line-through opacity-60">
+                              {session.price.toLocaleString()}
+                            </span>
+                          )}
+                          {session.isPackage && (
+                            <span className="block text-[11px] font-bold normal-case tracking-normal mt-1.5 opacity-80">
+                              Package · {session.packageSessions} sessions per {session.packagePeriod}
+                            </span>
+                          )}
                         </div>
                         </div>
                       </div>

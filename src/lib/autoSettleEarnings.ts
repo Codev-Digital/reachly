@@ -1,4 +1,5 @@
 import Booking from '@/models/Booking';
+import PackagePurchase from '@/models/PackagePurchase';
 
 /**
  * Auto-settles pending earnings by marking bookings as 'paid'/'completed'
@@ -21,12 +22,14 @@ export async function autoSettleEarnings(creatorId?: string): Promise<number> {
     if (creatorId) query.creatorId = creatorId;
 
     const pendingBookings = await Booking.find(query)
-      .select('_id scheduledDate scheduledTime')
+      .select('_id scheduledDate scheduledTime packagePurchaseId status')
       .lean();
 
     const idsToSettle: string[] = [];
+    const packageIdsToComplete: string[] = [];
 
     for (const b of pendingBookings as any[]) {
+      if (b.packagePurchaseId && b.status === 'completed') continue; // already marked, waiting for the package to finish
       try {
         const storedDate = new Date(b.scheduledDate);
         
@@ -60,14 +63,21 @@ export async function autoSettleEarnings(creatorId?: string): Promise<number> {
         const sessionMs = new Date(isoString).getTime();
 
         if (now.getTime() > sessionMs) {
-          idsToSettle.push(b._id.toString());
+          // Package sessions are only marked completed; their earnings are released
+          // together once the last session of the package is done.
+          (b.packagePurchaseId ? packageIdsToComplete : idsToSettle).push(b._id.toString());
         }
       } catch {
         // Skip malformed records
       }
     }
 
-    if (idsToSettle.length === 0) return 0;
+    if (packageIdsToComplete.length) {
+      await Booking.updateMany({ _id: { $in: packageIdsToComplete } }, { $set: { status: 'completed' } });
+    }
+    await releaseFinishedPackages(creatorId);
+
+    if (idsToSettle.length === 0) return packageIdsToComplete.length;
 
     const result = await Booking.updateMany(
       { _id: { $in: idsToSettle } },
@@ -83,5 +93,26 @@ export async function autoSettleEarnings(creatorId?: string): Promise<number> {
   } catch (err) {
     console.error('[autoSettleEarnings] Error:', err);
     return 0;
+  }
+}
+
+/**
+ * A package is finished when every one of its sessions has been booked and completed.
+ * Only then are its bookings marked paid, which releases the creator's earnings.
+ */
+async function releaseFinishedPackages(creatorId?: string) {
+  const query: any = { status: 'active' };
+  if (creatorId) query.creatorId = creatorId;
+  const purchases = await PackagePurchase.find(query).select('_id sessionsTotal sessionsBooked').lean();
+
+  for (const p of purchases as any[]) {
+    if (p.sessionsBooked < p.sessionsTotal) continue;
+    const completed = await Booking.countDocuments({ packagePurchaseId: p._id, status: 'completed' });
+    if (completed < p.sessionsTotal) continue;
+    await Booking.updateMany({ packagePurchaseId: p._id }, { $set: { paymentStatus: 'paid' } });
+    await PackagePurchase.updateOne(
+      { _id: p._id },
+      { $set: { status: 'completed', paymentStatus: 'paid', completedAt: new Date() } }
+    );
   }
 }

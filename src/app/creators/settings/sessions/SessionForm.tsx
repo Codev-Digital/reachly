@@ -33,6 +33,9 @@ interface DBTypeSession {
   description: string;
   features?: string[];
   maxBookings?: number;
+  isPackage?: boolean;
+  packageSessions?: number;
+  packagePeriod?: 'week' | 'month';
 }
 
 /**

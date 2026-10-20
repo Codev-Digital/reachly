@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { packageLabels } from '@/lib/packageLabels';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
@@ -87,6 +88,7 @@ export async function GET(request: NextRequest) {
                 : []
         ]);
 
+        const pkgLabels = await packageLabels(bookings);
         const profileMap = new Map(creatorProfiles.map((cp: any) => [cp.userId.toString(), cp]));
         const unreadMap = new Map(unreadCountsAgg.map((item: any) => [item._id.toString(), item.count]));
         const lastMsgMap = new Map(lastMessagesAgg.map((item: any) => [item._id.toString(), item]));
@@ -148,13 +150,16 @@ export async function GET(request: NextRequest) {
                 tags: [displayStatus],
                 ref: `RCH-${bIdStr.slice(-8).toUpperCase()}`,
                 duration: `${booking.sessionTypeId?.duration || 0} minutes`,
-                price: `PKR ${booking.finalPrice}`,
+                price: pkgLabels.get(bIdStr) || `PKR ${booking.finalPrice}`,
                 paymentMethod: booking.paymentMethod || 'Guest',
                 transactionId: `${bIdStr.slice(0, 8).toUpperCase()}`,
                 bookedOn: bookedOn,
                 originalStatus: booking.status,
                 scheduledDate: booking.scheduledDate,
                 isRescheduled: booking.isRescheduled || false,
+                isPackage: !!booking.packagePurchaseId,
+                sessionNumber: booking.sessionNumber,
+                rescheduleStatus: booking.rescheduleRequest?.status,
                 isLocked: booking.isLocked !== undefined ? booking.isLocked : !lastMsgDoc,
                 meetingUrl: booking.meetingUrl,
                 bookingRef: booking.bookingRef,

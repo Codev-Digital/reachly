@@ -9,6 +9,7 @@ import CreatorDashboardNav from '@/components/CreatorDashboardNav';
 import LoadingAnimation from '@/components/LoadingAnimation';
 import { Calendar, Clock, Video, MapPin, MessageSquare, AlertTriangle, CheckCircle, ArrowUpRight, X } from 'lucide-react';
 import DailyCall from '@/components/DailyCall';
+import OutsideSessions from '@/components/creator/OutsideSessions';
 import { isMeetingPassed } from '@/lib/time';
 
 function getGreeting() {
@@ -35,6 +36,9 @@ interface BookingType {
   meetingUrl?: string;
   bookingRef?: string;
   isCreatorBooker?: boolean;
+  isPackage?: boolean;
+  sessionNumber?: number;
+  rescheduleStatus?: 'pending' | 'unlocked';
 }
 
 export default function CreatorCalendar() {
@@ -176,6 +180,9 @@ export default function CreatorCalendar() {
             meetingUrl: b.meetingUrl,
             bookingRef: b.bookingRef,
             isCreatorBooker: b.isCreatorBooker || false,
+            isPackage: b.isPackage || false,
+            sessionNumber: b.sessionNumber,
+            rescheduleStatus: b.rescheduleStatus,
           }));
           setBookings(list);
         }
@@ -328,6 +335,24 @@ export default function CreatorCalendar() {
     }
   };
 
+  // Package sessions: the creator first asks the admin to unlock the chat so both sides can talk
+  const [requestingId, setRequestingId] = useState<string | null>(null);
+  const handleRequestReschedule = async (booking: BookingType) => {
+    setRequestingId(booking.id);
+    try {
+      const res = await fetch(`/api/creators/bookings/${booking.id}/reschedule-request`, { method: 'POST' });
+      if (res.ok) {
+        setBookings((prev) => prev.map((b) => (b.id === booking.id ? { ...b, rescheduleStatus: 'pending' } : b)));
+      } else {
+        alert((await res.json()).error || 'Could not send the request.');
+      }
+    } catch {
+      alert('Network error. Please try again.');
+    } finally {
+      setRequestingId(null);
+    }
+  };
+
   const handleRescheduleClick = (booking: BookingType) => {
     setBookingToReschedule(booking);
     setRescheduleDate(booking.selectedDate ? new Date(booking.selectedDate) : new Date());
@@ -453,6 +478,8 @@ export default function CreatorCalendar() {
             Copy Booking Link
           </button>
         </div>
+
+        <OutsideSessions />
 
         {/* Date Filter Strip Bar */}
         <div className="w-full bg-white rounded-2xl border border-gray-100 p-3 sm:p-4 mb-8 flex flex-wrap items-center justify-between gap-y-4 gap-x-2 shadow-xs">
@@ -647,6 +674,40 @@ export default function CreatorCalendar() {
                                 Chat now
                               </button>
                             ) : (
+                              booking.isPackage ? (
+                                // Package sessions can't be cancelled; reschedule goes through the admin chat unlock
+                                booking.rescheduleStatus === 'pending' ? (
+                                  <button
+                                    disabled
+                                    className="w-full py-2.5 border border-gray-200 bg-gray-50 text-gray-400 rounded-full text-xs font-semibold text-center cursor-not-allowed"
+                                  >
+                                    Waiting for admin to unlock chat
+                                  </button>
+                                ) : booking.rescheduleStatus === 'unlocked' ? (
+                                  <div className="flex items-center gap-3">
+                                    <button
+                                      onClick={() => router.push(`/creators/chats?bookingRef=${booking.bookingRef}`)}
+                                      className="flex-1 py-2 sm:py-2.5 border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-full text-xs font-semibold text-center transition-all cursor-pointer"
+                                    >
+                                      Open chat
+                                    </button>
+                                    <button
+                                      onClick={() => handleRescheduleClick(booking)}
+                                      className="flex-1 py-2 sm:py-2.5 bg-[#0012FF] hover:bg-[#0012FF]/90 text-white rounded-full text-xs font-semibold text-center transition-all cursor-pointer"
+                                    >
+                                      Reschedule
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <button
+                                    onClick={() => handleRequestReschedule(booking)}
+                                    disabled={requestingId === booking.id}
+                                    className="w-full py-2.5 border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-full text-xs font-semibold text-center transition-all cursor-pointer disabled:opacity-50"
+                                  >
+                                    {requestingId === booking.id ? 'Sending...' : 'Reschedule'}
+                                  </button>
+                                )
+                              ) : (
                               <div className="flex items-center gap-3">
                                 <button
                                   onClick={() => handleRescheduleClick(booking)}
@@ -661,6 +722,7 @@ export default function CreatorCalendar() {
                                   Cancel Appointment
                                 </button>
                               </div>
+                              )
                             )}
                           </>
                         );

@@ -86,6 +86,15 @@ export async function PUT(
     const isCancelling = status === "cancelled";
     const isRescheduling = Boolean(selectedDate || selectedTime);
 
+    // Package sessions are final for the user: no cancelling, no rescheduling
+    // (the creator can reschedule after agreeing a new time in chat).
+    if ((booking as any).packagePurchaseId && (isCancelling || isRescheduling)) {
+      return NextResponse.json(
+        { error: "Package sessions can't be cancelled or rescheduled. Please contact your creator." },
+        { status: 403 },
+      );
+    }
+
     // 1. Cancellation checks (must be at least 24 hours before session start time)
     if (isCancelling) {
       if (booking.status === "cancelled") {

@@ -34,6 +34,11 @@ export interface IBooking extends Document {
     discountAmount?: number;
     finalPrice: number;
 
+    packagePurchaseId?: mongoose.Types.ObjectId; // set when this session belongs to a package
+    sessionNumber?: number;                      // 1..N within the package
+    // Creator asked the admin to unlock the chat so a package session can be rescheduled
+    rescheduleRequest?: { status: 'pending' | 'unlocked'; requestedAt: Date };
+
     isRescheduled?: boolean;
     isLocked?: boolean;
 
@@ -120,6 +125,12 @@ const BookingSchema = new Schema<IBooking>(
         finalPrice: {
             type: Number,
             required: true,
+        },
+        packagePurchaseId: { type: Schema.Types.ObjectId, ref: 'PackagePurchase', index: true },
+        sessionNumber: { type: Number },
+        rescheduleRequest: {
+            status: { type: String, enum: ['pending', 'unlocked'] },
+            requestedAt: { type: Date },
         },
         isRescheduled: {
             type: Boolean,
