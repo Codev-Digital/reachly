@@ -24,8 +24,6 @@ interface EventCardProps {
 
 /** Event tile: full grid-cell width, 220px tall, 8px radius. */
 export default function EventCard({ event, onToggleVisibility, onClick }: EventCardProps) {
-  const Icon = event.visible ? Eye : EyeOff;
-
   return (
     <div
       role={onClick ? 'button' : undefined}
@@ -69,19 +67,21 @@ export default function EventCard({ event, onToggleVisibility, onClick }: EventC
       {/* Readability overlay: dark on top, brand blue at the bottom */}
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/45 via-black/30 to-[#0012FF]/55" />
 
-      {/* Visibility toggle */}
-      <button
-        type="button"
-        aria-label={event.visible ? 'Hide event' : 'Show event'}
-        title={event.visible ? 'Visible to followers' : 'Hidden from followers'}
-        onClick={(e) => {
-          e.stopPropagation();
-          onToggleVisibility?.(event.id);
-        }}
-        className="absolute right-3 top-3 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-white/25 text-white backdrop-blur-sm transition-colors hover:bg-white/40"
-      >
-        <Icon size={14} />
-      </button>
+      {/* Visibility toggle (creator manage view only) */}
+      {onToggleVisibility && (
+        <button
+          type="button"
+          aria-label={event.visible ? 'Hide event' : 'Show event'}
+          title={event.visible ? 'Visible to followers' : 'Hidden from followers'}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleVisibility(event.id);
+          }}
+          className="absolute right-3 top-3 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-white/25 text-white backdrop-blur-sm transition-colors hover:bg-white/40"
+        >
+          {event.visible ? <Eye size={14} /> : <EyeOff size={14} />}
+        </button>
+      )}
 
       {/* Details */}
       <div className="absolute inset-x-0 bottom-0 flex flex-col gap-1 p-4 sm:p-5">

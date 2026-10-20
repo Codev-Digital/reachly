@@ -1,17 +1,15 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect, useRef } from 'react';
 import UserNavbar from '@/components/UserNavbar';
-import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { User, Shield } from 'lucide-react';
 import { logout } from '@/lib/logout';
 import FormInput from '@/components/FormInput';
 import CitySelect from '@/components/CitySelect';
 
 export default function UserSettings() {
-  const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'Profile' | 'Security'>('Profile');
+  const [activeTab, setActiveTab] = useState('Profile');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successModalMessage, setSuccessModalMessage] = useState('');
@@ -192,70 +190,73 @@ export default function UserSettings() {
 
   const languages = ['Urdu', 'English', 'Punjabi', 'Sindhi', 'Pashto'];
 
+  const tabs = [
+    { name: 'Profile', icon: <User className="h-5 w-5" /> },
+    { name: 'Security', icon: <Shield className="h-5 w-5" /> },
+  ];
+
   return (
-    <div className="min-h-screen bg-[#F7F7FA] pb-12">
+    <div className="min-h-screen bg-[#F8F8FA] pb-12">
       <UserNavbar displayName={displayName} profilePhoto={profilePhoto} />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-        <motion.main
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="flex-grow"
-        >
-            {/* Header */}
-            <div className="mb-8">
-              <p className="text-gray-400 font-sans mb-1 text-sm font-medium">Hello {displayName}!</p>
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-black font-anton tracking-tight">
-                Account <span className="text-[#0012FF]">Settings</span> <span className="text-gray-400 font-normal text-xl sm:text-2xl">/ Overview</span>
-              </h1>
-            </div>
+      <main className="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-10 py-8">
+        {/* Header */}
+        <div className="mb-6">
+          <p className="text-gray-500 font-sans mb-1 text-sm sm:text-base">
+            Hello {displayName ? displayName.split(' ')[0] : 'there'}!
+          </p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-black font-sans tracking-tight">
+              Account <span className="text-[#0012FF]">Settings</span>
+            </h1>
+            <span className="text-gray-400 font-sans text-base sm:text-lg">/ Overview</span>
+          </div>
+        </div>
 
-          {/* Refined Top Navigation Segment Bar - Centered with Icons and Headings */}
-          <div className="flex flex-wrap items-center justify-center gap-1.5 mb-8 max-w-sm mx-auto">
-            {[
-              {
-                name: 'Profile' as 'Profile' | 'Security',
-                icon: (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="flex-shrink-0">
-                    <circle cx="12" cy="12" r="10" />
-                    <circle cx="12" cy="8" r="3" />
-                    <path d="M4 20c1-4 5-6 8-6s7 2 8 6" />
-                  </svg>
-                )
-              },
-              {
-                name: 'Security' as 'Profile' | 'Security',
-                icon: (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="flex-shrink-0">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                  </svg>
-                )
-              }
-            ].map((tab) => (
+        {/* Tab steps: icon box with the label underneath */}
+        <div className="flex flex-wrap gap-x-7 sm:gap-x-10 gap-y-5 mb-8" role="tablist" aria-label="Settings sections">
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.name;
+            return (
               <button
                 key={tab.name}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
                 onClick={() => setActiveTab(tab.name)}
-                className={`flex items-center gap-2 px-6 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all cursor-pointer border ${
-                  activeTab === tab.name
-                    ? 'bg-[#0012FF] border-[#0012FF] text-white shadow-md shadow-blue-100 scale-102'
-                    : 'bg-white border-gray-200 text-gray-500 hover:text-black hover:bg-gray-50'
-                }`}
+                className="group flex min-w-[72px] flex-col items-center gap-2.5 cursor-pointer"
               >
-                {tab.icon}
-                <span>{tab.name}</span>
+                <span
+                  className={`flex h-14 w-14 items-center justify-center rounded-[8px] border transition-colors ${
+                    isActive
+                      ? 'bg-[#E8E9FB] border-[#E8E9FB] text-[#0012FF]'
+                      : 'bg-white border-[#e2e2e2] text-gray-500 group-hover:bg-gray-50'
+                  }`}
+                >
+                  {React.cloneElement(tab.icon as React.ReactElement<{ className?: string }>, {
+                    className: 'h-6 w-6 shrink-0',
+                  })}
+                </span>
+                <span
+                  className={`text-sm transition-colors ${
+                    isActive ? 'font-bold text-[#0012FF]' : 'font-medium text-gray-500 group-hover:text-gray-700'
+                  }`}
+                >
+                  {tab.name}
+                </span>
               </button>
-            ))}
-          </div>
+            );
+          })}
+        </div>
 
+        <div className="w-full">
           {/* Profile Tab */}
           {activeTab === 'Profile' && (
-            <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 sm:p-8">
-              <h2 className="text-xl font-bold text-black font-anton uppercase tracking-wide">Profile</h2>
-              <p className="text-gray-400 text-sm mb-6">Keep your information up to date.</p>
-
-              <div className="w-full h-px bg-gray-100 mb-6" />
+            <div className="bg-white rounded-[8px] border border-[#e2e2e2] shadow-sm p-6 sm:p-8">
+              <div className="border-b border-[#e2e2e2] pb-5 mb-6">
+                <h3 className="text-xl font-bold text-black mb-1">Profile</h3>
+                <p className="text-gray-500 text-sm">Keep your information up to date.</p>
+              </div>
 
               <input
                 type="file"
@@ -364,18 +365,11 @@ export default function UserSettings() {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center justify-end gap-3">
-                <button
-                  onClick={() => router.back()}
-                  disabled={isSavingProfile}
-                  className="bg-white border border-gray-200 text-gray-500 px-6 py-2.5 rounded-full text-xs font-bold hover:bg-gray-50 transition-all shadow-sm disabled:opacity-50"
-                >
-                  Cancel
-                </button>
+              <div className="flex justify-end border-t border-[#e2e2e2] pt-6">
                 <button
                   onClick={handleSaveChanges}
                   disabled={isSavingProfile}
-                  className="bg-[#0012FF] text-white px-6 py-2.5 rounded-full text-xs font-bold shadow-sm hover:opacity-90 transition-all flex items-center justify-center gap-2 min-w-[130px] disabled:opacity-80"
+                  className="bg-[#0012FF] text-white px-8 py-3 rounded-2xl text-sm font-bold hover:bg-[#0010d0] transition-all disabled:bg-gray-400 active:scale-98 shadow-md flex items-center justify-center gap-2 min-w-[130px]"
                 >
                   {isSavingProfile ? (
                     <>
@@ -396,25 +390,24 @@ export default function UserSettings() {
           {/* Security Tab */}
           {activeTab === 'Security' && (
             <div className="space-y-6">
-              <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 sm:p-8">
-                <h2 className="text-xl font-bold text-black font-anton uppercase tracking-wide">Security</h2>
-                <p className="text-gray-400 text-sm mb-6">Manage your password and security settings.</p>
+              <div className="bg-white rounded-[8px] border border-[#e2e2e2] p-6 sm:p-8 shadow-sm">
+                <div className="border-b border-[#e2e2e2] pb-5 mb-6">
+                  <h3 className="text-xl font-bold text-black mb-1">Update Password</h3>
+                  <p className="text-gray-500 text-sm">Keep your account secure by changing your password periodically.</p>
+                </div>
 
-                <div className="w-full h-px bg-gray-100 mb-6" />
-
-                <div className="space-y-6 mb-8">
-                  {/* Old Password */}
+                <div className="mb-5">
                   <FormInput
-                    label="Old Password"
+                    label="Current Password"
                     type="password"
-                    placeholder="Enter old password"
+                    placeholder="••••••••"
                     value={oldPassword}
                     onChange={(e) => setOldPassword(e.target.value)}
                   />
+                </div>
 
-                  {/* Password Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* New Password */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
+                  <div>
                     <FormInput
                       label="New Password"
                       type="password"
@@ -422,10 +415,16 @@ export default function UserSettings() {
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                     />
-
-                    {/* Confirm Password */}
+                    <div className="grid grid-cols-4 gap-2 mt-2.5">
+                      <div className={`h-1.5 rounded-full transition-all duration-300 ${newPassword.length > 0 ? 'bg-[#0012FF]' : 'bg-gray-200'}`} />
+                      <div className={`h-1.5 rounded-full transition-all duration-300 ${newPassword.length >= 6 ? 'bg-[#0012FF]' : 'bg-gray-200'}`} />
+                      <div className={`h-1.5 rounded-full transition-all duration-300 ${newPassword.length >= 8 ? 'bg-[#0012FF]' : 'bg-gray-200'}`} />
+                      <div className={`h-1.5 rounded-full transition-all duration-300 ${newPassword.length >= 10 && /[A-Z]/.test(newPassword) ? 'bg-[#0012FF]' : 'bg-gray-200'}`} />
+                    </div>
+                  </div>
+                  <div>
                     <FormInput
-                      label="Confirm Password"
+                      label="Confirm New Password"
                       type="password"
                       placeholder="Confirm new password"
                       value={confirmPassword}
@@ -434,56 +433,35 @@ export default function UserSettings() {
                   </div>
                 </div>
 
-                {/* Save Password Button */}
-                <div className="flex items-center justify-end gap-3">
-                  <button
-                    onClick={() => {
-                      setOldPassword('');
-                      setNewPassword('');
-                      setConfirmPassword('');
-                    }}
-                    disabled={isUpdatingPassword}
-                    className="bg-white border border-gray-200 text-gray-500 px-6 py-2.5 rounded-full text-xs font-bold hover:bg-gray-50 transition-all shadow-sm disabled:opacity-50"
-                  >
-                    Cancel
-                  </button>
+                <div className="flex justify-end border-t border-[#e2e2e2] pt-6">
                   <button
                     onClick={handleUpdatePassword}
                     disabled={isUpdatingPassword}
-                    className="bg-[#0012FF] text-white px-6 py-2.5 rounded-full text-xs font-bold shadow-sm hover:opacity-90 transition-all flex items-center justify-center gap-2 min-w-[150px] disabled:opacity-80"
+                    className="bg-[#0012FF] text-white px-8 py-3 rounded-2xl text-sm font-bold hover:bg-[#0010d0] transition-all disabled:bg-gray-400 active:scale-98 shadow-md flex items-center justify-center gap-2 min-w-[150px]"
                   >
-                    {isUpdatingPassword ? (
-                      <>
-                        <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                        </svg>
-                        <span>Updating...</span>
-                      </>
-                    ) : (
-                      'Update Password'
-                    )}
+                    {isUpdatingPassword ? 'Updating...' : 'Change Password'}
                   </button>
                 </div>
               </div>
 
-              {/* Delete Account Card */}
-              <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-xl font-bold text-black font-anton uppercase tracking-wide">Delete Account</h2>
-                  <p className="text-gray-400 text-sm">Deleting your account will permanently remove all your data.</p>
+              <div className="bg-white rounded-[8px] border border-[#e2e2e2] p-6 sm:p-8 shadow-sm">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+                  <div>
+                    <h3 className="text-lg font-bold text-red-600 mb-1">Delete Account</h3>
+                    <p className="text-gray-500 text-sm">Deleting your account is permanent and cannot be undone. All data will be removed.</p>
+                  </div>
+                  <button
+                    onClick={() => setShowDeleteModal(true)}
+                    className="bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 px-6 py-3 rounded-2xl text-xs sm:text-sm font-bold transition-all w-fit active:scale-95 shrink-0"
+                  >
+                    Delete Account
+                  </button>
                 </div>
-                <button
-                  onClick={() => setShowDeleteModal(true)}
-                  className="bg-[#D92D20] text-white px-6 py-3 rounded-full text-xs font-bold hover:bg-red-700 transition-all shadow-sm flex-shrink-0"
-                >
-                  Delete Account
-                </button>
               </div>
             </div>
           )}
-        </motion.main>
-      </div>
+        </div>
+      </main>
 
       {/* Delete Account Confirmation Modal */}
       {showDeleteModal && (

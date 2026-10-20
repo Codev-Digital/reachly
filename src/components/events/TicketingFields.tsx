@@ -15,10 +15,12 @@ import {
   DAY_PERIODS,
   EVENT_CATEGORIES,
   MAX_TIERS_PER_DATE,
+  cloneTiersForDate,
   emptyDay,
   formatPrice,
   longDateLabel,
   newTierId,
+  pickTierTemplateDay,
   shortDateLabel,
   type DayPeriod,
   type EventDayData,
@@ -97,11 +99,17 @@ export default function TicketingFields({ values, onChange }: TicketingFieldsPro
 
   const handleDateClick = (iso: string) => {
     if (!dates.includes(iso)) {
+      // New date gets the same tiers as an existing date (creator can edit/delete per date after)
+      const template = pickTierTemplateDay(days, activeDate);
+      const seeded: EventDayData = {
+        ...emptyDay(),
+        tiers: template ? cloneTiersForDate(template.tiers) : [],
+      };
       onChange({
         ...values,
         dates: [...dates, iso].sort(),
         activeDate: iso,
-        days: { ...days, [iso]: days[iso] ?? emptyDay() },
+        days: { ...days, [iso]: days[iso] ?? seeded },
       });
     } else if (activeDate !== iso) {
       onChange({ ...values, activeDate: iso });
@@ -116,27 +124,62 @@ export default function TicketingFields({ values, onChange }: TicketingFieldsPro
   };
 
   const saveTier = (tier: TierFormValues) => {
-    if (!day) return;
+    if (!day || !activeDate) return;
+    if (day.tiers.length >= MAX_TIERS_PER_DATE && !editingTier) return;
     if (editingTier) {
-      // the quantity already entered for this tier is kept
+      // Edit only affects the date being viewed
       updateDay({ tiers: day.tiers.map((t) => (t.id === editingTier.id ? { ...t, ...tier } : t)) });
-    } else {
-      // a new tier is selected right away so its quantity can be filled in
-      const created: EventTier = { id: newTierId(), ...tier, quantity: '' };
-      updateDay({ tiers: [...day.tiers, created], selectedTierId: created.id });
+      return;
     }
+
+    // New tier is added on this date and mirrored onto other selected dates
+    const created: EventTier = { id: newTierId(), ...tier, quantity: '' };
+    const nextDays: Record<string, EventDayData> = {
+      ...days,
+      [activeDate]: { ...day, tiers: [...day.tiers, created] },
+    };
+
+    for (const iso of dates) {
+      if (iso === activeDate) continue;
+      const other = nextDays[iso] ?? emptyDay();
+      if (other.tiers.length >= MAX_TIERS_PER_DATE) continue;
+      const alreadyHas = other.tiers.some(
+        (t) => t.title.trim().toLowerCase() === created.title.trim().toLowerCase()
+      );
+      if (alreadyHas) continue;
+      nextDays[iso] = {
+        ...other,
+        tiers: [
+          ...other.tiers,
+          {
+            id: newTierId(),
+            title: created.title,
+            price: created.price,
+            persons: created.persons,
+            quantity: '',
+          },
+        ],
+      };
+    }
+
+    onChange({ ...values, days: nextDays });
   };
 
   const deleteTier = (id: string) => {
     if (!day) return;
-    const remaining = day.tiers.filter((t) => t.id !== id);
+    // Delete only on this date — other dates keep their copy
+    updateDay({ tiers: day.tiers.filter((t) => t.id !== id) });
+  };
+
+  const setTierQuantity = (id: string, quantity: string) => {
+    if (!day) return;
     updateDay({
-      tiers: remaining,
-      selectedTierId: day.selectedTierId === id ? (remaining[0]?.id ?? null) : day.selectedTierId,
+      tiers: day.tiers.map((t) => (t.id === id ? { ...t, quantity: digitsOnly(quantity) } : t)),
     });
   };
 
   const openAddTier = () => {
+    if ((day?.tiers.length ?? 0) >= MAX_TIERS_PER_DATE) return;
     setEditingTier(null);
     setTierDialogOpen(true);
   };
@@ -147,7 +190,6 @@ export default function TicketingFields({ values, onChange }: TicketingFieldsPro
   };
 
   const tiers = day?.tiers ?? [];
-  const selectedTier = tiers.find((t) => t.id === day?.selectedTierId) ?? null;
   const takenTitles = tiers.filter((t) => t.id !== editingTier?.id).map((t) => t.title);
 
   return (
@@ -244,101 +286,118 @@ export default function TicketingFields({ values, onChange }: TicketingFieldsPro
               />
             </div>
 
-            {/* Tier + quantity */}
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-              <Dropdown
-                label="Tier Name"
-                options={tiers.map((t) => t.title)}
-                value={selectedTier?.title ?? ''}
-                onChange={(title) => {
-                  const picked = tiers.find((t) => t.title === title);
-                  if (picked) updateDay({ selectedTierId: picked.id });
-                }}
-                placeholder="Select tier"
-                emptyText="No tier created"
-                labelAddon={
-                  <InfoTooltip title="Tier name">
-                    Choose the ticket tier for this date, then set how many tickets are available in Quantity.
+            {/* Tiers — up to 3; each row has its own quantity */}
+            <div>
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-1.5">
+                  <FormLabel className="mb-0">Ticket Tiers</FormLabel>
+                  <InfoTooltip title="Ticket tiers">
+                    Add up to {MAX_TIERS_PER_DATE} ticket tiers for this date. Set a quantity for each tier.
                   </InfoTooltip>
-                }
-                menuFooter={
-                  tiers.length === 0
-                    ? ({ close }) => (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            close();
-                            openAddTier();
-                          }}
-                          className="inline-flex h-7 cursor-pointer items-center gap-1 rounded-[6px] bg-[#0012FF]/10 px-2.5 text-xs font-semibold text-[#0012FF] transition-colors hover:bg-[#0012FF]/15"
-                        >
-                          <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-                          Add Tier
-                        </button>
-                      )
-                    : undefined
-                }
-              />
-              <FormInput
-                label="Quantity"
-                type="text"
-                inputMode="numeric"
-                maxLength={6}
-                value={selectedTier?.quantity ?? ''}
-                onChange={(e) => {
-                  if (!selectedTier) return;
-                  updateDay({
-                    tiers: tiers.map((t) => (t.id === selectedTier.id ? { ...t, quantity: digitsOnly(e.target.value) } : t)),
-                  });
-                }}
-                disabled={!selectedTier}
-                className="disabled:cursor-not-allowed disabled:bg-gray-50"
-                placeholder={selectedTier ? 'Enter available quantity' : 'Select a tier first'}
-              />
-            </div>
-
-            {/* Summary of the chosen tier, with edit / delete */}
-            {selectedTier && (
-              <div className="flex items-center gap-3 rounded-[8px] border border-[#e2e2e2] bg-white px-4 py-3">
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-black">{selectedTier.title}</p>
-                  <p className="mt-0.5 text-xs text-gray-400">
-                    {Number(selectedTier.persons).toLocaleString('en-US')}{' '}
-                    {Number(selectedTier.persons) === 1 ? 'person' : 'people'} allowed
-                  </p>
                 </div>
-                <span className="shrink-0 text-sm font-bold text-[#0012FF]">{formatPrice(selectedTier.price)}</span>
-                <button
-                  type="button"
-                  aria-label={`Edit ${selectedTier.title}`}
-                  onClick={() => openEditTier(selectedTier)}
-                  className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-[8px] text-gray-400 transition-colors hover:bg-gray-100 hover:text-[#0012FF]"
-                >
-                  <Pencil size={14} />
-                </button>
-                <button
-                  type="button"
-                  aria-label={`Delete ${selectedTier.title}`}
-                  onClick={() => deleteTier(selectedTier.id)}
-                  className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-[8px] text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
-                >
-                  <Trash2 size={14} />
-                </button>
+                <span className="text-[11px] font-medium text-gray-400">
+                  {tiers.length}/{MAX_TIERS_PER_DATE} used
+                </span>
               </div>
-            )}
 
-            {tiers.length < MAX_TIERS_PER_DATE ? (
-              <button
-                type="button"
-                onClick={openAddTier}
-                className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-[8px] border-2 border-dashed border-[#e2e2e2] bg-[#F8F8F8] py-4 font-sans text-sm font-semibold text-gray-600 transition-colors hover:border-[#0012FF]/40 hover:text-[#0012FF]"
-              >
-                <Plus className="h-4 w-4" aria-hidden="true" />
-                Add Tier
-              </button>
-            ) : (
-              <p className="text-xs text-gray-400">You can add up to {MAX_TIERS_PER_DATE} tiers for each date.</p>
-            )}
+              {tiers.length === 0 ? (
+                <p className="mb-3 text-xs text-gray-400">No tiers yet. Add at least one ticket tier for this date.</p>
+              ) : (
+                <div className="mb-3 overflow-hidden rounded-[8px] border border-[#e2e2e2] bg-white">
+                  {/* Column headers — desktop */}
+                  <div className="hidden items-center gap-4 border-b border-[#e2e2e2] bg-[#F8F8FA] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-gray-400 sm:grid sm:grid-cols-[minmax(0,1.4fr)_100px_120px_72px]">
+                    <span>Tier</span>
+                    <span className="text-right">Price</span>
+                    <span>Quantity</span>
+                    <span className="text-right">Actions</span>
+                  </div>
+
+                  <ul className="divide-y divide-[#e2e2e2]">
+                    {tiers.map((tier, index) => (
+                      <li key={tier.id} className="px-4 py-3.5 transition-colors hover:bg-[#FAFAFC]">
+                        <div className="grid grid-cols-1 items-center gap-3 sm:grid-cols-[minmax(0,1.4fr)_100px_120px_72px] sm:gap-4">
+                          {/* Tier identity */}
+                          <div className="flex min-w-0 items-start gap-3">
+                            <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#E8E9FB] text-[11px] font-bold text-[#0012FF]">
+                              {String(index + 1).padStart(2, '0')}
+                            </span>
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-semibold text-black">{tier.title}</p>
+                              <p className="mt-0.5 text-xs text-gray-400">
+                                {Number(tier.persons).toLocaleString('en-US')}{' '}
+                                {Number(tier.persons) === 1 ? 'person' : 'people'} allowed
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Price */}
+                          <div className="flex items-center justify-between gap-2 sm:block sm:text-right">
+                            <span className="text-[11px] font-medium uppercase tracking-wide text-gray-400 sm:hidden">
+                              Price
+                            </span>
+                            <span className="inline-flex rounded-md bg-[#EEF0FF] px-2.5 py-1 text-xs font-bold text-[#0012FF]">
+                              {formatPrice(tier.price)}
+                            </span>
+                          </div>
+
+                          {/* Quantity */}
+                          <div>
+                            <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-gray-400 sm:hidden">
+                              Quantity
+                            </label>
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              maxLength={6}
+                              value={tier.quantity}
+                              onChange={(e) => setTierQuantity(tier.id, e.target.value)}
+                              placeholder="0"
+                              aria-label={`Quantity for ${tier.title}`}
+                              className="w-full rounded-[8px] border border-[#e2e2e2] bg-white px-3 py-2 font-sans text-sm text-black placeholder:text-gray-300 transition-colors focus:border-[#0012FF] focus:outline-none"
+                            />
+                          </div>
+
+                          {/* Actions */}
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              type="button"
+                              aria-label={`Edit ${tier.title}`}
+                              onClick={() => openEditTier(tier)}
+                              className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-[8px] text-gray-400 transition-colors hover:bg-[#E8E9FB] hover:text-[#0012FF]"
+                            >
+                              <Pencil size={14} />
+                            </button>
+                            <button
+                              type="button"
+                              aria-label={`Delete ${tier.title}`}
+                              onClick={() => deleteTier(tier.id)}
+                              className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-[8px] text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {tiers.length < MAX_TIERS_PER_DATE ? (
+                <button
+                  type="button"
+                  onClick={openAddTier}
+                  className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-[8px] border border-dashed border-[#cfd2f0] bg-[#F8F8FA] py-3.5 font-sans text-sm font-semibold text-[#0012FF] transition-colors hover:border-[#0012FF]/50 hover:bg-[#EEF0FF]"
+                >
+                  <Plus className="h-4 w-4" aria-hidden="true" />
+                  Add Tier
+                </button>
+              ) : (
+                <p className="text-center text-xs text-gray-400">
+                  Maximum of {MAX_TIERS_PER_DATE} tiers reached for this date.
+                </p>
+              )}
+            </div>
           </motion.div>
         ) : (
           dates.length === 0 && (

@@ -6,32 +6,7 @@ import { Plus } from 'lucide-react';
 import CreatorDashboardNav from '@/components/CreatorDashboardNav';
 import EventCard, { EventCardData } from '@/components/EventCard';
 import { richTextPreview } from '@/lib/richText';
-import { fromISODate } from '@/lib/eventTicketing';
-
-const MONTHS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-];
-
-function formatCardDate(iso?: string) {
-  if (!iso) return 'Date TBA';
-  const d = fromISODate(iso);
-  return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
-}
-
-function formatCardTime(day?: {
-  startHour?: string;
-  startMinute?: string;
-  startPeriod?: string;
-  endHour?: string;
-  endMinute?: string;
-  endPeriod?: string;
-}) {
-  if (!day?.startHour) return 'Time TBA';
-  const start = `${day.startHour}:${day.startMinute || '00'} ${day.startPeriod || 'AM'}`;
-  if (!day.endHour) return start;
-  return `${start} - ${day.endHour}:${day.endMinute || '00'} ${day.endPeriod || 'PM'}`;
-}
+import { formatEventCardDate, formatEventCardTime } from '@/lib/eventDisplay';
 
 export default function CreatorEventsPage() {
   const [displayName, setDisplayName] = useState('');
@@ -68,8 +43,8 @@ export default function CreatorEventsPage() {
                 id: e.id,
                 title: e.title,
                 description: richTextPreview(e.description, 140) || 'No description yet.',
-                date: formatCardDate(first?.date),
-                time: formatCardTime(first),
+                date: formatEventCardDate(first?.date),
+                time: formatEventCardTime(first),
                 location: e.category || 'Category TBA',
                 image: e.bannerUrl || undefined,
                 visible: e.status === 'published',

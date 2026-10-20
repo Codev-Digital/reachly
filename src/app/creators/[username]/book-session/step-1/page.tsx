@@ -217,6 +217,8 @@ export default function BookSessionStep1() {
                     const themeIdx = index % 3;
                     const theme = cardThemes[themeIdx];
                     const isSelected = booking.selectedSession?.id === session.id;
+                    const payPrice = sessionPrice(session);
+                    const hasDiscount = payPrice < session.price;
 
                     return (
                       <div
@@ -276,16 +278,18 @@ export default function BookSessionStep1() {
                           </ul>
                         </div>
 
-                        {/* Price */}
-                        <div className={`text-2xl sm:text-3xl font-black font-sans uppercase tracking-tight mt-6 leading-none ${theme.text}`}>
-                          {sessionPrice(session).toLocaleString()} PKR
-                          {sessionPrice(session) < session.price && (
-                            <span className="ml-2 text-sm font-semibold line-through opacity-60">
-                              {session.price.toLocaleString()}
-                            </span>
+                        {/* Price — discounted amount first; cut original below when set */}
+                        <div className="mt-6">
+                          <div className={`text-2xl sm:text-3xl font-black font-sans uppercase tracking-tight leading-none ${theme.text}`}>
+                            {payPrice.toLocaleString()} PKR
+                          </div>
+                          {hasDiscount && (
+                            <div className={`mt-1.5 text-sm font-semibold line-through opacity-50 ${theme.text}`}>
+                              {session.price.toLocaleString()} PKR
+                            </div>
                           )}
                           {session.isPackage && (
-                            <span className="block text-[11px] font-bold normal-case tracking-normal mt-1.5 opacity-80">
+                            <span className={`block text-[11px] font-bold normal-case tracking-normal mt-1.5 opacity-80 ${theme.text}`}>
                               Package · {session.packageSessions} sessions per {session.packagePeriod}
                             </span>
                           )}

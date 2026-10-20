@@ -5,7 +5,7 @@ export const DAY_PERIODS: DayPeriod[] = ['AM', 'PM'];
 
 export { EVENT_CATEGORIES } from '@/lib/eventConstants';
 
-export const MAX_TIERS_PER_DATE = 10;
+export const MAX_TIERS_PER_DATE = 3;
 export const TIER_TITLE_MAX_LENGTH = 40;
 export const DEFAULT_TIER_PERSONS = '1';
 
@@ -16,7 +16,7 @@ export interface EventTier {
   price: string;
   /** Total people this tier allows. Digits only. */
   persons: string;
-  /** How many tickets of this tier are available on the date. Digits only, set after choosing the tier. */
+  /** How many tickets of this tier are available on the date. Digits only. */
   quantity: string;
 }
 
@@ -30,7 +30,7 @@ export interface EventDayData {
   endMinute: string;
   endPeriod: DayPeriod;
   tiers: EventTier[];
-  /** The tier picked in the "Select tier" dropdown (its quantity is shown below it). */
+  /** @deprecated Kept for older form state; UI no longer uses a selected-tier dropdown. */
   selectedTierId: string | null;
 }
 
@@ -59,6 +59,31 @@ export const emptyDay = (): EventDayData => ({
 export const emptyTicketing = (): TicketingValues => ({ category: '', dates: [], activeDate: null, days: {} });
 
 export const newTierId = () => `tier_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
+
+/** Fresh tier copies for another date (new ids; quantity starts empty so stock is set per day). */
+export const cloneTiersForDate = (tiers: EventTier[]): EventTier[] =>
+  tiers.map((t) => ({
+    id: newTierId(),
+    title: t.title,
+    price: t.price,
+    persons: t.persons,
+    quantity: '',
+  }));
+
+/** Prefer the day that already has the most tiers when seeding a newly picked date. */
+export const pickTierTemplateDay = (
+  days: Record<string, EventDayData>,
+  preferIso?: string | null
+): EventDayData | undefined => {
+  const preferred = preferIso ? days[preferIso] : undefined;
+  if (preferred?.tiers.length) return preferred;
+
+  let best: EventDayData | undefined;
+  for (const day of Object.values(days)) {
+    if (!best || day.tiers.length > best.tiers.length) best = day;
+  }
+  return best?.tiers.length ? best : undefined;
+};
 
 // ---- dates (local time, never UTC, so the picked day can't shift) ----
 
