@@ -25,6 +25,16 @@ export default function UserExploreCreatorsPage() {
   const [creators, setCreators] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [categoriesList, setCategoriesList] = useState<Array<{ id: string; name: string }>>([
+    { id: 'fashion', name: 'Fashion' },
+    { id: 'fitness', name: 'Fitness' },
+    { id: 'beauty', name: 'Beauty' },
+    { id: 'food', name: 'Food' },
+    { id: 'lifestyle', name: 'Lifestyle' },
+    { id: 'education', name: 'Education' },
+    { id: 'business', name: 'Business' },
+    { id: 'tech', name: 'Tech' },
+  ]);
 
   // No hardcoded creators - we'll use only the API data
   const hardcodedCreators: any[] = [];
@@ -47,10 +57,21 @@ export default function UserExploreCreatorsPage() {
   useEffect(() => {
     async function checkAuthAndFetch() {
       try {
-        const [res, creatorsRes] = await Promise.all([
+        const [res, creatorsRes, catRes] = await Promise.all([
           fetch('/api/user/me'),
-          fetch('/api/creators')
+          fetch('/api/creators'),
+          fetch('/api/categories'),
         ]);
+
+        if (catRes && catRes.ok) {
+          const catData = await catRes.json();
+          if (catData.categories && Array.isArray(catData.categories)) {
+            setCategoriesList(catData.categories.map((c: any) => ({
+              id: (c.slug || c.name).toLowerCase(),
+              name: c.name,
+            })));
+          }
+        }
 
         let freshAuth = false;
         if (res.ok) {
@@ -196,16 +217,7 @@ export default function UserExploreCreatorsPage() {
 
                     {openSections.categories && (
                       <div className="grid grid-cols-2 gap-2">
-                        {[
-                          { id: 'fashion', name: 'Fashion', icon: 'hanger' },
-                          { id: 'fitness', name: 'Fitness', icon: 'dumbbell' },
-                          { id: 'beauty', name: 'Beauty', icon: 'sparkles' },
-                          { id: 'food', name: 'Food', icon: 'utensils' },
-                          { id: 'lifestyle', name: 'Lifestyle', icon: 'heart' },
-                          { id: 'education', name: 'Education', icon: 'book' },
-                          { id: 'business', name: 'Business', icon: 'briefcase' },
-                          { id: 'tech', name: 'Tech', icon: 'monitor' },
-                        ].map(cat => (
+                        {categoriesList.map(cat => (
                           <button
                             key={cat.id}
                             onClick={() => toggleCategory(cat.id)}
@@ -214,15 +226,8 @@ export default function UserExploreCreatorsPage() {
                               : 'bg-transparent border-[rgba(255,255,255,0.1)] text-white/70 hover:border-[#C8A97E]/30'
                               }`}
                           >
-                            {cat.icon === 'hanger' && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M20.7 7C20.1 4.5 18 3 15.5 3c-1.8 0-3.3.9-4.3 2.3C10.2 3.9 8.7 3 6.9 3 4.4 3 2.3 4.5 1.7 7c-.2.7 0 1.4.5 2l7.2 6.1c.3.3.8.4 1.3.4s1-.1 1.3-.4l7.2-6.1c.5-.6.7-1.3.5-2z" /><path d="M2 15h20" /><path d="M2 19h20" /></svg>}
-                            {cat.icon === 'dumbbell' && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="4" y="10" width="4" height="4" rx="1" /><rect x="16" y="10" width="4" height="4" rx="1" /><line x1="8" y1="12" x2="16" y2="12" /></svg>}
-                            {cat.icon === 'sparkles' && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3z" /><path d="M5 19l.8 2.5L8.3 22l-2.5.8L5 25.3l-.8-2.5L1.7 22l2.5-.8L5 19z" /><path d="M19 19l.8 2.5 2.5.8-2.5.8-.8 2.5-.8-2.5-2.5-.8 2.5-.8.8-2.5z" /></svg>}
-                            {cat.icon === 'utensils' && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2" /><path d="M7 2v20" /><path d="M21 15V2c-2.8 0-5 2.2-5 5s2.2 5 5 5v8" /><path d="M16 7c0 2.8 2.2 5 5 5" /></svg>}
-                            {cat.icon === 'heart' && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg>}
-                            {cat.icon === 'book' && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /></svg>}
-                            {cat.icon === 'briefcase' && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="2" y="7" width="20" height="14" rx="2" ry="2" /><path d="M16 7V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v3" /></svg>}
-                            {cat.icon === 'monitor' && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="2" y="3" width="20" height="14" rx="2" /><path d="M8 21h8" /><path d="M12 17v4" /></svg>}
-                            {cat.name}
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg>
+                            <span className="truncate">{cat.name}</span>
                           </button>
                         ))}
                       </div>

@@ -86,11 +86,12 @@ export default function ExploreCreatorsPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [creatorsRes, authRes, savedRes, favRes] = await Promise.all([
+        const [creatorsRes, authRes, savedRes, favRes, catRes] = await Promise.all([
           fetch('/api/creators'),
           fetch('/api/user/me'),
           fetch('/api/user/saved-creators'),
           fetch('/api/user/favourite-creators'),
+          fetch('/api/categories'),
         ]);
 
         let freshCreators: any[] = [];
@@ -148,6 +149,19 @@ export default function ExploreCreatorsPage() {
           }
         } else {
           setIsAuthenticated(false);
+        }
+
+        if (catRes && catRes.ok) {
+          const catData = await catRes.json();
+          if (catData.categories && Array.isArray(catData.categories)) {
+            setCategories([
+              { id: 'all', label: 'All Categories' },
+              ...catData.categories.map((c: any) => ({
+                id: (c.slug || c.name).toLowerCase(),
+                label: c.name,
+              })),
+            ]);
+          }
         }
 
         // Cache for next instant mount
@@ -231,7 +245,9 @@ export default function ExploreCreatorsPage() {
       if (showSavedOnly && !saved.includes(c.username)) return false;
       if (selectedCategory !== 'all') {
         const niches: string[] = c.niches || [];
-        if (!niches.some((n: string) => n.toLowerCase() === selectedCategory)) return false;
+        const matchesNiche = niches.some((n: string) => n.toLowerCase() === selectedCategory);
+        const matchesCat = (c.category || '').toLowerCase() === selectedCategory;
+        if (!matchesNiche && !matchesCat) return false;
       }
       if (verifiedOnly && !c.isVerified) return false;
       if (minRating !== null && (parseFloat(c.rating) || 0) < minRating) return false;
@@ -250,14 +266,14 @@ export default function ExploreCreatorsPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const categories = [
+  const [categories, setCategories] = useState<{ id: string; label: string }[]>([
     { id: 'all', label: 'All Categories' },
     { id: 'lifestyle', label: 'Lifestyle' },
     { id: 'tech', label: 'Tech' },
     { id: 'fitness', label: 'Fitness' },
     { id: 'fashion', label: 'Fashion' },
     { id: 'business', label: 'Business' },
-  ];
+  ]);
 
   return (
     <div className="min-h-screen bg-[#F7F7FA] text-[#1a1a1a]">
