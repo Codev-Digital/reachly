@@ -1,5 +1,6 @@
 'use client';
 
+import { pktToday } from '@/lib/pkt';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import BookingProgress from '@/components/booking/BookingProgress';
@@ -41,8 +42,7 @@ export default function BookSessionStep2() {
   // Generate 60 days starting from today
   const getDatesList = () => {
     const dates = [];
-    const base = new Date();
-    base.setHours(0, 0, 0, 0);
+    const base = pktToday(); // always Pakistan's today, whatever the browser's timezone
     for (let i = 0; i < 60; i++) {
       const d = new Date(base);
       d.setDate(base.getDate() + i);
@@ -105,7 +105,7 @@ export default function BookSessionStep2() {
       const firstEnabled = datesList.find(isDayEnabled);
       if (firstEnabled) setBooking(b => ({ ...b, selectedDate: firstEnabled }));
     } else if (!booking.selectedDate && !schedule) {
-      setBooking(b => ({ ...b, selectedDate: new Date() }));
+      setBooking(b => ({ ...b, selectedDate: pktToday() }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [booking.selectedDate, schedule]);

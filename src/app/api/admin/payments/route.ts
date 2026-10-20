@@ -7,6 +7,7 @@ import User from '@/models/User';
 import CreatorProfile from '@/models/CreatorProfile';
 import { autoSettleEarnings } from '@/lib/autoSettleEarnings';
 import mongoose from 'mongoose';
+import PackagePurchase from '@/models/PackagePurchase';
 
 function isAdmin(email?: string | null) {
   if (!email) return false;
@@ -42,7 +43,15 @@ export async function GET(req: Request) {
     const userMap = new Map(users.map((u: any) => [u._id.toString(), u]));
     const creatorMap = new Map(creatorProfiles.map((cp: any) => [cp.userId.toString(), cp]));
 
-    const enrichedPayments = bookings.map((booking: any) => {
+    // A package is ONE payment of the whole price, made with its first session
+    const purchaseIds = [...new Set(bookings.map((b: any) => b.packagePurchaseId?.toString()).filter(Boolean))];
+    const purchases = purchaseIds.length
+      ? ((await PackagePurchase.find({ _id: { $in: purchaseIds } }).select('price paymentStatus').lean()) as any[])
+      : [];
+    const purchaseMap = new Map(purchases.map((p) => [String(p._id), p]));
+    const payableBookings = bookings.filter((b: any) => !b.packagePurchaseId || b.sessionNumber === 1);
+
+    const enrichedPayments = payableBookings.map((booking: any) => {
       const user = userMap.get(booking.userId?.toString());
       const creatorProfile = creatorMap.get(booking.creatorId?.toString());
       const creatorUser = userMap.get(booking.creatorId?.toString()); // in case we need their basic user details
@@ -64,6 +73,9 @@ export async function GET(req: Request) {
       if (booking.paymentStatus === 'paid') displayStatus = 'Completed';
       else if (booking.status === 'refunded' || booking.status === 'cancelled' || booking.paymentStatus === 'refunded') displayStatus = 'Refunded';
 
+      const purchase = booking.packagePurchaseId ? purchaseMap.get(booking.packagePurchaseId.toString()) : null;
+      if (purchase) displayStatus = purchase.paymentStatus === 'paid' ? 'Completed' : 'Pending';
+
       // Parse amount (assume finalPrice is string like "25,000" or number)
       let numericAmount = 0;
       if (typeof booking.finalPrice === 'string') {
@@ -71,6 +83,7 @@ export async function GET(req: Request) {
       } else if (typeof booking.finalPrice === 'number') {
         numericAmount = booking.finalPrice;
       }
+      if (purchase) numericAmount = purchase.price; // the whole package, not one session's share
 
       // Calculate platform fee (e.g. 20%) and creator earnings (80%)
       const platformFeeNum = numericAmount * 0.20;

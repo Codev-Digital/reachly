@@ -28,6 +28,7 @@ function generateBookingRef(): string {
 // Helper to format date like "Mon, Jan 1"
 function formatDate(date: Date): string {
   return date.toLocaleDateString("en-US", {
+    timeZone: "UTC", // the booking date is a plain calendar day; don't let the server's timezone shift it
     weekday: "short",
     month: "short",
     day: "numeric",

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import FormInput, { FormError } from '@/components/FormInput';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
+import { formatISODay, pktTodayISO } from '@/lib/pkt';
 
 export interface NextSessionTarget {
   id: string; // package purchase id
@@ -13,11 +14,6 @@ export interface NextSessionTarget {
   nextNumber: number;
   sessionsTotal: number;
 }
-
-const todayISO = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-};
 
 /**
  * "Book session N" for a package: pick a date and one of the creator's free slots, done.
@@ -110,19 +106,14 @@ export default function BookNextSessionModal({
             <DialogDescription className="text-left text-gray-400 mt-1 mb-6">
               {booked
                 ? `Session ${target.nextNumber} of "${target.title}" is confirmed.`
-                : 'Pick a day and one of the available times. We’ll use the details from your previous session.'}
+                : 'Pick a day and one of the available times (Pakistan time). We’ll use the details from your previous session.'}
             </DialogDescription>
 
             {booked ? (
               <>
                 <div className="rounded-2xl bg-emerald-50 border border-emerald-100 p-4 text-sm text-emerald-800 font-semibold">
-                  {new Date(booked.date + 'T12:00:00').toLocaleDateString('en-GB', {
-                    weekday: 'long',
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric',
-                  })}{' '}
-                  at {booked.time}
+                  {formatISODay(booked.date, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} at{' '}
+                  {booked.time} (Pakistan time)
                 </div>
                 <div className="mt-8 flex justify-end">
                   <Button onClick={close} className="px-8">
@@ -136,7 +127,7 @@ export default function BookNextSessionModal({
                   label="Date"
                   required
                   type="date"
-                  min={todayISO()}
+                  min={pktTodayISO()}
                   value={date}
                   onChange={(e) => {
                     setDate(e.target.value);

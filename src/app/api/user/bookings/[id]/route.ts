@@ -37,7 +37,7 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { status, selectedDate, selectedTime, timeZone: bodyTimeZone, timezone: bodyTimezoneAlt } = body;
+    const { status, selectedDate, selectedTime } = body;
 
     if (status && !["confirmed", "cancelled", "completed"].includes(status)) {
       return NextResponse.json({ error: "Invalid status" }, { status: 400 });
@@ -64,24 +64,8 @@ export async function PUT(
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
-    // Resolve timezone (browser header -> body timezone -> creator availability timezone -> Asia/Karachi default)
-    const headerTimeZone = request.headers.get("x-timezone");
-    let timeZone = headerTimeZone || bodyTimeZone || bodyTimezoneAlt;
-
-    if (!timeZone && booking.creatorId) {
-      try {
-        const CreatorAvailability = (await import("@/models/CreatorAvailability")).default;
-        const avail = await CreatorAvailability.findOne({ userId: booking.creatorId }).select("timezone").lean();
-        if (avail?.timezone) {
-          timeZone = avail.timezone;
-        }
-      } catch (tzErr) {
-        console.error("Error fetching creator timezone:", tzErr);
-      }
-    }
-    if (!timeZone) {
-      timeZone = "Asia/Karachi";
-    }
+    // Reachly runs on Pakistan time only (the browser / creator timezone is ignored)
+    const timeZone = 'Asia/Karachi';
 
     const isCancelling = status === "cancelled";
     const isRescheduling = Boolean(selectedDate || selectedTime);

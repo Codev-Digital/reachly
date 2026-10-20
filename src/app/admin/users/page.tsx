@@ -284,7 +284,6 @@ export default function UsersPage() {
                 <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">User</th>
                 <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Email</th>
                 <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Joined Date</th>
-                <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Time</th>
                 <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Status</th>
                 <th className="py-4 px-4 text-xs font-bold text-gray-400 text-center uppercase tracking-wider">Actions</th>
               </tr>
@@ -292,7 +291,7 @@ export default function UsersPage() {
             <tbody className="divide-y divide-gray-50">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-sm font-semibold text-gray-400">
+                  <td colSpan={6} className="py-8 text-center text-sm font-semibold text-gray-400">
                     Loading users list...
                   </td>
                 </tr>
@@ -326,7 +325,6 @@ export default function UsersPage() {
                     <td className="py-4 px-4 text-sm font-semibold text-gray-500">{user.joinedDate}</td>
 
                     {/* Time */}
-                    <td className="py-4 px-4 text-sm font-semibold text-gray-500">{user.time}</td>
 
                     {/* Status Badge */}
                     <td className="py-4 px-4">
@@ -365,7 +363,7 @@ export default function UsersPage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-sm font-semibold text-gray-400">
+                  <td colSpan={6} className="py-8 text-center text-sm font-semibold text-gray-400">
                     No users found matching filter criteria.
                   </td>
                 </tr>

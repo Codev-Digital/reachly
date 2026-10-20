@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
 import Booking from '@/models/Booking';
+import PackagePurchase from '@/models/PackagePurchase';
 import User from '@/models/User';
 import CreatorProfile from '@/models/CreatorProfile';
 
@@ -49,13 +50,19 @@ export async function GET() {
       .limit(20)
       .lean();
 
+    const pkgIds = [...new Set(recentBookings.map((b: any) => b.packagePurchaseId?.toString()).filter(Boolean))];
+    const pkgPurchases = pkgIds.length ? ((await PackagePurchase.find({ _id: { $in: pkgIds } }).select('price').lean()) as any[]) : [];
+    const pkgPrice = new Map(pkgPurchases.map((p) => [String(p._id), p.price]));
+
     for (const booking of recentBookings) {
+      // A package is a single payment, made with its first session
+      if (booking.packagePurchaseId && booking.sessionNumber !== 1) continue;
       if (booking.status === 'completed' || booking.status === 'confirmed' || booking.status === 'pending') {
         notifications.push({
           id: `bkg-${booking._id}`,
           type: 'payment_received',
           title: 'Payment Received',
-          message: `A new payment of PKR ${booking.finalPrice} was received.`,
+          message: `A new payment of PKR ${booking.packagePurchaseId ? pkgPrice.get(booking.packagePurchaseId.toString()) ?? booking.finalPrice : booking.finalPrice} was received.`,
           date: booking.createdAt || new Date(),
           link: '/admin/payments'
         });

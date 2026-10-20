@@ -7,6 +7,7 @@ import Booking from '@/models/Booking';
 import SessionType from '@/models/SessionType';
 import CreatorProfile from '@/models/CreatorProfile';
 import { autoSettleEarnings } from '@/lib/autoSettleEarnings';
+import { packageInfo } from '@/lib/packageLabels';
 
 export async function GET(req: NextRequest) {
   try {
@@ -89,9 +90,10 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    // Map outgoing bookings to transactions (shown as "Booking with Creator")
-    const outgoingTransactions = outgoingBookings.map((b: any) => {
-      const amount = b.finalPrice || 0;
+    // Packages are paid once, with their first session: later package sessions are not payments
+    const { paid: pkgPaid } = await packageInfo(outgoingBookings);
+    const outgoingTransactions = outgoingBookings.filter((b: any) => !(b.packagePurchaseId && b.sessionNumber !== 1)).map((b: any) => {
+      const amount = pkgPaid.has(b._id.toString()) ? (pkgPaid.get(b._id.toString()) as number) : (b.finalPrice || 0);
       const payStatus = b.paymentStatus || 'pending';
       const bookingStatus = b.status;
 

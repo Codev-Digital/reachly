@@ -242,12 +242,6 @@ export default function AdminCreatorDetailPage() {
               </div>
 
 
-              {/* Joined Timing */}
-              <div>
-                <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Joined Timing</p>
-                <p className="text-sm font-bold text-black mt-1">{creator.time}</p>
-              </div>
-
               {/* Actions */}
               <div className="col-span-2 sm:col-span-4 pt-5 mt-1 border-t border-gray-50">
                 <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider mb-3">Actions</p>

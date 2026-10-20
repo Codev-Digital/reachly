@@ -88,7 +88,7 @@ export default function UserDetailDialog({
                 <Field label="Phone" value={user.phone} />
                 <Field label="City" value={user.city} />
                 <Field label="Country" value={user.country} />
-                <Field label="Joined" value={`${user.joinedDate} · ${user.time}`} />
+                <Field label="Joined" value={user.joinedDate} />
                 <div className="col-span-2 pt-4 border-t border-gray-50">
                   <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Reason for joining</p>
                   <p className="text-sm text-gray-600 font-medium leading-relaxed mt-1">

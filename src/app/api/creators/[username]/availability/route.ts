@@ -91,7 +91,7 @@ export async function GET(
         // If a specific date was requested, compute the time slots for that day
         if (dateStr) {
             // Parse the date as local date in the creator's timezone
-            const timezone = availability.timezone || 'Asia/Karachi';
+            const timezone = 'Asia/Karachi'; // Reachly runs on Pakistan time only
             
             // Split date string into components
             const [yearStr, monthStr, dayStr] = dateStr.split('-');
@@ -236,7 +236,7 @@ export async function GET(
                 slots: availableSlots,
                 date: dateStr,
                 schedule: availability.schedule,
-                timezone: availability.timezone,
+                timezone: 'Asia/Karachi',
                 blockedDates: availability.blockedDates,
             });
         }
@@ -245,7 +245,7 @@ export async function GET(
         return NextResponse.json({
             success: true,
             schedule: availability.schedule,
-            timezone: availability.timezone,
+            timezone: 'Asia/Karachi',
             blockedDates: availability.blockedDates,
         });
     } catch (error: any) {

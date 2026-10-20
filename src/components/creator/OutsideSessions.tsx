@@ -4,6 +4,7 @@ import { useState } from 'react';
 import FormInput, { FormError } from '@/components/FormInput';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
+import { pktTodayISO } from '@/lib/pkt';
 
 export interface OutsideBlock {
   id: string;
@@ -84,12 +85,13 @@ export default function OutsideSessionModal({
               label="Date"
               required
               type="date"
+              min={pktTodayISO()}
               value={form.date}
               onChange={(e) => setForm({ ...form, date: e.target.value })}
             />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormInput
-                label="Start time"
+                label="Start time (Pakistan time)"
                 required
                 type="time"
                 value={form.time}

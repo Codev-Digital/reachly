@@ -50,7 +50,8 @@ export default function UserPayments() {
 
         if (bookingsRes.ok) {
           const data = await bookingsRes.json();
-          const formatted = (data.bookings || []).map((b: any) => ({
+          // A package is paid once (with its first session): later package sessions are not payments
+          const formatted = (data.bookings || []).filter((b: any) => !(b.isPackage && b.paymentAmount === 0)).map((b: any) => ({
             id: b.ref || `TXN-${b.id.slice(-5).toUpperCase()}`,
             creator: {
               name: b.creator,
@@ -61,9 +62,9 @@ export default function UserPayments() {
             method: b.paymentMethod || 'Jazzcash',
             date: b.shortDate || b.date,
             time: b.time,
-            amount: b.price || '0 PKR',
+            amount: `PKR ${Number(b.paymentAmount ?? 0).toLocaleString()}`,
             status: b.originalStatus === 'refunded' ? 'Refunded' : b.status === 'Pending Approval' || b.originalStatus === 'pending' ? 'Pending' : 'Completed',
-            rawPrice: parseFloat((b.price || '').replace(/[^0-9.]/g, '')) || 0,
+            rawPrice: Number(b.paymentAmount) || 0,
             rawStatus: b.originalStatus,
             scheduledDate: b.scheduledDate
           }));

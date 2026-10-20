@@ -307,7 +307,6 @@ export default function AdminCreatorsPage() {
                 <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Creator</th>
                 <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Email</th>
                 <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Joined Date</th>
-                <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Time</th>
                 <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Events Created</th>
                 <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Status</th>
                 <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Actions</th>
@@ -316,7 +315,7 @@ export default function AdminCreatorsPage() {
             <tbody className="divide-y divide-gray-50">
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="py-8 text-center text-sm font-semibold text-gray-400">
+                  <td colSpan={7} className="py-8 text-center text-sm font-semibold text-gray-400">
                     Loading creators list...
                   </td>
                 </tr>
@@ -350,7 +349,6 @@ export default function AdminCreatorsPage() {
                     <td className="py-4 px-4 text-sm font-semibold text-gray-500">{creator.joinedDate}</td>
 
                     {/* Time */}
-                    <td className="py-4 px-4 text-sm font-semibold text-gray-500">{creator.time}</td>
 
                     {/* Events Created */}
                     <td className="py-4 px-4 text-sm font-semibold text-gray-500">{creator.eventsCreated}</td>
@@ -387,7 +385,7 @@ export default function AdminCreatorsPage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={8} className="py-8 text-center text-sm font-semibold text-gray-400">
+                  <td colSpan={7} className="py-8 text-center text-sm font-semibold text-gray-400">
                     No creators found matching filter criteria.
                   </td>
                 </tr>
