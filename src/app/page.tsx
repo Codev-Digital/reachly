@@ -356,6 +356,52 @@ export default function Home() {
 
 
       {/* ════════════════════════════════════════
+            PAKISTAN'S TOP CREATORS
+        ════════════════════════════════════════ */}
+      <section className="py-20 bg-white text-[#0C0C0C] border-t border-gray-100">
+        <div className="max-w-[1160px] mx-auto px-4 sm:px-6">
+          <FadeUp className="mb-10 text-left">
+            <h2 
+              className="font-anton font-normal text-4xl sm:text-5xl md:text-[70px] text-black leading-tight md:leading-[70px] uppercase tracking-normal"
+              style={{ letterSpacing: '0%' }}
+            >
+              Pakistan&apos;s <span className="text-[#0012FF]">Top Creators</span>
+            </h2>
+            <p className="font-sans text-sm sm:text-base text-gray-500 mt-3">
+              Connect, collaborate and create with the most trusted voices across Pakistan
+            </p>
+          </FadeUp>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 justify-items-center">
+            {allCreators.map((creator, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: index * 0.06 }}
+                whileHover={{ y: -6, scale: 1.02 }}
+                className="w-[275px] h-[275px] rounded-[24px] overflow-hidden relative group shadow-md hover:shadow-xl transition-all duration-300 bg-white shrink-0 cursor-pointer"
+              >
+                <img
+                  src={creator.img}
+                  alt={creator.name}
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent flex items-end p-5">
+                  <span className="text-white font-sans font-bold text-lg tracking-wide drop-shadow-md">
+                    {creator.name}
+                  </span>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ════════════════════════════════════════
             FEATURED CREATORS
         ════════════════════════════════════════ */}
       <section className="py-20 bg-[#F7F7FA] text-[#0C0C0C] border-t border-gray-100">
@@ -493,50 +539,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ════════════════════════════════════════
-            PAKISTAN'S TOP CREATORS
-        ════════════════════════════════════════ */}
-      <section className="py-20 bg-white text-[#0C0C0C] border-t border-gray-100">
-        <div className="max-w-[1160px] mx-auto px-4 sm:px-6">
-          <FadeUp className="mb-10 text-left">
-            <h2 className="font-anton font-normal text-4xl sm:text-5xl md:text-[70px] text-black leading-tight md:leading-[70px] uppercase tracking-normal">
-              Pakistan&apos;s <span className="text-[#0012FF]">Top Creators</span>
-            </h2>
-            <p className="font-sans text-sm sm:text-base text-gray-500 mt-3">
-              Connect, collaborate and create with the most trusted voices across Pakistan
-            </p>
-          </FadeUp>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 justify-items-center">
-            {allCreators.map((creator, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.06 }}
-                whileHover={{ y: -6, scale: 1.02 }}
-                className="w-[275px] h-[275px] rounded-[24px] overflow-hidden relative group shadow-md hover:shadow-xl transition-all duration-300 bg-white shrink-0 cursor-pointer"
-              >
-                <img
-                  src={creator.img}
-                  alt={creator.name}
-                  loading="lazy"
-                  decoding="async"
-                  className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent flex items-end p-5">
-                  <span className="text-white font-sans font-bold text-lg tracking-wide drop-shadow-md">
-                    {creator.name}
-                  </span>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ════════════════════════════════════════
+{/* ════════════════════════════════════════
             HOW IT WORKS
         ════════════════════════════════════════ */}
       <section 
