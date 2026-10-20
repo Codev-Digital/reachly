@@ -45,6 +45,8 @@ export interface RichTextEditorProps {
   variant?: Variant;
   /** Grow with the content instead of showing an inner scrollbar. */
   autoHeight?: boolean;
+  /** Helper text shown under the editor, on the left (hidden while an error is shown). */
+  hint?: string;
   className?: string;
   labelClassName?: string;
   errorClassName?: string;
@@ -165,6 +167,7 @@ export default function RichTextEditor({
   maxLength = DETAILED_BIO_MAX_LENGTH,
   variant = 'light',
   autoHeight = false,
+  hint,
   className,
   labelClassName,
   errorClassName,
@@ -383,7 +386,11 @@ export default function RichTextEditor({
 
       <div className="flex items-start justify-between gap-3 mt-2">
         <div className="min-w-0">
-          {error && <FormError id={errorId} className={errorClassName}>{error}</FormError>}
+          {error ? (
+            <FormError id={errorId} className={errorClassName}>{error}</FormError>
+          ) : (
+            hint && <p className={twMerge('text-xs font-sans', theme.counter)}>{hint}</p>
+          )}
         </div>
         <p className={twMerge('shrink-0 text-xs font-sans', theme.counter, (s?.chars ?? 0) >= maxLength && 'text-red-500 font-medium')}>
           {s?.chars ?? 0}/{maxLength}

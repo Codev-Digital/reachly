@@ -39,6 +39,10 @@ export interface DropdownProps {
   /** Extra classes for the field — merged over the same defaults FormInput uses. */
   className?: string;
   menuClassName?: string;
+  /** Shown inside the open menu when there are no options (e.g. "No tier created"). */
+  emptyText?: string;
+  /** Content pinned under the options (e.g. a small "+ Add Tier" button). Call `close` to dismiss the menu. */
+  menuFooter?: (helpers: { close: () => void }) => ReactNode;
   labelClassName?: string;
   errorClassName?: string;
   wrapperClassName?: string;
@@ -79,6 +83,8 @@ export default function Dropdown({
   suffix,
   className,
   menuClassName,
+  emptyText,
+  menuFooter,
   labelClassName,
   errorClassName,
   wrapperClassName,
@@ -155,13 +161,13 @@ export default function Dropdown({
         if (editable && !open) break;
         e.preventDefault();
         if (!open) openMenu();
-        else if (activeIndex >= 0) select(options[activeIndex]);
+        else if (activeIndex >= 0 && options[activeIndex] !== undefined) select(options[activeIndex]);
         break;
       case ' ':
         if (editable) break; // typing a space
         e.preventDefault();
         if (!open) openMenu();
-        else if (activeIndex >= 0) select(options[activeIndex]);
+        else if (activeIndex >= 0 && options[activeIndex] !== undefined) select(options[activeIndex]);
         break;
       case 'Escape':
         if (open) {
@@ -294,42 +300,49 @@ export default function Dropdown({
         )}
 
         {open && (
-          <ul
-            ref={listRef}
-            id={listId}
-            role="listbox"
+          <div
             className={twMerge(
-              'absolute z-50 left-0 right-0 mt-1.5 max-h-60 overflow-y-auto rounded-[8px] border py-1 text-sm font-sans',
+              'absolute z-50 left-0 right-0 mt-1.5 overflow-hidden rounded-[8px] border text-sm font-sans',
               theme.menu,
               menuClassName
             )}
           >
-            {options.map((option, index) => {
-              const isSelected = option === selected;
-              return (
-                <li
-                  key={option}
-                  role="option"
-                  aria-selected={isSelected}
-                  onMouseEnter={() => setActiveIndex(index)}
-                  // mousedown (not click) so selection happens before any blur handling
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    select(option);
-                  }}
-                  className={twMerge(
-                    'flex items-center justify-between gap-2 px-4 py-2.5 cursor-pointer',
-                    theme.option,
-                    index === activeIndex && theme.active,
-                    isSelected && theme.selected
-                  )}
-                >
-                  <span className="truncate">{option}</span>
-                  {isSelected && <Check className="w-4 h-4 shrink-0" aria-hidden="true" />}
+            <ul ref={listRef} id={listId} role="listbox" className="max-h-60 overflow-y-auto py-1">
+              {options.length === 0 && emptyText && (
+                <li role="presentation" className="px-4 py-3 text-center text-sm text-gray-400 select-none">
+                  {emptyText}
                 </li>
-              );
-            })}
-          </ul>
+              )}
+              {options.map((option, index) => {
+                const isSelected = option === selected;
+                return (
+                  <li
+                    key={option}
+                    role="option"
+                    aria-selected={isSelected}
+                    onMouseEnter={() => setActiveIndex(index)}
+                    // mousedown (not click) so selection happens before any blur handling
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      select(option);
+                    }}
+                    className={twMerge(
+                      'flex items-center justify-between gap-2 px-4 py-2.5 cursor-pointer',
+                      theme.option,
+                      index === activeIndex && theme.active,
+                      isSelected && theme.selected
+                    )}
+                  >
+                    <span className="truncate">{option}</span>
+                    {isSelected && <Check className="w-4 h-4 shrink-0" aria-hidden="true" />}
+                  </li>
+                );
+              })}
+            </ul>
+            {menuFooter && (
+              <div className="border-t border-[#e2e2e2] p-2">{menuFooter({ close })}</div>
+            )}
+          </div>
         )}
       </div>
 

@@ -11,15 +11,24 @@ import { logout } from '@/lib/logout';
 const NAV_ITEMS = [
   { name: 'Dashboard', href: '/creators/dashboard', icon: 'dashboard' },
   { name: 'Chats', href: '/creators/chats', icon: 'chats' },
-  // { name: 'Events', href: '/creators/events', icon: 'events' },
+  { name: 'Events', href: '/creators/events', icon: 'events' },
   { name: 'Calendar', href: '/creators/calendar', icon: 'calendar' },
   { name: 'Wallet', href: '/creators/wallet', icon: 'wallet' },
   { name: 'Settings', href: '/creators/settings', icon: 'settings' },
 ];
 
+const ACTIVE_ICON_SRCS = [
+  '/assets/dashboard.png',
+  '/assets/chat.svg',
+  '/assets/events.svg',
+  '/assets/calendar.svg',
+  '/assets/wallet.svg',
+  '/assets/settings.svg.png',
+];
+
 function NavIcon({ icon, active }: { icon: string; active: boolean }) {
   if (icon === 'dashboard') {
-    if (active) return <Image src="/assets/dashboard.png" alt="Dashboard" width={38} height={38} className="object-contain flex-shrink-0" />;
+    if (active) return <Image src="/assets/dashboard.png" alt="Dashboard" width={38} height={38} className="object-contain flex-shrink-0" unoptimized priority />;
     return (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="flex-shrink-0">
         <rect x="3" y="3" width="7" height="9" rx="1" />
@@ -29,16 +38,19 @@ function NavIcon({ icon, active }: { icon: string; active: boolean }) {
       </svg>
     );
   }
-  // if (icon === 'events') {
-  //   return (
-  //     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="flex-shrink-0">
-  //       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-  //       <polyline points="14 2 14 8 20 8" />
-  //     </svg>
-  //   );
-  // }
+  if (icon === 'events') {
+    if (active) return <Image src="/assets/events.svg" alt="Events" width={33} height={33} className="object-contain flex-shrink-0" unoptimized priority />;
+    return (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="flex-shrink-0">
+        <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z" />
+        <path d="M13 5v2" />
+        <path d="M13 17v2" />
+        <path d="M13 11v2" />
+      </svg>
+    );
+  }
   if (icon === 'chats') {
-    if (active) return <Image src="/assets/chat.svg" alt="Chats" width={33} height={33} className="object-contain flex-shrink-0" />;
+    if (active) return <Image src="/assets/chat.svg" alt="Chats" width={33} height={33} className="object-contain flex-shrink-0" unoptimized priority />;
     return (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="flex-shrink-0">
         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
@@ -46,7 +58,7 @@ function NavIcon({ icon, active }: { icon: string; active: boolean }) {
     );
   }
   if (icon === 'calendar') {
-    if (active) return <Image src="/assets/calendar.svg" alt="Calendar" width={33} height={33} className="object-contain flex-shrink-0" />;
+    if (active) return <Image src="/assets/calendar.svg" alt="Calendar" width={33} height={33} className="object-contain flex-shrink-0" unoptimized priority />;
     return (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="flex-shrink-0">
         <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
@@ -57,7 +69,7 @@ function NavIcon({ icon, active }: { icon: string; active: boolean }) {
     );
   }
   if (icon === 'wallet') {
-    if (active) return <Image src="/assets/wallet.svg" alt="Wallet" width={33} height={33} className="object-contain flex-shrink-0" />;
+    if (active) return <Image src="/assets/wallet.svg" alt="Wallet" width={33} height={33} className="object-contain flex-shrink-0" unoptimized priority />;
     return (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="flex-shrink-0">
         <rect x="2" y="5" width="20" height="14" rx="2" />
@@ -66,7 +78,7 @@ function NavIcon({ icon, active }: { icon: string; active: boolean }) {
     );
   }
   if (icon === 'settings') {
-    if (active) return <Image src="/assets/settings.svg.png" alt="Settings" width={43} height={43} className="object-contain flex-shrink-0" />;
+    if (active) return <Image src="/assets/settings.svg.png" alt="Settings" width={43} height={43} className="object-contain flex-shrink-0" unoptimized priority />;
     return (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="flex-shrink-0">
         <circle cx="12" cy="12" r="3" />
@@ -103,6 +115,18 @@ export default function CreatorDashboardNav({
   displayName?: string;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+
+  // Warm the cache for every "active" icon and prefetch every tab route once,
+  // so switching tabs shows the icon and page instantly.
+  useEffect(() => {
+    ACTIVE_ICON_SRCS.forEach((src) => {
+      const img = new window.Image();
+      img.src = src;
+    });
+    NAV_ITEMS.forEach((item) => router.prefetch(item.href));
+  }, [router]);
+
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);

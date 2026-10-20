@@ -45,6 +45,7 @@ export default function CreatorLayout({
     pathname.startsWith('/creators/chats') ||
     pathname.startsWith('/creators/packages') ||
     pathname.startsWith('/creators/calendar') ||
+    pathname.startsWith('/creators/events') ||
     pathname.startsWith('/creators/wallet') ||
     pathname.startsWith('/creators/settings');
 
