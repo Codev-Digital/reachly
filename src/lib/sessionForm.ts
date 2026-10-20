@@ -1,4 +1,5 @@
 import { isRichTextEmpty } from '@/lib/richText';
+import { normalizeStoredQuestions, type SessionQuestion } from '@/lib/sessionQuestions';
 
 /** Shared by the "Add / Edit session" page and the creator onboarding sessions step. */
 
@@ -57,6 +58,8 @@ export interface SessionFormValues {
   price: string;
   discountedPrice: string;
   maxBookings: string;
+  /** Intake questions (multiple choice and/or short answer). */
+  questions: SessionQuestion[];
 }
 
 export type SessionErrorKey =
@@ -77,6 +80,7 @@ export const emptySessionValues = (): SessionFormValues => ({
   price: '1200',
   discountedPrice: '',
   maxBookings: '4',
+  questions: [],
 });
 
 /** Build form values from a stored session (description must already be editor HTML). */
@@ -88,6 +92,7 @@ export const sessionToValues = (
     price?: number | string;
     discountedPrice?: number | string | null;
     maxBookings?: number | string;
+    questions?: unknown;
   },
   description: string
 ): SessionFormValues => {
@@ -102,6 +107,7 @@ export const sessionToValues = (
     discountedPrice:
       s.discountedPrice !== undefined && s.discountedPrice !== null ? String(s.discountedPrice) : '',
     maxBookings: String(s.maxBookings || 4),
+    questions: normalizeStoredQuestions(s.questions),
   };
 };
 
@@ -152,6 +158,7 @@ export const valuesToPayload = (v: SessionFormValues) => ({
   discountedPrice: v.discountedPrice ? Number(v.discountedPrice) : undefined,
   bufferTime: effectiveBufferFor(v),
   maxBookings: Number(v.maxBookings),
+  questions: v.questions,
 });
 
 /** Scroll the first inline error into view after a failed validation. */

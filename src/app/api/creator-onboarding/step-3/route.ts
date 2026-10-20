@@ -6,6 +6,7 @@ import User from '@/models/User';
 import CreatorProfile from '@/models/CreatorProfile';
 import SessionType from '@/models/SessionType';
 import { cleanSessionDescription } from '@/lib/sanitizeRichText';
+import { sanitizeQuestions } from '@/lib/sessionQuestions';
 
 // ── GET — load all saved session types for this user ─────────────────────────
 export async function GET() {
@@ -76,6 +77,14 @@ export async function PUT(req: NextRequest) {
         );
       }
       s.description = cleanDescription.value;
+      const cleanQuestions = sanitizeQuestions(s.questions);
+      if ('error' in cleanQuestions) {
+        return NextResponse.json(
+          { error: `Session ${idx}: ${cleanQuestions.error}` },
+          { status: 422 }
+        );
+      }
+      s.questions = cleanQuestions.value;
       const duration = Number(s.duration);
       if (isNaN(duration) || duration < 1 || duration > 1440 || !Number.isInteger(duration)) {
         return NextResponse.json(

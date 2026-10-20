@@ -1,6 +1,7 @@
 'use client';
 
 import FormInput from '@/components/FormInput';
+import SessionQuestionsSection from '@/components/SessionQuestionsSection';
 import Dropdown from '@/components/Dropdown';
 import RichTextEditor from '@/components/RichTextEditor';
 import { InfoTooltip } from '@/components/ui/tooltip';
@@ -32,7 +33,6 @@ interface SessionFieldsProps {
  */
 export default function SessionFields({ values, onChange, errors, clearError }: SessionFieldsProps) {
   const { customDuration, duration } = values;
-
   const bufferChoices = bufferChoicesFor(Number(duration));
   const bufferOptions = [NO_BUFFER_OPTION, ...bufferChoices.map(bufferLabel)];
   const effectiveBuffer = effectiveBufferFor(values);
@@ -76,6 +76,7 @@ export default function SessionFields({ values, onChange, errors, clearError }: 
           clearError('description');
         }}
         maxLength={SESSION_DESCRIPTION_MAX_LENGTH}
+        autoHeight
         error={errors.description}
         placeholder="Personal styling session to revamp your wardrobe and discover your signature look."
       />
@@ -129,8 +130,8 @@ export default function SessionFields({ values, onChange, errors, clearError }: 
         />
       </div>
 
-      {/* Session price next to the discounted price */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+      {/* Session price, discounted price and max bookings on one line */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
         <FormInput
           label="Session Price"
           required
@@ -161,9 +162,6 @@ export default function SessionFields({ values, onChange, errors, clearError }: 
           error={errors.discountedPrice}
           placeholder="Optional"
         />
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <FormInput
           label="Max Bookings Per Day"
           required
@@ -179,6 +177,12 @@ export default function SessionFields({ values, onChange, errors, clearError }: 
           placeholder="4"
         />
       </div>
+
+      {/* Intake questions: multiple choice, short answer, or both */}
+      <SessionQuestionsSection
+        questions={values.questions}
+        onChange={(questions) => onChange({ questions })}
+      />
     </div>
   );
 }

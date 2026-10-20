@@ -43,6 +43,8 @@ export interface RichTextEditorProps {
   maxLength?: number;
   /** `dark` matches the dark creator dashboard pages. */
   variant?: Variant;
+  /** Grow with the content instead of showing an inner scrollbar. */
+  autoHeight?: boolean;
   className?: string;
   labelClassName?: string;
   errorClassName?: string;
@@ -162,6 +164,7 @@ export default function RichTextEditor({
   placeholder = 'Write something about yourself...',
   maxLength = DETAILED_BIO_MAX_LENGTH,
   variant = 'light',
+  autoHeight = false,
   className,
   labelClassName,
   errorClassName,
@@ -225,7 +228,11 @@ export default function RichTextEditor({
         id,
         'aria-invalid': error ? 'true' : 'false',
         ...(error ? { 'aria-describedby': errorId } : {}),
-        class: 'min-h-[160px] max-h-[360px] overflow-y-auto px-4 py-3 text-sm font-sans leading-relaxed focus:outline-none',
+        class: twMerge(
+          'min-h-[160px] px-4 py-3 text-sm font-sans leading-relaxed focus:outline-none',
+          // autoHeight grows with the content (no inner scrollbar); otherwise scroll after 360px
+          autoHeight ? 'overflow-visible' : 'max-h-[360px] overflow-y-auto'
+        ),
       },
     },
     onUpdate: ({ editor }) => onChange(editor.isEmpty ? '' : editor.getHTML()),
