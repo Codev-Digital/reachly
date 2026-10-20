@@ -309,8 +309,10 @@ export default function Dropdown({
           >
             <ul ref={listRef} id={listId} role="listbox" className="max-h-60 overflow-y-auto py-1">
               {options.length === 0 && emptyText && (
-                <li role="presentation" className="px-4 py-3 text-center text-sm text-gray-400 select-none">
-                  {emptyText}
+                // empty state: the message starts on the left and the footer action sits at the end of the same row
+                <li role="presentation" className="flex items-center justify-between gap-3 px-4 py-2.5">
+                  <span className="text-sm text-gray-400 select-none">{emptyText}</span>
+                  {menuFooter?.({ close })}
                 </li>
               )}
               {options.map((option, index) => {
@@ -339,8 +341,8 @@ export default function Dropdown({
                 );
               })}
             </ul>
-            {menuFooter && (
-              <div className="border-t border-[#e2e2e2] p-2">{menuFooter({ close })}</div>
+            {menuFooter && !(options.length === 0 && emptyText) && (
+              <div className="flex justify-end border-t border-[#e2e2e2] p-2">{menuFooter({ close })}</div>
             )}
           </div>
         )}

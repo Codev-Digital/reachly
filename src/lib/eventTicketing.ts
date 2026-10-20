@@ -3,6 +3,8 @@
 export type DayPeriod = 'AM' | 'PM';
 export const DAY_PERIODS: DayPeriod[] = ['AM', 'PM'];
 
+export { EVENT_CATEGORIES } from '@/lib/eventConstants';
+
 export const MAX_TIERS_PER_DATE = 10;
 export const TIER_TITLE_MAX_LENGTH = 40;
 export const DEFAULT_TIER_PERSONS = '1';
@@ -33,6 +35,8 @@ export interface EventDayData {
 }
 
 export interface TicketingValues {
+  /** One category for the whole event. */
+  category: string;
   /** Selected dates as YYYY-MM-DD, sorted ascending. */
   dates: string[];
   /** The date whose details are shown in the form below the calendar. */
@@ -52,7 +56,7 @@ export const emptyDay = (): EventDayData => ({
   selectedTierId: null,
 });
 
-export const emptyTicketing = (): TicketingValues => ({ dates: [], activeDate: null, days: {} });
+export const emptyTicketing = (): TicketingValues => ({ category: '', dates: [], activeDate: null, days: {} });
 
 export const newTierId = () => `tier_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
 

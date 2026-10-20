@@ -4,33 +4,52 @@ import { useEffect, useRef, useState } from 'react';
 import { ImageIcon, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { FormError, FormLabel } from '@/components/FormInput';
+import { cn } from '@/lib/cn';
 
 const MAX_BYTES = 5 * 1024 * 1024;
 const ACCEPTED = ['image/jpeg', 'image/png', 'image/webp'];
 
+/** Design size for the event banner (width × height). */
+export const BANNER_WIDTH = 1200;
+export const BANNER_HEIGHT = 400;
+
 interface BannerUploadProps {
   file: File | null;
   onChange: (file: File | null) => void;
+  /** Existing uploaded banner URL (shown when there is no new local file). */
+  previewUrl?: string | null;
   label?: string;
   required?: boolean;
   error?: string;
 }
 
-/** Dashed drop area for the event banner. Shows a local preview only (nothing is uploaded yet). */
-export default function BannerUpload({ file, onChange, label, required, error }: BannerUploadProps) {
+/**
+ * Banner drop area locked to the 1200×400 (3:1) frame.
+ * Uploaded images keep their aspect ratio inside that frame (no stretch).
+ */
+export default function BannerUpload({
+  file,
+  onChange,
+  previewUrl,
+  label,
+  required,
+  error,
+}: BannerUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [preview, setPreview] = useState<string | null>(null);
+  const [localPreview, setLocalPreview] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
 
   useEffect(() => {
     if (!file) {
-      setPreview(null);
+      setLocalPreview(null);
       return;
     }
     const url = URL.createObjectURL(file);
-    setPreview(url);
+    setLocalPreview(url);
     return () => URL.revokeObjectURL(url);
   }, [file]);
+
+  const shown = localPreview || previewUrl || null;
 
   const pick = (selected?: File | null) => {
     if (!selected) return;
@@ -44,6 +63,9 @@ export default function BannerUpload({ file, onChange, label, required, error }:
     }
     onChange(selected);
   };
+
+  // Full width, fixed 300px height — image is fitted inside without stretching
+  const frame = 'relative h-[300px] w-full overflow-hidden rounded-[8px]';
 
   return (
     <div>
@@ -61,14 +83,19 @@ export default function BannerUpload({ file, onChange, label, required, error }:
         className="hidden"
         onChange={(e) => {
           pick(e.target.files?.[0]);
-          e.target.value = ''; // allow re-selecting the same file
+          e.target.value = '';
         }}
       />
 
-      {preview ? (
-        <div className="group relative h-[180px] w-full overflow-hidden rounded-[8px] border border-[#e2e2e2] bg-gray-100 sm:h-[200px]">
+      {shown ? (
+        <div className={cn(frame, 'group border border-[#e2e2e2] bg-[#F3F3F5]')}>
+          {/* Cover the 300px frame; crop edges if needed so the banner always looks full */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={preview} alt="Event banner preview" className="h-full w-full object-cover" />
+          <img
+            src={shown}
+            alt="Event banner preview"
+            className="absolute inset-0 h-full w-full object-cover object-center"
+          />
           <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
             <button
               type="button"
@@ -86,6 +113,9 @@ export default function BannerUpload({ file, onChange, label, required, error }:
           >
             <X size={14} />
           </button>
+          <span className="pointer-events-none absolute bottom-2 right-2 rounded bg-black/50 px-2 py-0.5 text-[10px] font-medium text-white">
+            {BANNER_WIDTH}×{BANNER_HEIGHT}
+          </span>
         </div>
       ) : (
         <button
@@ -101,13 +131,17 @@ export default function BannerUpload({ file, onChange, label, required, error }:
             setDragging(false);
             pick(e.dataTransfer.files?.[0]);
           }}
-          className={`flex h-[180px] w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-[8px] border border-dashed bg-[#E8E6F8] transition-colors sm:h-[200px] ${
+          className={cn(
+            frame,
+            'flex cursor-pointer flex-col items-center justify-center gap-1 border border-dashed bg-[#E8E6F8] transition-colors',
             dragging ? 'border-[#0012FF]' : error ? 'border-red-400' : 'border-[#B8B0F0]'
-          }`}
+          )}
         >
           <ImageIcon size={22} className="mb-1 text-[#0012FF]" />
           <span className="text-sm font-semibold text-black">Upload banner</span>
-          <span className="text-[11px] text-gray-400">1200×400px recommended</span>
+          <span className="text-[11px] text-gray-400">
+            {BANNER_WIDTH}×{BANNER_HEIGHT}px recommended
+          </span>
         </button>
       )}
 

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import ActionDialog from '@/components/ActionDialog';
 import FormInput from '@/components/FormInput';
+import { usePreloadImages } from '@/lib/usePreloadImages';
 import { digitsOnly } from '@/lib/sessionForm';
 import {
   DEFAULT_TIER_PERSONS,
@@ -12,8 +13,6 @@ import {
   type TierFormErrors,
   type TierFormValues,
 } from '@/lib/eventTicketing';
-
-export const TIER_DIALOG_IMAGE = '/assets/add-category-sm.webp';
 
 interface AddTierDialogProps {
   open: boolean;
@@ -26,10 +25,14 @@ interface AddTierDialogProps {
   takenTitles: string[];
 }
 
+/** Same artwork the other "add" popups use. Preloaded so the popup opens with it already painted. */
+export const TIER_DIALOG_IMAGE = '/assets/add-category-sm.webp';
+
 const blank = (): TierFormValues => ({ title: '', price: '', persons: DEFAULT_TIER_PERSONS });
 
 /** "Add Tier" popup: tier title, price (PKR) and the total number of people it allows. */
 export default function AddTierDialog({ open, onOpenChange, onSave, editing, takenTitles }: AddTierDialogProps) {
+  usePreloadImages([TIER_DIALOG_IMAGE]);
   const [values, setValues] = useState<TierFormValues>(blank());
   const [errors, setErrors] = useState<TierFormErrors>({});
 
@@ -65,15 +68,11 @@ export default function AddTierDialog({ open, onOpenChange, onSave, editing, tak
       onOpenChange={onOpenChange}
       image={{ src: TIER_DIALOG_IMAGE, alt: 'Add tier' }}
       title={editing ? 'Edit Tier' : 'Add Tier'}
-      description="Set the tier name, its ticket price and how many people it allows."
       actions={[
         { label: 'Cancel', variant: 'outline', onClick: () => onOpenChange(false) },
         { label: editing ? 'Save Tier' : 'Add Tier', onClick: submit },
       ]}
-      classNames={{
-        content: 'sm:max-w-[480px]',
-        imageWrapper: 'w-24 sm:w-28 md:w-32 lg:w-36',
-      }}
+      classNames={{ content: 'sm:max-w-[480px]', description: 'mb-2' }}
     >
       <form
         className="mb-6 w-full space-y-4 text-left"
@@ -93,29 +92,31 @@ export default function AddTierDialog({ open, onOpenChange, onSave, editing, tak
           placeholder="e.g. Early Bird"
           autoFocus
         />
-        <FormInput
-          label="Price"
-          required
-          type="text"
-          inputMode="numeric"
-          maxLength={8}
-          suffix="PKR"
-          value={values.price}
-          onChange={(e) => patch({ price: digitsOnly(e.target.value) })}
-          error={errors.price}
-          placeholder="Enter price"
-        />
-        <FormInput
-          label="Total Person"
-          required
-          type="text"
-          inputMode="numeric"
-          maxLength={5}
-          value={values.persons}
-          onChange={(e) => patch({ persons: digitsOnly(e.target.value) })}
-          error={errors.persons}
-          placeholder="1"
-        />
+        <div className="grid grid-cols-2 gap-3">
+          <FormInput
+            label="Price"
+            required
+            type="text"
+            inputMode="numeric"
+            maxLength={8}
+            suffix="PKR"
+            value={values.price}
+            onChange={(e) => patch({ price: digitsOnly(e.target.value) })}
+            error={errors.price}
+            placeholder="Enter price"
+          />
+          <FormInput
+            label="Total Person"
+            required
+            type="text"
+            inputMode="numeric"
+            maxLength={5}
+            value={values.persons}
+            onChange={(e) => patch({ persons: digitsOnly(e.target.value) })}
+            error={errors.persons}
+            placeholder="1"
+          />
+        </div>
         {/* lets Enter submit the form */}
         <button type="submit" className="hidden" aria-hidden="true" tabIndex={-1} />
       </form>

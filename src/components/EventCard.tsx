@@ -22,7 +22,7 @@ interface EventCardProps {
   onClick?: (id: string) => void;
 }
 
-/** Fixed size event tile: 440 x 220, 8px radius (shrinks only on very small screens). */
+/** Event tile: full grid-cell width, 220px tall, 8px radius. */
 export default function EventCard({ event, onToggleVisibility, onClick }: EventCardProps) {
   const Icon = event.visible ? Eye : EyeOff;
 
@@ -38,7 +38,7 @@ export default function EventCard({ event, onToggleVisibility, onClick }: EventC
         }
       }}
       className={cn(
-        'group relative h-[220px] w-[440px] max-w-full overflow-hidden rounded-[8px] bg-[#0A1FD6] text-white',
+        'group relative h-[220px] w-full overflow-hidden rounded-[8px] bg-[#0A1FD6] text-white',
         onClick && 'cursor-pointer'
       )}
     >

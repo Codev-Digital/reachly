@@ -7,13 +7,13 @@ import DaysOfMonth from '@/components/DaysOfMonth';
 import Dropdown from '@/components/Dropdown';
 import TimePicker from '@/components/TimePicker';
 import FormInput, { FormLabel } from '@/components/FormInput';
-import AddTierDialog, { TIER_DIALOG_IMAGE } from '@/components/events/AddTierDialog';
+import AddTierDialog from '@/components/events/AddTierDialog';
 import { InfoTooltip } from '@/components/ui/tooltip';
 import { cn } from '@/lib/cn';
 import { digitsOnly } from '@/lib/sessionForm';
-import { usePreloadImages } from '@/lib/usePreloadImages';
 import {
   DAY_PERIODS,
+  EVENT_CATEGORIES,
   MAX_TIERS_PER_DATE,
   emptyDay,
   formatPrice,
@@ -78,10 +78,9 @@ function TimeField({
  * - Click the date being edited again: it is removed.
  */
 export default function TicketingFields({ values, onChange }: TicketingFieldsProps) {
-  const { dates, activeDate, days } = values;
+  const { category, dates, activeDate, days } = values;
   const [tierDialogOpen, setTierDialogOpen] = useState(false);
   const [editingTier, setEditingTier] = useState<EventTier | null>(null);
-  usePreloadImages([TIER_DIALOG_IMAGE]);
 
   const day: EventDayData | undefined = activeDate ? days[activeDate] : undefined;
 
@@ -89,6 +88,7 @@ export default function TicketingFields({ values, onChange }: TicketingFieldsPro
     const nextDates = dates.filter((d) => d !== iso);
     const { [iso]: _removed, ...nextDays } = days;
     onChange({
+      ...values,
       dates: nextDates,
       activeDate: activeDate === iso ? (nextDates[nextDates.length - 1] ?? null) : activeDate,
       days: nextDays,
@@ -98,6 +98,7 @@ export default function TicketingFields({ values, onChange }: TicketingFieldsPro
   const handleDateClick = (iso: string) => {
     if (!dates.includes(iso)) {
       onChange({
+        ...values,
         dates: [...dates, iso].sort(),
         activeDate: iso,
         days: { ...days, [iso]: days[iso] ?? emptyDay() },
@@ -151,6 +152,14 @@ export default function TicketingFields({ values, onChange }: TicketingFieldsPro
 
   return (
     <div className="space-y-5">
+      <Dropdown
+        label="Category"
+        options={[...EVENT_CATEGORIES]}
+        value={category}
+        onChange={(category) => onChange({ ...values, category })}
+        placeholder="Select category"
+      />
+
       {/* Date */}
       <div>
         <FormLabel>Date</FormLabel>
@@ -252,22 +261,22 @@ export default function TicketingFields({ values, onChange }: TicketingFieldsPro
                     Choose the ticket tier for this date, then set how many tickets are available in Quantity.
                   </InfoTooltip>
                 }
-                menuFooter={({ close }) =>
-                  tiers.length < MAX_TIERS_PER_DATE ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        close();
-                        openAddTier();
-                      }}
-                      className="inline-flex h-7 cursor-pointer items-center gap-1 rounded-[6px] bg-[#0012FF]/10 px-2.5 text-xs font-semibold text-[#0012FF] transition-colors hover:bg-[#0012FF]/15"
-                    >
-                      <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-                      Add Tier
-                    </button>
-                  ) : (
-                    <p className="px-1 text-xs text-gray-400">Tier limit reached for this date.</p>
-                  )
+                menuFooter={
+                  tiers.length === 0
+                    ? ({ close }) => (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            close();
+                            openAddTier();
+                          }}
+                          className="inline-flex h-7 cursor-pointer items-center gap-1 rounded-[6px] bg-[#0012FF]/10 px-2.5 text-xs font-semibold text-[#0012FF] transition-colors hover:bg-[#0012FF]/15"
+                        >
+                          <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+                          Add Tier
+                        </button>
+                      )
+                    : undefined
                 }
               />
               <FormInput

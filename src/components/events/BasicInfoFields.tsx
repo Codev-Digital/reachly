@@ -4,7 +4,9 @@ import FormInput from '@/components/FormInput';
 import RichTextEditor from '@/components/RichTextEditor';
 import BannerUpload from '@/components/events/BannerUpload';
 
-export const EVENT_DESCRIPTION_MAX_LENGTH = 140;
+import { EVENT_DESCRIPTION_MAX_LENGTH, EVENT_TITLE_MAX_LENGTH } from '@/lib/eventConstants';
+
+export { EVENT_DESCRIPTION_MAX_LENGTH };
 
 export interface BasicInfoValues {
   title: string;
@@ -21,17 +23,27 @@ interface BasicInfoFieldsProps {
   errors: BasicInfoErrors;
   onChange: (patch: Partial<BasicInfoValues>) => void;
   clearError: (key: keyof BasicInfoValues) => void;
+  /** Banner already saved on the server (shown when there is no new local file). */
+  bannerUrl?: string;
+  onClearBannerUrl?: () => void;
 }
 
 /** "Basic Info" step of the create-event form: title, description and banner. */
-export default function BasicInfoFields({ values, errors, onChange, clearError }: BasicInfoFieldsProps) {
+export default function BasicInfoFields({
+  values,
+  errors,
+  onChange,
+  clearError,
+  bannerUrl,
+  onClearBannerUrl,
+}: BasicInfoFieldsProps) {
   return (
     <div className="space-y-5">
       <FormInput
         label="Title"
         required
         type="text"
-        maxLength={80}
+        maxLength={EVENT_TITLE_MAX_LENGTH}
         value={values.title}
         onChange={(e) => {
           onChange({ title: e.target.value });
@@ -60,8 +72,10 @@ export default function BasicInfoFields({ values, errors, onChange, clearError }
         label="Banner Image"
         required
         file={values.banner}
+        previewUrl={bannerUrl}
         onChange={(banner) => {
           onChange({ banner });
+          if (!banner) onClearBannerUrl?.();
           clearError('banner');
         }}
         error={errors.banner}

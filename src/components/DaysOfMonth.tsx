@@ -24,6 +24,8 @@ export interface DaysOfMonthProps {
   yearsAhead?: number;
   /** How many years before the minimum year can still be browsed (their days are shown greyed out). */
   yearsBehind?: number;
+  /** Dates (YYYY-MM-DD) that show a small indicator dot (e.g. days with appointments). */
+  markedDates?: string[];
   className?: string;
 }
 
@@ -40,8 +42,10 @@ export default function DaysOfMonth({
   minDate,
   yearsAhead = 5,
   yearsBehind = 1,
+  markedDates = [],
   className,
 }: DaysOfMonthProps) {
+  const marked = useMemo(() => new Set(markedDates), [markedDates]);
   const min = useMemo(() => startOfDay(minDate ?? new Date()), [minDate]);
   const minYear = min.getFullYear();
   const firstYear = minYear - yearsBehind;
@@ -154,6 +158,7 @@ export default function DaysOfMonth({
           {days.map(({ iso, day, weekday, disabled }) => {
             const selected = selectedDates.includes(iso);
             const active = iso === activeDate;
+            const hasMark = marked.has(iso);
             return (
               <button
                 key={iso}
@@ -164,7 +169,7 @@ export default function DaysOfMonth({
                 aria-label={`${weekday} ${day} ${MONTH_NAMES[month]} ${year}`}
                 onClick={() => onDateClick(iso)}
                 className={cn(
-                  'flex h-9 min-w-[38px] flex-1 flex-col items-center justify-center rounded-[6px] leading-tight transition-colors',
+                  'relative flex h-9 min-w-[38px] flex-1 flex-col items-center justify-center rounded-[6px] leading-tight transition-colors',
                   disabled ? 'cursor-not-allowed text-gray-300' : 'cursor-pointer',
                   active
                     ? 'bg-[#0012FF] text-white'
@@ -175,6 +180,9 @@ export default function DaysOfMonth({
               >
                 <span className={cn('text-[9px]', active ? 'text-white/80' : disabled ? 'text-gray-300' : 'text-gray-400')}>{weekday}</span>
                 <span className="text-[11px] font-medium">{String(day).padStart(2, '0')}</span>
+                {hasMark && !active && (
+                  <span className="absolute bottom-0.5 h-1 w-1 rounded-full bg-[#0012FF]" aria-hidden="true" />
+                )}
               </button>
             );
           })}
