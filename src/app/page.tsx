@@ -1122,11 +1122,7 @@ export default function Home() {
                   {/* Divider */}
                   <div className="border-t border-gray-100 mb-4" />
                   <p className="font-sans text-sm text-gray-600 leading-relaxed line-clamp-5">{t.text}</p>
-                  {/* Colored dots */}
-                  <div className="flex gap-1.5 mt-5">
-                    <div className="w-5 h-1.5 rounded-full" style={{ backgroundColor: t.dot1 || '#A0B4E8' }} />
-                    <div className="w-5 h-1.5 rounded-full" style={{ backgroundColor: t.dot2 || '#B8E0C8' }} />
-                  </div>
+
                 </div>
               ))}
             </motion.div>
@@ -1160,11 +1156,7 @@ export default function Home() {
                   {/* Divider */}
                   <div className="border-t border-gray-100 mb-4" />
                   <p className="font-sans text-sm text-gray-600 leading-relaxed line-clamp-5">{t.text}</p>
-                  {/* Colored dots */}
-                  <div className="flex gap-1.5 mt-5">
-                    <div className="w-5 h-1.5 rounded-full" style={{ backgroundColor: t.dot1 || '#F4B8B8' }} />
-                    <div className="w-5 h-1.5 rounded-full" style={{ backgroundColor: t.dot2 || '#A0C8E8' }} />
-                  </div>
+
                 </div>
               ))}
             </motion.div>
@@ -1280,7 +1272,7 @@ export default function Home() {
             </FadeUp>
 
             {/* Right accordion */}
-            <FadeUp delay={0.1} className="flex flex-col gap-3">
+            <FadeUp delay={0.1} className="flex flex-col gap-4 sm:gap-5">
               {faqItems.map((item, i) => (
                 <motion.div
                   key={i}
@@ -1288,7 +1280,11 @@ export default function Home() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.4, delay: i * 0.07 }}
-                  className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
+                  className={`bg-white rounded-2xl border transition-all duration-300 overflow-hidden ${
+                    openFaq === i
+                      ? 'border-blue-300/80 shadow-[0_0_28px_rgba(0,18,255,0.18)]'
+                      : 'border-gray-100 shadow-sm'
+                  }`}
                 >
                   <button
                     onClick={() => setOpenFaq(openFaq === i ? null : i)}
@@ -1298,7 +1294,7 @@ export default function Home() {
                     <motion.svg
                       animate={{ rotate: openFaq === i ? 180 : 0 }}
                       transition={{ duration: 0.25 }}
-                      className="w-5 h-5 text-gray-400 shrink-0"
+                      className="w-5 h-5 text-gray-800 shrink-0"
                       fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"
                     >
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
