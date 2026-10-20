@@ -1003,14 +1003,27 @@ export default function Home() {
               className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm"
             >
               <h3 className="font-sans font-bold text-xl text-black mb-2">Secure Local Payments</h3>
-              <div className="flex items-center gap-4 my-6">
-                <div className="flex items-center justify-center h-16 px-5 rounded-2xl border border-red-400 scale-105 transition-all duration-300 bg-white shadow-[0_0_20px_rgba(239,68,68,0.45)]">
-
-                  <img src="/assets/jazzcash.png" alt="JazzCash" loading="lazy" decoding="async" className="h-10 object-contain" />
+              <div className="flex flex-wrap sm:flex-nowrap items-start gap-5 sm:gap-[32px] my-6">
+                {/* JazzCash: 170x88, r14, p14x24 */}
+                <div className="w-[170px] h-[88px] rounded-[14px] px-[24px] py-[14px] bg-white border border-red-200/70 shadow-[0_0_24px_rgba(239,68,68,0.32)] flex items-center justify-center shrink-0 transition-transform duration-300 hover:scale-[1.03]">
+                  <img
+                    src="/assets/jazzcash.png"
+                    alt="JazzCash"
+                    loading="lazy"
+                    decoding="async"
+                    className="max-h-[60px] max-w-[122px] w-auto h-auto object-contain"
+                  />
                 </div>
-                <br />
-                <div className="flex items-center justify-center h-16 px-5 rounded-2xl border border-green-400 bg-white shadow-lg shadow-green-500/40 transition-all duration-300">
-                  <img src="/assets/easypaisa (2).png" alt="EasyPaisa" loading="lazy" decoding="async" className="h-10 object-contain" />
+
+                {/* Easypaisa: 228x68, r14, p14x24, top offset +50px */}
+                <div className="w-[228px] h-[68px] rounded-[14px] px-[24px] py-[14px] bg-white border border-emerald-200/70 shadow-[0_0_24px_rgba(34,197,94,0.32)] flex items-center justify-center shrink-0 sm:mt-[50px] transition-transform duration-300 hover:scale-[1.03]">
+                  <img
+                    src="/assets/easypaisa-horizontal.png"
+                    alt="EasyPaisa"
+                    loading="lazy"
+                    decoding="async"
+                    className="max-h-[40px] max-w-[180px] w-auto h-auto object-contain"
+                  />
                 </div>
               </div>
               <p className="font-sans text-sm text-gray-500 leading-relaxed">Pay with JazzCash, EasyPaisa, or your bank card. Your money is held securely until the session is completed. Full refunds if a creator cancels. Safe, secure, and hassle-free payments every time.</p>
