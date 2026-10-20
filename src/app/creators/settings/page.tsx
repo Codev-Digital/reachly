@@ -666,10 +666,17 @@ export default function CreatorSettings() {
           </div>
 
           {/* Segment Tabs Skeleton */}
-          <div className="h-12 w-full max-w-2xl mx-auto bg-gray-200 rounded-3xl animate-pulse mb-8" />
+          <div className="flex gap-7 sm:gap-10 mb-8">
+            {[0, 1, 2, 3, 4].map((i) => (
+              <div key={i} className="flex min-w-[72px] flex-col items-center gap-2.5">
+                <div className="h-14 w-14 rounded-[8px] bg-gray-200 animate-pulse" />
+                <div className="h-3.5 w-14 rounded bg-gray-200 animate-pulse" />
+              </div>
+            ))}
+          </div>
 
           {/* Main Card Skeleton */}
-          <div className="bg-gray-200 rounded-[32px] h-[550px] animate-pulse max-w-4xl mx-auto" />
+          <div className="bg-gray-200 rounded-[8px] h-[550px] animate-pulse max-w-4xl mx-auto" />
         </main>
       </div>
     );
@@ -693,22 +700,38 @@ export default function CreatorSettings() {
           </div>
         </div>
 
-        {/* Premium Top Navigation Segment Bar */}
-        <div className="flex flex-wrap justify-center gap-2 sm:gap-1.5 mb-8 max-w-3xl mx-auto">
-          {tabs.map((tab) => (
-            <button
-              key={tab.name}
-              onClick={() => setActiveTab(tab.name)}
-              className={`w-[calc(50%-4px)] sm:w-auto flex items-center justify-center gap-1.5 sm:gap-2 px-2 py-2 sm:px-5 sm:py-2.5 rounded-[10px] sm:rounded-full text-[11px] sm:text-sm font-bold transition-all duration-300 shrink-0 ${
-                activeTab === tab.name
-                  ? 'bg-[#0012FF] text-white border border-[#0012FF] shadow-sm'
-                  : 'bg-white text-[#6B7280] border border-gray-200 hover:bg-gray-50'
-              }`}
-            >
-              {React.cloneElement(tab.icon as React.ReactElement<{ className?: string }>, { className: "h-3.5 w-3.5 sm:h-5 sm:w-5 shrink-0" })}
-              <span className="truncate">{tab.name}</span>
-            </button>
-          ))}
+        {/* Tab steps: icon box with the label underneath */}
+        <div className="flex flex-wrap gap-x-7 sm:gap-x-10 gap-y-5 mb-8" role="tablist" aria-label="Settings sections">
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.name;
+            return (
+              <button
+                key={tab.name}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => setActiveTab(tab.name)}
+                className="group flex min-w-[72px] flex-col items-center gap-2.5 cursor-pointer"
+              >
+                <span
+                  className={`flex h-14 w-14 items-center justify-center rounded-[8px] border transition-colors ${
+                    isActive
+                      ? 'bg-[#E8E9FB] border-[#E8E9FB] text-[#0012FF]'
+                      : 'bg-white border-[#e2e2e2] text-gray-500 group-hover:bg-gray-50'
+                  }`}
+                >
+                  {React.cloneElement(tab.icon as React.ReactElement<{ className?: string }>, { className: 'h-6 w-6 shrink-0' })}
+                </span>
+                <span
+                  className={`text-sm transition-colors ${
+                    isActive ? 'font-bold text-[#0012FF]' : 'font-medium text-gray-500 group-hover:text-gray-700'
+                  }`}
+                >
+                  {tab.name}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Form Content Area */}
@@ -716,10 +739,10 @@ export default function CreatorSettings() {
 
           {/* ============ PROFILE TAB ============ */}
           {activeTab === 'Profile' && (
-            <div className="bg-white rounded-3xl border border-gray-200 p-6 sm:p-8 shadow-sm">
+            <div className="bg-white rounded-[8px] border border-[#e2e2e2] p-6 sm:p-8 shadow-sm">
 
               {/* Cover Picture Box - Clean banner with top-right edit button and NO overlay text */}
-              <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden mb-6 bg-gray-900 border border-gray-200 shadow-inner">
+              <div className="relative rounded-[8px] overflow-hidden mb-6 bg-gray-900 border border-[#e2e2e2] shadow-inner">
                 <div className="relative h-48 sm:h-56 lg:h-64 w-full">
                   {coverPhoto ? (
                     <img
@@ -893,9 +916,9 @@ export default function CreatorSettings() {
                       <button
                         key={lang}
                         onClick={() => toggleLanguage(lang)}
-                        className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold border transition-all ${active
+                        className={`px-5 py-2.5 rounded-[8px] text-xs sm:text-sm font-semibold border transition-all ${active
                           ? 'bg-[#0012FF] text-white border-[#0012FF] shadow-sm'
-                          : 'bg-white text-gray-600 border-gray-200 hover:border-gray-305'
+                          : 'bg-white text-gray-600 border-[#e2e2e2] hover:border-gray-305'
                           }`}
                       >
                         {lang}
@@ -915,9 +938,9 @@ export default function CreatorSettings() {
                       <button
                         key={niche.name}
                         onClick={() => toggleNiche(niche.name)}
-                        className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold border transition-all ${active
+                        className={`flex items-center gap-2 px-4 py-2.5 rounded-[8px] text-xs sm:text-sm font-semibold border transition-all ${active
                           ? 'bg-[#0012FF] text-white border-[#0012FF] shadow-sm'
-                          : 'bg-white text-gray-600 border-gray-200 hover:border-gray-305'
+                          : 'bg-white text-gray-600 border-[#e2e2e2] hover:border-gray-305'
                           }`}
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="shrink-0">
@@ -1010,35 +1033,24 @@ export default function CreatorSettings() {
           {/* ============ SESSIONS TAB ============ */}
           {activeTab === 'Sessions' && (
             <div className="space-y-5">
-              <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm flex items-center justify-between gap-4">
-                <div>
-                  <h3 className="text-lg font-bold text-black font-sans">Session Types & Offerings</h3>
-                  <p className="text-xs text-gray-400 font-medium">Create and edit 1-on-1 sessions displayed on your public profile.</p>
-                </div>
-                <button
-                  onClick={handleOpenCreateModal}
-                  className="bg-[#0012FF] text-white px-5 py-2.5 rounded-full text-xs font-bold hover:bg-[#0010d0] transition-all flex items-center gap-1.5 shadow-sm cursor-pointer shrink-0"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Add New Session</span>
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={handleOpenCreateModal}
+                className="w-full flex items-center justify-center gap-2 rounded-[8px] border-2 border-dashed border-[#e2e2e2] bg-[#F8F8F8] py-4 font-sans text-sm font-semibold text-gray-600 transition-colors hover:border-[#0012FF]/40 hover:text-[#0012FF] cursor-pointer"
+              >
+                <Plus className="w-4 h-4" aria-hidden="true" />
+                Add New Session
+              </button>
 
               {sessions.length === 0 ? (
-                <div className="bg-white rounded-3xl border border-gray-200 p-10 text-center">
-                  <p className="text-gray-400 font-medium text-sm mb-4">No sessions created yet.</p>
-                  <button
-                    onClick={handleOpenCreateModal}
-                    className="bg-[#0012FF] text-white px-6 py-2.5 rounded-full text-xs font-bold hover:bg-[#0010d0] transition-all cursor-pointer"
-                  >
-                    + Create First Session
-                  </button>
+                <div className="bg-white rounded-[8px] border border-[#e2e2e2] p-10 text-center">
+                  <p className="text-gray-400 font-medium text-sm">No sessions created yet.</p>
                 </div>
               ) : (
                 sessions.map((session) => (
                   <div
                     key={session.id || session._id}
-                    className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm flex flex-col sm:flex-row sm:items-start justify-between gap-4 hover:border-gray-300 transition-all"
+                    className="bg-white rounded-[8px] border border-[#e2e2e2] p-6 shadow-sm flex flex-col sm:flex-row sm:items-start justify-between gap-4 hover:border-gray-300 transition-all"
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3 flex-wrap mb-3">
@@ -1055,7 +1067,7 @@ export default function CreatorSettings() {
                       {session.features && session.features.length > 0 && (
                         <div className="flex flex-wrap gap-2 mt-4">
                           {session.features.map((f, i) => (
-                            <span key={i} className="bg-[#F8F8FA] border border-gray-150 text-gray-500 rounded-lg text-xs px-3 py-1 font-medium">
+                            <span key={i} className="bg-[#F8F8FA] border border-[#e2e2e2] text-gray-500 rounded-[8px] text-xs px-3 py-1 font-medium">
                               ✓ {f}
                             </span>
                           ))}
@@ -1091,15 +1103,15 @@ export default function CreatorSettings() {
 
           {/* ============ AVAILABILITY TAB ============ */}
           {activeTab === 'Availability' && (
-            <div className="bg-white rounded-3xl border border-gray-200 p-6 sm:p-8 shadow-sm">
-              <div className="mb-6 border-b border-gray-100 pb-5">
+            <div className="bg-white rounded-[8px] border border-[#e2e2e2] p-6 sm:p-8 shadow-sm">
+              <div className="mb-6 border-b border-[#e2e2e2] pb-5">
                 <h3 className="text-2xl font-bold text-black mb-1">Availability Schedule</h3>
                 <p className="text-gray-500 text-sm">Update your weekly routine and booking durations.</p>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                 {/* Weekly Schedule */}
-                <div className="border border-gray-200 rounded-3xl p-6 bg-white">
+                <div className="border border-[#e2e2e2] rounded-[8px] p-6 bg-white">
                   <h4 className="text-lg font-bold text-black mb-5">Weekly Hours</h4>
 
                   <div className="space-y-3.5">
@@ -1111,8 +1123,8 @@ export default function CreatorSettings() {
                       return (
                         <div
                           key={day}
-                          className={`rounded-2xl px-4 py-3.5 border transition-colors ${isEnabled
-                            ? 'bg-gray-50 border-gray-200'
+                          className={`rounded-[8px] px-4 py-3.5 border transition-colors ${isEnabled
+                            ? 'bg-gray-50 border-[#e2e2e2]'
                             : 'bg-[#F8F8FA]/60 border-transparent opacity-75'
                             }`}
                         >
@@ -1139,7 +1151,7 @@ export default function CreatorSettings() {
                                   <select
                                     value={times.start}
                                     onChange={(e) => handleTimeChange(dayKey, 'start', e.target.value)}
-                                    className="appearance-none bg-white border border-gray-200 rounded-xl pl-3 pr-7 py-1.5 text-xs font-bold text-gray-700 focus:outline-none focus:border-[#0012FF] cursor-pointer"
+                                    className="appearance-none bg-white border border-[#e2e2e2] rounded-[8px] pl-3 pr-7 py-1.5 text-xs font-bold text-gray-700 focus:outline-none focus:border-[#0012FF] cursor-pointer"
                                   >
                                     {TIME_OPTIONS_12.map((t) => (
                                       <option key={t} value={t}>{t}</option>
@@ -1154,7 +1166,7 @@ export default function CreatorSettings() {
                                   <select
                                     value={times.end}
                                     onChange={(e) => handleTimeChange(dayKey, 'end', e.target.value)}
-                                    className="appearance-none bg-white border border-gray-200 rounded-xl pl-3 pr-7 py-1.5 text-xs font-bold text-gray-700 focus:outline-none focus:border-[#0012FF] cursor-pointer"
+                                    className="appearance-none bg-white border border-[#e2e2e2] rounded-[8px] pl-3 pr-7 py-1.5 text-xs font-bold text-gray-700 focus:outline-none focus:border-[#0012FF] cursor-pointer"
                                   >
                                     {TIME_OPTIONS_12.map((t) => (
                                       <option key={t} value={t}>{t}</option>
@@ -1174,7 +1186,7 @@ export default function CreatorSettings() {
                 </div>
 
                 {/* Booking Settings */}
-                <div className="border border-gray-200 rounded-3xl p-6 bg-white flex flex-col justify-between">
+                <div className="border border-[#e2e2e2] rounded-[8px] p-6 bg-white flex flex-col justify-between">
                   <div>
                     <h4 className="text-lg font-bold text-black mb-5">Booking Preferences</h4>
 
@@ -1185,7 +1197,7 @@ export default function CreatorSettings() {
                         <select
                           value={duration}
                           onChange={(e) => setDuration(e.target.value)}
-                          className="w-full appearance-none bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] cursor-pointer font-semibold"
+                          className="w-full appearance-none bg-white border border-[#e2e2e2] rounded-[8px] px-4 py-3.5 text-sm text-gray-900 focus:outline-none focus:border-[#0012FF] cursor-pointer font-semibold"
                         >
                           <option value="15 minutes">15 minutes</option>
                           <option value="30 minutes">30 minutes</option>
@@ -1213,7 +1225,7 @@ export default function CreatorSettings() {
               </div>
 
               {/* Bottom Buttons */}
-              <div className="flex flex-wrap items-center justify-end gap-3 border-t border-gray-100 pt-6">
+              <div className="flex flex-wrap items-center justify-end gap-3 border-t border-[#e2e2e2] pt-6">
                 <button
                   onClick={handleSaveAvailability}
                   disabled={saving}
@@ -1228,8 +1240,8 @@ export default function CreatorSettings() {
           {/* ============ SECURITY TAB ============ */}
           {activeTab === 'Security' && (
             <div className="space-y-6">
-              <div className="bg-white rounded-3xl border border-gray-200 p-6 sm:p-8 shadow-sm">
-                <div className="border-b border-gray-100 pb-5 mb-6">
+              <div className="bg-white rounded-[8px] border border-[#e2e2e2] p-6 sm:p-8 shadow-sm">
+                <div className="border-b border-[#e2e2e2] pb-5 mb-6">
                   <h3 className="text-xl font-bold text-black mb-1">Update Password</h3>
                   <p className="text-gray-500 text-sm">Keep your account secure by changing your password periodically.</p>
                 </div>
@@ -1272,7 +1284,7 @@ export default function CreatorSettings() {
                   </div>
                 </div>
 
-                <div className="flex justify-end border-t border-gray-100 pt-6">
+                <div className="flex justify-end border-t border-[#e2e2e2] pt-6">
                   <button
                     onClick={handleUpdatePassword}
                     disabled={saving}
@@ -1283,7 +1295,7 @@ export default function CreatorSettings() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-3xl border border-gray-200 p-6 sm:p-8 shadow-sm">
+              <div className="bg-white rounded-[8px] border border-[#e2e2e2] p-6 sm:p-8 shadow-sm">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
                   <div>
                     <h3 className="text-lg font-bold text-red-600 mb-1">Delete Account</h3>
@@ -1302,8 +1314,8 @@ export default function CreatorSettings() {
 
           {/* ============ REVIEWS TAB ============ */}
           {activeTab === 'Reviews' && (
-            <div className="bg-white rounded-3xl border border-gray-200 p-6 sm:p-8 shadow-sm">
-              <div className="border-b border-gray-100 pb-5 mb-8">
+            <div className="bg-white rounded-[8px] border border-[#e2e2e2] p-6 sm:p-8 shadow-sm">
+              <div className="border-b border-[#e2e2e2] pb-5 mb-8">
                 <h3 className="text-xl font-bold text-black mb-1">Client Reviews</h3>
                 <p className="text-gray-500 text-sm">See what clients are saying about your sessions.</p>
               </div>
@@ -1319,7 +1331,7 @@ export default function CreatorSettings() {
                 ].map((rev, i) => (
                   <div
                     key={i}
-                    className="relative bg-[#F8F8FA] border border-gray-200/70 rounded-[20px] p-6 flex flex-col justify-between min-h-[220px] transition-all hover:shadow-sm hover:scale-[1.01]"
+                    className="relative bg-[#F8F8FA] border border-[#e2e2e2] rounded-[8px] p-6 flex flex-col justify-between min-h-[220px] transition-all hover:shadow-sm hover:scale-[1.01]"
                   >
                     {/* Quotation Mark Badge Asset */}
                     <img
