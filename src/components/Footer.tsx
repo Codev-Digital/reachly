@@ -11,14 +11,14 @@ const platformLinks = [
 const companyLinks = [
   { name: "About", href: "/about" },
   //   { name: 'Shipping Policy', href: '/service-policy' },
-  { name: "Careers", href: "/about" },
-  { name: "Press", href: "/about" },
+  { name: "Careers", href: "/careers" },
+  { name: "Press", href: "/press" },
 ];
 
 const supportLinks = [
   { name: "Contact Support", href: "/contact-support" },
   { name: "FAQ", href: "/#faq" },
-  { name: "Guidelines", href: "/terms-and-conditions" },
+  { name: "Guidelines", href: "/guidelines" },
 ];
 
 const legalLinks = [

@@ -263,7 +263,7 @@ export default function Home() {
       {/* ════════════════════════════════════════
             HERO SECTION
         ════════════════════════════════════════ */}
-      <section className="relative overflow-hidden flex items-center [@media(min-height:900px)]:h-screen [@media(min-height:900px)]:min-h-screen">
+      <section id="hero" className="relative overflow-hidden flex items-center [@media(min-height:900px)]:h-screen [@media(min-height:900px)]:min-h-screen">
         <div className="fixed inset-0 w-screen h-screen -z-10">
           <Image
             src="/assets/new-bg-image.png"
@@ -386,7 +386,7 @@ export default function Home() {
       {/* ════════════════════════════════════════
             PAKISTAN'S TOP CREATORS
         ════════════════════════════════════════ */}
-      <section className="py-20 bg-white text-[#0C0C0C] border-t border-gray-100">
+      <section id="top-creators" className="py-20 bg-white text-[#0C0C0C] border-t border-gray-100 scroll-mt-10">
         <div className="max-w-[1160px] mx-auto px-4 sm:px-6">
           <FadeUp className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
             <div>
@@ -460,7 +460,7 @@ export default function Home() {
       {/* ════════════════════════════════════════
             FEATURED CREATORS
         ════════════════════════════════════════ */}
-      <section className="py-20 bg-[#F7F7FA] text-[#0C0C0C] border-t border-gray-100">
+      <section id="creators" className="py-20 bg-[#F7F7FA] text-[#0C0C0C] border-t border-gray-100 scroll-mt-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <FadeUp className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
             <div>
@@ -599,7 +599,8 @@ export default function Home() {
             HOW IT WORKS
         ════════════════════════════════════════ */}
       <section 
-        className="py-24 bg-[#F7F7FA] text-[#0C0C0C] border-t border-gray-100"
+        id="how-it-works"
+        className="py-24 bg-[#F7F7FA] text-[#0C0C0C] border-t border-gray-100 scroll-mt-10"
         onTouchStart={handleHowItWorksTouchStart}
         onTouchEnd={handleHowItWorksTouchEnd}
         onWheel={handleHowItWorksWheel}
@@ -720,7 +721,7 @@ export default function Home() {
       {/* ════════════════════════════════════════
             EXPLORE BY CATEGORY
         ════════════════════════════════════════ */}
-      <section className="py-20 bg-[#F7F7FA] text-[#0C0C0C] border-t border-gray-100">
+      <section id="pricing" className="py-20 bg-[#F7F7FA] text-[#0C0C0C] border-t border-gray-100 scroll-mt-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <FadeUp className="text-center mb-12">
             <h2 className="font-anton font-bold text-5xl sm:text-6xl md:text-7xl text-black leading-tight uppercase tracking-tight">
@@ -987,7 +988,7 @@ export default function Home() {
       {/* ════════════════════════════════════════
             WHY REACHLY
         ════════════════════════════════════════ */}
-      <section className="py-24 bg-white border-t border-gray-100">
+      <section id="why-reachly" className="py-24 bg-white border-t border-gray-100 scroll-mt-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <FadeUp className="text-center mb-14">
             <h2 className="font-anton font-bold text-black text-5xl sm:text-6xl md:text-7xl leading-tight uppercase tracking-tight">
@@ -1129,7 +1130,7 @@ export default function Home() {
       {/* ════════════════════════════════════════
             TESTIMONIALS MARQUEE
         ════════════════════════════════════════ */}
-      <section className="py-24 bg-[#F7F7FA] border-t border-gray-100 overflow-hidden">
+      <section id="testimonials" className="py-24 bg-[#F7F7FA] border-t border-gray-100 overflow-hidden scroll-mt-10">
         <FadeUp className="text-center mb-14 px-4">
           <h2 className="text-black font-anton font-bold text-5xl sm:text-6xl md:text-7xl leading-tight uppercase tracking-tight">
             What Our Community <span className="text-[#0012FF]">Says</span>
@@ -1214,7 +1215,7 @@ export default function Home() {
       {/* ════════════════════════════════════════
             ARE YOU A CREATOR? CTA BANNER
         ════════════════════════════════════════ */}
-      <section className="py-12 px-4 sm:px-8 bg-[#F7F7FA] border-t border-gray-100">
+      <section id="get-started" className="py-12 px-4 sm:px-8 bg-[#F7F7FA] border-t border-gray-100 scroll-mt-10">
         <FadeUp>
           <div className="max-w-6xl mx-auto relative rounded-[28px] bg-[#1a0aff] overflow-visible min-h-[220px] sm:min-h-[260px] flex items-center justify-center" style={{ boxShadow: '0 0 0 1px rgba(26,10,255,0.3)' }}>
 
@@ -1307,7 +1308,7 @@ export default function Home() {
       {/* ════════════════════════════════════════
             FAQ
         ════════════════════════════════════════ */}
-      <section className="py-24 bg-[#F7F7FA] border-t border-gray-100">
+      <section id="faq" className="py-24 bg-[#F7F7FA] border-t border-gray-100 scroll-mt-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
             {/* Left heading */}

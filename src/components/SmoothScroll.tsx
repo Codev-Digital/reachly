@@ -24,7 +24,23 @@ export default function SmoothScroll() {
       smoothWheel: true,
     });
 
+    // Handle hash scrolling on page load
+    if (window.location.hash) {
+      setTimeout(() => {
+        lenis.scrollTo(window.location.hash, { offset: -30 });
+      }, 300);
+    }
+
+    // Handle hash change while on the page
+    const handleHashChange = () => {
+      if (window.location.hash) {
+        lenis.scrollTo(window.location.hash, { offset: -30 });
+      }
+    };
+    window.addEventListener('hashchange', handleHashChange);
+
     return () => {
+      window.removeEventListener('hashchange', handleHashChange);
       lenis.destroy();
     };
   }, [pathname]);
