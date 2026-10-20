@@ -10,6 +10,12 @@ import CreatorNavbar from '@/components/CreatorNavbar';
 import Footer from '@/components/Footer';
 import SmoothScroll from '@/components/SmoothScroll';
 import Image from "next/image";
+import {
+  getStoredFavourites,
+  fetchFavourites,
+  toggleFavouriteApi,
+  subscribeFavourites,
+} from '@/lib/favouritesSync';
 
 /* ─── Fade-in-up wrapper for scroll-triggered sections ─── */
 function FadeUp({ children, delay = 0, className = '' }: { children: React.ReactNode; delay?: number; className?: string }) {
@@ -34,7 +40,7 @@ export default function Home() {
   const [activeStep, setActiveStep] = useState(0);
   const [creatorPage, setCreatorPage] = useState(0);
   const [activeCategory, setActiveCategory] = useState('All Categories');
-  const [favorites, setFavorites] = useState<string[]>([]);
+  const [favorites, setFavorites] = useState<string[]>(() => getStoredFavourites());
   const [featuredPage, setFeaturedPage] = useState(0);
   const [eventsPage, setEventsPage] = useState(0);
   const [savedEvents, setSavedEvents] = useState<string[]>([]);
@@ -182,14 +188,31 @@ export default function Home() {
     clearStorageIfNeeded();
   }, [status, session]);
 
-  const toggleFavorite = (name: string) => {
+  // Global Favourites Synchronization across all tabs, pages, and components
+  useEffect(() => {
+    setFavorites(getStoredFavourites());
+    const unsubscribe = subscribeFavourites((newFavs) => {
+      setFavorites(newFavs);
+    });
+    fetchFavourites().then((favs) => {
+      if (favs) setFavorites(favs);
+    });
+    return () => unsubscribe();
+  }, [status]);
+
+  const toggleFavorite = async (name: string) => {
     if (status !== 'authenticated') {
       setLoginCallbackUrl('');
       setLoginModalMode('favourite');
       setShowLoginModal(true);
       return;
     }
-    setFavorites(prev => prev.includes(name) ? prev.filter(i => i !== name) : [...prev, name]);
+    const result = await toggleFavouriteApi(name);
+    if (result.requiresAuth) {
+      setLoginCallbackUrl('');
+      setLoginModalMode('favourite');
+      setShowLoginModal(true);
+    }
   };
 
   const toggleSaveEvent = (id: string) =>

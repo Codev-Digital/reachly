@@ -8,6 +8,12 @@ import UserNavbar from '@/components/UserNavbar';
 import CreatorDashboardNav from '@/components/CreatorDashboardNav';
 import AdminNavbar from '@/components/AdminNavbar';
 import CreatorNavbar from '@/components/CreatorNavbar';
+import {
+  getStoredFavourites,
+  setStoredFavourites,
+  toggleFavouriteApi,
+  subscribeFavourites,
+} from '@/lib/favouritesSync';
 
 const ITEMS_PER_PAGE = 8;
 
@@ -49,14 +55,20 @@ export default function ExploreCreatorsPage() {
   };
   const [favLoading, setFavLoading] = useState<string | null>(null); // username being toggled
 
-  // Hydrate from cache immediately on mount to prevent loading flashes
+  // Hydrate from cache and subscribe to global favourites sync immediately on mount
   useEffect(() => {
+    const storedFavs = getStoredFavourites();
+    if (storedFavs.length > 0) setFavourites(storedFavs);
+
+    const unsubscribe = subscribeFavourites((newFavs) => {
+      setFavourites(newFavs);
+    });
+
     try {
       const cached = sessionStorage.getItem('reachly_explore_creators_cache');
       if (cached) {
         const parsed = JSON.parse(cached);
         if (parsed.creators && parsed.creators.length > 0) setCreators(parsed.creators);
-        if (parsed.favourites) setFavourites(parsed.favourites);
         if (parsed.saved) setSaved(parsed.saved);
         if (parsed.displayName) setDisplayName(parsed.displayName);
         if (parsed.profilePhoto) setProfilePhoto(parsed.profilePhoto);
@@ -66,6 +78,8 @@ export default function ExploreCreatorsPage() {
         setLoading(false);
       }
     } catch (e) {}
+
+    return () => unsubscribe();
   }, []);
 
   // Fetch creators + auth + saved + favourite lists in parallel
@@ -130,6 +144,7 @@ export default function ExploreCreatorsPage() {
             const d = await favRes.json();
             freshFavourites = d.favouriteCreators || [];
             setFavourites(freshFavourites);
+            setStoredFavourites(freshFavourites, true);
           }
         } else {
           setIsAuthenticated(false);
@@ -167,26 +182,17 @@ export default function ExploreCreatorsPage() {
     }
     if (favLoading === creatorUsername) return;
     setFavLoading(creatorUsername);
-    const isFav = favourites.includes(creatorUsername);
-    setFavourites(prev => isFav ? prev.filter(u => u !== creatorUsername) : [...prev, creatorUsername]);
     try {
-      const res = await fetch('/api/user/favourite-creators', {
-        method: isFav ? 'DELETE' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: creatorUsername }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setFavourites(data.favouriteCreators || []);
-      } else {
-        setFavourites(prev => isFav ? [...prev, creatorUsername] : prev.filter(u => u !== creatorUsername));
+      const res = await toggleFavouriteApi(creatorUsername);
+      if (res.requiresAuth) {
+        setLoginCallbackUrl('');
+        setLoginModalMode('favourite');
+        setShowLoginModal(true);
       }
-    } catch {
-      setFavourites(prev => isFav ? [...prev, creatorUsername] : prev.filter(u => u !== creatorUsername));
     } finally {
       setFavLoading(null);
     }
-  }, [isAuthenticated, favourites, favLoading]);
+  }, [isAuthenticated, favLoading]);
 
   const toggleSaved = useCallback(async (creatorUsername: string) => {
     if (!isAuthenticated) {
