@@ -34,7 +34,7 @@ export interface DropdownProps {
   inputMaxLength?: number;
   /** Keyboard type for the text input in `editable` mode (e.g. 'numeric'). */
   inputMode?: 'text' | 'numeric' | 'decimal' | 'tel' | 'email' | 'url' | 'search';
-  /** Text at the end of the field in its own bordered segment, shown in `editable` mode (e.g. "min"). */
+  /** Text at the end of the field in its own bordered segment (e.g. "min"), like the PKR box on FormInput. */
   suffix?: ReactNode;
   /** Extra classes for the field — merged over the same defaults FormInput uses. */
   className?: string;
@@ -175,7 +175,7 @@ export default function Dropdown({
     }
   };
 
-  const joined = editable && !!suffix; // input + suffix + chevron read as one bordered field
+  const joined = !!suffix; // field + suffix + chevron read as one bordered field
 
   const fieldClasses = twMerge(
     INPUT_CLASSES,
@@ -206,6 +206,7 @@ export default function Dropdown({
         className={twMerge(
           'relative',
           disabled && 'cursor-not-allowed',
+          joined && disabled && 'opacity-60',
           joined &&
             'flex items-stretch bg-white border border-[#e2e2e2] rounded-[8px] focus-within:border-[#0012FF] transition-all',
           joined && open && 'border-[#0012FF]'
@@ -245,13 +246,18 @@ export default function Dropdown({
             aria-describedby={error ? errorId : undefined}
             onClick={() => (open ? close() : openMenu())}
             onKeyDown={handleKeyDown}
-            className={twMerge(fieldClasses, 'text-left cursor-pointer disabled:cursor-not-allowed disabled:opacity-60')}
+            className={twMerge(
+              fieldClasses,
+              'text-left cursor-pointer disabled:cursor-not-allowed',
+              // joined fields dim the whole box instead of just the button
+              joined ? 'disabled:opacity-100' : 'disabled:opacity-60'
+            )}
           >
             <span className={twMerge('block truncate', !value && 'opacity-50')}>{value || placeholder}</span>
           </button>
         )}
 
-        {editable ? (
+        {editable || joined ? (
           <>
             {suffix && (
               <span className="flex items-center pl-4 pr-1 border-l border-[#e2e2e2] bg-gray-50 font-sans text-sm font-medium text-gray-500 select-none">

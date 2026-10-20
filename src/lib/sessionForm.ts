@@ -1,5 +1,11 @@
 import { isRichTextEmpty } from '@/lib/richText';
-import { normalizeStoredQuestions, type SessionQuestion } from '@/lib/sessionQuestions';
+import {
+  cleanQuestionsForSave,
+  normalizeStoredQuestions,
+  questionsAreValid,
+  withOptionSlots,
+  type SessionQuestion,
+} from '@/lib/sessionQuestions';
 
 /** Shared by the "Add / Edit session" page and the creator onboarding sessions step. */
 
@@ -7,7 +13,7 @@ export const PRESET_DURATIONS = [
   { label: '15 mins', value: '15' },
   { label: '30 mins', value: '30' },
   { label: '45 mins', value: '45' },
-  { label: '1 hour', value: '60' },
+  { label: '60 mins', value: '60' },
   { label: '90 mins', value: '90' },
 ];
 export const CUSTOM_DURATION_OPTION = 'Custom Duration';
@@ -68,7 +74,8 @@ export type SessionErrorKey =
   | 'duration'
   | 'price'
   | 'discountedPrice'
-  | 'maxBookings';
+  | 'maxBookings'
+  | 'questions';
 export type SessionErrors = Partial<Record<SessionErrorKey, string>>;
 
 export const emptySessionValues = (): SessionFormValues => ({
@@ -107,7 +114,7 @@ export const sessionToValues = (
     discountedPrice:
       s.discountedPrice !== undefined && s.discountedPrice !== null ? String(s.discountedPrice) : '',
     maxBookings: String(s.maxBookings || 4),
-    questions: normalizeStoredQuestions(s.questions),
+    questions: normalizeStoredQuestions(s.questions).map(withOptionSlots),
   };
 };
 
@@ -146,6 +153,10 @@ export const validateSessionValues = (v: SessionFormValues): SessionErrors => {
     next.maxBookings = 'Enter at least 1 booking per day';
   }
 
+  if (!questionsAreValid(v.questions)) {
+    next.questions = 'Finish or delete the incomplete questions';
+  }
+
   return next;
 };
 
@@ -158,7 +169,7 @@ export const valuesToPayload = (v: SessionFormValues) => ({
   discountedPrice: v.discountedPrice ? Number(v.discountedPrice) : undefined,
   bufferTime: effectiveBufferFor(v),
   maxBookings: Number(v.maxBookings),
-  questions: v.questions,
+  questions: cleanQuestionsForSave(v.questions),
 });
 
 /** Scroll the first inline error into view after a failed validation. */

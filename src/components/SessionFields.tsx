@@ -87,11 +87,8 @@ export default function SessionFields({ values, onChange, errors, clearError }: 
           label="Duration"
           required
           options={DURATION_OPTIONS}
-          value={
-            customDuration
-              ? duration
-              : (PRESET_DURATIONS.find((d) => d.value === duration)?.label ?? '')
-          }
+          // the field shows just the number; "min" sits in its own box at the end (like PKR)
+          value={customDuration ? duration : (PRESET_DURATIONS.find((d) => d.value === duration)?.value ?? '')}
           selectedOption={
             customDuration
               ? CUSTOM_DURATION_OPTION
@@ -105,7 +102,7 @@ export default function SessionFields({ values, onChange, errors, clearError }: 
           }}
           inputMode="numeric"
           inputMaxLength={4}
-          suffix={customDuration ? 'min' : undefined}
+          suffix="min"
           placeholder={customDuration ? 'Enter duration' : 'Select duration'}
           error={errors.duration}
         />
@@ -119,7 +116,10 @@ export default function SessionFields({ values, onChange, errors, clearError }: 
             </InfoTooltip>
           }
           options={bufferOptions}
-          value={bufferLabel(effectiveBuffer)}
+          // the field shows just the number; "min" sits in its own box at the end (like PKR)
+          value={effectiveBuffer === 0 ? NO_BUFFER_OPTION : String(effectiveBuffer)}
+          selectedOption={bufferLabel(effectiveBuffer)}
+          suffix="min"
           onChange={(label) =>
             onChange({
               bufferTime: label === NO_BUFFER_OPTION ? 0 : Number(label.replace(/\D/g, '')) || 0,
@@ -163,8 +163,9 @@ export default function SessionFields({ values, onChange, errors, clearError }: 
           placeholder="Optional"
         />
         <FormInput
-          label="Max Bookings Per Day"
+          label="Max Booking"
           required
+          suffix="Per day"
           type="text"
           inputMode="numeric"
           maxLength={3}
@@ -181,7 +182,11 @@ export default function SessionFields({ values, onChange, errors, clearError }: 
       {/* Intake questions: multiple choice, short answer, or both */}
       <SessionQuestionsSection
         questions={values.questions}
-        onChange={(questions) => onChange({ questions })}
+        onChange={(questions) => {
+          onChange({ questions });
+          clearError('questions');
+        }}
+        showErrors={!!errors.questions}
       />
     </div>
   );

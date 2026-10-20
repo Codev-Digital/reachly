@@ -19,7 +19,9 @@ export const QUESTION_TYPE_LABEL: Record<QuestionType, string> = {
   short_answer: 'Short Answer',
 };
 
-export const MAX_QUESTIONS_PER_TYPE = 5;
+/** Rows shown when a type is first added; the creator can add more one at a time. */
+export const INITIAL_QUESTIONS_PER_TYPE = 5;
+export const MAX_QUESTIONS_PER_TYPE = 20;
 export const OPTIONS_PER_QUESTION = 4;
 export const MIN_OPTIONS_PER_QUESTION = 2;
 export const QUESTION_MAX_LENGTH = 300;
@@ -72,6 +74,61 @@ export function sanitizeQuestions(raw: unknown): { value: SessionQuestion[] } | 
   // multiple choice first, then short answer - the same order the form shows them
   value.sort((a, b) => (a.type === b.type ? 0 : a.type === 'multiple_choice' ? -1 : 1));
   return { value };
+}
+
+/* ─── form helpers (the form keeps draft rows, including empty / unfinished ones) ─── */
+
+/** An empty question row for the editor. Multiple choice rows always carry 4 option slots. */
+export const blankQuestion = (type: QuestionType): SessionQuestion => ({
+  type,
+  question: '',
+  options: type === 'multiple_choice' ? Array(OPTIONS_PER_QUESTION).fill('') : [],
+  required: true,
+});
+
+/** Pad multiple choice options to the 4 editor slots. */
+export const withOptionSlots = (q: SessionQuestion): SessionQuestion =>
+  q.type === 'multiple_choice'
+    ? { ...q, options: Array.from({ length: OPTIONS_PER_QUESTION }, (_, i) => q.options[i] ?? '') }
+    : q;
+
+export interface QuestionIssues {
+  question?: string;
+  options?: string;
+}
+
+/** What is missing on a row the creator has started filling in. Empty rows have no issues (they are ignored). */
+export function questionIssues(q: SessionQuestion): QuestionIssues {
+  const text = q.question.trim();
+  const options = q.options.map((o) => o.trim()).filter(Boolean);
+  const started = !!text || (q.type === 'multiple_choice' && options.length > 0);
+  if (!started) return {};
+
+  const issues: QuestionIssues = {};
+  if (!text) issues.question = 'Enter the question';
+  if (q.type === 'multiple_choice' && options.length < MIN_OPTIONS_PER_QUESTION) {
+    issues.options = `Add at least ${MIN_OPTIONS_PER_QUESTION} answer options`;
+  }
+  return issues;
+}
+
+/** True when every started row is complete. */
+export const questionsAreValid = (questions: SessionQuestion[]) =>
+  questions.every((q) => {
+    const issues = questionIssues(q);
+    return !issues.question && !issues.options;
+  });
+
+/** Drop empty rows and trim text - what gets saved. */
+export function cleanQuestionsForSave(questions: SessionQuestion[]): SessionQuestion[] {
+  return questions
+    .filter((q) => q.question.trim())
+    .map((q) => ({
+      type: q.type,
+      question: q.question.trim(),
+      options: q.type === 'multiple_choice' ? q.options.map((o) => o.trim()).filter(Boolean) : [],
+      required: q.required !== false,
+    }));
 }
 
 /** Questions of one type, as stored on the session. */

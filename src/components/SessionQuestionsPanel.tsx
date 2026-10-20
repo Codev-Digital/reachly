@@ -1,27 +1,21 @@
 'use client';
 
-import { useState } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import FormInput, { FormError, FormLabel } from '@/components/FormInput';
-import { Button } from '@/components/ui/button';
 import {
   MAX_QUESTIONS_PER_TYPE,
-  MIN_OPTIONS_PER_QUESTION,
-  OPTIONS_PER_QUESTION,
   OPTION_LABELS,
   OPTION_MAX_LENGTH,
   QUESTION_MAX_LENGTH,
+  questionIssues,
   type QuestionType,
   type SessionQuestion,
 } from '@/lib/sessionQuestions';
 
-interface Row {
-  question: string;
-  options: string[];
-}
-interface RowErrors {
-  question?: string;
-  options?: string;
+export interface PanelItem {
+  question: SessionQuestion;
+  /** Position of the question in the session's full question list. */
+  index: number;
 }
 
 const COPY: Record<QuestionType, { title: string; subtitle: string }> = {
@@ -29,97 +23,28 @@ const COPY: Record<QuestionType, { title: string; subtitle: string }> = {
   short_answer: { title: 'Short Answer', subtitle: 'Type their own answer in a text field' },
 };
 
-const blankRow = (): Row => ({ question: '', options: Array(OPTIONS_PER_QUESTION).fill('') });
-
-/** Fixed number of question slots, filled from the saved questions of this type. */
-const buildRows = (initial: SessionQuestion[]): Row[] =>
-  Array.from({ length: MAX_QUESTIONS_PER_TYPE }, (_, i) => {
-    const q = initial[i];
-    if (!q) return blankRow();
-    return {
-      question: q.question,
-      options: Array.from({ length: OPTIONS_PER_QUESTION }, (_, k) => q.options[k] ?? ''),
-    };
-  });
-
 /**
  * Editor for one group of questions (multiple choice or short answer).
- * Shown in place of the "Add Question" button. Empty slots are ignored when saving.
+ * Edits go straight into the session form, so it is saved with the form's own save button.
+ * Each question has a trash button at the end of its row.
  */
 export default function SessionQuestionsPanel({
   type,
-  initial,
-  onSave,
-  onBack,
-  onCancel,
+  items,
+  showErrors,
+  onChangeItem,
+  onDeleteItem,
+  onAddItem,
 }: {
   type: QuestionType;
-  initial: SessionQuestion[];
-  onSave: (questions: SessionQuestion[]) => void;
-  /** Back to the "Choose Question Type" popup. */
-  onBack: () => void;
-  onCancel: () => void;
+  items: PanelItem[];
+  /** Show what is missing on unfinished questions (after a failed save). */
+  showErrors: boolean;
+  onChangeItem: (index: number, patch: Partial<SessionQuestion>) => void;
+  onDeleteItem: (index: number) => void;
+  onAddItem: () => void;
 }) {
   const isChoice = type === 'multiple_choice';
-  const [rows, setRows] = useState<Row[]>(() => buildRows(initial));
-  const [errors, setErrors] = useState<RowErrors[]>([]);
-  const [formError, setFormError] = useState('');
-
-  const clearRowError = (index: number, key: keyof RowErrors) =>
-    setErrors((prev) => (prev[index]?.[key] ? prev.map((e, i) => (i === index ? { ...e, [key]: '' } : e)) : prev));
-
-  const setQuestion = (index: number, value: string) => {
-    setRows((prev) => prev.map((r, i) => (i === index ? { ...r, question: value } : r)));
-    clearRowError(index, 'question');
-    setFormError('');
-  };
-
-  const setOption = (index: number, optionIndex: number, value: string) => {
-    setRows((prev) =>
-      prev.map((r, i) =>
-        i === index ? { ...r, options: r.options.map((o, k) => (k === optionIndex ? value : o)) } : r
-      )
-    );
-    clearRowError(index, 'options');
-    setFormError('');
-  };
-
-  const handleSave = () => {
-    const next: RowErrors[] = rows.map(() => ({}));
-    const questions: SessionQuestion[] = [];
-
-    rows.forEach((row, i) => {
-      const text = row.question.trim();
-      const options = row.options.map((o) => o.trim()).filter(Boolean);
-      const started = !!text || (isChoice && options.length > 0);
-      if (!started) return;
-
-      if (!text) next[i].question = 'Enter the question';
-      if (isChoice && options.length < MIN_OPTIONS_PER_QUESTION) {
-        next[i].options = `Add at least ${MIN_OPTIONS_PER_QUESTION} answer options`;
-      }
-      if (text && (!isChoice || options.length >= MIN_OPTIONS_PER_QUESTION)) {
-        questions.push({ type, question: text, options: isChoice ? options : [], required: true });
-      }
-    });
-
-    const hasRowErrors = next.some((e) => e.question || e.options);
-    setErrors(next);
-
-    if (hasRowErrors) {
-      setFormError('');
-      setTimeout(() => {
-        document.querySelector('[data-question-panel] [role="alert"]')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 50);
-      return;
-    }
-    if (questions.length === 0) {
-      setErrors(rows.map((_, i) => (i === 0 ? { question: 'Enter at least one question' } : {})));
-      setFormError('');
-      return;
-    }
-    onSave(questions);
-  };
 
   return (
     <div data-question-panel className="rounded-[16px] border border-[#e2e2e2] bg-white">
@@ -128,61 +53,75 @@ export default function SessionQuestionsPanel({
         <p className="font-sans text-xs text-gray-500 mt-1">{COPY[type].subtitle}</p>
       </div>
 
-      {rows.map((row, i) => (
-        <div key={i} className="border-t border-[#e2e2e2] px-5 py-4 space-y-4">
-          <FormInput
-            label={`Question ${i + 1}`}
-            required={i === 0}
-            type="text"
-            maxLength={QUESTION_MAX_LENGTH}
-            value={row.question}
-            onChange={(e) => setQuestion(i, e.target.value)}
-            error={errors[i]?.question}
-            placeholder="Enter your question"
-          />
-
-          {isChoice && (
-            <div>
-              <FormLabel required={i === 0}>Answer</FormLabel>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {row.options.map((option, k) => (
-                  <FormInput
-                    key={k}
-                    type="text"
-                    maxLength={OPTION_MAX_LENGTH}
-                    value={option}
-                    onChange={(e) => setOption(i, k, e.target.value)}
-                    aria-label={`Question ${i + 1} option ${OPTION_LABELS[k]}`}
-                    placeholder={`Option ${OPTION_LABELS[k]}`}
-                  />
-                ))}
-              </div>
-              {errors[i]?.options && <FormError className="mt-2">{errors[i].options}</FormError>}
+      {items.map(({ question, index }, position) => {
+        const issues = showErrors ? questionIssues(question) : {};
+        return (
+          <div key={index} className="border-t border-[#e2e2e2] px-5 py-4 space-y-4">
+            <div className="flex items-start gap-2">
+              <FormInput
+                wrapperClassName="flex-1 min-w-0"
+                label={`Question ${position + 1}`}
+                required={position === 0}
+                type="text"
+                maxLength={QUESTION_MAX_LENGTH}
+                value={question.question}
+                onChange={(e) => onChangeItem(index, { question: e.target.value })}
+                error={issues.question}
+                placeholder="Enter your question"
+              />
+              <button
+                type="button"
+                onClick={() => onDeleteItem(index)}
+                title="Delete question"
+                aria-label={`Delete question ${position + 1}`}
+                className="mt-5 flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-[8px] border border-[#e2e2e2] bg-white text-gray-400 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600 cursor-pointer"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
             </div>
-          )}
-        </div>
-      ))}
+
+            {isChoice && (
+              <div>
+                <FormLabel required={position === 0}>Answer</FormLabel>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {question.options.map((option, k) => (
+                    <FormInput
+                      key={k}
+                      type="text"
+                      maxLength={OPTION_MAX_LENGTH}
+                      value={option}
+                      onChange={(e) =>
+                        onChangeItem(index, {
+                          options: question.options.map((o, i) => (i === k ? e.target.value : o)),
+                        })
+                      }
+                      aria-label={`Question ${position + 1} option ${OPTION_LABELS[k]}`}
+                      placeholder={`Option ${OPTION_LABELS[k]}`}
+                    />
+                  ))}
+                </div>
+                {issues.options && <FormError className="mt-2">{issues.options}</FormError>}
+              </div>
+            )}
+          </div>
+        );
+      })}
 
       <div className="border-t border-[#e2e2e2] px-5 py-4">
-        {formError && <FormError className="mb-3">{formError}</FormError>}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <Button variant="outline" onClick={onBack} className="rounded-full px-6 py-2.5 text-xs text-gray-500">
-            <ArrowLeft className="w-3.5 h-3.5" aria-hidden="true" />
-            Back
-          </Button>
-          <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              onClick={onCancel}
-              className="rounded-full px-6 py-2.5 text-xs border-[#0012FF] text-[#0012FF] hover:bg-[#0012FF]/5"
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleSave} className="rounded-full px-6 py-2.5 text-xs">
-              Save Changes
-            </Button>
-          </div>
-        </div>
+        {items.length < MAX_QUESTIONS_PER_TYPE ? (
+          <button
+            type="button"
+            onClick={onAddItem}
+            className="w-full flex items-center justify-center gap-2 rounded-[8px] border border-dashed border-[#0012FF]/40 bg-[#0012FF]/5 py-3 text-xs font-semibold text-[#0012FF] transition-colors hover:bg-[#0012FF]/10 cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" aria-hidden="true" />
+            Add Question
+          </button>
+        ) : (
+          <p className="text-center text-xs text-gray-500">
+            You&apos;ve reached the limit of {MAX_QUESTIONS_PER_TYPE} questions.
+          </p>
+        )}
       </div>
     </div>
   );
