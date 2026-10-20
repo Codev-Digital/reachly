@@ -94,7 +94,7 @@ export default function AdminUserRequestsPage() {
                 <button
                   onClick={() => act(req._id, 'reject')}
                   disabled={actionLoading === req._id}
-                  className="px-5 py-2 rounded-full border border-rose-200 text-rose-600 font-semibold disabled:opacity-50"
+                  className="px-5 py-2 rounded-full bg-red-50 border border-red-200 text-red-600 font-semibold hover:bg-red-100 hover:border-red-300 transition-colors disabled:opacity-50"
                 >
                   Reject
                 </button>

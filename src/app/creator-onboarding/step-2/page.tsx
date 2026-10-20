@@ -154,7 +154,20 @@ export default function CreatorOnboardingStep2() {
   }, [formData.username]);
 
   const languages = ['Urdu', 'English', 'Punjabi', 'Sindhi', 'Pashto'];
-  const niches = ['Lifestyle', 'Tech', 'Fitness', 'Fashion', 'Business', 'Education', 'Beauty', 'Food'];
+  const [niches, setNiches] = useState<string[]>([
+    'Lifestyle', 'Tech', 'Fitness', 'Fashion', 'Business', 'Education', 'Beauty', 'Food'
+  ]);
+
+  useEffect(() => {
+    fetch('/api/categories')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.categories && Array.isArray(data.categories)) {
+          setNiches(data.categories.map((c: any) => c.name));
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const toggleLanguage = (lang: string) => {
     setIsDraftSaved(false);

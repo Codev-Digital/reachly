@@ -3,6 +3,12 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CreatorInfo } from '@/app/creators/[username]/book-session/layout';
+import {
+  getStoredFavourites,
+  fetchFavourites,
+  toggleFavouriteApi,
+  subscribeFavourites,
+} from '@/lib/favouritesSync';
 
 interface CreatorProfileCardProps {
   creator: CreatorInfo | null;
@@ -10,84 +16,44 @@ interface CreatorProfileCardProps {
   onMobileBookClick?: () => void;
 }
 
-let globalFavListCache: string[] | null = null;
-
 export default function CreatorProfileCard({ creator, mobileMode = 'compact', onMobileBookClick }: CreatorProfileCardProps) {
   const [isFavourite, setIsFavourite] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [isBioExpanded, setIsBioExpanded] = useState(false);
 
   useEffect(() => {
     if (!creator?.username) return;
-    const checkFavouriteStatus = async () => {
-      try {
-        if (globalFavListCache !== null) {
-          setIsFavourite(globalFavListCache.includes(creator.username));
-          setLoading(false);
-          return;
-        }
-        if (typeof window !== 'undefined') {
-          const cached = sessionStorage.getItem('reachly_fav_creators');
-          if (cached) {
-            const list = JSON.parse(cached);
-            globalFavListCache = list;
-            setIsFavourite(list.includes(creator.username));
-            setLoading(false);
-            return;
-          }
-        }
-        const res = await fetch('/api/user/favourite-creators');
-        if (res.ok) {
-          setIsAuthenticated(true);
-          const data = await res.json();
-          const favouriteList = data.favouriteCreators || [];
-          globalFavListCache = favouriteList;
-          try { sessionStorage.setItem('reachly_fav_creators', JSON.stringify(favouriteList)); } catch (e) {}
-          setIsFavourite(favouriteList.includes(creator.username));
-        } else if (res.status === 401) {
-          setIsAuthenticated(false);
-        }
-      } catch (err) {
-        console.error('Error checking favourite status:', err);
-      } finally {
-        setLoading(false);
+
+    // Check immediate stored state
+    setIsFavourite(getStoredFavourites().includes(creator.username));
+
+    // Live subscription across all pages, components, and browser tabs
+    const unsubscribe = subscribeFavourites((newFavs) => {
+      if (creator?.username) {
+        setIsFavourite(newFavs.includes(creator.username));
       }
-    };
-    checkFavouriteStatus();
+    });
+
+    // Refresh from server in background
+    fetchFavourites().then((favs) => {
+      if (favs && creator?.username) {
+        setIsFavourite(favs.includes(creator.username));
+      }
+    });
+
+    return () => unsubscribe();
   }, [creator?.username]);
 
   const toggleFavourite = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!isAuthenticated) {
-      setShowLoginModal(true);
-      return;
-    }
     if (!creator?.username || saving) return;
     setSaving(true);
-    const nextFavouriteState = !isFavourite;
-    setIsFavourite(nextFavouriteState);
-
     try {
-      const res = await fetch('/api/user/favourite-creators', {
-        method: nextFavouriteState ? 'POST' : 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: creator.username }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        const favouriteList = data.favouriteCreators || [];
-        globalFavListCache = favouriteList;
-        try { sessionStorage.setItem('reachly_fav_creators', JSON.stringify(favouriteList)); } catch (e) {}
-        setIsFavourite(favouriteList.includes(creator.username));
-      } else {
-        setIsFavourite(!nextFavouriteState);
+      const result = await toggleFavouriteApi(creator.username);
+      if (result.requiresAuth) {
+        setShowLoginModal(true);
       }
-    } catch (err) {
-      console.error('Error toggling favourite:', err);
-      setIsFavourite(!nextFavouriteState);
     } finally {
       setSaving(false);
     }
@@ -176,7 +142,7 @@ export default function CreatorProfileCard({ creator, mobileMode = 'compact', on
             {creator && (
               <button
                 onClick={toggleFavourite}
-                disabled={loading || saving}
+                disabled={saving}
                 className="w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center hover:bg-white hover:scale-105 active:scale-95 transition-all shadow-md disabled:opacity-60 cursor-pointer"
                 aria-label={isFavourite ? 'Remove from favourites' : 'Add to favourites'}
               >

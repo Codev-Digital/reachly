@@ -10,6 +10,12 @@ import Image from 'next/image';
 import { motion } from 'framer-motion';
 import DailyCall from '@/components/DailyCall';
 import { isMeetingPassed } from '@/lib/time';
+import {
+  getStoredFavourites,
+  setStoredFavourites,
+  toggleFavouriteApi,
+  subscribeFavourites,
+} from '@/lib/favouritesSync';
 
 function LoginToExplore() {
   const router = useRouter();
@@ -50,10 +56,17 @@ export default function UserDashboard() {
   const [activeBookingTab, setActiveBookingTab] = useState<'Upcoming' | 'Past' | 'Cancelled'>('Upcoming');
   const [bookingsPage, setBookingsPage] = useState(0);
   const BOOKINGS_PER_PAGE = 3;
-  const [favorites, setFavorites] = useState<string[]>([]); // creator usernames
+  const [favorites, setFavorites] = useState<string[]>(() => getStoredFavourites()); // creator usernames
 
-  // Synchronously load from sessionStorage cache on mount to bypass skeleton loading
+  // Synchronously load from sessionStorage cache on mount and subscribe to global favourites
   useEffect(() => {
+    const storedFavs = getStoredFavourites();
+    if (storedFavs.length > 0) setFavorites(storedFavs);
+
+    const unsubscribe = subscribeFavourites((newFavs) => {
+      setFavorites(newFavs);
+    });
+
     try {
       const cachedDashboard = sessionStorage.getItem('reachly_user_dashboard_cache');
       console.log("cachedDashboard",cachedDashboard)
@@ -61,7 +74,6 @@ export default function UserDashboard() {
         const cached = JSON.parse(cachedDashboard);
         if (cached.displayName) setDisplayName(cached.displayName);
         if (cached.profilePhoto) setProfilePhoto(cached.profilePhoto);
-        if (cached.favorites) setFavorites(cached.favorites);
         if (cached.creatorsList) setCreatorsList(cached.creatorsList);
         if (cached.realBookingsList) setRealBookingsList(cached.realBookingsList);
         setIsAuthenticated(true);
@@ -71,6 +83,8 @@ export default function UserDashboard() {
     } catch (e) {
       console.error('Failed to load dashboard cache:', e);
     }
+
+    return () => unsubscribe();
   }, []);
 
   // User details
@@ -206,6 +220,7 @@ export default function UserDashboard() {
         const favData = await favRes.json();
         userFavorites = favData.favouriteCreators || [];
         setFavorites(userFavorites);
+        setStoredFavourites(userFavorites, true);
       }
 
       if (creatorsRes.ok) {
@@ -326,24 +341,7 @@ export default function UserDashboard() {
   };
 
   const toggleFavorite = async (username: string) => {
-    const isFav = favorites.includes(username);
-    setFavorites(prev => isFav ? prev.filter(u => u !== username) : [...prev, username]);
-    try {
-      const res = await fetch('/api/user/favourite-creators', {
-        method: isFav ? 'DELETE' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setFavorites(data.favouriteCreators || []);
-      } else {
-        // revert on error
-        setFavorites(prev => isFav ? [...prev, username] : prev.filter(u => u !== username));
-      }
-    } catch {
-      setFavorites(prev => isFav ? [...prev, username] : prev.filter(u => u !== username));
-    }
+    await toggleFavouriteApi(username);
   };
 
   // Real-time creators state

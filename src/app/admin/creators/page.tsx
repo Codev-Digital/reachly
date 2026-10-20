@@ -49,18 +49,41 @@ export default function AdminCreatorsPage() {
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
+  const [isSubmittingCategory, setIsSubmittingCategory] = useState(false);
+  const [categoryError, setCategoryError] = useState('');
 
   const [currentPage, setCurrentPage] = useState(1);
 
-  const categories = [
+  const [categories, setCategories] = useState<string[]>([
+    'Lifestyle',
+    'Tech',
+    'Fitness',
+    'Fashion',
+    'Business',
+    'Education',
+    'Beauty',
+    'Food',
     'Software Engineering',
-    'Fashion & Lifestyle',
-    'Finance & Business',
-    'Health & Fitness',
-    'Digital Marketing',
-    'Food & Travel',
-    'Education'
-  ];
+    'Digital Marketing'
+  ]);
+
+  const loadCategories = async () => {
+    try {
+      const res = await fetch('/api/categories');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.categories && Array.isArray(data.categories)) {
+          setCategories(data.categories.map((c: any) => c.name));
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load categories:', e);
+    }
+  };
+
+  useEffect(() => {
+    loadCategories();
+  }, []);
 
   const [creators, setCreators] = useState<Creator[]>([]);
   const [loading, setLoading] = useState(true);
@@ -112,11 +135,32 @@ export default function AdminCreatorsPage() {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedCreators = filteredCreators.slice(startIndex, startIndex + itemsPerPage);
 
-  const handleAddCategorySubmit = () => {
-    if (selectedCategory) {
-      alert(`Category "${selectedCategory}" added successfully!`);
-      setShowAddCategoryModal(false);
-      setSelectedCategory('');
+  const handleAddCategorySubmit = async () => {
+    const name = selectedCategory.trim();
+    if (!name) {
+      setCategoryError('Please enter a category name');
+      return;
+    }
+    setIsSubmittingCategory(true);
+    setCategoryError('');
+    try {
+      const res = await fetch('/api/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setShowAddCategoryModal(false);
+        setSelectedCategory('');
+        await loadCategories();
+      } else {
+        setCategoryError(data.error || 'Failed to add category');
+      }
+    } catch {
+      setCategoryError('Network error while adding category');
+    } finally {
+      setIsSubmittingCategory(false);
     }
   };
 
@@ -492,24 +536,46 @@ export default function AdminCreatorsPage() {
 
               {/* Custom Input / Dropdown Container */}
               <div className="w-full mb-6 relative">
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Category</label>
-                <button
-                  onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
-                  className="w-full flex items-center justify-between px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-semibold text-gray-800 hover:bg-gray-50 transition-all text-left"
-                >
-                  <span>{selectedCategory || 'Select Category'}</span>
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    className={`transition-transform duration-200 ${isCategoryDropdownOpen ? 'rotate-180' : ''}`}
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 text-left">Category</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={selectedCategory}
+                    onChange={(e) => {
+                      setSelectedCategory(e.target.value);
+                      setCategoryError('');
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddCategorySubmit();
+                      }
+                    }}
+                    placeholder="Type or select category (e.g. Gaming)"
+                    className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-semibold text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#0012FF] transition-all pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 cursor-pointer"
                   >
-                    <polyline points="6 9 12 15 18 9" />
-                  </svg>
-                </button>
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      className={`transition-transform duration-200 ${isCategoryDropdownOpen ? 'rotate-180' : ''}`}
+                    >
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </button>
+                </div>
+
+                {categoryError && (
+                  <p className="text-xs text-red-500 font-semibold mt-1.5 text-left">{categoryError}</p>
+                )}
 
                 <AnimatePresence>
                   {isCategoryDropdownOpen && (
@@ -521,14 +587,19 @@ export default function AdminCreatorsPage() {
                         exit={{ opacity: 0, y: 5 }}
                         className="absolute left-0 right-0 mt-1 bg-white border border-gray-100 rounded-xl shadow-xl z-30 max-h-48 overflow-y-auto py-1"
                       >
+                        <div className="px-3 py-1.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider border-b border-gray-50">
+                          Existing Categories
+                        </div>
                         {categories.map((cat) => (
                           <button
                             key={cat}
+                            type="button"
                             onClick={() => {
                               setSelectedCategory(cat);
                               setIsCategoryDropdownOpen(false);
+                              setCategoryError('');
                             }}
-                            className={`w-full text-left px-4 py-2.5 text-sm font-semibold transition-all ${selectedCategory === cat
+                            className={`w-full text-left px-4 py-2 text-sm font-semibold transition-all ${selectedCategory === cat
                               ? 'bg-[#0012FF] text-white'
                               : 'text-gray-600 hover:bg-gray-50'
                               }`}
@@ -545,18 +616,23 @@ export default function AdminCreatorsPage() {
               {/* Action Buttons */}
               <div className="flex gap-3 w-full">
                 <button
-                  onClick={() => setShowAddCategoryModal(false)}
-                  className="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-all bg-white"
+                  type="button"
+                  onClick={() => {
+                    setShowAddCategoryModal(false);
+                    setCategoryError('');
+                  }}
+                  className="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-all bg-white cursor-pointer"
                 >
                   Cancel
                 </button>
 
                 <button
+                  type="button"
                   onClick={handleAddCategorySubmit}
-                  disabled={!selectedCategory}
-                  className="flex-1 py-2.5 bg-[#0012FF] disabled:bg-blue-300 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-all"
+                  disabled={!selectedCategory || isSubmittingCategory}
+                  className="flex-1 py-2.5 bg-[#0012FF] disabled:bg-blue-300 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-all cursor-pointer"
                 >
-                  Add
+                  {isSubmittingCategory ? 'Adding...' : 'Add'}
                 </button>
               </div>
             </motion.div>

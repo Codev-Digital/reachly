@@ -10,6 +10,12 @@ import CreatorNavbar from '@/components/CreatorNavbar';
 import Footer from '@/components/Footer';
 import SmoothScroll from '@/components/SmoothScroll';
 import Image from "next/image";
+import {
+  getStoredFavourites,
+  fetchFavourites,
+  toggleFavouriteApi,
+  subscribeFavourites,
+} from '@/lib/favouritesSync';
 
 /* ─── Fade-in-up wrapper for scroll-triggered sections ─── */
 function FadeUp({ children, delay = 0, className = '' }: { children: React.ReactNode; delay?: number; className?: string }) {
@@ -28,19 +34,89 @@ function FadeUp({ children, delay = 0, className = '' }: { children: React.React
   );
 }
 
+function getCategoryIcon(name: string) {
+  const lower = name.toLowerCase();
+  if (lower.includes('all')) {
+    return <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>;
+  }
+  if (lower.includes('lifestyle')) {
+    return <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>;
+  }
+  if (lower.includes('tech') || lower.includes('software') || lower.includes('developer') || lower.includes('code')) {
+    return <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>;
+  }
+  if (lower.includes('fitness') || lower.includes('health')) {
+    return <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>;
+  }
+  if (lower.includes('fashion')) {
+    return <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>;
+  }
+  if (lower.includes('business') || lower.includes('marketing') || lower.includes('finance')) {
+    return <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>;
+  }
+  if (lower.includes('education')) {
+    return <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.168.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.168.477-4.5 1.253" /></svg>;
+  }
+  if (lower.includes('beauty')) {
+    return <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>;
+  }
+  if (lower.includes('food') || lower.includes('travel')) {
+    return <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m12.728 12.728l.707.707M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
+  }
+  return <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg>;
+}
+
 export default function Home() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const [activeStep, setActiveStep] = useState(0);
   const [creatorPage, setCreatorPage] = useState(0);
   const [activeCategory, setActiveCategory] = useState('All Categories');
-  const [favorites, setFavorites] = useState<string[]>([]);
+  const [favorites, setFavorites] = useState<string[]>(() => getStoredFavourites());
   const [featuredPage, setFeaturedPage] = useState(0);
   const [eventsPage, setEventsPage] = useState(0);
   const [savedEvents, setSavedEvents] = useState<string[]>([]);
   const [categoryIndex, setCategoryIndex] = useState(0);
+  const [categoriesList, setCategoriesList] = useState<string[]>([
+    'All Categories',
+    'Lifestyle',
+    'Tech',
+    'Fitness',
+    'Fashion',
+    'Business',
+    'Education',
+    'Beauty',
+    'Food',
+  ]);
+
+  useEffect(() => {
+    fetch('/api/categories')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.categories && Array.isArray(data.categories)) {
+          const names = data.categories.map((c: any) => c.name);
+          setCategoriesList(['All Categories', ...names]);
+        }
+      })
+      .catch(() => {});
+  }, []);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [loginModalMode, setLoginModalMode] = useState<'booking' | 'favourite'>('booking');
+  const [loginCallbackUrl, setLoginCallbackUrl] = useState('');
+
+  const handleCreatorBooking = (e: React.MouseEvent, username: string) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const destination = `/creators/${username}/book-session`;
+    if (status !== 'authenticated') {
+      setLoginCallbackUrl(destination);
+      setLoginModalMode('booking');
+      setShowLoginModal(true);
+      return;
+    }
+    router.push(destination);
+  };
 
   const [dbCreators, setDbCreators] = useState<any[]>([]);
   const [loadingDbCreators, setLoadingDbCreators] = useState(true);
@@ -167,12 +243,31 @@ export default function Home() {
     clearStorageIfNeeded();
   }, [status, session]);
 
-  const toggleFavorite = (name: string) => {
+  // Global Favourites Synchronization across all tabs, pages, and components
+  useEffect(() => {
+    setFavorites(getStoredFavourites());
+    const unsubscribe = subscribeFavourites((newFavs) => {
+      setFavorites(newFavs);
+    });
+    fetchFavourites().then((favs) => {
+      if (favs) setFavorites(favs);
+    });
+    return () => unsubscribe();
+  }, [status]);
+
+  const toggleFavorite = async (name: string) => {
     if (status !== 'authenticated') {
+      setLoginCallbackUrl('');
+      setLoginModalMode('favourite');
       setShowLoginModal(true);
       return;
     }
-    setFavorites(prev => prev.includes(name) ? prev.filter(i => i !== name) : [...prev, name]);
+    const result = await toggleFavouriteApi(name);
+    if (result.requiresAuth) {
+      setLoginCallbackUrl('');
+      setLoginModalMode('favourite');
+      setShowLoginModal(true);
+    }
   };
 
   const toggleSaveEvent = (id: string) =>
@@ -188,6 +283,17 @@ export default function Home() {
     { name: 'Bilal Abbas', img: '/Avatars/4.jpg' },
     { name: 'Ahsan Khan', img: '/Avatars/7.jpg' },
     { name: 'Sajal Ali', img: '/Avatars/8.jpg' },
+  ];
+
+  const topCreatorsPage2 = [
+    { name: 'Fawad Khan', img: '/Avatars/15.jpg' },
+    { name: 'Ayeza Khan', img: '/Avatars/9.jpg' },
+    { name: 'Humayun Saeed', img: '/Avatars/10.jpg' },
+    { name: 'Yumna Zaidi', img: '/Avatars/11.jpg' },
+    { name: 'Hamza Ali Abbasi', img: '/Avatars/12.jpg' },
+    { name: 'Iqra Aziz', img: '/Avatars/13.jpg' },
+    { name: 'Ahad Raza Mir', img: '/Avatars/14.jpg' },
+    { name: 'Saba Qamar', img: '/Avatars/16.jpg' },
   ];
   /* duplicate for seamless loop */
   const marqueeCreators = [...allCreators, ...allCreators];
@@ -225,7 +331,10 @@ export default function Home() {
   // Explore By Category uses the same real-time DB creators (already priority-sorted)
   const filteredCategoryCreators = activeCategory === 'All Categories'
     ? dbCreators
-    : dbCreators.filter(creator => (creator.niches || []).includes(activeCategory) || creator.category === activeCategory);
+    : dbCreators.filter(creator =>
+      (creator.niches || []).some((n: string) => n.toLowerCase() === activeCategory.toLowerCase()) ||
+      creator.category?.toLowerCase() === activeCategory.toLowerCase()
+    );
 
   return (
     <div className="min-h-screen">
@@ -235,7 +344,7 @@ export default function Home() {
       {/* ════════════════════════════════════════
             HERO SECTION
         ════════════════════════════════════════ */}
-      <section className="relative overflow-hidden flex items-center [@media(min-height:900px)]:h-screen [@media(min-height:900px)]:min-h-screen">
+      <section id="hero" className="relative overflow-hidden flex items-center [@media(min-height:900px)]:h-screen [@media(min-height:900px)]:min-h-screen">
         <div className="fixed inset-0 w-screen h-screen -z-10">
           <Image
             src="/assets/new-bg-image.png"
@@ -260,7 +369,10 @@ export default function Home() {
                 <Link href="/explore-creators" className="bg-white text-[#001F7D] font-sans font-semibold px-8 py-3 rounded-full text-sm hover:bg-white/90 transition-all">
                   Explore Creators
                 </Link>
-                <Link href="/signup" className="border border-white/50 text-white font-sans font-semibold px-8 py-3 rounded-full text-sm hover:bg-white/10 transition-all">
+                <Link
+                  href="/signup"
+                  className="btn-become-creator font-sans font-semibold px-8 py-3 rounded-full text-sm inline-flex items-center justify-center cursor-pointer"
+                >
                   Become a Creator
                 </Link>
               </div>
@@ -353,71 +465,86 @@ export default function Home() {
         </div>
       </section>
 
+
+
       {/* ════════════════════════════════════════
-            PAKISTAN'S TOP CREATORS — auto marquee
+            PAKISTAN'S TOP CREATORS
         ════════════════════════════════════════ */}
-      {/* <section className="py-20 bg-[#F7F7FA] text-[#0C0C0C]">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6">
-            <FadeUp className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
-              <div>
-                <h2 className="font-anton font-bold text-5xl sm:text-6xl md:text-7xl text-black leading-tight uppercase tracking-tight">
-                  Pakistan's <span className="text-[#0012FF]">Top Creators</span>
-                </h2>
-                <p className="font-sans text-sm sm:text-base text-gray-500 mt-2">
-                  Connect, Collaborate and create with the most trusted voices across Pakistan
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setCreatorPage(prev => (prev > 0 ? prev - 1 : 1))}
-                  className="w-12 h-12 rounded-full border border-[#0012FF] flex items-center justify-center text-[#0012FF] hover:bg-[#0012FF]/5 transition-all active:scale-95"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
-                </button>
-                <button
-                  onClick={() => setCreatorPage(prev => (prev < 1 ? prev + 1 : 0))}
-                  className="w-12 h-12 rounded-full bg-[#0012FF] flex items-center justify-center text-white hover:bg-[#0012FF]/95 transition-all active:scale-95 shadow-md shadow-[#0012FF]/20"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
-                </button>
-              </div>
-            </FadeUp>
+      <section id="top-creators" className="py-20 bg-white text-[#0C0C0C] border-t border-gray-100 scroll-mt-10">
+        <div className="max-w-[1160px] mx-auto px-4 sm:px-6">
+          <FadeUp className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+            <div>
+              <h2 className="font-anton font-bold text-5xl sm:text-6xl md:text-7xl text-black leading-tight uppercase tracking-tight">
+                Pakistan&apos;s <span className="text-[#0012FF]">Top Creators</span>
+              </h2>
+              <p className="font-sans text-sm sm:text-base text-gray-500 mt-2">
+                Connect, collaborate and create with the most trusted voices across Pakistan
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setCreatorPage(prev => (prev > 0 ? prev - 1 : 1))}
+                className="w-12 h-12 rounded-full border border-[#0012FF] flex items-center justify-center text-[#0012FF] hover:bg-[#0012FF]/5 transition-all active:scale-95 cursor-pointer"
+                aria-label="Previous creators"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <button
+                onClick={() => setCreatorPage(prev => (prev < 1 ? prev + 1 : 0))}
+                className="w-12 h-12 rounded-full bg-[#0012FF] flex items-center justify-center text-white shadow-md shadow-[#0012FF]/20 hover:bg-[#0010d0] transition-all active:scale-95 cursor-pointer"
+                aria-label="Next creators"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+          </FadeUp>
 
-            <motion.div
-              animate={{ x: creatorPage === 0 ? 0 : -20 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-6"
-            >
-              {allCreators.map((creator, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.08 }}
-                  whileHover={{ y: -8, scale: 1.02 }}
-                  className="relative h-[360px] w-full rounded-3xl overflow-hidden shadow-lg group bg-white cursor-pointer"
-                >
+          <motion.div
+            key={creatorPage}
+            initial={{ opacity: 0, x: creatorPage === 0 ? -20 : 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.35, ease: 'easeOut' }}
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 justify-items-center"
+          >
+            {(creatorPage === 0 ? allCreators : topCreatorsPage2).map((creator, index) => (
+              <motion.div
+                key={creator.name}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: index * 0.04 }}
+                whileHover={{ y: -6, scale: 1.02 }}
+                onClick={(e) => {
+                  const targetUsername = (creator as any).username || creator.name.toLowerCase().replace(/\s+/g, '');
+                  handleCreatorBooking(e, targetUsername);
+                }}
+                className="w-[275px] h-[275px] rounded-[24px] overflow-hidden relative group shadow-md hover:shadow-xl transition-all duration-300 bg-white shrink-0 cursor-pointer"
+              >
                 <img
-    src={creator.img}
-    alt={creator.name}
-    className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
-  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end justify-center pb-6">
-                    <span className="text-white font-sans font-bold text-lg tracking-wide drop-shadow-md">{creator.name}</span>
-                  </div>
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-        </section> */}
-
-
+                  src={creator.img}
+                  alt={creator.name}
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent flex items-end p-5">
+                  <span className="text-white font-sans font-bold text-lg tracking-wide drop-shadow-md">
+                    {creator.name}
+                  </span>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
 
       {/* ════════════════════════════════════════
             FEATURED CREATORS
         ════════════════════════════════════════ */}
-      <section className="py-20 bg-[#F7F7FA] text-[#0C0C0C] border-t border-gray-100">
+      <section id="creators" className="py-20 bg-[#F7F7FA] text-[#0C0C0C] border-t border-gray-100 scroll-mt-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <FadeUp className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
             <div>
@@ -458,8 +585,7 @@ export default function Home() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.5, delay: index * 0.05 }}
-                    onClick={() => router.push(`/creators/${creator.username}/book-session`)}
-                    className="flex flex-col w-[290px] sm:w-[325px] shrink-0 group cursor-pointer"
+                    className="flex flex-col w-[290px] sm:w-[325px] shrink-0 group"
                   >
                     {/* Top Image Container */}
                     <div className="relative w-full h-[300px] sm:h-[330px] rounded-[24px] overflow-hidden bg-gray-100 mb-3 shadow-xs transition-transform duration-300 group-hover:scale-[1.01]">
@@ -534,7 +660,8 @@ export default function Home() {
                       {/* Book Now Link */}
                       <div>
                         <span
-                          className="text-xs sm:text-sm font-bold text-[#0012FF] underline hover:text-[#0010d0] font-sans pt-1 inline-block"
+                          onClick={(e) => handleCreatorBooking(e, creator.username)}
+                          className="text-xs sm:text-sm font-bold text-[#0012FF] underline hover:text-[#0010d0] font-sans pt-1 inline-block cursor-pointer"
                         >
                           Book Now
                         </span>
@@ -552,39 +679,88 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ════════════════════════════════════════
+{/* ════════════════════════════════════════
             HOW IT WORKS
         ════════════════════════════════════════ */}
       <section 
-        className="py-24 bg-[#F7F7FA] text-[#0C0C0C] border-t border-gray-100"
+        id="how-it-works"
+        className="py-24 bg-[#F7F7FA] text-[#0C0C0C] border-t border-gray-100 scroll-mt-10"
         onTouchStart={handleHowItWorksTouchStart}
         onTouchEnd={handleHowItWorksTouchEnd}
         onWheel={handleHowItWorksWheel}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="grid md:grid-cols-2 gap-12 lg:gap-16 items-center">
-            {/* Left: animated card stack */}
-            <FadeUp className="relative h-[360px] sm:h-[400px] flex items-center justify-center pl-16 sm:pl-20 md:pl-24">
-              {[
-                { src: '/assets/how_it_works_3.png', bg: 'bg-[#FFD6E8]', step: 2 },
-                { src: '/assets/how_it_works_2.jpg', bg: 'bg-[#FFE699]', step: 1 },
-                { src: '/assets/how_it-works_1.png', bg: 'bg-[#C0E5FA]', step: 0 },
-              ].map(({ src, bg, step }) => (
-                <motion.div
-                  key={step}
-                  animate={{
-                    zIndex: activeStep === step ? 3 : activeStep === (step + 1) % 3 ? 2 : 1,
-                    x: activeStep === step ? 0 : activeStep === (step + 1) % 3 ? -40 : -80,
-                    y: activeStep === step ? 0 : activeStep === (step + 1) % 3 ? 15 : 30,
-                    rotate: activeStep === step ? -5 : activeStep === (step + 1) % 3 ? -15 : -25,
-                    scale: activeStep === step ? 1 : activeStep === (step + 1) % 3 ? 0.95 : 0.9,
-                  }}
-                  transition={{ type: 'spring', stiffness: 260, damping: 25 }}
-                  className={`absolute w-[200px] h-[260px] sm:w-[280px] sm:h-[350px] rounded-3xl overflow-hidden shadow-xl ${bg}`}
-                >
-                  <img src={src} alt="How it works" loading="lazy" decoding="async" className="w-full h-full object-cover" />
-                </motion.div>
-              ))}
+            {/* Left: animated card stack matching exact Figma positions and angles */}
+            <FadeUp className="relative h-[380px] sm:h-[420px] w-full flex items-center justify-center overflow-visible">
+              <div className="relative w-[498px] h-[360px] scale-[0.62] xs:scale-[0.72] sm:scale-[0.85] md:scale-95 lg:scale-100 origin-center transition-transform">
+                {[
+                  {
+                    step: 0,
+                    src: '/assets/how_it-works_1.png',
+                    bg: 'bg-[#C0E5FA]',
+                  },
+                  {
+                    step: 1,
+                    src: '/assets/how_it_works_2.jpg',
+                    bg: 'bg-[#FFE699]',
+                  },
+                  {
+                    step: 2,
+                    src: '/assets/how_it_works_3.png',
+                    bg: 'bg-[#FFD6E8]',
+                  },
+                ].map((card) => {
+                  const isActive = activeStep === card.step;
+                  // Fixed slots matching Picture 1:
+                  // Slot 0 (Back, Left), Slot 1 (Mid, Center), Slot 2 (Front, Right - Active)
+                  const slotIndex =
+                    card.step === activeStep
+                      ? 2
+                      : card.step === (activeStep + 1) % 3
+                        ? 1
+                        : 0;
+
+                  const slots = [
+                    { x: 0, y: 0, rotate: 10, zIndex: 10, scale: 1 },
+                    { x: 119, y: 13.78, rotate: -10, zIndex: 20, scale: 1 },
+                    { x: 237.27, y: -8, rotate: 10, zIndex: 40, scale: 1.03 },
+                  ];
+
+                  const slot = slots[slotIndex];
+
+                  return (
+                    <motion.div
+                      key={card.step}
+                      onClick={() => setActiveStep(card.step)}
+                      animate={{
+                        x: slot.x,
+                        y: slot.y,
+                        rotate: slot.rotate,
+                        scale: slot.scale,
+                        zIndex: slot.zIndex,
+                      }}
+                      transition={{ type: 'spring', stiffness: 280, damping: 26 }}
+                      style={{
+                        width: '260px',
+                        height: '344px',
+                        position: 'absolute',
+                        left: 0,
+                        top: 0,
+                      }}
+                      className={`rounded-[32px] overflow-hidden shadow-2xl cursor-pointer select-none ${card.bg}`}
+                    >
+                      <img
+                        src={card.src}
+                        alt="How it works"
+                        loading="lazy"
+                        decoding="async"
+                        className="w-full h-full object-cover pointer-events-none"
+                      />
+                    </motion.div>
+                  );
+                })}
+              </div>
             </FadeUp>
 
             {/* Right: step text */}
@@ -629,7 +805,7 @@ export default function Home() {
       {/* ════════════════════════════════════════
             EXPLORE BY CATEGORY
         ════════════════════════════════════════ */}
-      <section className="py-20 bg-[#F7F7FA] text-[#0C0C0C] border-t border-gray-100">
+      <section id="pricing" className="py-20 bg-[#F7F7FA] text-[#0C0C0C] border-t border-gray-100 scroll-mt-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <FadeUp className="text-center mb-12">
             <h2 className="font-anton font-bold text-5xl sm:text-6xl md:text-7xl text-black leading-tight uppercase tracking-tight">
@@ -642,24 +818,14 @@ export default function Home() {
             {/* Left category buttons — horizontal scroll on mobile, vertical on desktop */}
             <div className="lg:col-span-3">
               <div className="flex flex-row lg:flex-col gap-2 overflow-x-auto lg:overflow-x-visible pb-2 lg:pb-0 no-scrollbar">
-                {[
-                  { name: 'All Categories', icon: <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg> },
-                  { name: 'Lifestyle', icon: <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg> },
-                  { name: 'Tech', icon: <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg> },
-                  { name: 'Fitness', icon: <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg> },
-                  { name: 'Fashion', icon: <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg> },
-                  { name: 'Business', icon: <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg> },
-                  { name: 'Education', icon: <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.168.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.168.477-4.5 1.253" /></svg> },
-                  { name: 'Beauty', icon: <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg> },
-                  { name: 'Food', icon: <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m12.728 12.728l.707.707M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> },
-                ].map((cat, i) => (
+                {categoriesList.map((catName, i) => (
                   <motion.button
-                    key={i}
+                    key={catName || i}
                     whileTap={{ scale: 0.95 }}
-                    onClick={() => { setActiveCategory(cat.name); setCategoryIndex(0); }}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-sans font-medium whitespace-nowrap shrink-0 cursor-pointer ${activeCategory === cat.name ? 'bg-[#0012FF] text-white shadow-md shadow-[#0012FF]/20' : 'bg-white text-gray-500 border border-gray-100'}`}
+                    onClick={() => { setActiveCategory(catName); setCategoryIndex(0); }}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-sans font-medium whitespace-nowrap shrink-0 cursor-pointer transition-colors ${activeCategory === catName ? 'bg-[#0012FF] text-white shadow-md shadow-[#0012FF]/20' : 'bg-white text-gray-500 border border-gray-100 hover:border-gray-300'}`}
                   >
-                    {cat.icon} {cat.name}
+                    {getCategoryIcon(catName)} {catName}
                   </motion.button>
                 ))}
               </div>
@@ -708,8 +874,7 @@ export default function Home() {
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ duration: 0.5, delay: index * 0.05 }}
-                        onClick={() => router.push(`/creators/${creator.username}/book-session`)}
-                        className="flex flex-col w-[290px] sm:w-[325px] shrink-0 group cursor-pointer"
+                        className="flex flex-col w-[290px] sm:w-[325px] shrink-0 group"
                       >
                         {/* Top Image Container */}
                         <div className="relative w-full h-[300px] sm:h-[330px] rounded-[24px] overflow-hidden bg-gray-100 mb-3 shadow-xs transition-transform duration-300 group-hover:scale-[1.01]">
@@ -783,12 +948,12 @@ export default function Home() {
 
                           {/* Book Now Link */}
                           <div>
-                            <Link
-                              href={`/creators/${creator.username}/book-session`}
-                              className="text-xs sm:text-sm font-bold text-[#0012FF] underline hover:text-[#0010d0] font-sans pt-1 inline-block"
+                            <span
+                              onClick={(e) => handleCreatorBooking(e, creator.username)}
+                              className="text-xs sm:text-sm font-bold text-[#0012FF] underline hover:text-[#0010d0] font-sans pt-1 inline-block cursor-pointer"
                             >
                               Book Now
-                            </Link>
+                            </span>
                           </div>
                         </div>
                       </motion.div>
@@ -897,7 +1062,7 @@ export default function Home() {
       {/* ════════════════════════════════════════
             WHY REACHLY
         ════════════════════════════════════════ */}
-      <section className="py-24 bg-white border-t border-gray-100">
+      <section id="why-reachly" className="py-24 bg-white border-t border-gray-100 scroll-mt-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <FadeUp className="text-center mb-14">
             <h2 className="font-anton font-bold text-black text-5xl sm:text-6xl md:text-7xl leading-tight uppercase tracking-tight">
@@ -960,14 +1125,27 @@ export default function Home() {
               className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm"
             >
               <h3 className="font-sans font-bold text-xl text-black mb-2">Secure Local Payments</h3>
-              <div className="flex items-center gap-4 my-6">
-                <div className="flex items-center justify-center h-16 px-5 rounded-2xl border border-red-400 scale-105 transition-all duration-300 bg-white shadow-[0_0_20px_rgba(239,68,68,0.45)]">
-
-                  <img src="/assets/jazzcash.png" alt="JazzCash" loading="lazy" decoding="async" className="h-10 object-contain" />
+              <div className="flex flex-wrap sm:flex-nowrap items-start gap-5 sm:gap-[32px] my-6">
+                {/* JazzCash: 170x88, r14, p14x24 */}
+                <div className="w-[170px] h-[88px] rounded-[14px] px-[24px] py-[14px] bg-white border border-red-200/70 shadow-[0_0_24px_rgba(239,68,68,0.32)] flex items-center justify-center shrink-0 transition-transform duration-300 hover:scale-[1.03]">
+                  <img
+                    src="/assets/jazzcash.png"
+                    alt="JazzCash"
+                    loading="lazy"
+                    decoding="async"
+                    className="max-h-[60px] max-w-[122px] w-auto h-auto object-contain"
+                  />
                 </div>
-                <br />
-                <div className="flex items-center justify-center h-16 px-5 rounded-2xl border border-green-400 bg-white shadow-lg shadow-green-500/40 transition-all duration-300">
-                  <img src="/assets/easypaisa (2).png" alt="EasyPaisa" loading="lazy" decoding="async" className="h-10 object-contain" />
+
+                {/* Easypaisa: 228x68, r14, p14x24, top offset +50px */}
+                <div className="w-[228px] h-[68px] rounded-[14px] px-[24px] py-[14px] bg-white border border-emerald-200/70 shadow-[0_0_24px_rgba(34,197,94,0.32)] flex items-center justify-center shrink-0 sm:mt-[50px] transition-transform duration-300 hover:scale-[1.03]">
+                  <img
+                    src="/assets/easypaisa-horizontal.png"
+                    alt="EasyPaisa"
+                    loading="lazy"
+                    decoding="async"
+                    className="max-h-[40px] max-w-[180px] w-auto h-auto object-contain"
+                  />
                 </div>
               </div>
               <p className="font-sans text-sm text-gray-500 leading-relaxed">Pay with JazzCash, EasyPaisa, or your bank card. Your money is held securely until the session is completed. Full refunds if a creator cancels. Safe, secure, and hassle-free payments every time.</p>
@@ -1026,7 +1204,7 @@ export default function Home() {
       {/* ════════════════════════════════════════
             TESTIMONIALS MARQUEE
         ════════════════════════════════════════ */}
-      <section className="py-24 bg-[#F7F7FA] border-t border-gray-100 overflow-hidden">
+      <section id="testimonials" className="py-24 bg-[#F7F7FA] border-t border-gray-100 overflow-hidden scroll-mt-10">
         <FadeUp className="text-center mb-14 px-4">
           <h2 className="text-black font-anton font-bold text-5xl sm:text-6xl md:text-7xl leading-tight uppercase tracking-tight">
             What Our Community <span className="text-[#0012FF]">Says</span>
@@ -1066,11 +1244,7 @@ export default function Home() {
                   {/* Divider */}
                   <div className="border-t border-gray-100 mb-4" />
                   <p className="font-sans text-sm text-gray-600 leading-relaxed line-clamp-5">{t.text}</p>
-                  {/* Colored dots */}
-                  <div className="flex gap-1.5 mt-5">
-                    <div className="w-5 h-1.5 rounded-full" style={{ backgroundColor: t.dot1 || '#A0B4E8' }} />
-                    <div className="w-5 h-1.5 rounded-full" style={{ backgroundColor: t.dot2 || '#B8E0C8' }} />
-                  </div>
+
                 </div>
               ))}
             </motion.div>
@@ -1104,11 +1278,7 @@ export default function Home() {
                   {/* Divider */}
                   <div className="border-t border-gray-100 mb-4" />
                   <p className="font-sans text-sm text-gray-600 leading-relaxed line-clamp-5">{t.text}</p>
-                  {/* Colored dots */}
-                  <div className="flex gap-1.5 mt-5">
-                    <div className="w-5 h-1.5 rounded-full" style={{ backgroundColor: t.dot1 || '#F4B8B8' }} />
-                    <div className="w-5 h-1.5 rounded-full" style={{ backgroundColor: t.dot2 || '#A0C8E8' }} />
-                  </div>
+
                 </div>
               ))}
             </motion.div>
@@ -1119,7 +1289,7 @@ export default function Home() {
       {/* ════════════════════════════════════════
             ARE YOU A CREATOR? CTA BANNER
         ════════════════════════════════════════ */}
-      <section className="py-12 px-4 sm:px-8 bg-[#F7F7FA] border-t border-gray-100">
+      <section id="get-started" className="py-12 px-4 sm:px-8 bg-[#F7F7FA] border-t border-gray-100 scroll-mt-10">
         <FadeUp>
           <div className="max-w-6xl mx-auto relative rounded-[28px] bg-[#1a0aff] overflow-visible min-h-[220px] sm:min-h-[260px] flex items-center justify-center" style={{ boxShadow: '0 0 0 1px rgba(26,10,255,0.3)' }}>
 
@@ -1212,7 +1382,7 @@ export default function Home() {
       {/* ════════════════════════════════════════
             FAQ
         ════════════════════════════════════════ */}
-      <section className="py-24 bg-[#F7F7FA] border-t border-gray-100">
+      <section id="faq" className="py-24 bg-[#F7F7FA] border-t border-gray-100 scroll-mt-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
             {/* Left heading */}
@@ -1224,7 +1394,7 @@ export default function Home() {
             </FadeUp>
 
             {/* Right accordion */}
-            <FadeUp delay={0.1} className="flex flex-col gap-3">
+            <FadeUp delay={0.1} className="flex flex-col gap-4 sm:gap-5">
               {faqItems.map((item, i) => (
                 <motion.div
                   key={i}
@@ -1232,7 +1402,11 @@ export default function Home() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.4, delay: i * 0.07 }}
-                  className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
+                  className={`bg-white rounded-2xl border transition-all duration-300 overflow-hidden ${
+                    openFaq === i
+                      ? 'border-blue-300/80 shadow-[0_0_28px_rgba(0,18,255,0.18)]'
+                      : 'border-gray-100 shadow-sm'
+                  }`}
                 >
                   <button
                     onClick={() => setOpenFaq(openFaq === i ? null : i)}
@@ -1242,7 +1416,7 @@ export default function Home() {
                     <motion.svg
                       animate={{ rotate: openFaq === i ? 180 : 0 }}
                       transition={{ duration: 0.25 }}
-                      className="w-5 h-5 text-gray-400 shrink-0"
+                      className="w-5 h-5 text-gray-800 shrink-0"
                       fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"
                     >
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -1265,7 +1439,7 @@ export default function Home() {
 
       <Footer />
 
-      {/* ── Login Required Modal (Favourites) ── */}
+      {/* ── Login Required / Save to Favourites Modal ── */}
       <AnimatePresence>
         {showLoginModal && (
           <div 
@@ -1284,6 +1458,7 @@ export default function Home() {
               <button
                 onClick={() => setShowLoginModal(false)}
                 className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 transition-colors p-1.5 rounded-full hover:bg-gray-100 cursor-pointer z-10"
+                aria-label="Close"
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <line x1="18" y1="6" x2="6" y2="18" />
@@ -1294,32 +1469,44 @@ export default function Home() {
               {/* Illustration */}
               <div className="w-40 sm:w-52 h-auto my-2">
                 <img
-                  src="/assets/favourites.png"
-                  alt="Save to Favourites"
+                  src={loginModalMode === 'booking' ? '/assets/login.png' : '/assets/favourites.png'}
+                  alt={loginModalMode === 'booking' ? 'Login Required' : 'Save to Favourites'}
                   className="w-full h-auto object-contain"
                 />
               </div>
 
               {/* Title */}
               <h3 className="text-xl sm:text-2xl font-extrabold text-black mb-2 tracking-tight">
-                Save to Favourites
+                {loginModalMode === 'booking' ? 'Login Required' : 'Save to Favourites'}
               </h3>
 
               {/* Description */}
               <p className="text-xs sm:text-sm text-gray-400 font-medium leading-relaxed mb-6 max-w-[260px] sm:max-w-[280px]">
-                Create a free account or log in to save your favourite creators and get personalised recommendations.
+                {loginModalMode === 'booking'
+                  ? 'Please log in or sign up to continue booking this session with the creator.'
+                  : 'Create a free account or log in to save your favourite creators and get personalised recommendations.'}
               </p>
 
               {/* Action Buttons */}
               <div className="flex flex-col gap-3 w-full max-w-[280px]">
                 <button
-                  onClick={() => router.push('/login')}
+                  onClick={() => {
+                    const loginUrl = loginCallbackUrl
+                      ? `/login?callbackUrl=${encodeURIComponent(loginCallbackUrl)}`
+                      : '/login';
+                    router.push(loginUrl);
+                  }}
                   className="w-full py-3.5 bg-[#0012FF] hover:bg-[#0010d0] text-white rounded-full font-bold text-sm sm:text-base transition-all shadow-md active:scale-98 cursor-pointer"
                 >
                   Log In
                 </button>
                 <button
-                  onClick={() => router.push('/signup')}
+                  onClick={() => {
+                    const signupUrl = loginCallbackUrl
+                      ? `/signup?callbackUrl=${encodeURIComponent(loginCallbackUrl)}`
+                      : '/signup';
+                    router.push(signupUrl);
+                  }}
                   className="w-full py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full font-bold text-xs sm:text-sm transition-all cursor-pointer"
                 >
                   Create Account

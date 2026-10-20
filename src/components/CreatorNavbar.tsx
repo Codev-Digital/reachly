@@ -108,9 +108,9 @@ export default function CreatorNavbar() {
     <header className="bg-transparent absolute top-0 left-0 right-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6 lg:py-8">
         {/* Top Navbar */}
-        <div className="flex justify-between items-center">
+        <div className="relative flex justify-between items-center">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2 z-10 flex-shrink-0">
             <img
               src="/assets/logo.png"
               alt="Reachly Logo"
@@ -118,34 +118,46 @@ export default function CreatorNavbar() {
             />
           </Link>
 
-          {/* Desktop Nav */}
-          <div className="hidden lg:flex gap-8 xl:gap-10 items-center">
+          {/* Desktop Nav - Central */}
+          <div className="hidden lg:flex items-center gap-7 xl:gap-9 absolute left-1/2 -translate-x-1/2">
+            <Link
+              href="/"
+              className={`font-sans text-sm font-medium transition-colors ${
+                pathname === "/"
+                  ? "text-white font-semibold"
+                  : "text-white/80 hover:text-white"
+              }`}
+            >
+              Home
+            </Link>
+
             <Link
               href="/explore-creators"
               className={`font-sans text-sm font-medium transition-colors ${
                 pathname === "/explore-creators"
-                  ? "text-white"
+                  ? "text-white font-semibold"
                   : "text-white/80 hover:text-white"
               }`}
             >
               Explore Creators
             </Link>
 
-            {/* <Link
+            <Link
               href="/events"
-              className={`font-sans text-sm font-medium transition-colors ${pathname === '/events'
-                ? 'text-white'
-                : 'text-white/80 hover:text-white'
-                }`}
+              className={`font-sans text-sm font-medium transition-colors ${
+                pathname === "/events"
+                  ? "text-white font-semibold"
+                  : "text-white/80 hover:text-white"
+              }`}
             >
               Events
-            </Link> */}
+            </Link>
 
             <Link
               href="/for-creators"
               className={`font-sans text-sm font-medium transition-colors ${
                 pathname === "/for-creators"
-                  ? "text-white"
+                  ? "text-white font-semibold"
                   : "text-white/80 hover:text-white"
               }`}
             >
@@ -156,43 +168,35 @@ export default function CreatorNavbar() {
               href="/about"
               className={`font-sans text-sm font-medium transition-colors ${
                 pathname === "/about"
-                  ? "text-white"
+                  ? "text-white font-semibold"
                   : "text-white/80 hover:text-white"
               }`}
             >
               About
             </Link>
+          </div>
 
-            <Link
-              href="/contact-support"
-              className={`font-sans text-sm font-medium transition-colors ${
-                pathname === "/contact-support"
-                  ? "text-white"
-                  : "text-white/80 hover:text-white"
-              }`}
-            >
-              Contact Support
-            </Link>
-
+          {/* Right Auth Buttons */}
+          <div className="hidden lg:flex items-center z-10">
             {status === "authenticated" ? (
               <button
                 onClick={handleDashboardClick}
-                className="bg-white text-[#0033A0] px-5 py-2 rounded-full font-semibold text-sm hover:bg-white/90 transition-all"
+                className="bg-white text-[#0033A0] px-5 py-2 rounded-full font-semibold text-sm hover:bg-white/90 transition-all cursor-pointer"
               >
                 Dashboard
               </button>
             ) : (
-              <div className="flex gap-3">
+              <div className="flex items-center gap-4">
                 <button
                   onClick={() => navigateWithLoading("/login")}
-                  className="text-white font-sans font-medium text-sm hover:text-white/80 transition-all"
+                  className="text-white font-sans font-medium text-sm hover:text-white/80 transition-all cursor-pointer"
                 >
                   Login
                 </button>
 
                 <button
                   onClick={() => router.push("/signup")}
-                  className="border border-white/50 text-white px-5 py-2 rounded-full font-sans font-medium text-sm hover:bg-white/10 transition-all"
+                  className="border border-white text-white px-5 py-2 rounded-full font-sans font-medium text-sm hover:bg-white hover:text-[#001F7D] transition-all cursor-pointer"
                 >
                   Sign up
                 </button>
@@ -261,6 +265,20 @@ export default function CreatorNavbar() {
               >
                 <motion.div variants={itemVariants}>
                   <Link
+                    href="/"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={`block font-poppins text-base font-medium ${
+                      pathname === "/"
+                        ? "text-[#C8A97E]"
+                        : "text-[#0C0C0C]"
+                    }`}
+                  >
+                    Home
+                  </Link>
+                </motion.div>
+
+                <motion.div variants={itemVariants}>
+                  <Link
                     href="/explore-creators"
                     onClick={() => setIsMobileMenuOpen(false)}
                     className={`block font-poppins text-base font-medium ${
@@ -275,15 +293,15 @@ export default function CreatorNavbar() {
 
                 <motion.div variants={itemVariants}>
                   <Link
-                    href="/how-it-works"
+                    href="/events"
                     onClick={() => setIsMobileMenuOpen(false)}
                     className={`block font-poppins text-base font-medium ${
-                      pathname === "/how-it-works"
+                      pathname === "/events"
                         ? "text-[#C8A97E]"
                         : "text-[#0C0C0C]"
                     }`}
                   >
-                    How it Works
+                    Events
                   </Link>
                 </motion.div>
 
@@ -312,20 +330,6 @@ export default function CreatorNavbar() {
                     }`}
                   >
                     About
-                  </Link>
-                </motion.div>
-
-                <motion.div variants={itemVariants}>
-                  <Link
-                    href="/contact-support"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className={`block font-poppins text-base font-medium ${
-                      pathname === "/contact-support"
-                        ? "text-[#C8A97E]"
-                        : "text-[#0C0C0C]"
-                    }`}
-                  >
-                    Contact Support
                   </Link>
                 </motion.div>
 

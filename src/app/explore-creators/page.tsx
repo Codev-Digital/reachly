@@ -8,6 +8,12 @@ import UserNavbar from '@/components/UserNavbar';
 import CreatorDashboardNav from '@/components/CreatorDashboardNav';
 import AdminNavbar from '@/components/AdminNavbar';
 import CreatorNavbar from '@/components/CreatorNavbar';
+import {
+  getStoredFavourites,
+  setStoredFavourites,
+  toggleFavouriteApi,
+  subscribeFavourites,
+} from '@/lib/favouritesSync';
 
 const ITEMS_PER_PAGE = 8;
 
@@ -30,16 +36,39 @@ export default function ExploreCreatorsPage() {
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [minRating, setMinRating] = useState<number | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [loginModalMode, setLoginModalMode] = useState<'booking' | 'favourite'>('booking');
+  const [loginCallbackUrl, setLoginCallbackUrl] = useState('');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const handleCreatorBooking = (e: React.MouseEvent, username: string) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (isAdmin) return;
+    const destination = `/creators/${username}/book-session`;
+    if (!isAuthenticated) {
+      setLoginCallbackUrl(destination);
+      setLoginModalMode('booking');
+      setShowLoginModal(true);
+      return;
+    }
+    router.push(destination);
+  };
   const [favLoading, setFavLoading] = useState<string | null>(null); // username being toggled
 
-  // Hydrate from cache immediately on mount to prevent loading flashes
+  // Hydrate from cache and subscribe to global favourites sync immediately on mount
   useEffect(() => {
+    const storedFavs = getStoredFavourites();
+    if (storedFavs.length > 0) setFavourites(storedFavs);
+
+    const unsubscribe = subscribeFavourites((newFavs) => {
+      setFavourites(newFavs);
+    });
+
     try {
       const cached = sessionStorage.getItem('reachly_explore_creators_cache');
       if (cached) {
         const parsed = JSON.parse(cached);
         if (parsed.creators && parsed.creators.length > 0) setCreators(parsed.creators);
-        if (parsed.favourites) setFavourites(parsed.favourites);
         if (parsed.saved) setSaved(parsed.saved);
         if (parsed.displayName) setDisplayName(parsed.displayName);
         if (parsed.profilePhoto) setProfilePhoto(parsed.profilePhoto);
@@ -49,17 +78,20 @@ export default function ExploreCreatorsPage() {
         setLoading(false);
       }
     } catch (e) {}
+
+    return () => unsubscribe();
   }, []);
 
   // Fetch creators + auth + saved + favourite lists in parallel
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [creatorsRes, authRes, savedRes, favRes] = await Promise.all([
+        const [creatorsRes, authRes, savedRes, favRes, catRes] = await Promise.all([
           fetch('/api/creators'),
           fetch('/api/user/me'),
           fetch('/api/user/saved-creators'),
           fetch('/api/user/favourite-creators'),
+          fetch('/api/categories'),
         ]);
 
         let freshCreators: any[] = [];
@@ -113,9 +145,23 @@ export default function ExploreCreatorsPage() {
             const d = await favRes.json();
             freshFavourites = d.favouriteCreators || [];
             setFavourites(freshFavourites);
+            setStoredFavourites(freshFavourites, true);
           }
         } else {
           setIsAuthenticated(false);
+        }
+
+        if (catRes && catRes.ok) {
+          const catData = await catRes.json();
+          if (catData.categories && Array.isArray(catData.categories)) {
+            setCategories([
+              { id: 'all', label: 'All Categories' },
+              ...catData.categories.map((c: any) => ({
+                id: (c.slug || c.name).toLowerCase(),
+                label: c.name,
+              })),
+            ]);
+          }
         }
 
         // Cache for next instant mount
@@ -142,32 +188,33 @@ export default function ExploreCreatorsPage() {
   }, []);
 
   const toggleFavourite = useCallback(async (creatorUsername: string) => {
-    if (!isAuthenticated) { setShowLoginModal(true); return; }
+    if (!isAuthenticated) {
+      setLoginCallbackUrl('');
+      setLoginModalMode('favourite');
+      setShowLoginModal(true);
+      return;
+    }
     if (favLoading === creatorUsername) return;
     setFavLoading(creatorUsername);
-    const isFav = favourites.includes(creatorUsername);
-    setFavourites(prev => isFav ? prev.filter(u => u !== creatorUsername) : [...prev, creatorUsername]);
     try {
-      const res = await fetch('/api/user/favourite-creators', {
-        method: isFav ? 'DELETE' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: creatorUsername }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setFavourites(data.favouriteCreators || []);
-      } else {
-        setFavourites(prev => isFav ? [...prev, creatorUsername] : prev.filter(u => u !== creatorUsername));
+      const res = await toggleFavouriteApi(creatorUsername);
+      if (res.requiresAuth) {
+        setLoginCallbackUrl('');
+        setLoginModalMode('favourite');
+        setShowLoginModal(true);
       }
-    } catch {
-      setFavourites(prev => isFav ? [...prev, creatorUsername] : prev.filter(u => u !== creatorUsername));
     } finally {
       setFavLoading(null);
     }
-  }, [isAuthenticated, favourites, favLoading]);
+  }, [isAuthenticated, favLoading]);
 
   const toggleSaved = useCallback(async (creatorUsername: string) => {
-    if (!isAuthenticated) { setShowLoginModal(true); return; }
+    if (!isAuthenticated) {
+      setLoginCallbackUrl('');
+      setLoginModalMode('favourite');
+      setShowLoginModal(true);
+      return;
+    }
     if (favLoading === creatorUsername) return;
     setFavLoading(creatorUsername);
     const wasSaved = saved.includes(creatorUsername);
@@ -198,7 +245,9 @@ export default function ExploreCreatorsPage() {
       if (showSavedOnly && !saved.includes(c.username)) return false;
       if (selectedCategory !== 'all') {
         const niches: string[] = c.niches || [];
-        if (!niches.some((n: string) => n.toLowerCase() === selectedCategory)) return false;
+        const matchesNiche = niches.some((n: string) => n.toLowerCase() === selectedCategory);
+        const matchesCat = (c.category || '').toLowerCase() === selectedCategory;
+        if (!matchesNiche && !matchesCat) return false;
       }
       if (verifiedOnly && !c.isVerified) return false;
       if (minRating !== null && (parseFloat(c.rating) || 0) < minRating) return false;
@@ -217,14 +266,14 @@ export default function ExploreCreatorsPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const categories = [
+  const [categories, setCategories] = useState<{ id: string; label: string }[]>([
     { id: 'all', label: 'All Categories' },
     { id: 'lifestyle', label: 'Lifestyle' },
     { id: 'tech', label: 'Tech' },
     { id: 'fitness', label: 'Fitness' },
     { id: 'fashion', label: 'Fashion' },
     { id: 'business', label: 'Business' },
-  ];
+  ]);
 
   return (
     <div className="min-h-screen bg-[#F7F7FA] text-[#1a1a1a]">
@@ -239,24 +288,172 @@ export default function ExploreCreatorsPage() {
         )
       ) : (
         <div className="px-4 sm:px-6 pt-4">
-          <nav className="bg-white shadow-sm border border-gray-100 max-w-[1536px] mx-auto rounded-3xl px-6 py-4 flex items-center justify-between">
-            {/* Logo */}
-            <Link href="/" className="flex items-center gap-2">
-              <img src="/assets/logo1.png" alt="Reachly" className="h-10 w-auto object-contain" />
-            </Link>
+          <nav className="bg-white shadow-sm border border-gray-100 max-w-[1536px] mx-auto rounded-3xl px-6 sm:px-8 py-3.5 sm:py-4 relative flex flex-col">
+            <div className="relative flex justify-between items-center w-full">
+              {/* Logo */}
+              <Link href="/" className="flex items-center gap-2 z-10 flex-shrink-0">
+                <img src="/assets/logo1.png" alt="Reachly" className="h-10 w-auto object-contain" />
+              </Link>
 
-            {/* Right side — all links + buttons grouped together like homepage */}
-            <div className="flex items-center gap-8">
-              <div className="hidden lg:flex items-center gap-8 font-medium text-sm text-gray-600">
-                <Link href="/explore-creators" className="text-[#0012FF] font-bold transition-colors">Explore Creators</Link>
-                <Link href="/for-creators" className="hover:text-black transition-colors">For Creators</Link>
-                <Link href="/about" className="hover:text-black transition-colors">About</Link>
+              {/* Desktop Nav - Central */}
+              <div className="hidden lg:flex items-center gap-7 xl:gap-9 absolute left-1/2 -translate-x-1/2">
+                <Link
+                  href="/"
+                  className="font-sans text-sm font-medium text-gray-600 hover:text-black transition-colors"
+                >
+                  Home
+                </Link>
+                <Link
+                  href="/explore-creators"
+                  className="font-sans text-sm font-bold text-[#0012FF] transition-colors"
+                >
+                  Explore Creators
+                </Link>
+                <Link
+                  href="/events"
+                  className="font-sans text-sm font-medium text-gray-600 hover:text-black transition-colors"
+                >
+                  Events
+                </Link>
+                <Link
+                  href="/for-creators"
+                  className="font-sans text-sm font-medium text-gray-600 hover:text-black transition-colors"
+                >
+                  For Creators
+                </Link>
+                <Link
+                  href="/about"
+                  className="font-sans text-sm font-medium text-gray-600 hover:text-black transition-colors"
+                >
+                  About
+                </Link>
               </div>
-              <div className="flex items-center gap-3">
-                <button onClick={() => router.push('/login')} className="text-gray-700 font-semibold text-sm hover:text-black transition-all cursor-pointer">Login</button>
-                <button onClick={() => router.push('/signup')} className="border border-gray-300 text-gray-700 px-5 py-2 rounded-full font-semibold text-sm hover:bg-gray-50 transition-all cursor-pointer">Sign up</button>
+
+              {/* Right Auth Buttons */}
+              <div className="hidden lg:flex items-center gap-4 z-10">
+                <button
+                  onClick={() => router.push('/login')}
+                  className="text-gray-700 font-sans font-medium text-sm hover:text-black transition-all cursor-pointer"
+                >
+                  Login
+                </button>
+                <button
+                  onClick={() => router.push('/signup')}
+                  className="border border-gray-300 text-gray-700 px-5 py-2 rounded-full font-sans font-medium text-sm hover:border-black hover:text-black transition-all cursor-pointer"
+                >
+                  Sign up
+                </button>
               </div>
+
+              {/* Mobile Hamburger */}
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="lg:hidden w-10 h-10 flex items-center justify-center focus:outline-none z-10"
+                aria-label="Toggle menu"
+              >
+                <div className="relative w-6 h-6">
+                  <motion.span
+                    animate={
+                      isMobileMenuOpen
+                        ? { rotate: 45, top: 12 }
+                        : { rotate: 0, top: 4 }
+                    }
+                    transition={{ duration: 0.3 }}
+                    className="absolute left-0 w-6 h-[2px] bg-black rounded-full"
+                  />
+                  <motion.span
+                    animate={{
+                      opacity: isMobileMenuOpen ? 0 : 1,
+                      x: isMobileMenuOpen ? -10 : 0,
+                    }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute left-0 top-3 w-6 h-[2px] bg-black rounded-full"
+                  />
+                  <motion.span
+                    animate={
+                      isMobileMenuOpen
+                        ? { rotate: -45, top: 12 }
+                        : { rotate: 0, top: 20 }
+                    }
+                    transition={{ duration: 0.3 }}
+                    className="absolute left-0 w-6 h-[2px] bg-black rounded-full"
+                  />
+                </div>
+              </motion.button>
             </div>
+
+            {/* Mobile Menu */}
+            <AnimatePresence>
+              {isMobileMenuOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10, height: 0 }}
+                  animate={{ opacity: 1, y: 0, height: 'auto' }}
+                  exit={{ opacity: 0, y: -10, height: 0 }}
+                  transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                  className="lg:hidden overflow-hidden mt-4 pt-4 border-t border-gray-100"
+                >
+                  <div className="flex flex-col gap-4 pb-4">
+                    <Link
+                      href="/"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="block font-sans text-base font-medium text-gray-700 hover:text-black"
+                    >
+                      Home
+                    </Link>
+                    <Link
+                      href="/explore-creators"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="block font-sans text-base font-bold text-[#0012FF]"
+                    >
+                      Explore Creators
+                    </Link>
+                    <Link
+                      href="/events"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="block font-sans text-base font-medium text-gray-700 hover:text-black"
+                    >
+                      Events
+                    </Link>
+                    <Link
+                      href="/for-creators"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="block font-sans text-base font-medium text-gray-700 hover:text-black"
+                    >
+                      For Creators
+                    </Link>
+                    <Link
+                      href="/about"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="block font-sans text-base font-medium text-gray-700 hover:text-black"
+                    >
+                      About
+                    </Link>
+                  </div>
+                  <div className="pt-4 border-t border-gray-100 flex flex-col gap-3">
+                    <button
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        router.push('/login');
+                      }}
+                      className="w-full py-2.5 rounded-full text-center text-sm font-semibold text-gray-700 hover:text-black bg-gray-50 hover:bg-gray-100 transition-all cursor-pointer"
+                    >
+                      Login
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        router.push('/signup');
+                      }}
+                      className="w-full py-2.5 rounded-full text-center text-sm font-semibold text-white bg-[#0012FF] hover:bg-[#0010d0] transition-all cursor-pointer shadow-sm"
+                    >
+                      Sign up
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </nav>
         </div>
       )}
@@ -280,6 +477,7 @@ export default function ExploreCreatorsPage() {
               <button
                 onClick={() => setShowLoginModal(false)}
                 className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 transition-colors p-1.5 rounded-full hover:bg-gray-100 cursor-pointer z-10"
+                aria-label="Close"
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <line x1="18" y1="6" x2="6" y2="18" />
@@ -290,32 +488,44 @@ export default function ExploreCreatorsPage() {
               {/* Illustration */}
               <div className="w-40 sm:w-52 h-auto my-2">
                 <img
-                  src="/assets/favourites.png"
-                  alt="Save to Favourites"
+                  src={loginModalMode === 'booking' ? '/assets/login.png' : '/assets/favourites.png'}
+                  alt={loginModalMode === 'booking' ? 'Login Required' : 'Save to Favourites'}
                   className="w-full h-auto object-contain"
                 />
               </div>
 
               {/* Title */}
               <h3 className="text-xl sm:text-2xl font-extrabold text-black mb-2 tracking-tight">
-                Save to Favourites
+                {loginModalMode === 'booking' ? 'Login Required' : 'Save to Favourites'}
               </h3>
 
               {/* Description */}
               <p className="text-xs sm:text-sm text-gray-400 font-medium leading-relaxed mb-6 max-w-[260px] sm:max-w-[280px]">
-                Create a free account or log in to save your favourite creators and get personalised recommendations.
+                {loginModalMode === 'booking'
+                  ? 'Please log in or sign up to continue booking this session with the creator.'
+                  : 'Create a free account or log in to save your favourite creators and get personalised recommendations.'}
               </p>
 
               {/* Action Buttons */}
               <div className="flex flex-col gap-3 w-full max-w-[280px]">
                 <button
-                  onClick={() => router.push('/login')}
+                  onClick={() => {
+                    const loginUrl = loginCallbackUrl
+                      ? `/login?callbackUrl=${encodeURIComponent(loginCallbackUrl)}`
+                      : '/login';
+                    router.push(loginUrl);
+                  }}
                   className="w-full py-3.5 bg-[#0012FF] hover:bg-[#0010d0] text-white rounded-full font-bold text-sm sm:text-base transition-all shadow-md active:scale-98 cursor-pointer"
                 >
                   Log In
                 </button>
                 <button
-                  onClick={() => router.push('/signup')}
+                  onClick={() => {
+                    const signupUrl = loginCallbackUrl
+                      ? `/signup?callbackUrl=${encodeURIComponent(loginCallbackUrl)}`
+                      : '/signup';
+                    router.push(signupUrl);
+                  }}
                   className="w-full py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full font-bold text-xs sm:text-sm transition-all cursor-pointer"
                 >
                   Create Account
@@ -354,7 +564,13 @@ export default function ExploreCreatorsPage() {
           {/* Favourites tab — heart */}
           <button
             onClick={() => {
-              if (!isAuthenticated) { setShowLoginModal(true); return; }
+              if (!isAuthenticated) {
+                setLoginCallbackUrl('');
+                setLoginModalMode('favourite');
+                setShowLoginModal(true);
+                return;
+              }
+
               const next = !showFavouritesOnly;
               setShowFavouritesOnly(next);
               if (next) setShowSavedOnly(false);
@@ -378,7 +594,13 @@ export default function ExploreCreatorsPage() {
           {/* Saved tab — bookmark */}
           <button
             onClick={() => {
-              if (!isAuthenticated) { setShowLoginModal(true); return; }
+              if (!isAuthenticated) {
+                setLoginCallbackUrl('');
+                setLoginModalMode('favourite');
+                setShowLoginModal(true);
+                return;
+              }
+
               const next = !showSavedOnly;
               setShowSavedOnly(next);
               if (next) setShowFavouritesOnly(false);
@@ -505,8 +727,7 @@ export default function ExploreCreatorsPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.4, delay: index * 0.04 }}
-                  onClick={() => !isAdmin && router.push(`/creators/${creator.username}/book-session`)}
-                  className={`flex flex-col w-full group ${isAdmin ? 'cursor-default' : 'cursor-pointer'}`}
+                  className="flex flex-col w-full group"
                 >
                   {/* Top Image Container */}
                   <div className="relative w-full aspect-[4/4.2] rounded-[20px] overflow-hidden bg-gray-100 mb-3.5 shadow-xs transition-transform duration-300 group-hover:scale-[1.01]">
@@ -584,12 +805,12 @@ export default function ExploreCreatorsPage() {
                     {/* Book Now Link */}
                     {!isAdmin && (
                       <div>
-                        <Link
-                          href={`/creators/${creator.username}/book-session`}
-                          className="text-xs sm:text-sm font-bold text-[#0012FF] underline hover:text-[#0010d0] font-sans pt-1 inline-block"
+                        <span
+                          onClick={(e) => handleCreatorBooking(e, creator.username)}
+                          className="text-xs sm:text-sm font-bold text-[#0012FF] underline hover:text-[#0010d0] font-sans pt-1 inline-block cursor-pointer"
                         >
                           Book Now
-                        </Link>
+                        </span>
                       </div>
                     )}
                   </div>

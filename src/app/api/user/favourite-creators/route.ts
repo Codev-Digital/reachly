@@ -7,10 +7,10 @@ import { verifyToken } from '@/lib/jwt';
 
 async function getEmailFromRequest(request: NextRequest): Promise<string | null> {
   const session = await getServerSession(authOptions);
-  if (session?.user?.email) return session.user.email;
+  if (session?.user?.email) return session.user.email.toLowerCase().trim();
   const token = request.cookies.get('auth_token')?.value;
   const payload = token ? verifyToken(token) : null;
-  return payload?.email ?? null;
+  return payload?.email ? payload.email.toLowerCase().trim() : null;
 }
 
 export async function GET(request: NextRequest) {
@@ -31,11 +31,12 @@ export async function POST(request: NextRequest) {
     const email = await getEmailFromRequest(request);
     if (!email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const { username } = await request.json();
-    if (!username) return NextResponse.json({ error: 'Username required' }, { status: 400 });
+    const trimmedUsername = typeof username === 'string' ? username.trim() : '';
+    if (!trimmedUsername) return NextResponse.json({ error: 'Username required' }, { status: 400 });
     await connectDB();
     const user = await User.findOneAndUpdate(
       { email },
-      { $addToSet: { favouriteCreators: username } },
+      { $addToSet: { favouriteCreators: trimmedUsername } },
       { new: true }
     ).select('favouriteCreators');
     return NextResponse.json({ favouriteCreators: user?.favouriteCreators || [] });
@@ -49,11 +50,12 @@ export async function DELETE(request: NextRequest) {
     const email = await getEmailFromRequest(request);
     if (!email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const { username } = await request.json();
-    if (!username) return NextResponse.json({ error: 'Username required' }, { status: 400 });
+    const trimmedUsername = typeof username === 'string' ? username.trim() : '';
+    if (!trimmedUsername) return NextResponse.json({ error: 'Username required' }, { status: 400 });
     await connectDB();
     const user = await User.findOneAndUpdate(
       { email },
-      { $pull: { favouriteCreators: username } },
+      { $pull: { favouriteCreators: trimmedUsername } },
       { new: true }
     ).select('favouriteCreators');
     return NextResponse.json({ favouriteCreators: user?.favouriteCreators || [] });

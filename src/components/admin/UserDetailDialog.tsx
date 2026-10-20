@@ -124,7 +124,7 @@ export default function UserDetailDialog({
               <button
                 disabled={busy}
                 onClick={() => onDelete(user)}
-                className="px-5 py-2 border border-rose-200 text-rose-600 rounded-xl text-xs sm:text-sm font-semibold hover:bg-rose-50 transition-all cursor-pointer ml-auto bg-white"
+                className="px-5 py-2 bg-red-50 border border-red-200 text-red-600 rounded-full text-xs sm:text-sm font-semibold hover:bg-red-100 hover:border-red-300 transition-all cursor-pointer ml-auto"
               >
                 Delete Account
               </button>
