@@ -311,7 +311,10 @@ export default function Home() {
                 <Link href="/explore-creators" className="bg-white text-[#001F7D] font-sans font-semibold px-8 py-3 rounded-full text-sm hover:bg-white/90 transition-all">
                   Explore Creators
                 </Link>
-                <Link href="/signup" className="border border-white/50 text-white font-sans font-semibold px-8 py-3 rounded-full text-sm hover:bg-white/10 transition-all">
+                <Link
+                  href="/signup"
+                  className="border border-white/60 text-white font-sans font-semibold px-8 py-3 rounded-full text-sm hover:bg-white hover:text-[#001F7D] hover:border-white hover:shadow-lg hover:shadow-white/10 transition-all duration-200"
+                >
                   Become a Creator
                 </Link>
               </div>
