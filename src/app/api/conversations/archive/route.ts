@@ -29,13 +29,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Conversation not found' }, { status: 404 });
     }
 
-    if (conv.creatorId.toString() === user._id.toString()) {
+    const uid = user._id.toString();
+    const isCreator = conv.creatorId.toString() === uid;
+    const isDmPeer = conv.userId && conv.userId.toString() === uid;
+    const isBroadcastMember =
+      conv.type === 'broadcast' &&
+      Array.isArray(conv.participantIds) &&
+      conv.participantIds.some((id: any) => id.toString() === uid);
+
+    if (isCreator) {
       await Conversation.findByIdAndUpdate(
         conversationId,
         { $set: { isArchivedByCreator: archive } },
         { new: true }
       );
-    } else if (conv.userId.toString() === user._id.toString()) {
+    } else if (isDmPeer || isBroadcastMember) {
       await Conversation.findByIdAndUpdate(
         conversationId,
         { $set: { isArchivedByUser: archive } },

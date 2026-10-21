@@ -13,6 +13,13 @@ export interface IMessage extends Document {
     fileName: string;
     fileSize: number;
   };
+  /** Multi-image albums (and general multi-file). First item mirrors `attachment` for older clients. */
+  attachments?: {
+    url: string;
+    fileType: string;
+    fileName: string;
+    fileSize: number;
+  }[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -52,8 +59,16 @@ const MessageSchema = new Schema<IMessage>(
       url: String,
       fileType: String,
       fileName: String,
-      fileSize: Number
+      fileSize: Number,
     },
+    attachments: [
+      {
+        url: String,
+        fileType: String,
+        fileName: String,
+        fileSize: Number,
+      },
+    ],
   },
   { timestamps: true }
 );

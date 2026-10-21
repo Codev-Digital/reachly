@@ -12,6 +12,7 @@ import {
   type EventStatusInput,
 } from '@/lib/eventValidation';
 import { asUploadBlob, eventSaveError } from '@/lib/eventApi';
+import { ensureEventBroadcastChannel } from '@/lib/eventBroadcastChat';
 
 function serialize(event: any) {
   return {
@@ -157,6 +158,14 @@ export async function PUT(req: NextRequest, context: RouteContext) {
     }
 
     await event.save();
+
+    // Keep / create the broadcast chat channel (title & banner stay in sync)
+    try {
+      await ensureEventBroadcastChannel(event);
+    } catch (chatErr) {
+      console.error('[PUT /api/creators/events/:id] broadcast channel:', chatErr);
+    }
+
     return NextResponse.json({ success: true, event: serialize(event) });
   } catch (err) {
     console.error('[PUT /api/creators/events/:id]', err);

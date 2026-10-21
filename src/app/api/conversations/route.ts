@@ -61,16 +61,22 @@ export async function GET(request: NextRequest) {
             }
         }
 
-        // Find all conversations for this user
+        // DMs where user is creator/user, plus event broadcast channels they belong to
         const conversations = await Conversation.find({
-            $or: [{ creatorId: user._id }, { userId: user._id }],
+            $or: [
+                { creatorId: user._id },
+                { userId: user._id },
+                { type: 'broadcast', participantIds: user._id },
+            ],
         })
             .sort({ updatedAt: -1 })
             .lean() as any[];
 
-        // If date filter active, keep only conversations that have a booking on that date
+        // If date filter active, keep only DM conversations that have a booking on that date
+        // (broadcast channels are hidden on date-filtered views)
         const filteredConversations = dateParam
             ? conversations.filter((conv) => {
+                if (conv.type === 'broadcast') return false;
                 const key = `${conv.creatorId}-${conv.userId}`;
                 return dateBookingMap.has(key);
             })
@@ -81,15 +87,24 @@ export async function GET(request: NextRequest) {
         }
 
         const convIds = filteredConversations.map((c) => c._id);
+        const dmConversations = filteredConversations.filter((c) => c.type !== 'broadcast');
         const otherUserIds = Array.from(new Set(
-            filteredConversations.map((c) => (c.creatorId.toString() === userId ? c.userId : c.creatorId).toString())
+            dmConversations.map((c) => (c.creatorId.toString() === userId ? c.userId : c.creatorId).toString())
         ));
 
-        // Build pair matching for bookings
-        const pairConditions = filteredConversations.map((c) => ({
-            creatorId: c.creatorId,
-            userId: c.userId,
-        }));
+        // Also load creator profiles for broadcast channels (buyer side shows creator)
+        const broadcastCreatorIds = filteredConversations
+            .filter((c) => c.type === 'broadcast')
+            .map((c) => c.creatorId.toString());
+        const allProfileUserIds = Array.from(new Set([...otherUserIds, ...broadcastCreatorIds]));
+
+        // Build pair matching for bookings (DMs only)
+        const pairConditions = dmConversations
+            .filter((c) => c.userId)
+            .map((c) => ({
+                creatorId: c.creatorId,
+                userId: c.userId,
+            }));
 
         // Batch fetch users, profiles, messages, and bookings concurrently
         const [
@@ -100,7 +115,7 @@ export async function GET(request: NextRequest) {
             bookingsList
         ] = await Promise.all([
             User.find({ _id: { $in: otherUserIds } }).select('_id name email profilePhoto lastActiveAt').lean(),
-            CreatorProfile.find({ userId: { $in: otherUserIds } }).select('userId displayName username profilePhoto').lean(),
+            CreatorProfile.find({ userId: { $in: allProfileUserIds } }).select('userId displayName username profilePhoto').lean(),
             Message.aggregate([
                 { $match: { conversationId: { $in: convIds } } },
                 { $sort: { createdAt: -1 } },
@@ -148,22 +163,71 @@ export async function GET(request: NextRequest) {
 
         const enriched = filteredConversations.map((conv) => {
             const convId = conv._id.toString();
+            const isBroadcast = conv.type === 'broadcast';
             const isCreator = conv.creatorId.toString() === userId;
-            const otherUserId = isCreator ? conv.userId.toString() : conv.creatorId.toString();
 
-            const otherUser = otherUsersMap.get(otherUserId);
-            const creatorProfile = creatorProfilesMap.get(otherUserId);
+            const lastMsg = lastMsgMap.get(convId);
+            const unreadSenderRole = isCreator ? 'user' : 'creator';
+            const unreadCount = unreadMap.get(`${convId}-${unreadSenderRole}`) || 0;
+
+            if (isBroadcast) {
+                const creatorProfile = creatorProfilesMap.get(conv.creatorId.toString());
+                const title = (conv.title || 'Event').trim() || 'Event';
+                // Channel avatar = event banner; message avatars use creatorAvatar separately
+                const eventAvatar = conv.bannerUrl || '/assets/events.svg';
+                const creatorName = creatorProfile?.displayName || creatorProfile?.username || 'Creator';
+                const creatorAvatar =
+                    creatorProfile?.profilePhoto || '/avatar.png';
+                const createdIso = conv.createdAt ? new Date(conv.createdAt).toISOString() : '';
+                const participantCount = Array.isArray(conv.participantIds) ? conv.participantIds.length : 0;
+
+                return {
+                    id: convId,
+                    conversationId: convId,
+                    type: 'broadcast' as const,
+                    eventId: conv.eventId ? String(conv.eventId) : null,
+                    creatorId: conv.creatorId.toString(),
+                    userId: null,
+                    isLocked: conv.isLocked,
+                    isCreator,
+                    // Channel display name = event title (both creator & user views)
+                    follower: title,
+                    creator: title,
+                    creatorName,
+                    creatorAvatar,
+                    username: creatorProfile?.username || '',
+                    avatar: eventAvatar,
+                    image: eventAvatar,
+                    email: '',
+                    isOnline: false,
+                    lastMessage: (lastMsg?.content || '').split('|||')[0],
+                    lastMessageSenderRole: lastMsg?.senderRole || null,
+                    lastMessageTime: lastMsg?.createdAt || null,
+                    unreadCount,
+                    scheduledDate: createdIso,
+                    shortDate: 'Event Broadcast',
+                    time: '',
+                    meetingUrl: null,
+                    session: 'Event Broadcast',
+                    duration: participantCount > 0 ? `${participantCount} members` : '',
+                    price: '',
+                    ref: conv.eventId ? `EVT-${String(conv.eventId).slice(-6).toUpperCase()}` : '',
+                    participantCount,
+                    isArchivedByCreator: isCreator ? Boolean(conv.isArchivedByCreator) : false,
+                    isArchivedByUser: !isCreator ? Boolean(conv.isArchivedByUser) : false,
+                };
+            }
+
+            const otherUserId = isCreator ? conv.userId?.toString() : conv.creatorId.toString();
+            const otherUser = otherUserId ? otherUsersMap.get(otherUserId) : null;
+            const creatorProfile = otherUserId ? creatorProfilesMap.get(otherUserId) : null;
 
             const displayName = creatorProfile?.displayName || otherUser?.name || 'Unknown';
             const username = creatorProfile?.username || '';
             const avatar = creatorProfile?.profilePhoto || otherUser?.profilePhoto || '/avatar.png';
             const email = otherUser?.email || '';
 
-            const lastMsg = lastMsgMap.get(convId);
-            const unreadSenderRole = isCreator ? 'user' : 'creator';
-            const unreadCount = unreadMap.get(`${convId}-${unreadSenderRole}`) || 0;
-
-            const pairKey = `${conv.creatorId.toString()}-${conv.userId.toString()}`;
+            const pairKey = `${conv.creatorId.toString()}-${conv.userId?.toString()}`;
             const targetBooking = dateParam ? dateBookingMap.get(pairKey) : pairBookingMap.get(pairKey);
 
             let sessionTitle = '';
@@ -201,8 +265,10 @@ export async function GET(request: NextRequest) {
             return {
                 id: convId,
                 conversationId: convId,
+                type: 'dm' as const,
+                eventId: null,
                 creatorId: conv.creatorId.toString(),
-                userId: conv.userId.toString(),
+                userId: conv.userId?.toString() || null,
                 isLocked: conv.isLocked,
                 isCreator,
                 follower: displayName,
@@ -224,6 +290,7 @@ export async function GET(request: NextRequest) {
                 duration,
                 price,
                 ref: bookingRef,
+                participantCount: 2,
                 isArchivedByCreator: isCreator ? Boolean((conv as any).isArchivedByCreator) : false,
                 isArchivedByUser: !isCreator ? Boolean((conv as any).isArchivedByUser) : false,
             };

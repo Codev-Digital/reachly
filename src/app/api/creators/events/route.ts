@@ -10,6 +10,7 @@ import {
   type EventStatusInput,
 } from '@/lib/eventValidation';
 import { asUploadBlob, eventSaveError } from '@/lib/eventApi';
+import { ensureEventBroadcastChannel } from '@/lib/eventBroadcastChat';
 
 function serialize(event: any) {
   return {
@@ -127,6 +128,13 @@ export async function POST(req: NextRequest) {
       bannerUrl,
       publishedAt: status === 'published' ? new Date() : null,
     });
+
+    // Auto-create a broadcast chat channel for this event
+    try {
+      await ensureEventBroadcastChannel(event);
+    } catch (chatErr) {
+      console.error('[POST /api/creators/events] broadcast channel:', chatErr);
+    }
 
     return NextResponse.json({ success: true, event: serialize(event) }, { status: 201 });
   } catch (err) {

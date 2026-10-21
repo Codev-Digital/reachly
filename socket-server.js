@@ -46,13 +46,22 @@ mongoose.connect(MONGODB_URI)
 
 const ConversationSchema = new mongoose.Schema(
   {
+    type: { type: String, enum: ['dm', 'broadcast'], default: 'dm' },
+    eventId: { type: mongoose.Schema.Types.ObjectId, ref: 'Event', default: null },
+    title: { type: String, default: '' },
+    bannerUrl: { type: String, default: '' },
+    participantIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     creatorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false, default: null },
     isLocked: { type: Boolean, default: true },
   },
   { timestamps: true }
 );
-ConversationSchema.index({ creatorId: 1, userId: 1 }, { unique: true });
+ConversationSchema.index(
+  { creatorId: 1, userId: 1 },
+  { unique: true, partialFilterExpression: { eventId: null } }
+);
+ConversationSchema.index({ eventId: 1 }, { unique: true, sparse: true });
 const Conversation = mongoose.models.Conversation || mongoose.model('Conversation', ConversationSchema);
 
 const MessageSchema = new mongoose.Schema(
@@ -69,10 +78,71 @@ const MessageSchema = new mongoose.Schema(
       fileName: String,
       fileSize: Number
     },
+    attachments: [{
+      url: String,
+      fileType: String,
+      fileName: String,
+      fileSize: Number
+    }],
   },
   { timestamps: true }
 );
 const Message = mongoose.models.Message || mongoose.model('Message', MessageSchema);
+
+// Lightweight read models for sender display (broadcast joiners)
+const UserLite =
+  mongoose.models.User ||
+  mongoose.model(
+    'User',
+    new mongoose.Schema({
+      name: String,
+      profilePhoto: String,
+    })
+  );
+const CreatorProfileLite =
+  mongoose.models.CreatorProfile ||
+  mongoose.model(
+    'CreatorProfile',
+    new mongoose.Schema({
+      userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      displayName: String,
+      username: String,
+      profilePhoto: String,
+    })
+  );
+
+async function resolveSenderProfile(senderId, senderRole) {
+  try {
+    // Joiners: User name/photo. Creators: CreatorProfile then User.
+    if (senderRole === 'user') {
+      const user = await UserLite.findById(senderId).select('name profilePhoto').lean();
+      return {
+        senderName: user?.name || 'User',
+        senderAvatar: user?.profilePhoto || '/avatar.png',
+      };
+    }
+    const [user, creatorProfile] = await Promise.all([
+      UserLite.findById(senderId).select('name profilePhoto').lean(),
+      CreatorProfileLite.findOne({ userId: senderId })
+        .select('displayName username profilePhoto')
+        .lean(),
+    ]);
+    const name =
+      creatorProfile?.displayName ||
+      creatorProfile?.username ||
+      user?.name ||
+      'Creator';
+    const avatar =
+      creatorProfile?.profilePhoto || user?.profilePhoto || '/avatar.png';
+    return { senderName: name, senderAvatar: avatar };
+  } catch (err) {
+    console.error('resolveSenderProfile error:', err);
+    return {
+      senderName: senderRole === 'creator' ? 'Creator' : 'User',
+      senderAvatar: '/avatar.png',
+    };
+  }
+}
 
 // 3. Start WebSocket Server
 const PORT = 3001;
@@ -144,38 +214,22 @@ wss.on('connection', (ws) => {
         const roomClients = rooms.get(conversationId);
         const isRead = roomClients && roomClients.size > 1;
 
-        // Save to DB
+        const attachments = Array.isArray(data.attachments) && data.attachments.length
+          ? data.attachments
+          : (data.attachment ? [data.attachment] : undefined);
+        const attachment = attachments?.[0] || data.attachment || undefined;
+
         const newMsg = new Message({
           conversationId: new mongoose.Types.ObjectId(conversationId),
           senderId: new mongoose.Types.ObjectId(senderId),
           senderRole,
           content,
           read: isRead,
-          attachment: data.attachment || undefined,
+          attachment,
+          attachments,
         });
 
-        // Broadcast immediately for instant delivery
-        if (roomClients) {
-          const payload = JSON.stringify({
-            type: 'message',
-            message: {
-              id: newMsg._id.toString(), // Use the generated ObjectId
-              conversationId,
-              senderId,
-              senderRole,
-              content,
-              read: isRead,
-              createdAt: new Date().toISOString(), // Use current time instead of relying on newMsg.createdAt which gets set on save
-              attachment: data.attachment || undefined,
-              tempId: tempId || data.tempId || undefined,
-            },
-          });
-          roomClients.forEach(client => {
-            if (client.readyState === WebSocket.OPEN) client.send(payload);
-          });
-        }
-
-        // Save to DB in background
+        // Persist immediately — never block DB save on profile lookup (that was dropping messages)
         Promise.all([
           newMsg.save(),
           Conversation.findByIdAndUpdate(conversationId, { updatedAt: new Date() })
@@ -184,6 +238,39 @@ wss.on('connection', (ws) => {
         }).catch(dbErr => {
           console.error('Error saving message to DB:', dbErr);
         });
+
+        // Broadcast quickly; don't stall delivery if profile lookup is slow
+        const fallbackProfile = {
+          senderName: senderRole === 'creator' ? 'Creator' : 'User',
+          senderAvatar: '/avatar.png',
+        };
+        const { senderName, senderAvatar } = await Promise.race([
+          resolveSenderProfile(senderId, senderRole),
+          new Promise((resolve) => setTimeout(() => resolve(fallbackProfile), 400)),
+        ]);
+
+        if (roomClients) {
+          const payload = JSON.stringify({
+            type: 'message',
+            message: {
+              id: newMsg._id.toString(),
+              conversationId,
+              senderId,
+              senderRole,
+              senderName,
+              senderAvatar,
+              content,
+              read: isRead,
+              createdAt: new Date().toISOString(),
+              attachment,
+              attachments,
+              tempId: tempId || data.tempId || undefined,
+            },
+          });
+          roomClients.forEach(client => {
+            if (client.readyState === WebSocket.OPEN) client.send(payload);
+          });
+        }
       }
 
       // ── LOCK STATUS ───────────────────────────────────────────────────────

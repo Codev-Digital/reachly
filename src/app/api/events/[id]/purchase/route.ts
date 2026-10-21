@@ -8,6 +8,7 @@ import Event from '@/models/Event';
 import EventPurchase from '@/models/EventPurchase';
 import { isValidObjectId, isValidISODate } from '@/lib/eventValidation';
 import { verifyToken } from '@/lib/jwt';
+import { addBuyerToEventBroadcast } from '@/lib/eventBroadcastChat';
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -116,6 +117,13 @@ export async function POST(req: NextRequest, context: RouteContext) {
       status: 'confirmed',
       paymentStatus: 'pending',
     });
+
+    // Auto-add buyer to the event broadcast chat channel
+    try {
+      await addBuyerToEventBroadcast(event._id, user.id);
+    } catch (chatErr) {
+      console.error('[POST /api/events/:id/purchase] broadcast channel:', chatErr);
+    }
 
     return NextResponse.json(
       {
