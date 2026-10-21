@@ -44,6 +44,9 @@ interface Booking {
   bookingRef?: string;
   isPackage?: boolean;
   sessionNumber?: number;
+  isEvent?: boolean;
+  eventId?: string | null;
+  tierTitle?: string | null;
 }
 
 export default function UserBookingsPage() {
@@ -132,10 +135,16 @@ export default function UserBookingsPage() {
         const data = await bookingsRes.json();
         if (data.bookings) {
           const list = data.bookings.map((b: any) => {
-            const passed = b.scheduledDate ? isMeetingPassed(b.scheduledDate, b.time) : false;
+            const passed = b.isEvent
+              ? b.status === 'Past'
+              : b.scheduledDate
+                ? isMeetingPassed(b.scheduledDate, b.time)
+                : false;
             let finalStatus = b.status;
             if (b.originalStatus === 'cancelled' || b.status === 'Cancelled') {
               finalStatus = 'Cancelled';
+            } else if (b.isEvent) {
+              finalStatus = b.status === 'Past' ? 'Past' : b.status === 'Cancelled' ? 'Cancelled' : 'Upcoming';
             } else if (b.status === 'Past' || passed) {
               finalStatus = 'Past';
             } else {
@@ -150,8 +159,10 @@ export default function UserBookingsPage() {
               price: b.price || '2500 PKR',
               date: b.shortDate,
               time: b.time,
-              location: b.paymentMethod === 'Guest' ? 'Online' : 'In-person',
-              bio: b.bio || 'No description provided.',
+              location: b.isEvent ? 'Event' : b.paymentMethod === 'Guest' ? 'Online' : 'In-person',
+              bio: b.isEvent
+                ? (b.bio || b.session || b.tierTitle || 'Event ticket')
+                : (b.bio || 'No description provided.'),
               originalStatus: b.originalStatus,
               status: finalStatus,
               scheduledDate: b.scheduledDate,
@@ -160,6 +171,9 @@ export default function UserBookingsPage() {
               bookingRef: b.bookingRef,
               isPackage: b.isPackage || false,
               sessionNumber: b.sessionNumber,
+              isEvent: !!b.isEvent,
+              eventId: b.eventId || null,
+              tierTitle: b.tierTitle || null,
             };
           });
           setBookings(list);
@@ -302,7 +316,10 @@ export default function UserBookingsPage() {
   };
 
   const filteredBookings = bookings.filter((b) => {
-    const matchesTab = activeTab === 'Cancelled' ? b.originalStatus === 'cancelled' : b.status === activeTab;
+    const matchesTab =
+      activeTab === 'Cancelled'
+        ? b.originalStatus === 'cancelled' || b.status === 'Cancelled'
+        : b.status === activeTab;
     const matchesSearch = !searchQuery.trim() ||
       b.creator.toLowerCase().includes(searchQuery.toLowerCase()) ||
       b.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -475,6 +492,11 @@ export default function UserBookingsPage() {
                             <polyline points="12 6 12 12 16 14" />
                           </svg>
                           <span>{booking.date} at {booking.time}</span>
+                          {booking.isEvent && (
+                            <span className="text-[10px] font-bold text-[#0012FF] bg-[#EEF2FF] px-2 py-0.5 rounded-full shrink-0 leading-none">
+                              Event{booking.tierTitle ? ` · ${booking.tierTitle}` : ''}
+                            </span>
+                          )}
                           {booking.isPackage && (
                             <span className="text-[10px] font-bold text-[#0012FF] bg-[#EEF2FF] px-2 py-0.5 rounded-full shrink-0 leading-none">
                               Package · session {booking.sessionNumber}
@@ -533,6 +555,21 @@ export default function UserBookingsPage() {
                         const passed = isMeetingPassed(booking.scheduledDate, booking.time);
                         const isCancelled = activeTab === 'Cancelled' || booking.originalStatus === 'cancelled' || booking.status === 'Cancelled';
                         const isPast = activeTab === 'Past' || passed;
+
+                        if (booking.isEvent) {
+                          return (
+                            <button
+                              onClick={() =>
+                                router.push(
+                                  booking.eventId ? `/user/events/${booking.eventId}` : '/user/events'
+                                )
+                              }
+                              className="w-full py-2.5 bg-[#0012FF] hover:bg-[#0012FF]/90 text-white rounded-full text-xs font-bold text-center transition-all cursor-pointer shadow-md shadow-[#0012FF]/20"
+                            >
+                              View Event
+                            </button>
+                          );
+                        }
 
                         if (isCancelled || isPast) {
                           return (

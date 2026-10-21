@@ -46,6 +46,9 @@ interface DisplayBooking {
   scheduledDate?: string;
   meetingUrl?: string;
   bookingRef?: string;
+  isEvent?: boolean;
+  eventId?: string | null;
+  tierTitle?: string | null;
 }
 
 export default function UserDashboard() {
@@ -245,16 +248,26 @@ export default function UserDashboard() {
               handle: `@${b.username}`,
               avatar: b.image || '/Avatars/12.jpg',
               time: `${b.shortDate} at ${b.time}`,
-              type: b.paymentMethod === 'Guest' ? 'Online' : 'In-person',
+              type: b.isEvent ? 'Event' : b.paymentMethod === 'Guest' ? 'Online' : 'In-person',
               status: b.originalStatus === 'cancelled' ? 'Cancelled' : 'Accepted',
               amount: b.price || '2500 PKR',
-              note: b.preSessionQuestion || 'No description provided.',
+              note: b.isEvent
+                ? (b.bio || b.session || b.tierTitle || 'Event ticket')
+                : (b.preSessionQuestion || b.session || 'No description provided.'),
               scheduledDate: b.scheduledDate,
               meetingUrl: b.meetingUrl,
-              bookingRef: b.bookingRef
+              bookingRef: b.bookingRef,
+              isEvent: !!b.isEvent,
+              eventId: b.eventId || null,
+              tierTitle: b.tierTitle || null,
             };
 
-            const passed = b.scheduledDate ? isMeetingPassed(b.scheduledDate, b.time) : false;
+            // Events: trust API status (avoid time-parse false "Past")
+            const passed = b.isEvent
+              ? b.status === 'Past'
+              : b.scheduledDate
+                ? isMeetingPassed(b.scheduledDate, b.time)
+                : false;
 
             if (b.originalStatus === 'cancelled' || b.status === 'Cancelled') {
               cancelledArr.push(displayObj);
@@ -767,6 +780,11 @@ export default function UserDashboard() {
                                   <span className="bg-[#E6F9EE] text-[#12B76A] font-bold text-[10px] px-2 py-0.5 rounded-full">
                                     {booking.status || 'Accepted'}
                                   </span>
+                                  {booking.isEvent && (
+                                    <span className="bg-[#EEF2FF] text-[#0012FF] font-bold text-[10px] px-2 py-0.5 rounded-full">
+                                      Event
+                                    </span>
+                                  )}
                                 </div>
                                 <p className="text-[11px] text-gray-400 font-medium font-sans mt-0.5">{booking.handle}</p>
                               </div>
@@ -806,6 +824,21 @@ export default function UserDashboard() {
                             const passed = booking.scheduledDate ? isMeetingPassed(booking.scheduledDate, booking.time) : false;
                             const isCancelled = activeBookingTab === 'Cancelled' || booking.status === 'Cancelled' || booking.status === 'cancelled';
                             const isPast = activeBookingTab === 'Past' || passed;
+
+                            if (booking.isEvent) {
+                              return (
+                                <button
+                                  onClick={() =>
+                                    router.push(
+                                      booking.eventId ? `/user/events/${booking.eventId}` : '/user/events'
+                                    )
+                                  }
+                                  className="w-full py-2 bg-[#0012FF] hover:bg-[#0012FF]/90 text-white rounded-lg text-[11px] font-bold text-center transition-all cursor-pointer shadow-sm"
+                                >
+                                  View Event
+                                </button>
+                              );
+                            }
 
                             if (isCancelled || isPast) {
                               return (

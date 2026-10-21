@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Calendar, Clock, MapPin } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, MapPin, ChevronRight, Ticket, X } from 'lucide-react';
 import UserNavbar from '@/components/UserNavbar';
 import { formatEventCardDate, formatEventCardTime } from '@/lib/eventDisplay';
 import { isRichTextEmpty } from '@/lib/richText';
@@ -38,9 +39,20 @@ interface EventDetail {
   creator: {
     username: string;
     displayName: string;
+    profilePhoto?: string | null;
+    shortBio?: string;
     city?: string;
     country?: string;
   } | null;
+}
+
+/** First available (in-stock) tier key for a date index, or null. */
+function firstAvailableTierKey(dates: EventDate[] | undefined, dateIndex: number): string | null {
+  const tiers = dates?.[dateIndex]?.tiers ?? [];
+  const idx = tiers.findIndex((t) => Number(t.quantity) > 0);
+  if (idx >= 0) return `${dateIndex}:${idx}`;
+  if (tiers.length > 0) return `${dateIndex}:0`;
+  return null;
 }
 
 const TIER_STYLES = [
@@ -66,8 +78,8 @@ export default function UserEventDetailPage() {
   const [notFound, setNotFound] = useState(false);
   const [selectedDateIndex, setSelectedDateIndex] = useState(0);
   const [selectedTierKey, setSelectedTierKey] = useState<string | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [buying, setBuying] = useState(false);
-  const [buyMessage, setBuyMessage] = useState('');
 
   useEffect(() => {
     try {
@@ -107,11 +119,14 @@ export default function UserEventDetailPage() {
 
         if (eventRes.ok) {
           const data = await eventRes.json();
-          setEvent(data.event);
-          const firstWithTiers = (data.event?.dates || []).findIndex(
+          const loaded: EventDetail = data.event;
+          setEvent(loaded);
+          const firstWithTiers = (loaded.dates || []).findIndex(
             (d: EventDate) => (d.tiers || []).length > 0
           );
-          setSelectedDateIndex(firstWithTiers >= 0 ? firstWithTiers : 0);
+          const dateIdx = firstWithTiers >= 0 ? firstWithTiers : 0;
+          setSelectedDateIndex(dateIdx);
+          setSelectedTierKey(firstAvailableTierKey(loaded.dates, dateIdx));
         } else {
           setNotFound(true);
         }
@@ -140,16 +155,47 @@ export default function UserEventDetailPage() {
     return event?.dates?.[dateIdx]?.tiers?.[tierIdx] ?? null;
   }, [event, selectedTierKey]);
 
-  const handleBuy = async () => {
-    if (!selectedTier || !event) return;
+  const selectDate = (i: number) => {
+    setSelectedDateIndex(i);
+    setSelectedTierKey(firstAvailableTierKey(event?.dates, i));
+  };
+
+  const openConfirm = () => {
+    if (!selectedTier) return;
+    setConfirmOpen(true);
+  };
+
+  const confirmBuy = async () => {
+    if (!selectedTier || !event || !activeDate?.date) return;
     setBuying(true);
-    setBuyMessage('');
     try {
-      // Checkout API for event tickets will plug in here
-      await new Promise((r) => setTimeout(r, 400));
-      setBuyMessage(
-        `Ready to buy “${selectedTier.title}” for ${formatPkr(selectedTier.price)}. Ticket checkout is coming next.`
-      );
+      const res = await fetch(`/api/events/${event.id}/purchase`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          eventDate: activeDate.date,
+          tierTitle: selectedTier.title,
+          quantity: 1,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert(data.error || 'Failed to buy ticket');
+        return;
+      }
+      setConfirmOpen(false);
+      try {
+        sessionStorage.removeItem('reachly_user_bookings_page_cache');
+        sessionStorage.removeItem('reachly_user_dashboard_cache');
+      } catch {
+        /* ignore */
+      }
+      // Hard navigation so dashboard/bookings always refetch (no stale client cache)
+      window.location.href = '/user/dashboard';
+    } catch (err) {
+      console.error(err);
+      alert('Failed to buy ticket');
     } finally {
       setBuying(false);
     }
@@ -241,11 +287,7 @@ export default function UserEventDetailPage() {
                         <button
                           key={`${d.date}-${i}`}
                           type="button"
-                          onClick={() => {
-                            setSelectedDateIndex(i);
-                            setSelectedTierKey(null);
-                            setBuyMessage('');
-                          }}
+                          onClick={() => selectDate(i)}
                           className={cn(
                             'cursor-pointer rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors',
                             i === selectedDateIndex
@@ -271,10 +313,7 @@ export default function UserEventDetailPage() {
                             key={key}
                             type="button"
                             disabled={soldOut}
-                            onClick={() => {
-                              setSelectedTierKey(key);
-                              setBuyMessage('');
-                            }}
+                            onClick={() => setSelectedTierKey(key)}
                             className={cn(
                               'rounded-[8px] px-4 py-3 text-left transition-all',
                               style.bg,
@@ -298,8 +337,61 @@ export default function UserEventDetailPage() {
               </div>
             </section>
 
-            {/* Bottom — Description → Refund → Terms */}
+            {/* Bottom — Host → Description → Refund → Terms */}
             <section className="mt-8 space-y-8 rounded-[8px] border border-[#e2e2e2] bg-white p-6 shadow-sm sm:p-8 lg:p-10">
+              {event.creator && (
+                <div className="rounded-[8px] border border-[#e2e2e2] bg-[#FAFAFC] p-4 sm:p-5">
+                  <div className="flex items-center gap-4">
+                    <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full border-2 border-white bg-white shadow-sm ring-1 ring-[#e2e2e2] sm:h-16 sm:w-16">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={event.creator.profilePhoto || '/avatar.png'}
+                        alt={event.creator.displayName}
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+                        Hosted by
+                      </p>
+                      <div className="mt-0.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                        {event.creator.username ? (
+                          <Link
+                            href={`/creators/${event.creator.username}`}
+                            className="truncate text-base font-bold text-black transition-colors hover:text-[#0012FF] sm:text-lg"
+                          >
+                            {event.creator.displayName}
+                          </Link>
+                        ) : (
+                          <p className="truncate text-base font-bold text-black sm:text-lg">
+                            {event.creator.displayName}
+                          </p>
+                        )}
+                        {event.creator.username && (
+                          <span className="truncate text-sm font-medium text-gray-400">
+                            @{event.creator.username}
+                          </span>
+                        )}
+                      </div>
+                      {event.creator.shortBio?.trim() && (
+                        <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-gray-500">
+                          {event.creator.shortBio.trim()}
+                        </p>
+                      )}
+                    </div>
+                    {event.creator.username && (
+                      <Link
+                        href={`/creators/${event.creator.username}`}
+                        className="hidden shrink-0 items-center gap-1 rounded-full border border-[#e2e2e2] bg-white px-3.5 py-2 text-xs font-semibold text-gray-600 transition-colors hover:border-[#0012FF]/40 hover:text-[#0012FF] sm:inline-flex"
+                      >
+                        View profile
+                        <ChevronRight size={14} />
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              )}
+
               <div>
                 <h2 className="text-lg font-bold text-black sm:text-xl">Description</h2>
                 {isRichTextEmpty(event.description) ? (
@@ -346,20 +438,117 @@ export default function UserEventDetailPage() {
                       {tiers.length ? 'Select a ticket tier to continue' : 'No tickets available for this date'}
                     </p>
                   )}
-                  {buyMessage && (
-                    <p className="mt-1 text-xs font-medium text-[#0012FF]">{buyMessage}</p>
-                  )}
                 </div>
                 <button
                   type="button"
-                  disabled={!selectedTier || buying}
-                  onClick={handleBuy}
-                  className="inline-flex w-full cursor-pointer items-center justify-center rounded-full bg-[#0012FF] px-8 py-3 text-sm font-bold text-white shadow-md transition-all hover:bg-[#0010d0] active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-gray-300 sm:w-auto"
+                  disabled={!selectedTier || Number(selectedTier.quantity) <= 0}
+                  onClick={openConfirm}
+                  className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[#0012FF] px-8 py-3 text-sm font-bold text-white shadow-md transition-all hover:bg-[#0010d0] active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-gray-300 sm:w-auto"
                 >
-                  {buying ? 'Processing...' : 'Buy Ticket'}
+                  <Ticket size={16} strokeWidth={2.5} />
+                  Buy Ticket
                 </button>
               </div>
             </div>
+
+            {/* Purchase confirmation */}
+            {confirmOpen && selectedTier && (
+              <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs">
+                <div
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="buy-ticket-title"
+                  className="relative w-full max-w-md overflow-hidden rounded-[20px] border border-[#e2e2e2] bg-white shadow-2xl"
+                >
+                  <button
+                    type="button"
+                    aria-label="Close"
+                    onClick={() => setConfirmOpen(false)}
+                    className="absolute right-3 top-3 z-10 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-black/35 text-white transition-colors hover:bg-black/50"
+                  >
+                    <X size={16} />
+                  </button>
+
+                  <div className="relative h-40 w-full bg-gray-100 sm:h-44">
+                    {event.bannerUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={event.bannerUrl}
+                        alt=""
+                        className="absolute inset-0 h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div
+                        className="absolute inset-0"
+                        style={{
+                          background:
+                            'radial-gradient(120% 90% at 0% 0%, #FF5A36 0%, rgba(255,90,54,0) 55%), linear-gradient(180deg, #0B1B8F 0%, #050A3A 100%)',
+                        }}
+                      />
+                    )}
+                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                  </div>
+
+                  <div className="p-5 sm:p-6">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+                      Confirm purchase
+                    </p>
+                    <h3
+                      id="buy-ticket-title"
+                      className="mt-1 text-lg font-extrabold leading-snug tracking-tight text-black sm:text-xl"
+                    >
+                      {event.title}
+                    </h3>
+
+                    <div className="mt-4 rounded-[8px] border border-[#e2e2e2] bg-[#F8F8FA] p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+                            Selected tier
+                          </p>
+                          <p className="mt-0.5 truncate text-sm font-bold text-black">
+                            {selectedTier.title}
+                          </p>
+                          <p className="mt-1 text-xs text-gray-500">
+                            {formatEventCardDate(activeDate?.date)}
+                            {' · '}
+                            {formatEventCardTime(activeDate)}
+                          </p>
+                        </div>
+                        <div className="shrink-0 text-right">
+                          <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+                            Price
+                          </p>
+                          <p className="mt-0.5 text-base font-extrabold text-[#0012FF]">
+                            {formatPkr(Number(selectedTier.price) || 0)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-5 grid grid-cols-2 gap-2.5">
+                      <button
+                        type="button"
+                        onClick={() => setConfirmOpen(false)}
+                        disabled={buying}
+                        className="inline-flex w-full cursor-pointer items-center justify-center rounded-full border border-[#e2e2e2] bg-white px-4 py-3 text-sm font-bold text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-60"
+                      >
+                        Close
+                      </button>
+                      <button
+                        type="button"
+                        onClick={confirmBuy}
+                        disabled={buying}
+                        className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[#0012FF] px-4 py-3 text-sm font-bold text-white shadow-md transition-all hover:bg-[#0010d0] active:scale-[0.98] disabled:bg-gray-400"
+                      >
+                        <Ticket size={16} strokeWidth={2.5} />
+                        {buying ? 'Processing...' : 'Buy Ticket'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </>
         )}
       </main>

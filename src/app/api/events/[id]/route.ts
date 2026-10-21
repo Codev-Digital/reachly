@@ -30,7 +30,7 @@ export async function GET(_req: NextRequest, context: RouteContext) {
       userId: (event as any).creatorId,
       isDeactivated: { $ne: true },
     })
-      .select('userId username displayName profilePhoto city country')
+      .select('userId username displayName profilePhoto shortBio city country')
       .lean();
 
     if (!creator) {
@@ -56,6 +56,7 @@ export async function GET(_req: NextRequest, context: RouteContext) {
           username: (creator as any).username || '',
           displayName: (creator as any).displayName || 'Creator',
           profilePhoto: (creator as any).profilePhoto || null,
+          shortBio: (creator as any).shortBio || '',
           city: (creator as any).city || '',
           country: (creator as any).country || '',
         },

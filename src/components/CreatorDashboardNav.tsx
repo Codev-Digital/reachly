@@ -14,8 +14,11 @@ const NAV_ITEMS = [
   { name: 'Chats', href: '/creators/chats', icon: 'chats' },
   { name: 'Events', href: '/creators/events', icon: 'events' },
   { name: 'Calendar', href: '/creators/calendar', icon: 'calendar' },
-  { name: 'Wallet', href: '/creators/wallet', icon: 'wallet' },
-  { name: 'Settings', href: '/creators/settings', icon: 'settings' },
+];
+
+const ACCOUNT_MENU_ITEMS = [
+  { name: 'Wallet', href: '/creators/wallet' },
+  { name: 'Settings', href: '/creators/settings' },
 ];
 
 const ACTIVE_ICON_SRCS = [
@@ -23,8 +26,6 @@ const ACTIVE_ICON_SRCS = [
   '/assets/chat.svg',
   '/assets/events.svg',
   '/assets/calendar.svg',
-  '/assets/wallet.svg',
-  '/assets/settings.svg.png',
 ];
 
 function NavIcon({ icon, active }: { icon: string; active: boolean }) {
@@ -125,7 +126,7 @@ export default function CreatorDashboardNav({
       const img = new window.Image();
       img.src = src;
     });
-    NAV_ITEMS.forEach((item) => router.prefetch(item.href));
+    [...NAV_ITEMS, ...ACCOUNT_MENU_ITEMS].forEach((item) => router.prefetch(item.href));
   }, [router]);
 
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -572,16 +573,45 @@ export default function CreatorDashboardNav({
                   )}
                 </button>
 
-                {/* Profile Dropdown Menu in settings theme */}
+                {/* Profile Dropdown Menu */}
                 {profileDropdownOpen && (
-                  <div className="hidden md:block absolute right-0 top-[48px] sm:top-[52px] w-56 bg-white rounded-2xl shadow-xl border border-gray-100 py-2.5 z-[100] text-left animate-in fade-in slide-in-from-top-2 duration-150">
-
+                  <div className="hidden lg:block absolute right-0 top-[48px] sm:top-[52px] w-56 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-[100] text-left animate-in fade-in slide-in-from-top-2 duration-150">
+                    {ACCOUNT_MENU_ITEMS.map((item) => {
+                      const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+                      return (
+                        <Link
+                          key={item.name}
+                          href={item.href}
+                          onClick={() => setProfileDropdownOpen(false)}
+                          className={`flex w-full items-center gap-2.5 px-4 py-2.5 text-sm font-semibold transition-colors ${
+                            isActive
+                              ? 'bg-[#0012FF]/8 text-[#0012FF]'
+                              : 'text-gray-700 hover:bg-gray-50 hover:text-[#0012FF]'
+                          }`}
+                        >
+                          {item.name === 'Wallet' && (
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <rect x="2" y="5" width="20" height="14" rx="2" />
+                              <line x1="2" y1="10" x2="22" y2="10" />
+                            </svg>
+                          )}
+                          {item.name === 'Settings' && (
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <circle cx="12" cy="12" r="3" />
+                              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0-2.83l-.06-.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                            </svg>
+                          )}
+                          {item.name}
+                        </Link>
+                      );
+                    })}
+                    <div className="my-1.5 border-t border-gray-100" />
                     <button
                       onClick={() => {
                         setProfileDropdownOpen(false);
                         setShowLogoutModal(true);
                       }}
-                      className="hidden md:flex w-full items-center gap-2.5 px-4 py-3 text-sm text-red-500 hover:bg-red-50/70 font-semibold transition-colors text-left cursor-pointer rounded-xl mx-0"
+                      className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50/70 font-semibold transition-colors text-left cursor-pointer"
                     >
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                       Logout
@@ -640,6 +670,7 @@ export default function CreatorDashboardNav({
                       <Link
                         key={item.name}
                         href={item.href}
+                        onClick={() => setMobileOpen(false)}
                         className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${isActive
                           ? 'bg-[#0012FF]/8 text-[#0012FF]'
                           : 'text-gray-600 hover:bg-gray-50 hover:text-[#0012FF]'
@@ -647,6 +678,31 @@ export default function CreatorDashboardNav({
                       >
                         <NavIcon icon={item.icon} active={isActive} />
                         {item.name}
+                      </Link>
+                    );
+                  })}
+
+                  <div className="my-2 border-t border-gray-100" />
+
+                  {ACCOUNT_MENU_ITEMS.map((item) => {
+                    const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+                    return (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        onClick={() => setMobileOpen(false)}
+                        className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${
+                          isActive
+                            ? 'bg-[#0012FF]/10 text-[#0012FF]'
+                            : 'text-gray-600 hover:bg-gray-50 hover:text-[#0012FF]'
+                        }`}
+                      >
+                        {item.name === 'Wallet' ? (
+                          <NavIcon icon="wallet" active={isActive} />
+                        ) : (
+                          <NavIcon icon="settings" active={isActive} />
+                        )}
+                        <span>{item.name}</span>
                       </Link>
                     );
                   })}

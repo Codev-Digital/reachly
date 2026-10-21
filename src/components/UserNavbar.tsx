@@ -264,9 +264,12 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
     { name: 'Bookings', href: '/user/bookings', icon: 'bookings' },
     { name: 'Packages', href: '/user/packages', icon: 'bookings' },
     { name: 'Chats', href: '/user/chats', icon: 'chats' },
-    { name: 'Referrals', href: '/user/referrals', icon: 'referrals' },
-    { name: 'Wallet', href: '/user/payments', icon: 'wallet' },
-    { name: 'Settings', href: '/user/settings', icon: 'settings' },
+  ];
+
+  const accountMenuItems = [
+    { name: 'Referrals', href: '/user/referrals' },
+    { name: 'Wallet', href: '/user/payments' },
+    { name: 'Settings', href: '/user/settings' },
   ];
 
   const isBookSession = pathname.includes('/book-session');
@@ -284,8 +287,8 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
             />
           </Link>
 
-          {/* Centered Navigation Items */}
-          <div className="hidden lg:flex items-center gap-2">
+          {/* Centered Navigation Items — icons keep original sizes; fixed slot stops header height jump */}
+          <div className="hidden lg:flex h-[52px] items-center gap-2">
             {navItems.map((item) => {
               const isActive = activeNavItem === item.name || (item.name === 'Dashboard' && (pathname === '/user/dashboard' || pathname === '/explore-creators' || pathname.includes('/book-session'))) || (item.name === 'Bookings' && pathname === '/user/bookings') || (item.name === 'Chats' && pathname === '/user/chats');
               return (
@@ -293,128 +296,82 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
                   key={item.name}
                   href={item.href}
                   onClick={() => item.href !== '#' && setActiveNavItem(item.name)}
-                  className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition-all ${isActive
+                  className={`flex h-[52px] items-center gap-2 rounded-full px-5 text-sm font-semibold transition-colors ${isActive
                     ? ' text-[#0012FF]'
                     : 'text-gray-500 hover:text-[#0012FF] hover:bg-gray-50'
                     }`}
                 >
-                  {/* Dashboard Icon */}
-                  {item.icon === 'dashboard' && (
-                    isActive ? (
-                      <img
-                        src="/assets/dashboard.png"
-                        alt="Dashboard"
-                        className="w-[39px] h-[39px] object-contain"
-                      />
-                    ) : (
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <rect x="3" y="3" width="7" height="9" rx="1" />
-                        <rect x="14" y="3" width="7" height="5" rx="1" />
-                        <rect x="14" y="11" width="7" height="10" rx="1" />
-                        <rect x="3" y="14" width="7" height="7" rx="1" />
-                      </svg>
-                    )
-                  )}
+                  {/* Slot sized for largest active icon (39px) so inactive 18px SVGs don't shrink the bar */}
+                  <span className="inline-flex h-[39px] w-[39px] shrink-0 items-center justify-center">
+                    {/* Dashboard Icon */}
+                    {item.icon === 'dashboard' && (
+                      isActive ? (
+                        <img
+                          src="/assets/dashboard.png"
+                          alt="Dashboard"
+                          className="h-[39px] w-[39px] object-contain"
+                        />
+                      ) : (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                          <rect x="3" y="3" width="7" height="9" rx="1" />
+                          <rect x="14" y="3" width="7" height="5" rx="1" />
+                          <rect x="14" y="11" width="7" height="10" rx="1" />
+                          <rect x="3" y="14" width="7" height="7" rx="1" />
+                        </svg>
+                      )
+                    )}
 
-                  {/* Events Icon */}
-                  {item.icon === 'events' && (
-                    isActive ? (
-                      <img
-                        src="/assets/events.svg"
-                        alt="Events"
-                        className="w-[32px] h-[32px] object-contain"
-                      />
-                    ) : (
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z" />
-                        <path d="M13 5v2" />
-                        <path d="M13 17v2" />
-                        <path d="M13 11v2" />
-                      </svg>
-                    )
-                  )}
+                    {/* Events Icon */}
+                    {item.icon === 'events' && (
+                      isActive ? (
+                        <img
+                          src="/assets/events.svg"
+                          alt="Events"
+                          className="h-[32px] w-[32px] object-contain"
+                        />
+                      ) : (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                          <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z" />
+                          <path d="M13 5v2" />
+                          <path d="M13 17v2" />
+                          <path d="M13 11v2" />
+                        </svg>
+                      )
+                    )}
 
-                  {/* Bookings Icon */}
-                  {item.icon === 'bookings' && (
-                    isActive ? (
-                      <img
-                        src="/assets/bookings.svg"
-                        alt="Bookings"
-                        className="w-[32px] h-[32px] object-contain"
-                      />
-                    ) : (
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                        <line x1="16" y1="2" x2="16" y2="6" />
-                        <line x1="8" y1="2" x2="8" y2="6" />
-                        <line x1="3" y1="10" x2="21" y2="10" />
-                      </svg>
-                    )
-                  )}
+                    {/* Bookings Icon */}
+                    {item.icon === 'bookings' && (
+                      isActive ? (
+                        <img
+                          src="/assets/bookings.svg"
+                          alt="Bookings"
+                          className="h-[32px] w-[32px] object-contain"
+                        />
+                      ) : (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                          <line x1="16" y1="2" x2="16" y2="6" />
+                          <line x1="8" y1="2" x2="8" y2="6" />
+                          <line x1="3" y1="10" x2="21" y2="10" />
+                        </svg>
+                      )
+                    )}
 
-                  {/* Referrals Icon */}
-                  {item.icon === 'referrals' && (
-                    isActive ? (
-                      <img
-                        src="/assets/referrals.svg"
-                        alt="Referrals"
-                        className="w-[32px] h-[32px] object-contain"
-                      />
-                    ) : (
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-                        <polyline points="16 6 12 2 8 6" />
-                        <line x1="12" y1="2" x2="12" y2="15" />
-                      </svg>
-                    )
-                  )}
-
-                  {/* Chats Icon */}
-                  {item.icon === 'chats' && (
-                    isActive ? (
-                      <img
-                        src="/assets/chat.svg"
-                        alt="Chats"
-                        className="w-[32px] h-[32px] object-contain"
-                      />
-                    ) : (
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                      </svg>
-                    )
-                  )}
-
-                  {/* Wallet Icon */}
-                  {item.icon === 'wallet' && (
-                    isActive ? (
-                      <img
-                        src="/assets/wallet.svg"
-                        alt="Wallet"
-                        className="w-[32px] h-[32px] object-contain"
-                      />
-                    ) : (
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <rect x="2" y="5" width="20" height="14" rx="2" />
-                        <line x1="2" y1="10" x2="22" y2="10" />
-                      </svg>
-                    )
-                  )}
-
-                  {/* Settings Icon */}
-                  {item.icon === 'settings' && (
-                    isActive ? (
-                      <img
-                        src="/assets/settings.svg.png"
-                        alt="Settings"
-                        className="w-[43px] h-[43px] object-contain"
-                      />
-                    ) : (
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="12" cy="12" r="3" />
-                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l-.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0-2.83l-.06-.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                      </svg>
-                    )
-                  )}
+                    {/* Chats Icon */}
+                    {item.icon === 'chats' && (
+                      isActive ? (
+                        <img
+                          src="/assets/chat.svg"
+                          alt="Chats"
+                          className="h-[32px] w-[32px] object-contain"
+                        />
+                      ) : (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                        </svg>
+                      )
+                    )}
+                  </span>
 
                   {item.name}
                 </Link>
@@ -606,13 +563,53 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
 
               {/* Profile Dropdown Menu */}
               {profileDropdownOpen && (
-                <div className="hidden lg:block absolute right-0 top-[48px] sm:top-[52px] w-56 bg-white rounded-2xl shadow-xl border border-gray-100 py-2.5 z-[100] text-left animate-in fade-in slide-in-from-top-2 duration-150">
+                <div className="hidden lg:block absolute right-0 top-[48px] sm:top-[52px] w-56 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-[100] text-left animate-in fade-in slide-in-from-top-2 duration-150">
+                  {accountMenuItems.map((item) => {
+                    const isActive = activeNavItem === item.name;
+                    return (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        onClick={() => {
+                          setProfileDropdownOpen(false);
+                          setActiveNavItem(item.name);
+                        }}
+                        className={`flex w-full items-center gap-2.5 px-4 py-2.5 text-sm font-semibold transition-colors ${
+                          isActive
+                            ? 'bg-[#0012FF]/8 text-[#0012FF]'
+                            : 'text-gray-700 hover:bg-gray-50 hover:text-[#0012FF]'
+                        }`}
+                      >
+                        {item.name === 'Referrals' && (
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                            <polyline points="16 6 12 2 8 6" />
+                            <line x1="12" y1="2" x2="12" y2="15" />
+                          </svg>
+                        )}
+                        {item.name === 'Wallet' && (
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <rect x="2" y="5" width="20" height="14" rx="2" />
+                            <line x1="2" y1="10" x2="22" y2="10" />
+                          </svg>
+                        )}
+                        {item.name === 'Settings' && (
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="12" cy="12" r="3" />
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l-.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0-2.83l-.06-.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                          </svg>
+                        )}
+                        {item.name}
+                      </Link>
+                    );
+                  })}
+                  <div className="my-1.5 border-t border-gray-100" />
                   <button
                     onClick={() => {
                       setProfileDropdownOpen(false);
                       setShowLogoutModal(true);
                     }}
-                    className="hidden lg:flex w-full items-center gap-2.5 px-4 py-3 text-sm text-red-500 hover:bg-red-50/70 font-semibold transition-colors text-left cursor-pointer rounded-xl"
+                    className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50/70 font-semibold transition-colors text-left cursor-pointer"
                   >
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                     Logout
@@ -748,53 +745,47 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
                         )
                       )}
 
-                      {/* Referrals Icon */}
-                      {item.icon === 'referrals' && (
-                        isActive ? (
-                          <img
-                            src="/assets/referrals.svg"
-                            alt="Referrals"
-                            className="w-6 h-6 object-contain"
-                          />
-                        ) : (
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-                            <polyline points="16 6 12 2 8 6" />
-                            <line x1="12" y1="2" x2="12" y2="15" />
-                          </svg>
-                        )
-                      )}
+                      <span>{item.name}</span>
+                    </Link>
+                  );
+                })}
 
-                      {/* Wallet Icon */}
-                      {item.icon === 'wallet' && (
-                        isActive ? (
-                          <img
-                            src="/assets/wallet.svg"
-                            alt="Wallet"
-                            className="w-6 h-6 object-contain"
-                          />
-                        ) : (
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <rect x="2" y="5" width="20" height="14" rx="2" />
-                            <line x1="2" y1="10" x2="22" y2="10" />
-                          </svg>
-                        )
-                      )}
+                <div className="my-2 border-t border-gray-100" />
 
-                      {/* Settings Icon */}
-                      {item.icon === 'settings' && (
-                        isActive ? (
-                          <img
-                            src="/assets/settings.svg.png"
-                            alt="Settings"
-                            className="w-6 h-6 object-contain"
-                          />
-                        ) : (
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <circle cx="12" cy="12" r="3" />
-                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l-.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0-2.83l-.06-.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                          </svg>
-                        )
+                {accountMenuItems.map((item) => {
+                  const isActive = activeNavItem === item.name;
+                  return (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      onClick={() => {
+                        setMobileOpen(false);
+                        setActiveNavItem(item.name);
+                      }}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${
+                        isActive
+                          ? 'bg-[#0012FF]/10 text-[#0012FF]'
+                          : 'text-gray-600 hover:bg-gray-50 hover:text-[#0012FF]'
+                      }`}
+                    >
+                      {item.name === 'Referrals' && (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                          <polyline points="16 6 12 2 8 6" />
+                          <line x1="12" y1="2" x2="12" y2="15" />
+                        </svg>
+                      )}
+                      {item.name === 'Wallet' && (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <rect x="2" y="5" width="20" height="14" rx="2" />
+                          <line x1="2" y1="10" x2="22" y2="10" />
+                        </svg>
+                      )}
+                      {item.name === 'Settings' && (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <circle cx="12" cy="12" r="3" />
+                          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l-.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0-2.83l-.06-.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                        </svg>
                       )}
                       <span>{item.name}</span>
                     </Link>

@@ -1,11 +1,12 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Image from 'next/image';
 import { usePreloadImages } from '@/lib/usePreloadImages';
+import { EVENT_CATEGORIES } from '@/lib/eventConstants';
 
-interface Event {
+interface EventItem {
   id: string;
   title: string;
   description: string;
@@ -14,141 +15,103 @@ interface Event {
   venue: string;
   category: string;
   image: string;
-  status: 'Upcoming' | 'Completed' | 'Cancelled';
+  status: 'Upcoming' | 'Completed' | 'Cancelled' | 'Draft';
 }
+
+interface Kpis {
+  totalCreators: number;
+  totalCreatorsTrend: string;
+  upcomingEvents: number;
+  upcomingEventsTrend: string;
+  completedEvents: number;
+  completedEventsTrend: string;
+  cancelledEvents: number;
+  cancelledEventsTrend: string;
+}
+
+interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+const EMPTY_KPIS: Kpis = {
+  totalCreators: 0,
+  totalCreatorsTrend: '→ 0% from last month',
+  upcomingEvents: 0,
+  upcomingEventsTrend: '→ 0% from last month',
+  completedEvents: 0,
+  completedEventsTrend: '→ 0% from last month',
+  cancelledEvents: 0,
+  cancelledEventsTrend: '→ 0% from last month',
+};
 
 export default function AdminEventsPage() {
   usePreloadImages(['/assets/add-category-sm.webp']);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('All Categories');
+  const [categories, setCategories] = useState<string[]>([
+    'All Categories',
+    ...EVENT_CATEGORIES,
+  ]);
 
-  // Modal states
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedEventType, setSelectedEventType] = useState('');
   const [isTypeDropdownOpen, setIsTypeDropdownOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const eventTypes = [
-    'Workshops',
-    'Hackathons',
-    'Science Fairs',
-    'Conferences',
-    'Panel Discussions'
-  ];
-
-  const initialEvents: Event[] = [
-    {
-      id: 'EVT-10245',
-      title: 'Creator Growth',
-      description: 'Grow your audience and brand.',
-      date: '5 July 2026',
-      time: '2PM - 6PM',
-      venue: 'Nishat Hotel, Gulberg, Lahore',
-      category: 'Workshops',
-      image: '/assets/event-1.jpg',
-      status: 'Upcoming'
-    },
-    {
-      id: 'EVT-10246',
-      title: 'Creator Growth',
-      description: 'Grow your audience and brand.',
-      date: '5 July 2026',
-      time: '2PM - 6PM',
-      venue: 'Nishat Hotel, Gulberg, Lahore',
-      category: 'Hackathons',
-      image: '/assets/event-2.jpg',
-      status: 'Upcoming'
-    },
-    {
-      id: 'EVT-10247',
-      title: 'Creator Growth',
-      description: 'Grow your audience and brand.',
-      date: '5 July 2026',
-      time: '2PM - 6PM',
-      venue: 'Nishat Hotel, Gulberg, Lahore',
-      category: 'Science Fairs',
-      image: '/assets/event-1.jpg',
-      status: 'Completed'
-    },
-    {
-      id: 'EVT-10248',
-      title: 'Creator Growth',
-      description: 'Grow your audience and brand.',
-      date: '5 July 2026',
-      time: '2PM - 6PM',
-      venue: 'Nishat Hotel, Gulberg, Lahore',
-      category: 'Conferences',
-      image: '/assets/event-2.jpg',
-      status: 'Upcoming'
-    },
-    {
-      id: 'EVT-10249',
-      title: 'Creator Growth',
-      description: 'Grow your audience and brand.',
-      date: '5 July 2026',
-      time: '2PM - 6PM',
-      venue: 'Nishat Hotel, Gulberg, Lahore',
-      category: 'Panel Discussions',
-      image: '/assets/event-1.jpg',
-      status: 'Cancelled'
-    },
-    {
-      id: 'EVT-10250',
-      title: 'Creator Growth',
-      description: 'Grow your audience and brand.',
-      date: '5 July 2026',
-      time: '2PM - 6PM',
-      venue: 'Nishat Hotel, Gulberg, Lahore',
-      category: 'Workshops',
-      image: '/assets/event-2.jpg',
-      status: 'Completed'
-    },
-    {
-      id: 'EVT-10251',
-      title: 'Creator Growth',
-      description: 'Grow your audience and brand.',
-      date: '5 July 2026',
-      time: '2PM - 6PM',
-      venue: 'Nishat Hotel, Gulberg, Lahore',
-      category: 'Conferences',
-      image: '/assets/event-1.jpg',
-      status: 'Upcoming'
-    },
-    {
-      id: 'EVT-10252',
-      title: 'Creator Growth',
-      description: 'Grow your audience and brand.',
-      date: '5 July 2026',
-      time: '2PM - 6PM',
-      venue: 'Nishat Hotel, Gulberg, Lahore',
-      category: 'Workshops',
-      image: '/assets/event-2.jpg',
-      status: 'Upcoming'
-    },
-    {
-      id: 'EVT-10253',
-      title: 'Creator Growth',
-      description: 'Grow your audience and brand.',
-      date: '5 July 2026',
-      time: '2PM - 6PM',
-      venue: 'Nishat Hotel, Gulberg, Lahore',
-      category: 'Panel Discussions',
-      image: '/assets/event-1.jpg',
-      status: 'Completed'
-    }
-  ];
-
-  const [events, setEvents] = useState<Event[]>(initialEvents);
-
-  // Filter logic
-  const filteredEvents = events.filter(evt => {
-    const matchesSearch = evt.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      evt.venue.toLowerCase().includes(searchQuery.toLowerCase());
-
-    const matchesCategory = selectedCategoryFilter === 'All Categories' || evt.category === selectedCategoryFilter;
-
-    return matchesSearch && matchesCategory;
+  const [events, setEvents] = useState<EventItem[]>([]);
+  const [kpis, setKpis] = useState<Kpis>(EMPTY_KPIS);
+  const [pagination, setPagination] = useState<Pagination>({
+    page: 1,
+    limit: 9,
+    total: 0,
+    totalPages: 1,
   });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchQuery.trim()), 300);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch, selectedCategoryFilter]);
+
+  const loadEvents = useCallback(async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams({
+        page: String(currentPage),
+        limit: '9',
+      });
+      if (debouncedSearch) params.set('search', debouncedSearch);
+      if (selectedCategoryFilter && selectedCategoryFilter !== 'All Categories') {
+        params.set('category', selectedCategoryFilter);
+      }
+
+      const res = await fetch(`/api/admin/events?${params.toString()}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      setEvents(data.events || []);
+      if (data.kpis) setKpis(data.kpis);
+      if (data.pagination) setPagination(data.pagination);
+      if (Array.isArray(data.categories) && data.categories.length > 0) {
+        setCategories(data.categories);
+      }
+    } catch (err) {
+      console.error('Failed to load admin events:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentPage, debouncedSearch, selectedCategoryFilter]);
+
+  useEffect(() => {
+    loadEvents();
+  }, [loadEvents]);
 
   const handleAddEventTypeSubmit = () => {
     if (selectedEventType) {
@@ -158,6 +121,18 @@ export default function AdminEventsPage() {
     }
   };
 
+  const pageNumbers = (() => {
+    const total = pagination.totalPages;
+    const current = pagination.page;
+    if (total <= 5) return Array.from({ length: total }, (_, i) => i + 1);
+    if (current <= 3) return [1, 2, 3, 4, 5];
+    if (current >= total - 2) return [total - 4, total - 3, total - 2, total - 1, total];
+    return [current - 2, current - 1, current, current + 1, current + 2];
+  })();
+
+  const showingFrom = pagination.total === 0 ? 0 : (pagination.page - 1) * pagination.limit + 1;
+  const showingTo = Math.min(pagination.page * pagination.limit, pagination.total);
+
   return (
     <motion.div
       initial={{ y: 20, opacity: 0 }}
@@ -165,7 +140,6 @@ export default function AdminEventsPage() {
       transition={{ delay: 0.2 }}
       className="pb-12"
     >
-      {/* Declarative clip path for curved image lower right notch */}
       <svg width="0" height="0" className="absolute">
         <defs>
           <clipPath id="cover-clip-s1" clipPathUnits="objectBoundingBox">
@@ -193,7 +167,6 @@ export default function AdminEventsPage() {
         </defs>
       </svg>
 
-      {/* Greetings & Title Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <p className="text-gray-500 font-sans text-sm sm:text-base mb-1">Hello Anna Chris!</p>
@@ -203,7 +176,6 @@ export default function AdminEventsPage() {
           </h1>
         </div>
 
-        {/* Add Event Type Button */}
         <button
           onClick={() => setShowAddModal(true)}
           className="sm:self-end px-6 py-3 bg-[#0012FF] text-white rounded-2xl text-sm font-bold shadow-md shadow-[#0012FF]/20 hover:bg-[#0012FF]/95 transition-all"
@@ -214,8 +186,6 @@ export default function AdminEventsPage() {
 
       {/* Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 w-full gap-4 sm:gap-5 mb-8">
-        
-        {/* Card 1 - Total Creators */}
         <div className="w-full bg-[#B6C2FF] rounded-2xl p-6 flex flex-col justify-between min-h-[160px] shadow-sm transition-transform hover:-translate-y-1">
           <div className="w-10 h-10 bg-white/50 rounded-xl flex items-center justify-center mb-4">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2.5">
@@ -225,12 +195,15 @@ export default function AdminEventsPage() {
           </div>
           <div>
             <p className="text-[11px] font-sans mb-1 text-white/90 font-bold uppercase tracking-wider">Total Creators</p>
-            <p className="text-3xl font-black text-[#0012FF] font-sans leading-none mb-1">410</p>
-            <p className="text-[10px] text-white flex items-center gap-1 leading-tight font-medium">↑ +18.2% from last month</p>
+            <p className="text-3xl font-black text-[#0012FF] font-sans leading-none mb-1">
+              {loading ? '—' : kpis.totalCreators}
+            </p>
+            <p className="text-[10px] text-white flex items-center gap-1 leading-tight font-medium">
+              {kpis.totalCreatorsTrend}
+            </p>
           </div>
         </div>
 
-        {/* Card 2 - Upcoming Events */}
         <div className="w-full bg-[#FFE5A3] rounded-2xl p-6 flex flex-col justify-between min-h-[160px] shadow-sm transition-transform hover:-translate-y-1">
           <div className="w-10 h-10 bg-white/50 rounded-xl flex items-center justify-center mb-4">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2.5">
@@ -240,12 +213,15 @@ export default function AdminEventsPage() {
           </div>
           <div>
             <p className="text-[11px] font-sans mb-1 text-white/90 font-bold uppercase tracking-wider">Upcoming Events</p>
-            <p className="text-3xl font-black text-[#D97706] font-sans leading-none mb-1">234</p>
-            <p className="text-[10px] text-white/90 flex items-center gap-1 leading-tight font-medium">↑ +18.2% from last month</p>
+            <p className="text-3xl font-black text-[#D97706] font-sans leading-none mb-1">
+              {loading ? '—' : kpis.upcomingEvents}
+            </p>
+            <p className="text-[10px] text-white/90 flex items-center gap-1 leading-tight font-medium">
+              {kpis.upcomingEventsTrend}
+            </p>
           </div>
         </div>
 
-        {/* Card 3 - Completed Events */}
         <div className="w-full bg-[#A3F0B5] rounded-2xl p-6 flex flex-col justify-between min-h-[160px] shadow-sm transition-transform hover:-translate-y-1">
           <div className="w-10 h-10 bg-white/50 rounded-xl flex items-center justify-center mb-4">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2.5">
@@ -254,12 +230,15 @@ export default function AdminEventsPage() {
           </div>
           <div>
             <p className="text-[11px] font-sans mb-1 text-white/90 font-bold uppercase tracking-wider">Completed Events</p>
-            <p className="text-3xl font-black text-[#16A34A] font-sans leading-none mb-1">376</p>
-            <p className="text-[10px] text-white/90 flex items-center gap-1 leading-tight font-medium">↑ +18.2% from last month</p>
+            <p className="text-3xl font-black text-[#16A34A] font-sans leading-none mb-1">
+              {loading ? '—' : kpis.completedEvents}
+            </p>
+            <p className="text-[10px] text-white/90 flex items-center gap-1 leading-tight font-medium">
+              {kpis.completedEventsTrend}
+            </p>
           </div>
         </div>
 
-        {/* Card 4 - Cancelled Events */}
         <div className="w-full bg-[#FFB5B5] rounded-2xl p-6 flex flex-col justify-between min-h-[160px] shadow-sm transition-transform hover:-translate-y-1">
           <div className="w-10 h-10 bg-white/50 rounded-xl flex items-center justify-center mb-4">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E11D48" strokeWidth="2.5">
@@ -269,18 +248,19 @@ export default function AdminEventsPage() {
           </div>
           <div>
             <p className="text-[11px] font-sans mb-1 text-white/90 font-bold uppercase tracking-wider">Cancelled Events</p>
-            <p className="text-3xl font-black text-[#E11D48] font-sans leading-none mb-1">34</p>
-            <p className="text-[10px] text-white flex items-center gap-1 leading-tight font-medium">↑ +18.2% from last month</p>
+            <p className="text-3xl font-black text-[#E11D48] font-sans leading-none mb-1">
+              {loading ? '—' : kpis.cancelledEvents}
+            </p>
+            <p className="text-[10px] text-white flex items-center gap-1 leading-tight font-medium">
+              {kpis.cancelledEventsTrend}
+            </p>
           </div>
         </div>
-
       </div>
 
-      {/* Main Categories & Search Filters Row */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
-        {/* Categories Tab selector */}
         <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
-          {['All Categories', 'Workshops', 'Hackathons', 'Science Fairs', 'Conferences', 'Panel Discussions'].map((cat) => {
+          {categories.map((cat) => {
             const isSelected = selectedCategoryFilter === cat;
             return (
               <button
@@ -297,7 +277,6 @@ export default function AdminEventsPage() {
           })}
         </div>
 
-        {/* Search Input */}
         <div className="relative w-full lg:w-80">
           <input
             type="text"
@@ -321,10 +300,13 @@ export default function AdminEventsPage() {
         </div>
       </div>
 
-      {/* Events Grid layout */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredEvents.length > 0 ? (
-          filteredEvents.map((evt, idx) => (
+        {loading ? (
+          Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="h-64 sm:h-[280px] w-full animate-pulse rounded-[24px] bg-gray-200" />
+          ))
+        ) : events.length > 0 ? (
+          events.map((evt, idx) => (
             <motion.div
               key={evt.id}
               initial={{ scale: 0.95, opacity: 0 }}
@@ -332,36 +314,35 @@ export default function AdminEventsPage() {
               transition={{ delay: idx * 0.05 }}
               className="relative rounded-[24px] overflow-hidden shadow-sm group w-full h-64 sm:h-[280px]"
             >
-              {/* Background Image */}
               <img
                 src={evt.image}
                 alt={evt.title}
                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
               />
-              
-              {/* Gradient Overlays */}
+
               <div className="absolute inset-0 bg-[#0012FF]/30 mix-blend-multiply pointer-events-none"></div>
               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-none"></div>
 
-              {/* Bookmark Icon */}
+              <span className="absolute top-4 left-4 z-10 rounded-full bg-white/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white backdrop-blur-md">
+                {evt.status}
+              </span>
+
               <button className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center hover:bg-white/30 transition-colors z-10 cursor-pointer shadow-sm">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="white" stroke="white" strokeWidth="2">
                   <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
                 </svg>
               </button>
 
-              {/* Content Bottom */}
               <div className="absolute inset-x-0 bottom-0 p-5 sm:p-6 flex flex-col justify-end z-10">
                 <div className="flex items-end justify-between w-full">
                   <div className="flex-1 pr-2">
                     <h3 className="font-sans font-black text-xl sm:text-2xl text-white leading-tight mb-1">
                       {evt.title}
                     </h3>
-                    <p className="text-[11px] sm:text-xs text-gray-200 font-medium mb-3 sm:mb-4">
+                    <p className="text-[11px] sm:text-xs text-gray-200 font-medium mb-3 sm:mb-4 line-clamp-2">
                       {evt.description}
                     </p>
 
-                    {/* Icons Row */}
                     <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-[10px] sm:text-xs text-white font-semibold">
                       <span className="flex items-center gap-1.5">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -389,9 +370,8 @@ export default function AdminEventsPage() {
                     </div>
                   </div>
 
-                  {/* Buy Ticket Button */}
                   <button className="shrink-0 px-4 sm:px-5 py-2 sm:py-2.5 bg-white rounded-full text-[#0012FF] text-[11px] sm:text-xs font-bold shadow-md hover:bg-gray-50 transition-colors cursor-pointer">
-                    Buy Ticket
+                    View
                   </button>
                 </div>
               </div>
@@ -399,44 +379,45 @@ export default function AdminEventsPage() {
           ))
         ) : (
           <div className="col-span-full bg-white rounded-[32px] p-12 text-center border border-gray-100 shadow-sm">
-            <p className="text-gray-400 font-semibold text-sm">No events found matching current category filter.</p>
+            <p className="text-gray-400 font-semibold text-sm">No events found matching current filters.</p>
           </div>
         )}
       </div>
 
-      {/* Pagination Footer */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-10 pt-6 border-t border-gray-100">
-        <p className="text-xs font-semibold text-gray-400">Showing {filteredEvents.length} of {events.length}</p>
+        <p className="text-xs font-semibold text-gray-400">
+          Showing {showingFrom}–{showingTo} of {pagination.total}
+        </p>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setCurrentPage(1)}
-            className="w-8 h-8 rounded-full border border-gray-100 flex items-center justify-center text-gray-400 hover:bg-gray-50 transition-colors"
+            type="button"
+            disabled={pagination.page <= 1 || loading}
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            className="w-8 h-8 rounded-full border border-gray-100 flex items-center justify-center text-gray-400 hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <polyline points="15 18 9 12 15 6" />
             </svg>
           </button>
+          {pageNumbers.map((n) => (
+            <button
+              key={n}
+              type="button"
+              disabled={loading}
+              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${pagination.page === n
+                ? 'bg-[#0012FF] text-white shadow-md shadow-[#0012FF]/20'
+                : 'text-gray-500 hover:bg-gray-50'
+                }`}
+              onClick={() => setCurrentPage(n)}
+            >
+              {n}
+            </button>
+          ))}
           <button
-            className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${currentPage === 1
-              ? 'bg-[#0012FF] text-white shadow-md shadow-[#0012FF]/20'
-              : 'text-gray-500 hover:bg-gray-50'
-              }`}
-            onClick={() => setCurrentPage(1)}
-          >
-            1
-          </button>
-          <button
-            className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${currentPage === 2
-              ? 'bg-[#0012FF] text-white shadow-md shadow-[#0012FF]/20'
-              : 'text-gray-500 hover:bg-gray-50'
-              }`}
-            onClick={() => setCurrentPage(2)}
-          >
-            2
-          </button>
-          <button
-            onClick={() => setCurrentPage(2)}
-            className="w-8 h-8 rounded-full border border-gray-100 flex items-center justify-center text-gray-400 hover:bg-gray-50 transition-colors"
+            type="button"
+            disabled={pagination.page >= pagination.totalPages || loading}
+            onClick={() => setCurrentPage((p) => Math.min(pagination.totalPages, p + 1))}
+            className="w-8 h-8 rounded-full border border-gray-100 flex items-center justify-center text-gray-400 hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <polyline points="9 18 15 12 9 6" />
@@ -445,7 +426,6 @@ export default function AdminEventsPage() {
         </div>
       </div>
 
-      {/* Add Event Type Modal */}
       <AnimatePresence>
         {showAddModal && (
           <div className="fixed inset-0 flex items-center justify-center z-[100] p-4">
@@ -462,25 +442,16 @@ export default function AdminEventsPage() {
               exit={{ scale: 0.9, opacity: 0 }}
               className="relative w-full max-w-lg bg-white rounded-3xl shadow-xl flex flex-col items-center p-6 sm:p-8 z-10"
             >
-              {/* Close Button */}
               <button
                 onClick={() => setShowAddModal(false)}
                 className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-all z-20 cursor-pointer"
               >
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <line x1="18" y1="6" x2="6" y2="18" />
                   <line x1="6" y1="6" x2="18" y2="18" />
                 </svg>
               </button>
 
-              {/* Responsive Illustration */}
               <div className="w-28 sm:w-36 md:w-44 lg:w-56 aspect-[3/2] mt-3 mb-4">
                 <Image
                   src="/assets/add-category-sm.webp"
@@ -501,7 +472,6 @@ export default function AdminEventsPage() {
                 Add a new event type.
               </p>
 
-              {/* Event Type Dropdown Selection */}
               <div className="w-full mb-6 relative">
                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Event Type</label>
                 <button
@@ -532,7 +502,7 @@ export default function AdminEventsPage() {
                         exit={{ opacity: 0, y: 5 }}
                         className="absolute left-0 right-0 mt-1 bg-white border border-gray-100 rounded-xl shadow-xl z-30 max-h-48 overflow-y-auto py-1"
                       >
-                        {eventTypes.map((type) => (
+                        {EVENT_CATEGORIES.map((type) => (
                           <button
                             key={type}
                             onClick={() => {
@@ -553,7 +523,6 @@ export default function AdminEventsPage() {
                 </AnimatePresence>
               </div>
 
-              {/* Action Buttons */}
               <div className="flex gap-3 w-full">
                 <button
                   onClick={() => setShowAddModal(false)}

@@ -84,7 +84,7 @@ export default function UserEventsPage() {
         {loading ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 lg:gap-6">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-[220px] w-full animate-pulse rounded-[8px] bg-gray-200" />
+              <div key={i} className="h-[270px] w-full animate-pulse rounded-[8px] bg-gray-200" />
             ))}
           </div>
         ) : events.length === 0 ? (

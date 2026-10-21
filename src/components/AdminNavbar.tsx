@@ -177,14 +177,11 @@ export default function AdminNavbar() {
       name: 'Events',
       href: '/admin/bookings',
       iconActive: (
-        <div className="w-8 h-8 rounded-full bg-[#0012FF]/10 flex items-center justify-center text-[#0012FF]">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-            <line x1="16" y1="2" x2="16" y2="6" />
-            <line x1="8" y1="2" x2="8" y2="6" />
-            <line x1="3" y1="10" x2="21" y2="10" />
-          </svg>
-        </div>
+        <img
+          src="/assets/events.svg"
+          alt="Events Active"
+          className="w-[38px] h-[38px] object-contain flex-shrink-0"
+        />
       ),
       iconInactive: (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400">
@@ -199,14 +196,11 @@ export default function AdminNavbar() {
       name: 'Reschedule',
       href: '/admin/reschedule-requests',
       iconActive: (
-        <div className="w-8 h-8 rounded-full bg-[#0012FF]/10 flex items-center justify-center text-[#0012FF]">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-            <line x1="16" y1="2" x2="16" y2="6" />
-            <line x1="8" y1="2" x2="8" y2="6" />
-            <line x1="3" y1="10" x2="21" y2="10" />
-          </svg>
-        </div>
+        <img
+          src="/assets/calendar.svg"
+          alt="Reschedule Active"
+          className="w-[38px] h-[38px] object-contain flex-shrink-0"
+        />
       ),
       iconInactive: (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400">
