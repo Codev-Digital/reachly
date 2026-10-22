@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: 'User not found' }, { status: 404 });
       }
       const single = await User.findById(id).lean();
-      if (!single || (single as any).approvalStatus === 'deleted') {
+      if (!single) {
         return NextResponse.json({ error: 'User not found' }, { status: 404 });
       }
       const reqDoc = await UserApprovalRequest.findOne({ userId: single._id }).lean();
@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Fetch all users who are NOT creators
-    const normalUsers = await User.find({ _id: { $nin: creatorUserIds }, approvalStatus: { $ne: 'deleted' } }).sort({ createdAt: -1 }).lean();
+    const normalUsers = await User.find({ _id: { $nin: creatorUserIds } }).sort({ createdAt: -1 }).lean();
 
     const requests = await UserApprovalRequest.find({ userId: { $in: normalUsers.map((u: any) => u._id) } }).lean();
     const reqByUser = new Map(requests.map((r: any) => [r.userId.toString(), r]));
@@ -74,11 +74,12 @@ function formatUser(user: any, request?: any) {
   // Map status
   // Only an admin-approved account is Active; not-yet-applied ('none') is Inactive
   // Only an admin-approved account is Active; not-yet-applied ('none') is Inactive
-  let status: 'Active' | 'Pending' | 'Inactive' | 'Suspended' | 'Rejected' = 'Inactive';
+  let status: 'Active' | 'Pending' | 'Inactive' | 'Suspended' | 'Rejected' | 'Deleted' = 'Inactive';
   if (user.approvalStatus === 'approved') status = 'Active';
   else if (user.approvalStatus === 'pending') status = 'Pending';
   else if (user.approvalStatus === 'rejected') status = 'Rejected';
   else if (user.approvalStatus === 'suspended') status = 'Suspended';
+  else if (user.approvalStatus === 'deleted') status = 'Deleted';
 
   return {
     id: `USR-${user._id.toString().slice(-5).toUpperCase()}`,
@@ -109,7 +110,7 @@ export async function PUT(req: NextRequest) {
     await connectDB();
     const { userId, action } = await req.json();
 
-    if (!userId || !['approve', 'reject', 'suspend', 'activate'].includes(action)) {
+    if (!userId || !['approve', 'reject', 'suspend', 'activate', 'restore'].includes(action)) {
       return NextResponse.json({ error: 'Invalid data parameters' }, { status: 400 });
     }
 

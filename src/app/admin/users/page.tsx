@@ -15,7 +15,7 @@ export default function UsersPage() {
   const openDetail = (u: User) => setActiveUser(u);
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedStatusFilter, setSelectedStatusFilter] = useState<'All Statuses' | 'Active' | 'Pending' | 'Inactive' | 'Suspended' | 'Rejected'>('All Statuses');
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState<'All Statuses' | 'Active' | 'Pending' | 'Inactive' | 'Suspended' | 'Rejected' | 'Deleted'>('All Statuses');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
@@ -49,7 +49,7 @@ export default function UsersPage() {
       user.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.email.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesStatus = selectedStatusFilter === 'All Statuses' || user.status === selectedStatusFilter;
+    const matchesStatus = selectedStatusFilter === 'All Statuses' ? user.status !== 'Deleted' : user.status === selectedStatusFilter;
 
     return matchesSearch && matchesStatus;
   });
@@ -66,7 +66,7 @@ export default function UsersPage() {
           method: 'DELETE'
         });
         if (res.ok) {
-          setUsers(prev => prev.filter(u => u.id !== userToDelete.id));
+          setUsers(prev => prev.map(u => (u.id === userToDelete.id || u.dbId === userToDelete.dbId ? { ...u, status: 'Deleted' } : u)));
         } else {
           const err = await res.json();
           alert(err.error || 'Failed to delete user.');
@@ -78,6 +78,25 @@ export default function UsersPage() {
         setShowDeleteModal(false);
         setUserToDelete(null);
       }
+    }
+  };
+
+  const handleRestoreUser = async (user: User) => {
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.dbId || user.id, action: 'restore' }),
+      });
+      if (res.ok) {
+        setUsers(prev => prev.map(u => (u.id === user.id || u.dbId === user.dbId ? { ...u, status: 'Active' } : u)));
+      } else {
+        const err = await res.json();
+        alert(err.error || 'Failed to restore user.');
+      }
+    } catch (err) {
+      console.error('Failed to restore user:', err);
+      alert('Error restoring user.');
     }
   };
 
@@ -139,7 +158,7 @@ export default function UsersPage() {
           </div>
           <div>
             <p className="text-[11px] text-white/90 font-semibold mb-0.5">Total Users</p>
-            <p className="text-3xl font-black text-[#0012FF] leading-none mb-1">{users.length}</p>
+            <p className="text-3xl font-black text-[#0012FF] leading-none mb-1">{users.filter(u => u.status !== 'Deleted').length}</p>
             <p className="text-[10px] text-white/90">All registered users</p>
           </div>
         </div>
@@ -249,7 +268,7 @@ export default function UsersPage() {
                       exit={{ opacity: 0, y: 10 }}
                       className="absolute right-0 mt-2 bg-white border border-gray-100 rounded-2xl shadow-xl z-20 py-1.5 min-w-[170px] overflow-hidden"
                     >
-                      {(['All Statuses', 'Active', 'Pending', 'Inactive', 'Suspended', 'Rejected'] as const).map((filter) => {
+                      {(['All Statuses', 'Active', 'Pending', 'Inactive', 'Suspended', 'Rejected', 'Deleted'] as const).map((filter) => {
                         const isSelected = selectedStatusFilter === filter;
                         return (
                           <button
@@ -339,7 +358,9 @@ export default function UsersPage() {
                               ? 'bg-rose-50 text-rose-600'
                               : user.status === 'Suspended'
                                 ? 'bg-gray-100 text-gray-600'
-                                : 'bg-rose-50 text-rose-600'
+                                : user.status === 'Deleted'
+                                  ? 'bg-red-50 text-red-600 font-semibold border border-red-200'
+                                  : 'bg-rose-50 text-rose-600'
                           }`}
                       >
                         {user.status}
@@ -349,12 +370,21 @@ export default function UsersPage() {
                     {/* Actions */}
                     <td className="py-4 px-4" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-center gap-2">
-                        <button
-                          onClick={() => handleDeleteClick(user)}
-                          className="px-3.5 py-1 bg-white border border-red-200 rounded-full text-xs font-medium text-red-500 hover:bg-red-50 hover:border-red-300 transition-colors"
-                        >
-                          Delete
-                        </button>
+                        {user.status === 'Deleted' ? (
+                          <button
+                            onClick={() => handleRestoreUser(user)}
+                            className="px-3.5 py-1 bg-white border border-emerald-300 rounded-full text-xs font-medium text-emerald-600 hover:bg-emerald-50 transition-colors"
+                          >
+                            Restore
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleDeleteClick(user)}
+                            className="px-3.5 py-1 bg-white border border-red-200 rounded-full text-xs font-medium text-red-500 hover:bg-red-50 hover:border-red-300 transition-colors"
+                          >
+                            Delete
+                          </button>
+                        )}
                         <button
                           onClick={() => openDetail(user)}
                           className="px-3.5 py-1 bg-gray-100 rounded-full text-xs font-medium text-gray-600 hover:bg-gray-200 hover:text-gray-800 transition-colors"

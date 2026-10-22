@@ -18,7 +18,7 @@ interface Creator {
   joinedDate: string;
   time: string;
   eventsCreated: string;
-  status: 'Active' | 'Pending' | 'Inactive' | 'Suspended' | 'Rejected';
+  status: 'Active' | 'Pending' | 'Inactive' | 'Suspended' | 'Rejected' | 'Deleted';
   avatar: string;
   city?: string;
   country?: string;
@@ -43,7 +43,7 @@ export default function AdminCreatorsPage() {
   const openDetail = (c: Creator) => router.push(`/admin/creators/${c.dbId || c.id}`);
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedStatusFilter, setSelectedStatusFilter] = useState<'All Statuses' | 'Active' | 'Pending' | 'Inactive' | 'Suspended' | 'Rejected'>('All Statuses');
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState<'All Statuses' | 'Active' | 'Pending' | 'Inactive' | 'Suspended' | 'Rejected' | 'Deleted'>('All Statuses');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
@@ -89,9 +89,9 @@ export default function AdminCreatorsPage() {
   const [loading, setLoading] = useState(true);
 
   // Dynamic stats
-  const totalCreators = creators.length;
+  const totalCreators = creators.filter(c => c.status !== 'Deleted').length;
   const activeCreators = creators.filter(c => c.status === 'Active').length;
-  const inactiveCreators = creators.filter(c => c.status === 'Inactive' || c.status === 'Suspended' || c.status === 'Rejected').length;
+  const inactiveCreators = creators.filter(c => c.status === 'Inactive' || c.status === 'Suspended' || c.status === 'Rejected' || c.status === 'Deleted').length;
   const pendingCreators = creators.filter(c => c.status === 'Pending').length;
 
   const loadCreators = async () => {
@@ -119,7 +119,7 @@ export default function AdminCreatorsPage() {
       creator.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       creator.email.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesStatus = selectedStatusFilter === 'All Statuses' || creator.status === selectedStatusFilter;
+    const matchesStatus = selectedStatusFilter === 'All Statuses' ? creator.status !== 'Deleted' : creator.status === selectedStatusFilter;
 
     return matchesSearch && matchesStatus;
   });
@@ -316,7 +316,7 @@ export default function AdminCreatorsPage() {
                       exit={{ opacity: 0, y: 10 }}
                       className="absolute right-0 mt-2 bg-white border border-gray-100 rounded-2xl shadow-xl z-20 py-1.5 min-w-[170px] overflow-hidden"
                     >
-                      {(['All Statuses', 'Active', 'Pending', 'Inactive', 'Suspended', 'Rejected'] as const).map((filter) => {
+                      {(['All Statuses', 'Active', 'Pending', 'Inactive', 'Suspended', 'Rejected', 'Deleted'] as const).map((filter) => {
                         const isSelected = selectedStatusFilter === filter;
                         return (
                           <button
@@ -410,7 +410,9 @@ export default function AdminCreatorsPage() {
                               ? 'bg-rose-50 text-rose-600'
                               : creator.status === 'Suspended'
                                 ? 'bg-gray-100 text-gray-600'
-                                : 'bg-rose-50 text-rose-600'
+                                : creator.status === 'Deleted'
+                                  ? 'bg-red-50 text-red-600 font-semibold border border-red-200'
+                                  : 'bg-rose-50 text-rose-600'
                           }`}
                       >
                         {creator.status}

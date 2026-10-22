@@ -4,7 +4,7 @@ import { useState } from 'react';
 import ActionDialog from '@/components/ActionDialog';
 
 type Action = 'approve' | 'reject' | 'suspend' | 'activate';
-type Status = 'Active' | 'Pending' | 'Inactive' | 'Suspended' | 'Rejected';
+type Status = 'Active' | 'Pending' | 'Inactive' | 'Suspended' | 'Rejected' | 'Deleted';
 
 const COPY: Record<Action, { button: string; title: string; ok: string; ask: string; variant: 'success' | 'destructive'; img: string; style: string; solid: string }> = {
   approve: {
@@ -44,6 +44,7 @@ const BY_STATUS: Record<Status, Action[]> = {
   Suspended: ['activate'],
   Rejected: ['activate'],
   Inactive: [],
+  Deleted: ['activate'],
 };
 
 export default function CreatorStatusActions({
@@ -106,7 +107,7 @@ export default function CreatorStatusActions({
                 : `px-3.5 py-1.5 border rounded-full text-[10px] font-bold transition-colors ${COPY[a].style}`
             }
           >
-            {COPY[a].button}
+            {status === 'Deleted' && a === 'activate' ? 'Restore' : COPY[a].button}
           </button>
         ))}
       </div>
