@@ -11,6 +11,8 @@ export interface AdminUser {
   email: string;
   joinedDate: string;
   time: string;
+  deletedDate?: string;
+  deletedTime?: string;
   status: 'Active' | 'Pending' | 'Inactive' | 'Suspended' | 'Rejected' | 'Deleted';
   avatar: string;
   city?: string;

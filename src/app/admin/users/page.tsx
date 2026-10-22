@@ -66,7 +66,10 @@ export default function UsersPage() {
           method: 'DELETE'
         });
         if (res.ok) {
-          setUsers(prev => prev.map(u => (u.id === userToDelete.id || u.dbId === userToDelete.dbId ? { ...u, status: 'Deleted' } : u)));
+          const now = new Date();
+          const dDate = now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+          const dTime = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+          setUsers(prev => prev.map(u => (u.id === userToDelete.id || u.dbId === userToDelete.dbId ? { ...u, status: 'Deleted', deletedDate: dDate, deletedTime: dTime } : u)));
         } else {
           const err = await res.json();
           alert(err.error || 'Failed to delete user.');
@@ -302,8 +305,8 @@ export default function UsersPage() {
                 <th className="py-4 px-4 text-xs font-semibold text-gray-500">User ID</th>
                 <th className="py-4 px-4 text-xs font-semibold text-gray-500">User</th>
                 <th className="py-4 px-4 text-xs font-semibold text-gray-500">Email</th>
-                <th className="py-4 px-4 text-xs font-semibold text-gray-500">Joined Date</th>
-                <th className="py-4 px-4 text-xs font-semibold text-gray-500">Time</th>
+                <th className="py-4 px-4 text-xs font-semibold text-gray-500">{selectedStatusFilter === 'Deleted' ? 'Deleted Date' : 'Joined Date'}</th>
+                <th className="py-4 px-4 text-xs font-semibold text-gray-500">{selectedStatusFilter === 'Deleted' ? 'Deleted Time' : 'Time'}</th>
                 <th className="py-4 px-4 text-xs font-semibold text-gray-500">Status</th>
                 <th className="py-4 px-4 text-xs font-semibold text-gray-500 text-center">Actions</th>
               </tr>
@@ -342,10 +345,10 @@ export default function UsersPage() {
                     <td className="py-4 px-4 text-sm text-gray-500">{user.email}</td>
 
                     {/* Joined Date */}
-                    <td className="py-4 px-4 text-sm text-gray-500">{user.joinedDate}</td>
+                    <td className="py-4 px-4 text-sm text-gray-500">{selectedStatusFilter === 'Deleted' && user.deletedDate ? user.deletedDate : user.joinedDate}</td>
 
                     {/* Time */}
-                    <td className="py-4 px-4 text-sm text-gray-500">{user.time || '—'}</td>
+                    <td className="py-4 px-4 text-sm text-gray-500">{selectedStatusFilter === 'Deleted' && user.deletedTime ? user.deletedTime : (user.time || '—')}</td>
 
                     {/* Status Badge */}
                     <td className="py-4 px-4">

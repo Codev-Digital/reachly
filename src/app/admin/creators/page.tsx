@@ -17,6 +17,8 @@ interface Creator {
   email: string;
   joinedDate: string;
   time: string;
+  deletedDate?: string;
+  deletedTime?: string;
   eventsCreated: string;
   status: 'Active' | 'Pending' | 'Inactive' | 'Suspended' | 'Rejected' | 'Deleted';
   avatar: string;
@@ -350,8 +352,8 @@ export default function AdminCreatorsPage() {
                 <th className="py-4 px-4 text-xs font-semibold text-gray-500">Creator ID</th>
                 <th className="py-4 px-4 text-xs font-semibold text-gray-500">Creator</th>
                 <th className="py-4 px-4 text-xs font-semibold text-gray-500">Email</th>
-                <th className="py-4 px-4 text-xs font-semibold text-gray-500">Joined Date</th>
-                <th className="py-4 px-4 text-xs font-semibold text-gray-500">Time</th>
+                <th className="py-4 px-4 text-xs font-semibold text-gray-500">{selectedStatusFilter === 'Deleted' ? 'Deleted Date' : 'Joined Date'}</th>
+                <th className="py-4 px-4 text-xs font-semibold text-gray-500">{selectedStatusFilter === 'Deleted' ? 'Deleted Time' : 'Time'}</th>
                 <th className="py-4 px-4 text-xs font-semibold text-gray-500">Events Created</th>
                 <th className="py-4 px-4 text-xs font-semibold text-gray-500">Status</th>
                 <th className="py-4 px-4 text-xs font-semibold text-gray-500">Actions</th>
@@ -391,10 +393,10 @@ export default function AdminCreatorsPage() {
                     <td className="py-4 px-4 text-sm text-gray-500">{creator.email}</td>
 
                     {/* Joined Date */}
-                    <td className="py-4 px-4 text-sm text-gray-500">{creator.joinedDate}</td>
+                    <td className="py-4 px-4 text-sm text-gray-500">{selectedStatusFilter === 'Deleted' && creator.deletedDate ? creator.deletedDate : creator.joinedDate}</td>
 
                     {/* Time */}
-                    <td className="py-4 px-4 text-sm text-gray-500">{creator.time || '—'}</td>
+                    <td className="py-4 px-4 text-sm text-gray-500">{selectedStatusFilter === 'Deleted' && creator.deletedTime ? creator.deletedTime : (creator.time || '—')}</td>
 
                     {/* Events Created */}
                     <td className="py-4 px-4 text-sm text-gray-500">{creator.eventsCreated}</td>

@@ -65,11 +65,27 @@ function formatUser(user: any, request?: any) {
     month: 'short',
     year: 'numeric'
   });
-  const time = d.toLocaleTimeString('en-US', {
+    const time = d.toLocaleTimeString('en-US', {
     hour: 'numeric',
     minute: '2-digit',
     hour12: true
   });
+
+  let deletedDate = '';
+  let deletedTime = '';
+  if (user.deletedAt) {
+    const dDel = new Date(user.deletedAt);
+    deletedDate = dDel.toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    });
+    deletedTime = dDel.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  }
 
   // Map status
   // Only an admin-approved account is Active; not-yet-applied ('none') is Inactive
