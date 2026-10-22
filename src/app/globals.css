@@ -285,18 +285,3 @@ input[type="range"]::-webkit-slider-thumb {
 .ui-dialog-content[data-state='open'] { animation: ui-dialog-pop-in 0.22s cubic-bezier(0.16, 1, 0.3, 1) both; }
 .ui-dialog-content[data-state='closed'] { animation: ui-dialog-pop-out 0.15s ease-in both; }
 
-/* Hero CTA: Become a Creator hover styling */
-.btn-become-creator {
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  color: #ffffff !important;
-  background-color: transparent;
-  transition: all 0.25s ease;
-}
-
-.btn-become-creator:hover {
-  background-color: #ffffff !important;
-  color: #001F7D !important;
-  border-color: #ffffff !important;
-  box-shadow: 0 10px 25px -5px rgba(255, 255, 255, 0.15);
-  opacity: 1 !important;
-}
