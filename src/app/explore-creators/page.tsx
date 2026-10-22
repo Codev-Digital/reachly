@@ -692,6 +692,72 @@ export default function ExploreCreatorsPage() {
                   </button>
                 );
               })}
+
+              {/* Favourites option in arrow carousel */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (!isAuthenticated) {
+                    setLoginCallbackUrl('');
+                    setLoginModalMode('favourite');
+                    setShowLoginModal(true);
+                    return;
+                  }
+                  const next = !showFavouritesOnly;
+                  setShowFavouritesOnly(next);
+                  if (next) setShowSavedOnly(false);
+                  setSelectedCategory('all');
+                  setCurrentPage(1);
+                }}
+                className={`h-[40px] px-3.5 sm:px-4 shrink-0 rounded-[8px] flex items-center justify-center gap-2 text-xs font-semibold whitespace-nowrap transition-all border cursor-pointer ${
+                  showFavouritesOnly
+                    ? 'bg-red-500 text-white border-red-500 shadow-xs'
+                    : 'bg-white text-[#6B7280] border-[#E5E7EB] hover:border-red-400 hover:text-red-500'
+                }`}
+              >
+                <svg className="w-4 h-4 shrink-0" fill={showFavouritesOnly ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </svg>
+                <span>Favourites</span>
+                {isAuthenticated && favourites.length > 0 && (
+                  <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none ${showFavouritesOnly ? 'bg-white/25 text-white' : 'bg-red-100 text-red-500'}`}>
+                    {favourites.length}
+                  </span>
+                )}
+              </button>
+
+              {/* Saved option in arrow carousel */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (!isAuthenticated) {
+                    setLoginCallbackUrl('');
+                    setLoginModalMode('favourite');
+                    setShowLoginModal(true);
+                    return;
+                  }
+                  const next = !showSavedOnly;
+                  setShowSavedOnly(next);
+                  if (next) setShowFavouritesOnly(false);
+                  setSelectedCategory('all');
+                  setCurrentPage(1);
+                }}
+                className={`h-[40px] px-3.5 sm:px-4 shrink-0 rounded-[8px] flex items-center justify-center gap-2 text-xs font-semibold whitespace-nowrap transition-all border cursor-pointer ${
+                  showSavedOnly
+                    ? 'bg-[#0012FF] text-white border-[#0012FF]'
+                    : 'bg-white text-[#6B7280] border-[#E5E7EB] hover:border-[#0012FF]/40 hover:text-[#0012FF]'
+                }`}
+              >
+                <svg className="w-4 h-4 shrink-0" fill={showSavedOnly ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                </svg>
+                <span>Saved</span>
+                {isAuthenticated && saved.length > 0 && (
+                  <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none ${showSavedOnly ? 'bg-white/25 text-white' : 'bg-[#EEF2FF] text-[#0012FF]'}`}>
+                    {saved.length}
+                  </span>
+                )}
+              </button>
             </div>
 
             {/* Forward Scroll Arrow (Always visible on the right of categories) */}
@@ -795,14 +861,19 @@ export default function ExploreCreatorsPage() {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-2xl border border-[#e0e0e0] shadow-sm p-6 mb-8 grid grid-cols-1 sm:grid-cols-2 gap-6"
+            className="bg-white rounded-2xl border border-[#e0e0e0] shadow-sm p-6 mb-8 grid grid-cols-1 sm:grid-cols-3 gap-6"
           >
             <div>
               <label className="block text-sm font-semibold text-[#333] mb-3">Minimum Rating</label>
               <div className="flex gap-2 flex-wrap">
-                {[null, 3.5, 4, 4.5].map(r => (
-                  <button key={String(r)} onClick={() => setMinRating(r)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${minRating === r ? 'bg-[#0012FF] text-white border-[#0012FF]' : 'bg-white text-[#555] border-[#ddd] hover:border-[#0012FF]/50'}`}>
+                {[null, 3.5, 4, 4.5].map((r) => (
+                  <button
+                    key={String(r)}
+                    onClick={() => setMinRating(r)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all cursor-pointer ${
+                      minRating === r ? 'bg-[#0012FF] text-white border-[#0012FF]' : 'bg-white text-[#555] border-[#ddd] hover:border-[#0012FF]/50'
+                    }`}
+                  >
                     {r === null ? 'Any' : `${r}+`}
                   </button>
                 ))}
@@ -810,13 +881,96 @@ export default function ExploreCreatorsPage() {
             </div>
             <div>
               <label className="block text-sm font-semibold text-[#333] mb-3">Verified Only</label>
-              <button onClick={() => setVerifiedOnly(v => !v)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border transition-all ${verifiedOnly ? 'bg-[#0012FF] text-white border-[#0012FF]' : 'bg-white text-[#555] border-[#ddd] hover:border-[#0012FF]/50'}`}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+              <button
+                onClick={() => setVerifiedOnly((v) => !v)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border transition-all cursor-pointer ${
+                  verifiedOnly ? 'bg-[#0012FF] text-white border-[#0012FF]' : 'bg-white text-[#555] border-[#ddd] hover:border-[#0012FF]/50'
+                }`}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                </svg>
                 {verifiedOnly ? 'Verified Only ✓' : 'Show All'}
               </button>
-              {(verifiedOnly || minRating !== null) && (
-                <button onClick={() => { setVerifiedOnly(false); setMinRating(null); }} className="mt-3 text-xs text-[#0012FF] underline hover:opacity-70">Reset filters</button>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-[#333] mb-3">Saved & Favourites</label>
+              <div className="flex gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!isAuthenticated) {
+                      setLoginCallbackUrl('');
+                      setLoginModalMode('favourite');
+                      setShowLoginModal(true);
+                      return;
+                    }
+                    const next = !showFavouritesOnly;
+                    setShowFavouritesOnly(next);
+                    if (next) setShowSavedOnly(false);
+                    setSelectedCategory('all');
+                    setCurrentPage(1);
+                  }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all cursor-pointer ${
+                    showFavouritesOnly
+                      ? 'bg-red-500 text-white border-red-500 shadow-xs'
+                      : 'bg-white text-gray-700 border-[#ddd] hover:border-red-400 hover:text-red-500'
+                  }`}
+                >
+                  <svg className="w-3.5 h-3.5" fill={showFavouritesOnly ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  </svg>
+                  <span>Favourites Only</span>
+                  {isAuthenticated && favourites.length > 0 && (
+                    <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none ${showFavouritesOnly ? 'bg-white/25 text-white' : 'bg-red-100 text-red-500'}`}>
+                      {favourites.length}
+                    </span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!isAuthenticated) {
+                      setLoginCallbackUrl('');
+                      setLoginModalMode('favourite');
+                      setShowLoginModal(true);
+                      return;
+                    }
+                    const next = !showSavedOnly;
+                    setShowSavedOnly(next);
+                    if (next) setShowFavouritesOnly(false);
+                    setSelectedCategory('all');
+                    setCurrentPage(1);
+                  }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all cursor-pointer ${
+                    showSavedOnly
+                      ? 'bg-[#0012FF] text-white border-[#0012FF] shadow-xs'
+                      : 'bg-white text-gray-700 border-[#ddd] hover:border-[#0012FF]/40 hover:text-[#0012FF]'
+                  }`}
+                >
+                  <svg className="w-3.5 h-3.5" fill={showSavedOnly ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                  </svg>
+                  <span>Saved Only</span>
+                  {isAuthenticated && saved.length > 0 && (
+                    <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none ${showSavedOnly ? 'bg-white/25 text-white' : 'bg-[#EEF2FF] text-[#0012FF]'}`}>
+                      {saved.length}
+                    </span>
+                  )}
+                </button>
+              </div>
+              {(verifiedOnly || minRating !== null || showFavouritesOnly || showSavedOnly) && (
+                <button
+                  onClick={() => {
+                    setVerifiedOnly(false);
+                    setMinRating(null);
+                    setShowFavouritesOnly(false);
+                    setShowSavedOnly(false);
+                  }}
+                  className="mt-3 text-xs text-[#0012FF] underline hover:opacity-70 cursor-pointer block"
+                >
+                  Reset all filters
+                </button>
               )}
             </div>
           </motion.div>
