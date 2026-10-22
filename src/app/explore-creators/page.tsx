@@ -667,7 +667,7 @@ export default function ExploreCreatorsPage() {
             <div
               ref={categoriesScrollRef}
               onScroll={checkScroll}
-              className="flex items-center gap-[10px] overflow-x-auto no-scrollbar scroll-smooth py-1 flex-1 min-w-0"
+              className="flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth py-1 flex-1 min-w-0"
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
               {categories.map((cat) => {
@@ -681,14 +681,14 @@ export default function ExploreCreatorsPage() {
                       setShowSavedOnly(false);
                       setCurrentPage(1);
                     }}
-                    className={`w-[156px] h-[40px] shrink-0 rounded-[8px] flex items-center justify-center gap-[10px] px-5 py-[10px] text-sm font-semibold transition-all border cursor-pointer ${
+                    className={`h-[40px] px-3.5 sm:px-4 shrink-0 rounded-[8px] flex items-center justify-center gap-2 text-xs font-semibold whitespace-nowrap transition-all border cursor-pointer ${
                       isActive
                         ? 'bg-[#0012FF] text-white border-[#0012FF] shadow-xs'
                         : 'bg-white text-[#6B7280] border-[#E5E7EB] hover:border-[#0012FF]/40 hover:text-[#0012FF]'
                     }`}
                   >
                     {getCategoryIcon(cat.label || cat.id)}
-                    <span className="truncate">{cat.label}</span>
+                    <span>{cat.label}</span>
                   </button>
                 );
               })}
@@ -724,7 +724,7 @@ export default function ExploreCreatorsPage() {
                 setSelectedCategory('all');
                 setCurrentPage(1);
               }}
-              className={`h-[40px] px-4 rounded-[8px] flex items-center gap-1.5 text-sm font-semibold transition-all border cursor-pointer ${
+              className={`h-[40px] px-3 sm:px-4 rounded-[8px] flex items-center gap-1.5 text-xs font-semibold whitespace-nowrap transition-all border cursor-pointer ${
                 showFavouritesOnly
                   ? 'bg-red-500 text-white border-red-500'
                   : 'bg-white text-[#6B7280] border-[#E5E7EB] hover:border-red-400 hover:text-red-500'
@@ -756,7 +756,7 @@ export default function ExploreCreatorsPage() {
                 setSelectedCategory('all');
                 setCurrentPage(1);
               }}
-              className={`h-[40px] px-4 rounded-[8px] flex items-center gap-1.5 text-sm font-semibold transition-all border cursor-pointer ${
+              className={`h-[40px] px-3 sm:px-4 rounded-[8px] flex items-center gap-1.5 text-xs font-semibold whitespace-nowrap transition-all border cursor-pointer ${
                 showSavedOnly
                   ? 'bg-[#0012FF] text-white border-[#0012FF]'
                   : 'bg-white text-[#6B7280] border-[#E5E7EB] hover:border-[#0012FF]/40 hover:text-[#0012FF]'
@@ -776,7 +776,7 @@ export default function ExploreCreatorsPage() {
             {/* Filter */}
             <button
               onClick={() => setShowFilterPanel(!showFilterPanel)}
-              className={`h-[40px] px-4 rounded-[8px] flex items-center gap-2 text-sm font-medium border transition-all cursor-pointer ${
+              className={`h-[40px] px-3 sm:px-4 rounded-[8px] flex items-center gap-1.5 text-xs font-semibold whitespace-nowrap border transition-all cursor-pointer ${
                 showFilterPanel
                   ? 'bg-[#0012FF] text-white border-[#0012FF]'
                   : 'bg-white text-[#6B7280] border-[#E5E7EB] hover:border-[#0012FF]/40 hover:text-[#0012FF]'
