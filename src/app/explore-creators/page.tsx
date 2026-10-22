@@ -661,9 +661,9 @@ export default function ExploreCreatorsPage() {
         </div>
 
         {/* Category Filter Bar + Navigation Arrows + Action Filters */}
-        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 mb-8 w-full max-w-[1160px] mx-auto">
-          {/* Categories Section (Shows 6 at a time, remaining via arrow) */}
-          <div className="flex items-center gap-2 flex-1 min-w-0">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-8 w-full max-w-[1160px] mx-auto">
+          {/* Categories Section (Shows 6 at a time, arrow right next to Business) */}
+          <div className="flex items-center gap-2">
             {/* Previous Arrow on Left (Shown ONLY when not on first page of 6) */}
             {categoryPage > 0 && (
               <button
@@ -678,8 +678,8 @@ export default function ExploreCreatorsPage() {
               </button>
             )}
 
-            {/* Categories Display (Exactly 6 items per page) */}
-            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 flex-1 min-w-0">
+            {/* Categories Display (Exactly 6 items per page, hugging contents) */}
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
               {visibleCategories.map((item) => {
                 if (item.isFav) {
                   return (
@@ -699,18 +699,18 @@ export default function ExploreCreatorsPage() {
                         setSelectedCategory('all');
                         setCurrentPage(1);
                       }}
-                      className={`h-[40px] px-3.5 sm:px-4 shrink-0 rounded-[8px] flex items-center justify-center gap-2 text-xs font-semibold whitespace-nowrap transition-all border cursor-pointer ${
+                      className={`h-[40px] px-3.5 sm:px-4 shrink-0 rounded-[8px] flex items-center justify-center gap-2 text-xs font-semibold whitespace-nowrap transition-all border cursor-pointer select-none ${
                         showFavouritesOnly
-                          ? 'bg-red-500 text-white border-red-500 shadow-xs'
+                          ? '!bg-red-500 !text-white !border-red-500 shadow-xs'
                           : 'bg-white text-[#6B7280] border-[#E5E7EB] hover:border-red-400 hover:text-red-500'
                       }`}
                     >
-                      <svg className="w-4 h-4 shrink-0" fill={showFavouritesOnly ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <svg className={`w-4 h-4 shrink-0 ${showFavouritesOnly ? '!text-white' : ''}`} fill={showFavouritesOnly ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                       </svg>
-                      <span>Favourites</span>
+                      <span className={showFavouritesOnly ? '!text-white' : ''}>Favourites</span>
                       {isAuthenticated && favourites.length > 0 && (
-                        <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none ${showFavouritesOnly ? 'bg-white/25 text-white' : 'bg-red-100 text-red-500'}`}>
+                        <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none ${showFavouritesOnly ? 'bg-white/25 !text-white' : 'bg-red-100 text-red-500'}`}>
                           {favourites.length}
                         </span>
                       )}
@@ -736,16 +736,16 @@ export default function ExploreCreatorsPage() {
                         setSelectedCategory('all');
                         setCurrentPage(1);
                       }}
-                      className={`h-[40px] px-3.5 sm:px-4 shrink-0 rounded-[8px] flex items-center justify-center gap-2 text-xs font-semibold whitespace-nowrap transition-all border cursor-pointer ${
+                      className={`h-[40px] px-3.5 sm:px-4 shrink-0 rounded-[8px] flex items-center justify-center gap-2 text-xs font-semibold whitespace-nowrap transition-all border cursor-pointer select-none ${
                         showSavedOnly
-                          ? 'bg-[#0012FF] text-white border-[#0012FF]'
+                          ? '!bg-[#0012FF] !text-white !border-[#0012FF] shadow-xs'
                           : 'bg-white text-[#6B7280] border-[#E5E7EB] hover:border-[#0012FF]/40 hover:text-[#0012FF]'
                       }`}
                     >
-                      <svg className="w-4 h-4 shrink-0" fill={showSavedOnly ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <svg className={`w-4 h-4 shrink-0 ${showSavedOnly ? '!text-white' : ''}`} fill={showSavedOnly ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                       </svg>
-                      <span>Saved</span>
+                      <span className={showSavedOnly ? '!text-white' : ''}>Saved</span>
                       {isAuthenticated && saved.length > 0 && (
                         <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none ${showSavedOnly ? 'bg-white/25 text-white' : 'bg-[#EEF2FF] text-[#0012FF]'}`}>
                           {saved.length}
@@ -765,20 +765,20 @@ export default function ExploreCreatorsPage() {
                       setShowSavedOnly(false);
                       setCurrentPage(1);
                     }}
-                    className={`h-[40px] px-3.5 sm:px-4 shrink-0 rounded-[8px] flex items-center justify-center gap-2 text-xs font-semibold whitespace-nowrap transition-all border cursor-pointer ${
+                    className={`h-[40px] px-3.5 sm:px-4 shrink-0 rounded-[8px] flex items-center justify-center gap-2 text-xs font-semibold whitespace-nowrap transition-all border cursor-pointer select-none ${
                       isActive
-                        ? 'bg-[#0012FF] text-white border-[#0012FF] shadow-xs'
+                        ? '!bg-[#0012FF] !text-white !border-[#0012FF] shadow-xs'
                         : 'bg-white text-[#6B7280] border-[#E5E7EB] hover:border-[#0012FF]/40 hover:text-[#0012FF]'
                     }`}
                   >
-                    {getCategoryIcon(item.label || item.id)}
-                    <span>{item.label}</span>
+                    <span className={isActive ? '!text-white' : ''}>{getCategoryIcon(item.label || item.id)}</span>
+                    <span className={isActive ? '!text-white' : ''}>{item.label}</span>
                   </button>
                 );
               })}
             </div>
 
-            {/* Forward Arrow on Right (Shows next page of categories if more than 6) */}
+            {/* Forward Arrow on Right (Exactly right next to Business / categories) */}
             {categoryPage < totalCategoryPages - 1 && (
               <button
                 type="button"
