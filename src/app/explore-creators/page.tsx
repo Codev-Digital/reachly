@@ -17,12 +17,12 @@ import {
 
 const ITEMS_PER_PAGE = 12;
 
-function getCategoryFilterIcon(name: string) {
+function getCategoryIcon(name: string) {
   const lower = (name || '').toLowerCase();
   if (lower.includes('all')) {
     return (
       <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18M6 12h4m-4 6h4m8-6h4m-4 6h4" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
       </svg>
     );
   }
@@ -33,35 +33,52 @@ function getCategoryFilterIcon(name: string) {
       </svg>
     );
   }
-  if (lower.includes('tech') || lower.includes('software') || lower.includes('code')) {
+  if (lower.includes('tech') || lower.includes('software') || lower.includes('developer') || lower.includes('code')) {
     return (
       <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-        <circle cx="12" cy="8" r="5" stroke="currentColor" strokeWidth="2" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M8.21 13.89L7 21l5-3 5 3-1.21-7.11" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
       </svg>
     );
   }
   if (lower.includes('fitness') || lower.includes('health') || lower.includes('gym')) {
     return (
       <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-        <circle cx="6" cy="18" r="3" />
-        <circle cx="18" cy="18" r="3" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 18V13l-3-3 4-2 3 3h2M15 6a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
       </svg>
     );
   }
   if (lower.includes('fashion') || lower.includes('style')) {
     return (
       <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 3c-1.5 2.5-3 5.5-3 8.5a3 3 0 006 0c0-3-1.5-6-3-8.5z" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 14.5c-2.5 0-5.5-.5-7.5-2.5 2 3.5 5 5 7.5 5s5.5-1.5 7.5-5c-2 2-5 2.5-7.5 2.5z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
       </svg>
     );
   }
-  if (lower.includes('business') || lower.includes('finance') || lower.includes('marketing')) {
+  if (lower.includes('business') || lower.includes('marketing') || lower.includes('finance')) {
     return (
       <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3 9l1-5h16l1 5M3 9a3 3 0 006 0 3 3 0 006 0 3 3 0 006 0M3 9v10a2 2 0 002 2h14a2 2 0 002-2V9m-9 4h4" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+      </svg>
+    );
+  }
+  if (lower.includes('education')) {
+    return (
+      <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.168.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.168.477-4.5 1.253" />
+      </svg>
+    );
+  }
+  if (lower.includes('beauty')) {
+    return (
+      <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+      </svg>
+    );
+  }
+  if (lower.includes('food') || lower.includes('travel')) {
+    return (
+      <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m12.728 12.728l.707.707M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
     );
   }
@@ -629,14 +646,28 @@ export default function ExploreCreatorsPage() {
         </div>
 
         {/* Category Filter Bar + Navigation Arrows + Action Filters */}
-        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 mb-8 w-full max-w-[1160px] mx-auto">
-          {/* Scrollable Categories Section (width matches ~813px) */}
-          <div className="flex items-center gap-[10px] w-full max-w-[815px] overflow-hidden">
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 mb-8 w-full max-w-[1160px] mx-auto">
+          {/* Scrollable Categories Section with Forward Arrow & Dynamic Left Arrow */}
+          <div className="flex items-center gap-[10px] flex-1 min-w-0">
+            {/* Previous Arrow on Left (Shown ONLY when scrolled) */}
+            {canScrollLeft && (
+              <button
+                type="button"
+                onClick={() => scrollCategories('left')}
+                className="w-10 h-10 rounded-full border border-[#0012FF] flex items-center justify-center text-[#0012FF] hover:bg-[#0012FF]/5 shrink-0 transition-all cursor-pointer shadow-xs"
+                aria-label="Previous categories"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+            )}
+
             {/* Categories Scroll Container */}
             <div
               ref={categoriesScrollRef}
               onScroll={checkScroll}
-              className="flex items-center gap-[10px] overflow-x-auto no-scrollbar scroll-smooth py-1 flex-1"
+              className="flex items-center gap-[10px] overflow-x-auto no-scrollbar scroll-smooth py-1 flex-1 min-w-0"
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
               {categories.map((cat) => {
@@ -656,38 +687,24 @@ export default function ExploreCreatorsPage() {
                         : 'bg-white text-[#6B7280] border-[#E5E7EB] hover:border-[#0012FF]/40 hover:text-[#0012FF]'
                     }`}
                   >
-                    {getCategoryFilterIcon(cat.label || cat.id)}
+                    {getCategoryIcon(cat.label || cat.id)}
                     <span className="truncate">{cat.label}</span>
                   </button>
                 );
               })}
             </div>
 
-            {/* Homepage-style Forward & Back Navigation Arrows */}
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={() => scrollCategories('left')}
-                disabled={!canScrollLeft}
-                className="w-10 h-10 rounded-full border border-[#0012FF] flex items-center justify-center text-[#0012FF] hover:bg-[#0012FF]/5 shrink-0 transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
-                aria-label="Previous categories"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-              <button
-                type="button"
-                onClick={() => scrollCategories('right')}
-                disabled={!canScrollRight}
-                className="w-10 h-10 rounded-full bg-[#0012FF] flex items-center justify-center text-white shadow-md shadow-[#0012FF]/20 hover:bg-[#0010d0] shrink-0 transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
-                aria-label="Next categories"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-            </div>
+            {/* Forward Scroll Arrow (Always visible on the right of categories) */}
+            <button
+              type="button"
+              onClick={() => scrollCategories('right')}
+              className="w-10 h-10 rounded-full bg-[#0012FF] flex items-center justify-center text-white shadow-md shadow-[#0012FF]/20 hover:bg-[#0010d0] shrink-0 transition-all cursor-pointer"
+              aria-label="Next categories"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
           </div>
 
           {/* Right Action Buttons: Favourites, Saved & Filter */}
