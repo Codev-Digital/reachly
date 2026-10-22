@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -15,7 +15,62 @@ import {
   subscribeFavourites,
 } from '@/lib/favouritesSync';
 
-const ITEMS_PER_PAGE = 8;
+const ITEMS_PER_PAGE = 12;
+
+function getCategoryFilterIcon(name: string) {
+  const lower = (name || '').toLowerCase();
+  if (lower.includes('all')) {
+    return (
+      <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18M6 12h4m-4 6h4m8-6h4m-4 6h4" />
+      </svg>
+    );
+  }
+  if (lower.includes('lifestyle')) {
+    return (
+      <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+      </svg>
+    );
+  }
+  if (lower.includes('tech') || lower.includes('software') || lower.includes('code')) {
+    return (
+      <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        <circle cx="12" cy="8" r="5" stroke="currentColor" strokeWidth="2" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8.21 13.89L7 21l5-3 5 3-1.21-7.11" />
+      </svg>
+    );
+  }
+  if (lower.includes('fitness') || lower.includes('health') || lower.includes('gym')) {
+    return (
+      <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        <circle cx="6" cy="18" r="3" />
+        <circle cx="18" cy="18" r="3" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 18V13l-3-3 4-2 3 3h2M15 6a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
+      </svg>
+    );
+  }
+  if (lower.includes('fashion') || lower.includes('style')) {
+    return (
+      <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 3c-1.5 2.5-3 5.5-3 8.5a3 3 0 006 0c0-3-1.5-6-3-8.5z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 14.5c-2.5 0-5.5-.5-7.5-2.5 2 3.5 5 5 7.5 5s5.5-1.5 7.5-5c-2 2-5 2.5-7.5 2.5z" />
+      </svg>
+    );
+  }
+  if (lower.includes('business') || lower.includes('finance') || lower.includes('marketing')) {
+    return (
+      <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 9l1-5h16l1 5M3 9a3 3 0 006 0 3 3 0 006 0 3 3 0 006 0M3 9v10a2 2 0 002 2h14a2 2 0 002-2V9m-9 4h4" />
+      </svg>
+    );
+  }
+  return (
+    <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+    </svg>
+  );
+}
 
 export default function ExploreCreatorsPage() {
   const router = useRouter();
@@ -28,6 +83,29 @@ export default function ExploreCreatorsPage() {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [showFilterPanel, setShowFilterPanel] = useState(false);
+
+  const categoriesScrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+  const checkScroll = () => {
+    if (categoriesScrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = categoriesScrollRef.current;
+      setCanScrollLeft(scrollLeft > 10);
+      setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 10);
+    }
+  };
+
+  const scrollCategories = (direction: 'left' | 'right') => {
+    if (categoriesScrollRef.current) {
+      const scrollAmount = 330;
+      categoriesScrollRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth',
+      });
+      setTimeout(checkScroll, 350);
+    }
+  };
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isCreator, setIsCreator] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -274,6 +352,10 @@ export default function ExploreCreatorsPage() {
     { id: 'fashion', label: 'Fashion' },
     { id: 'business', label: 'Business' },
   ]);
+
+  useEffect(() => {
+    checkScroll();
+  }, [categories]);
 
   return (
     <div className="min-h-screen bg-[#F7F7FA] text-[#1a1a1a]">
@@ -537,7 +619,7 @@ export default function ExploreCreatorsPage() {
       </AnimatePresence>
 
       {/* Page content */}
-      <main className="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-10 py-8">
+      <main className="max-w-[1160px] mx-auto px-4 sm:px-6 lg:px-0 py-8">
         {/* Hero text */}
         <div className="mb-8">
           <p className="text-gray-500 text-sm font-sans mb-1">Find the perfect match</p>
@@ -546,94 +628,149 @@ export default function ExploreCreatorsPage() {
           </h1>
         </div>
 
-        {/* Category Filter Bar + Favourites tab */}
-        <div className="flex items-center gap-2 flex-wrap mb-8">
-          {categories.map(cat => (
-            <button
-              key={cat.id}
-              onClick={() => { setSelectedCategory(cat.id); setShowFavouritesOnly(false); setShowSavedOnly(false); setCurrentPage(1); }}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all border ${selectedCategory === cat.id && !showFavouritesOnly && !showSavedOnly
-                ? 'bg-[#0012FF] text-white border-[#0012FF]'
-                : 'bg-white text-[#444] border-[#ddd] hover:border-[#0012FF]/40 hover:text-[#0012FF]'
-                }`}
+        {/* Category Filter Bar + Navigation Arrows + Action Filters */}
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 mb-8 w-full max-w-[1160px] mx-auto">
+          {/* Scrollable Categories Section (width matches ~813px) */}
+          <div className="flex items-center gap-[10px] w-full max-w-[815px] overflow-hidden">
+            {/* Categories Scroll Container */}
+            <div
+              ref={categoriesScrollRef}
+              onScroll={checkScroll}
+              className="flex items-center gap-[10px] overflow-x-auto no-scrollbar scroll-smooth py-1 flex-1"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
-              {cat.label}
+              {categories.map((cat) => {
+                const isActive = selectedCategory === cat.id && !showFavouritesOnly && !showSavedOnly;
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => {
+                      setSelectedCategory(cat.id);
+                      setShowFavouritesOnly(false);
+                      setShowSavedOnly(false);
+                      setCurrentPage(1);
+                    }}
+                    className={`w-[156px] h-[40px] shrink-0 rounded-[8px] flex items-center justify-center gap-[10px] px-5 py-[10px] text-sm font-semibold transition-all border cursor-pointer ${
+                      isActive
+                        ? 'bg-[#0012FF] text-white border-[#0012FF] shadow-xs'
+                        : 'bg-white text-[#6B7280] border-[#E5E7EB] hover:border-[#0012FF]/40 hover:text-[#0012FF]'
+                    }`}
+                  >
+                    {getCategoryFilterIcon(cat.label || cat.id)}
+                    <span className="truncate">{cat.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Homepage-style Forward & Back Navigation Arrows */}
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => scrollCategories('left')}
+                disabled={!canScrollLeft}
+                className="w-10 h-10 rounded-full border border-[#0012FF] flex items-center justify-center text-[#0012FF] hover:bg-[#0012FF]/5 shrink-0 transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                aria-label="Previous categories"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                onClick={() => scrollCategories('right')}
+                disabled={!canScrollRight}
+                className="w-10 h-10 rounded-full bg-[#0012FF] flex items-center justify-center text-white shadow-md shadow-[#0012FF]/20 hover:bg-[#0010d0] shrink-0 transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                aria-label="Next categories"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          {/* Right Action Buttons: Favourites, Saved & Filter */}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Favourites tab — heart */}
+            <button
+              onClick={() => {
+                if (!isAuthenticated) {
+                  setLoginCallbackUrl('');
+                  setLoginModalMode('favourite');
+                  setShowLoginModal(true);
+                  return;
+                }
+                const next = !showFavouritesOnly;
+                setShowFavouritesOnly(next);
+                if (next) setShowSavedOnly(false);
+                setSelectedCategory('all');
+                setCurrentPage(1);
+              }}
+              className={`h-[40px] px-4 rounded-[8px] flex items-center gap-1.5 text-sm font-semibold transition-all border cursor-pointer ${
+                showFavouritesOnly
+                  ? 'bg-red-500 text-white border-red-500'
+                  : 'bg-white text-[#6B7280] border-[#E5E7EB] hover:border-red-400 hover:text-red-500'
+              }`}
+            >
+              <svg className="w-4 h-4" fill={showFavouritesOnly ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+              <span>Favourites</span>
+              {isAuthenticated && favourites.length > 0 && (
+                <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none ${showFavouritesOnly ? 'bg-white/25 text-white' : 'bg-red-100 text-red-500'}`}>
+                  {favourites.length}
+                </span>
+              )}
             </button>
-          ))}
 
-          {/* Favourites tab — heart */}
-          <button
-            onClick={() => {
-              if (!isAuthenticated) {
-                setLoginCallbackUrl('');
-                setLoginModalMode('favourite');
-                setShowLoginModal(true);
-                return;
-              }
-
-              const next = !showFavouritesOnly;
-              setShowFavouritesOnly(next);
-              if (next) setShowSavedOnly(false);
-              setSelectedCategory('all');
-              setCurrentPage(1);
-            }}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-all border ${showFavouritesOnly
-              ? 'bg-red-500 text-white border-red-500'
-              : 'bg-white text-[#444] border-[#ddd] hover:border-red-400 hover:text-red-500'
+            {/* Saved tab — bookmark */}
+            <button
+              onClick={() => {
+                if (!isAuthenticated) {
+                  setLoginCallbackUrl('');
+                  setLoginModalMode('favourite');
+                  setShowLoginModal(true);
+                  return;
+                }
+                const next = !showSavedOnly;
+                setShowSavedOnly(next);
+                if (next) setShowFavouritesOnly(false);
+                setSelectedCategory('all');
+                setCurrentPage(1);
+              }}
+              className={`h-[40px] px-4 rounded-[8px] flex items-center gap-1.5 text-sm font-semibold transition-all border cursor-pointer ${
+                showSavedOnly
+                  ? 'bg-[#0012FF] text-white border-[#0012FF]'
+                  : 'bg-white text-[#6B7280] border-[#E5E7EB] hover:border-[#0012FF]/40 hover:text-[#0012FF]'
               }`}
-          >
+            >
+              <svg className="w-4 h-4" fill={showSavedOnly ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+              </svg>
+              <span>Saved</span>
+              {isAuthenticated && saved.length > 0 && (
+                <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none ${showSavedOnly ? 'bg-white/25 text-white' : 'bg-[#EEF2FF] text-[#0012FF]'}`}>
+                  {saved.length}
+                </span>
+              )}
+            </button>
 
-            Favourites
-            {isAuthenticated && favourites.length > 0 && (
-              <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none ${showFavouritesOnly ? 'bg-white/25 text-white' : 'bg-red-100 text-red-500'}`}>
-                {favourites.length}
-              </span>
-            )}
-          </button>
-
-          {/* Saved tab — bookmark */}
-          <button
-            onClick={() => {
-              if (!isAuthenticated) {
-                setLoginCallbackUrl('');
-                setLoginModalMode('favourite');
-                setShowLoginModal(true);
-                return;
-              }
-
-              const next = !showSavedOnly;
-              setShowSavedOnly(next);
-              if (next) setShowFavouritesOnly(false);
-              setSelectedCategory('all');
-              setCurrentPage(1);
-            }}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-all border ${showSavedOnly
-              ? 'bg-[#0012FF] text-white border-[#0012FF]'
-              : 'bg-white text-[#444] border-[#ddd] hover:border-[#0012FF]/40 hover:text-[#0012FF]'
+            {/* Filter */}
+            <button
+              onClick={() => setShowFilterPanel(!showFilterPanel)}
+              className={`h-[40px] px-4 rounded-[8px] flex items-center gap-2 text-sm font-medium border transition-all cursor-pointer ${
+                showFilterPanel
+                  ? 'bg-[#0012FF] text-white border-[#0012FF]'
+                  : 'bg-white text-[#6B7280] border-[#E5E7EB] hover:border-[#0012FF]/40 hover:text-[#0012FF]'
               }`}
-          >
-
-            Saved
-            {isAuthenticated && saved.length > 0 && (
-              <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none ${showSavedOnly ? 'bg-white/25 text-white' : 'bg-[#EEF2FF] text-[#0012FF]'}`}>
-                {saved.length}
-              </span>
-            )}
-          </button>
-
-          <div className="flex-1" />
-
-          {/* Filter */}
-          <button
-            onClick={() => setShowFilterPanel(!showFilterPanel)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border transition-all ${showFilterPanel ? 'bg-[#0012FF] text-white border-[#0012FF]' : 'bg-white text-[#444] border-[#ddd] hover:border-[#0012FF]/40 hover:text-[#0012FF]'
-              }`}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="4" y1="6" x2="20" y2="6" /><line x1="8" y1="12" x2="16" y2="12" /><line x1="11" y1="18" x2="13" y2="18" />
-            </svg>
-            Filter
-          </button>
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="4" y1="6" x2="20" y2="6" /><line x1="8" y1="12" x2="16" y2="12" /><line x1="11" y1="18" x2="13" y2="18" />
+              </svg>
+              <span>Filter</span>
+            </button>
+          </div>
         </div>
 
         {/* Filter Panel */}
@@ -696,14 +833,20 @@ export default function ExploreCreatorsPage() {
 
         {/* Creator Grid */}
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5 sm:gap-6">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="animate-pulse space-y-3">
-                <div className="w-full aspect-[4/4.2] bg-gray-200 rounded-[20px]" />
-                <div className="space-y-2 px-1">
-                  <div className="h-4 w-3/4 bg-gray-200 rounded" />
-                  <div className="h-3 w-1/2 bg-gray-200 rounded" />
-                  <div className="h-3 w-full bg-gray-200 rounded" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 justify-items-center w-full max-w-[1160px] mx-auto">
+            {Array.from({ length: 12 }).map((_, i) => (
+              <div key={i} className="animate-pulse flex flex-col w-[275px] h-[465px] justify-between">
+                <div className="w-[275px] h-[300px] bg-gray-200 rounded-[20px]" />
+                <div className="space-y-2 pt-3 flex-1 flex flex-col justify-between">
+                  <div>
+                    <div className="h-4 w-3/4 bg-gray-200 rounded" />
+                    <div className="h-3 w-1/2 bg-gray-200 rounded mt-2" />
+                    <div className="h-3 w-full bg-gray-200 rounded mt-2" />
+                  </div>
+                  <div>
+                    <div className="h-4 w-1/3 bg-gray-200 rounded" />
+                    <div className="h-4 w-1/4 bg-gray-200 rounded mt-2" />
+                  </div>
                 </div>
               </div>
             ))}
@@ -717,7 +860,7 @@ export default function ExploreCreatorsPage() {
             <p className="text-sm text-gray-400 mt-1">Try adjusting your filters</p>
           </div>
         ) : paginated.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5 sm:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 justify-items-center w-full max-w-[1160px] mx-auto">
             {paginated.map((creator, index) => {
               const isFav = favourites.includes(creator.username);
               return (
@@ -727,10 +870,10 @@ export default function ExploreCreatorsPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.4, delay: index * 0.04 }}
-                  className="flex flex-col w-full group"
+                  className="flex flex-col w-[275px] h-[465px] justify-between group"
                 >
                   {/* Top Image Container */}
-                  <div className="relative w-full aspect-[4/4.2] rounded-[20px] overflow-hidden bg-gray-100 mb-3.5 shadow-xs transition-transform duration-300 group-hover:scale-[1.01]">
+                  <div className="relative w-[275px] h-[300px] rounded-[20px] overflow-hidden bg-gray-100 shrink-0 shadow-xs transition-transform duration-300 group-hover:scale-[1.01]">
                     <img
                       src={creator.profilePhoto || '/avatar.png'}
                       alt={creator.displayName || creator.name}
@@ -739,7 +882,7 @@ export default function ExploreCreatorsPage() {
 
                     {/* Top Left Badge: Sponsored / Verified */}
                     <span
-                      className={`absolute top-3.5 left-3.5 px-3 py-1 rounded-full text-xs font-bold shadow-2xs tracking-wide ${
+                      className={`absolute top-3.5 left-3.5 px-3 py-1 rounded-full text-xs font-bold tracking-wide ${
                         creator.isVerified
                           ? 'bg-[#E6F9EE] text-[#12B76A]'
                           : 'bg-[#EEF2FF] text-[#0012FF]'
@@ -770,49 +913,53 @@ export default function ExploreCreatorsPage() {
                   </div>
 
                   {/* Info Box Below Image */}
-                  <div className="px-0.5 space-y-1">
-                    {/* Title & Star Rating */}
-                    <div className="flex items-center justify-between gap-2">
-                      <h3 className="font-bold text-base sm:text-lg text-black font-sans flex items-center gap-1.5 leading-tight truncate">
-                        <span>{creator.displayName || creator.name}</span>
-                        {creator.isVerified && (
-                          <svg className="w-4.5 h-4.5 text-[#12B76A] fill-current shrink-0" viewBox="0 0 24 24">
-                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
-                          </svg>
-                        )}
-                      </h3>
-                      <span className="flex items-center gap-1 text-xs sm:text-sm font-bold text-amber-500 shrink-0">
-                        ★ {creator.rating || '4.9'}
-                      </span>
-                    </div>
-
-                    {/* Handle */}
-                    <p className="text-xs text-gray-400 font-medium font-sans">@{creator.username}</p>
-
-                    {/* Short Bio */}
-                    <p className="text-xs text-gray-400 font-sans leading-relaxed line-clamp-2 pt-1">
-                      {creator.shortBio || 'Ayesha Khan is one of Pakistan’s leading fashion and lifestyle content creators...'}
-                    </p>
-
-                    {/* Price Row */}
-                    <div className="pt-2 flex items-center gap-1 text-xs text-gray-400 font-sans">
-                      <span>Starting from</span>
-                      <strong className="text-black font-black text-sm sm:text-base ml-1">
-                        {creator.startingPrice ? `${creator.startingPrice} PKR` : '1200 PKR'}
-                      </strong>
-                    </div>
-
-                    {/* Book Now Link */}
-                    {!isAdmin && (
-                      <div>
-                        <span
-                          onClick={(e) => handleCreatorBooking(e, creator.username)}
-                          className="text-xs sm:text-sm font-bold text-[#0012FF] underline hover:text-[#0010d0] font-sans pt-1 inline-block cursor-pointer"
-                        >
-                          Book Now
+                  <div className="flex flex-col flex-1 justify-between pt-3 pb-1">
+                    <div>
+                      {/* Title & Star Rating */}
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="font-bold text-base text-black font-sans flex items-center gap-1.5 leading-tight truncate">
+                          <span className="truncate">{creator.displayName || creator.name}</span>
+                          {creator.isVerified && (
+                            <svg className="w-4 h-4 text-[#12B76A] fill-current shrink-0" viewBox="0 0 24 24">
+                              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                            </svg>
+                          )}
+                        </h3>
+                        <span className="flex items-center gap-1 text-xs font-bold text-amber-500 shrink-0">
+                          ★ {creator.rating || '4.9'}
                         </span>
                       </div>
-                    )}
+
+                      {/* Handle */}
+                      <p className="text-xs text-gray-400 font-medium font-sans mt-0.5">@{creator.username}</p>
+
+                      {/* Short Bio */}
+                      <p className="text-xs text-gray-500 font-sans leading-relaxed line-clamp-2 mt-1.5">
+                        {creator.shortBio || 'Ayesha Khan is one of Pakistan’s leading fashion and lifestyle content creators...'}
+                      </p>
+                    </div>
+
+                    <div>
+                      {/* Price Row */}
+                      <div className="flex items-center gap-1 text-xs text-gray-400 font-sans">
+                        <span>Starting from</span>
+                        <strong className="text-black font-black text-sm ml-1">
+                          {creator.startingPrice ? `${creator.startingPrice} PKR` : '1200 PKR'}
+                        </strong>
+                      </div>
+
+                      {/* Book Now Link */}
+                      {!isAdmin && (
+                        <div className="pt-1">
+                          <span
+                            onClick={(e) => handleCreatorBooking(e, creator.username)}
+                            className="text-xs sm:text-sm font-bold text-[#0012FF] underline hover:text-[#0010d0] font-sans inline-block cursor-pointer"
+                          >
+                            Book Now
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </motion.div>
               );
@@ -822,20 +969,39 @@ export default function ExploreCreatorsPage() {
 
         {/* Pagination */}
         {!loading && totalPages > 1 && (
-          <div className="flex items-center justify-center gap-2 mt-12">
-            <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1}
-              className="w-9 h-9 flex items-center justify-center rounded-full border border-[#ddd] bg-white text-[#555] hover:border-[#0012FF] hover:text-[#0012FF] disabled:opacity-40 disabled:cursor-not-allowed transition-all">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6" /></svg>
+          <div className="w-full pt-8 mt-12 border-t border-gray-200 flex items-center justify-center gap-2 max-w-[1160px] mx-auto">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-[#0012FF] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              aria-label="Previous Page"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
             </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-              <button key={p} onClick={() => handlePageChange(p)}
-                className={`w-9 h-9 flex items-center justify-center rounded-full text-sm font-semibold border transition-all ${p === currentPage ? 'bg-[#0012FF] text-white border-[#0012FF]' : 'bg-white text-[#555] border-[#ddd] hover:border-[#0012FF] hover:text-[#0012FF]'}`}>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+              <button
+                key={p}
+                onClick={() => handlePageChange(p)}
+                className={`w-7 h-7 flex items-center justify-center rounded-md text-xs font-bold transition-all ${
+                  p === currentPage
+                    ? 'bg-[#0012FF] text-white shadow-xs'
+                    : 'bg-transparent text-gray-600 hover:text-[#0012FF]'
+                }`}
+              >
                 {p}
               </button>
             ))}
-            <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages}
-              className="w-9 h-9 flex items-center justify-center rounded-full border border-[#ddd] bg-white text-[#555] hover:border-[#0012FF] hover:text-[#0012FF] disabled:opacity-40 disabled:cursor-not-allowed transition-all">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6" /></svg>
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-[#0012FF] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              aria-label="Next Page"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
             </button>
           </div>
         )}
