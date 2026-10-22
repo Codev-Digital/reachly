@@ -279,19 +279,20 @@ export default function UsersPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[800px]">
             <thead>
-              <tr className="border-b border-gray-100/80">
-                <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">User ID</th>
-                <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">User</th>
-                <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Email</th>
-                <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Joined Date</th>
-                <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Status</th>
-                <th className="py-4 px-4 text-xs font-bold text-gray-400 text-center uppercase tracking-wider">Actions</th>
+              <tr className="border-b border-gray-200">
+                <th className="py-4 px-4 text-xs font-semibold text-gray-500">User ID</th>
+                <th className="py-4 px-4 text-xs font-semibold text-gray-500">User</th>
+                <th className="py-4 px-4 text-xs font-semibold text-gray-500">Email</th>
+                <th className="py-4 px-4 text-xs font-semibold text-gray-500">Joined Date</th>
+                <th className="py-4 px-4 text-xs font-semibold text-gray-500">Time</th>
+                <th className="py-4 px-4 text-xs font-semibold text-gray-500">Status</th>
+                <th className="py-4 px-4 text-xs font-semibold text-gray-500 text-center">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-sm font-semibold text-gray-400">
+                  <td colSpan={7} className="py-8 text-center text-sm font-semibold text-gray-400">
                     Loading users list...
                   </td>
                 </tr>
@@ -300,10 +301,10 @@ export default function UsersPage() {
                   <tr
                     key={user.id}
                     onClick={() => openDetail(user)}
-                    className="hover:bg-gray-50/50 transition-colors cursor-pointer"
+                    className="hover:bg-gray-50/70 transition-colors cursor-pointer"
                   >
                     {/* User ID */}
-                    <td className="py-4 px-4 text-sm font-semibold text-gray-500">{user.id}</td>
+                    <td className="py-4 px-4 text-sm font-medium text-gray-500">{user.id}</td>
 
                     {/* User Profile */}
                     <td className="py-4 px-4">
@@ -312,30 +313,33 @@ export default function UsersPage() {
                           <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
                         </div>
                         <div>
-                          <p className="text-sm font-bold text-black leading-none mb-0.5">{user.name}</p>
-                          <p className="text-xs text-gray-400 font-medium">{user.username}</p>
+                          <p className="text-sm font-semibold text-gray-900 leading-none mb-1">{user.name}</p>
+                          <p className="text-xs text-gray-400 font-medium">@{user.username?.replace(/^@/, '')}</p>
                         </div>
                       </div>
                     </td>
 
                     {/* Email */}
-                    <td className="py-4 px-4 text-sm font-semibold text-gray-500">{user.email}</td>
+                    <td className="py-4 px-4 text-sm text-gray-500">{user.email}</td>
 
                     {/* Joined Date */}
-                    <td className="py-4 px-4 text-sm font-semibold text-gray-500">{user.joinedDate}</td>
+                    <td className="py-4 px-4 text-sm text-gray-500">{user.joinedDate}</td>
 
                     {/* Time */}
+                    <td className="py-4 px-4 text-sm text-gray-500">{user.time || '—'}</td>
 
                     {/* Status Badge */}
                     <td className="py-4 px-4">
                       <span
-                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${user.status === 'Active'
-                          ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${user.status === 'Active'
+                          ? 'bg-emerald-50 text-emerald-600'
                           : user.status === 'Pending'
-                            ? 'bg-amber-50 text-amber-600 border border-amber-200'
+                            ? 'bg-amber-50 text-amber-600'
                             : user.status === 'Inactive'
-                              ? 'bg-rose-50 text-rose-600 border border-rose-200'
-                              : 'bg-gray-100 text-gray-600 border border-gray-200'
+                              ? 'bg-rose-50 text-rose-600'
+                              : user.status === 'Suspended'
+                                ? 'bg-gray-100 text-gray-600'
+                                : 'bg-rose-50 text-rose-600'
                           }`}
                       >
                         {user.status}
@@ -347,13 +351,13 @@ export default function UsersPage() {
                       <div className="flex items-center justify-center gap-2">
                         <button
                           onClick={() => handleDeleteClick(user)}
-                          className="px-4 py-1.5 bg-red-50 border border-red-200 rounded-full text-xs font-bold text-red-600 hover:bg-red-100 hover:border-red-300 transition-colors"
+                          className="px-3.5 py-1 bg-white border border-red-200 rounded-full text-xs font-medium text-red-500 hover:bg-red-50 hover:border-red-300 transition-colors"
                         >
                           Delete
                         </button>
                         <button
                           onClick={() => openDetail(user)}
-                          className="px-4 py-1.5 bg-gray-100 rounded-full text-xs font-bold text-gray-400 hover:bg-gray-200 hover:text-gray-500 transition-colors"
+                          className="px-3.5 py-1 bg-gray-100 rounded-full text-xs font-medium text-gray-600 hover:bg-gray-200 hover:text-gray-800 transition-colors"
                         >
                           View Details
                         </button>
@@ -363,7 +367,7 @@ export default function UsersPage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-sm font-semibold text-gray-400">
+                  <td colSpan={7} className="py-8 text-center text-sm font-semibold text-gray-400">
                     No users found matching filter criteria.
                   </td>
                 </tr>
@@ -373,7 +377,7 @@ export default function UsersPage() {
         </div>
 
         {/* Pagination Footer */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-4 border-t border-gray-50">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-4 border-t border-gray-200">
           <p className="text-xs font-semibold text-gray-400">
             Showing {filteredUsers.length > 0 ? startIndex + 1 : 0} - {Math.min(startIndex + itemsPerPage, filteredUsers.length)} of {filteredUsers.length}
           </p>

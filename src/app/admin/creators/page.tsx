@@ -346,20 +346,21 @@ export default function AdminCreatorsPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[800px]">
             <thead>
-              <tr className="border-b border-gray-100/80">
-                <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Creator ID</th>
-                <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Creator</th>
-                <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Email</th>
-                <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Joined Date</th>
-                <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Events Created</th>
-                <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Status</th>
-                <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Actions</th>
+              <tr className="border-b border-gray-200">
+                <th className="py-4 px-4 text-xs font-semibold text-gray-500">Creator ID</th>
+                <th className="py-4 px-4 text-xs font-semibold text-gray-500">Creator</th>
+                <th className="py-4 px-4 text-xs font-semibold text-gray-500">Email</th>
+                <th className="py-4 px-4 text-xs font-semibold text-gray-500">Joined Date</th>
+                <th className="py-4 px-4 text-xs font-semibold text-gray-500">Time</th>
+                <th className="py-4 px-4 text-xs font-semibold text-gray-500">Events Created</th>
+                <th className="py-4 px-4 text-xs font-semibold text-gray-500">Status</th>
+                <th className="py-4 px-4 text-xs font-semibold text-gray-500">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-sm font-semibold text-gray-400">
+                  <td colSpan={8} className="py-8 text-center text-sm font-semibold text-gray-400">
                     Loading creators list...
                   </td>
                 </tr>
@@ -368,10 +369,10 @@ export default function AdminCreatorsPage() {
                   <tr
                     key={creator.id}
                     onClick={() => openDetail(creator)}
-                    className="hover:bg-gray-50/50 transition-colors cursor-pointer"
+                    className="hover:bg-gray-50/70 transition-colors cursor-pointer"
                   >
                     {/* Creator ID */}
-                    <td className="py-4 px-4 text-sm font-semibold text-gray-500">{creator.id}</td>
+                    <td className="py-4 px-4 text-sm font-medium text-gray-500">{creator.id}</td>
 
                     {/* Creator Profile */}
                     <td className="py-4 px-4">
@@ -380,33 +381,36 @@ export default function AdminCreatorsPage() {
                           <img src={creator.avatar} alt={creator.name} className="w-full h-full object-cover" />
                         </div>
                         <div>
-                          <p className="text-sm font-bold text-black leading-none mb-0.5">{creator.name}</p>
-                          <p className="text-xs text-gray-400 font-medium">{creator.username}</p>
+                          <p className="text-sm font-semibold text-gray-900 leading-none mb-1">{creator.name}</p>
+                          <p className="text-xs text-gray-400 font-medium">@{creator.username?.replace(/^@/, '')}</p>
                         </div>
                       </div>
                     </td>
 
                     {/* Email */}
-                    <td className="py-4 px-4 text-sm font-semibold text-gray-500">{creator.email}</td>
+                    <td className="py-4 px-4 text-sm text-gray-500">{creator.email}</td>
 
                     {/* Joined Date */}
-                    <td className="py-4 px-4 text-sm font-semibold text-gray-500">{creator.joinedDate}</td>
+                    <td className="py-4 px-4 text-sm text-gray-500">{creator.joinedDate}</td>
 
                     {/* Time */}
+                    <td className="py-4 px-4 text-sm text-gray-500">{creator.time || '—'}</td>
 
                     {/* Events Created */}
-                    <td className="py-4 px-4 text-sm font-semibold text-gray-500">{creator.eventsCreated}</td>
+                    <td className="py-4 px-4 text-sm text-gray-500">{creator.eventsCreated}</td>
 
                     {/* Status Badge */}
                     <td className="py-4 px-4">
                       <span
-                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide ${creator.status === 'Active'
-                          ? 'bg-[#E5F7ED] text-[#12B76A]'
+                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${creator.status === 'Active'
+                          ? 'bg-emerald-50 text-emerald-600'
                           : creator.status === 'Pending'
-                            ? 'bg-[#FFF3E0] text-[#F59E0B]'
+                            ? 'bg-amber-50 text-amber-600'
                             : creator.status === 'Inactive'
-                              ? 'bg-[#FFEBEB] text-[#EF4444]'
-                              : 'bg-gray-100 text-gray-500'
+                              ? 'bg-rose-50 text-rose-600'
+                              : creator.status === 'Suspended'
+                                ? 'bg-gray-100 text-gray-600'
+                                : 'bg-rose-50 text-rose-600'
                           }`}
                       >
                         {creator.status}
@@ -419,7 +423,7 @@ export default function AdminCreatorsPage() {
                         <CreatorStatusActions userId={creator.dbId || creator.id} status={creator.status} onChanged={loadCreators} />
                         <button
                           onClick={() => openDetail(creator)}
-                          className="px-3.5 py-1.5 border border-gray-200 bg-gray-50 rounded-full text-[10px] font-bold text-gray-500 hover:bg-gray-100 transition-colors"
+                          className="px-3.5 py-1 bg-gray-100 rounded-full text-xs font-medium text-gray-600 hover:bg-gray-200 hover:text-gray-800 transition-colors"
                         >
                           View Details
                         </button>
@@ -429,7 +433,7 @@ export default function AdminCreatorsPage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-sm font-semibold text-gray-400">
+                  <td colSpan={8} className="py-8 text-center text-sm font-semibold text-gray-400">
                     No creators found matching filter criteria.
                   </td>
                 </tr>
@@ -439,7 +443,7 @@ export default function AdminCreatorsPage() {
         </div>
 
         {/* Pagination Footer */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-4 border-t border-gray-50">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-4 border-t border-gray-200">
           <p className="text-xs font-semibold text-gray-400">
             Showing {filteredCreators.length > 0 ? startIndex + 1 : 0} - {Math.min(startIndex + itemsPerPage, filteredCreators.length)} of {filteredCreators.length}
           </p>
