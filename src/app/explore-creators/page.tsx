@@ -100,6 +100,8 @@ export default function ExploreCreatorsPage() {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [showFilterPanel, setShowFilterPanel] = useState(false);
+  const [categoryPage, setCategoryPage] = useState(0);
+  const CATEGORIES_PER_PAGE = 6;
 
   const categoriesScrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -370,9 +372,22 @@ export default function ExploreCreatorsPage() {
     { id: 'business', label: 'Business' },
   ]);
 
-  useEffect(() => {
-    checkScroll();
+  const allFilterItems = useMemo(() => {
+    const items: Array<{ id: string; label: string; isFav?: boolean; isSaved?: boolean }> = [
+      ...categories,
+      { id: 'favourites', label: 'Favourites', isFav: true },
+      { id: 'saved', label: 'Saved', isSaved: true },
+    ];
+    return items;
   }, [categories]);
+
+  const totalCategoryPages = Math.max(1, Math.ceil(allFilterItems.length / CATEGORIES_PER_PAGE));
+  const visibleCategories = useMemo(() => {
+    return allFilterItems.slice(
+      categoryPage * CATEGORIES_PER_PAGE,
+      (categoryPage + 1) * CATEGORIES_PER_PAGE
+    );
+  }, [allFilterItems, categoryPage]);
 
   return (
     <div className="min-h-screen bg-[#F7F7FA] text-[#1a1a1a]">
@@ -647,13 +662,13 @@ export default function ExploreCreatorsPage() {
 
         {/* Category Filter Bar + Navigation Arrows + Action Filters */}
         <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 mb-8 w-full max-w-[1160px] mx-auto">
-          {/* Scrollable Categories Section with Forward Arrow & Dynamic Left Arrow */}
-          <div className="flex items-center gap-[10px] flex-1 min-w-0">
-            {/* Previous Arrow on Left (Shown ONLY when scrolled) */}
-            {canScrollLeft && (
+          {/* Categories Section (Shows 6 at a time, remaining via arrow) */}
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            {/* Previous Arrow on Left (Shown ONLY when not on first page of 6) */}
+            {categoryPage > 0 && (
               <button
                 type="button"
-                onClick={() => scrollCategories('left')}
+                onClick={() => setCategoryPage((p) => Math.max(0, p - 1))}
                 className="w-10 h-10 rounded-full border border-[#0012FF] flex items-center justify-center text-[#0012FF] hover:bg-[#0012FF]/5 shrink-0 transition-all cursor-pointer shadow-xs"
                 aria-label="Previous categories"
               >
@@ -663,20 +678,89 @@ export default function ExploreCreatorsPage() {
               </button>
             )}
 
-            {/* Categories Scroll Container */}
-            <div
-              ref={categoriesScrollRef}
-              onScroll={checkScroll}
-              className="flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth py-1 flex-1 min-w-0"
-              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-            >
-              {categories.map((cat) => {
-                const isActive = selectedCategory === cat.id && !showFavouritesOnly && !showSavedOnly;
+            {/* Categories Display (Exactly 6 items per page) */}
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 flex-1 min-w-0">
+              {visibleCategories.map((item) => {
+                if (item.isFav) {
+                  return (
+                    <button
+                      key="fav"
+                      type="button"
+                      onClick={() => {
+                        if (!isAuthenticated) {
+                          setLoginCallbackUrl('');
+                          setLoginModalMode('favourite');
+                          setShowLoginModal(true);
+                          return;
+                        }
+                        const next = !showFavouritesOnly;
+                        setShowFavouritesOnly(next);
+                        if (next) setShowSavedOnly(false);
+                        setSelectedCategory('all');
+                        setCurrentPage(1);
+                      }}
+                      className={`h-[40px] px-3.5 sm:px-4 shrink-0 rounded-[8px] flex items-center justify-center gap-2 text-xs font-semibold whitespace-nowrap transition-all border cursor-pointer ${
+                        showFavouritesOnly
+                          ? 'bg-red-500 text-white border-red-500 shadow-xs'
+                          : 'bg-white text-[#6B7280] border-[#E5E7EB] hover:border-red-400 hover:text-red-500'
+                      }`}
+                    >
+                      <svg className="w-4 h-4 shrink-0" fill={showFavouritesOnly ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                      </svg>
+                      <span>Favourites</span>
+                      {isAuthenticated && favourites.length > 0 && (
+                        <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none ${showFavouritesOnly ? 'bg-white/25 text-white' : 'bg-red-100 text-red-500'}`}>
+                          {favourites.length}
+                        </span>
+                      )}
+                    </button>
+                  );
+                }
+
+                if (item.isSaved) {
+                  return (
+                    <button
+                      key="saved"
+                      type="button"
+                      onClick={() => {
+                        if (!isAuthenticated) {
+                          setLoginCallbackUrl('');
+                          setLoginModalMode('favourite');
+                          setShowLoginModal(true);
+                          return;
+                        }
+                        const next = !showSavedOnly;
+                        setShowSavedOnly(next);
+                        if (next) setShowFavouritesOnly(false);
+                        setSelectedCategory('all');
+                        setCurrentPage(1);
+                      }}
+                      className={`h-[40px] px-3.5 sm:px-4 shrink-0 rounded-[8px] flex items-center justify-center gap-2 text-xs font-semibold whitespace-nowrap transition-all border cursor-pointer ${
+                        showSavedOnly
+                          ? 'bg-[#0012FF] text-white border-[#0012FF]'
+                          : 'bg-white text-[#6B7280] border-[#E5E7EB] hover:border-[#0012FF]/40 hover:text-[#0012FF]'
+                      }`}
+                    >
+                      <svg className="w-4 h-4 shrink-0" fill={showSavedOnly ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                      </svg>
+                      <span>Saved</span>
+                      {isAuthenticated && saved.length > 0 && (
+                        <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none ${showSavedOnly ? 'bg-white/25 text-white' : 'bg-[#EEF2FF] text-[#0012FF]'}`}>
+                          {saved.length}
+                        </span>
+                      )}
+                    </button>
+                  );
+                }
+
+                const isActive = selectedCategory === item.id && !showFavouritesOnly && !showSavedOnly;
                 return (
                   <button
-                    key={cat.id}
+                    key={item.id}
                     onClick={() => {
-                      setSelectedCategory(cat.id);
+                      setSelectedCategory(item.id);
                       setShowFavouritesOnly(false);
                       setShowSavedOnly(false);
                       setCurrentPage(1);
@@ -687,90 +771,26 @@ export default function ExploreCreatorsPage() {
                         : 'bg-white text-[#6B7280] border-[#E5E7EB] hover:border-[#0012FF]/40 hover:text-[#0012FF]'
                     }`}
                   >
-                    {getCategoryIcon(cat.label || cat.id)}
-                    <span>{cat.label}</span>
+                    {getCategoryIcon(item.label || item.id)}
+                    <span>{item.label}</span>
                   </button>
                 );
               })}
-
-              {/* Favourites option in arrow carousel */}
-              <button
-                type="button"
-                onClick={() => {
-                  if (!isAuthenticated) {
-                    setLoginCallbackUrl('');
-                    setLoginModalMode('favourite');
-                    setShowLoginModal(true);
-                    return;
-                  }
-                  const next = !showFavouritesOnly;
-                  setShowFavouritesOnly(next);
-                  if (next) setShowSavedOnly(false);
-                  setSelectedCategory('all');
-                  setCurrentPage(1);
-                }}
-                className={`h-[40px] px-3.5 sm:px-4 shrink-0 rounded-[8px] flex items-center justify-center gap-2 text-xs font-semibold whitespace-nowrap transition-all border cursor-pointer ${
-                  showFavouritesOnly
-                    ? 'bg-red-500 text-white border-red-500 shadow-xs'
-                    : 'bg-white text-[#6B7280] border-[#E5E7EB] hover:border-red-400 hover:text-red-500'
-                }`}
-              >
-                <svg className="w-4 h-4 shrink-0" fill={showFavouritesOnly ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                </svg>
-                <span>Favourites</span>
-                {isAuthenticated && favourites.length > 0 && (
-                  <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none ${showFavouritesOnly ? 'bg-white/25 text-white' : 'bg-red-100 text-red-500'}`}>
-                    {favourites.length}
-                  </span>
-                )}
-              </button>
-
-              {/* Saved option in arrow carousel */}
-              <button
-                type="button"
-                onClick={() => {
-                  if (!isAuthenticated) {
-                    setLoginCallbackUrl('');
-                    setLoginModalMode('favourite');
-                    setShowLoginModal(true);
-                    return;
-                  }
-                  const next = !showSavedOnly;
-                  setShowSavedOnly(next);
-                  if (next) setShowFavouritesOnly(false);
-                  setSelectedCategory('all');
-                  setCurrentPage(1);
-                }}
-                className={`h-[40px] px-3.5 sm:px-4 shrink-0 rounded-[8px] flex items-center justify-center gap-2 text-xs font-semibold whitespace-nowrap transition-all border cursor-pointer ${
-                  showSavedOnly
-                    ? 'bg-[#0012FF] text-white border-[#0012FF]'
-                    : 'bg-white text-[#6B7280] border-[#E5E7EB] hover:border-[#0012FF]/40 hover:text-[#0012FF]'
-                }`}
-              >
-                <svg className="w-4 h-4 shrink-0" fill={showSavedOnly ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                </svg>
-                <span>Saved</span>
-                {isAuthenticated && saved.length > 0 && (
-                  <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none ${showSavedOnly ? 'bg-white/25 text-white' : 'bg-[#EEF2FF] text-[#0012FF]'}`}>
-                    {saved.length}
-                  </span>
-                )}
-              </button>
             </div>
 
-            {/* Forward Scroll Arrow (Always visible on the right of categories) */}
-            <button
-              type="button"
-              onClick={() => scrollCategories('right')}
-              className="w-10 h-10 rounded-full bg-[#0012FF] flex items-center justify-center text-white shadow-md shadow-[#0012FF]/20 hover:bg-[#0010d0] shrink-0 transition-all cursor-pointer"
-              aria-label="Next categories"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
+            {/* Forward Arrow on Right (Shows next page of categories if more than 6) */}
+            {categoryPage < totalCategoryPages - 1 && (
+              <button
+                type="button"
+                onClick={() => setCategoryPage((p) => Math.min(totalCategoryPages - 1, p + 1))}
+                className="w-10 h-10 rounded-full bg-[#0012FF] flex items-center justify-center text-white shadow-md shadow-[#0012FF]/20 hover:bg-[#0010d0] shrink-0 transition-all cursor-pointer"
+                aria-label="Next categories"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            )}
           </div>
 
           {/* Right Action Buttons: Filter only */}
