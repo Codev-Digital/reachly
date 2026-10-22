@@ -48,11 +48,11 @@ export default function WelcomeModal({
         showCloseButton={false}
         onEscapeKeyDown={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
-        className="max-w-6xl max-h-[95vh] overflow-y-auto rounded-[32px] p-4 lg:p-6"
+        className="max-w-6xl max-h-[95vh] overflow-y-auto lg:overflow-hidden rounded-[32px] p-4 lg:p-6 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
           {/* Left side */}
-          <div className="lg:col-span-6 p-4 sm:p-6 md:p-8 flex flex-col justify-between">
+          <div className="lg:col-span-6 p-4 sm:p-6 md:p-6 flex flex-col justify-between">
             <div className="mb-8">
               <Image
                 src="/assets/logo1.png"
@@ -65,7 +65,7 @@ export default function WelcomeModal({
             </div>
 
             <div className="my-auto max-w-xl mx-auto w-full">
-              <div className="text-center mb-8">
+              <div className="text-center mb-6">
                 <DialogTitle className="font-anton font-bold text-black text-2xl sm:text-3xl md:text-4xl leading-tight uppercase mb-3">
                   Welcome to Reachly{firstName ? `, ${firstName}` : ''}
                 </DialogTitle>
@@ -80,7 +80,7 @@ export default function WelcomeModal({
                     key={card.id}
                     type="button"
                     onClick={() => onChoose(card.id)}
-                    className="group relative text-left rounded-2xl border border-gray-200 bg-white p-5 min-h-[220px] transition-all hover:border-[#0012FF] hover:shadow-lg hover:shadow-blue-500/10 cursor-pointer"
+                    className="group relative text-left rounded-2xl border border-gray-200 bg-white p-5 min-h-[200px] transition-all hover:border-[#0012FF] hover:shadow-lg hover:shadow-blue-500/10 cursor-pointer"
                   >
                     <span className="absolute top-3 right-3 text-[#0012FF] transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5">
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -101,7 +101,7 @@ export default function WelcomeModal({
 
           {/* Right hero side */}
           <div className="hidden lg:block lg:col-span-6 relative">
-            <div className="h-full min-h-[600px] lg:min-h-[700px]">
+            <div className="h-full min-h-[500px]">
               <HeroImage />
             </div>
           </div>
