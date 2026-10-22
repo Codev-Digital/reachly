@@ -126,34 +126,34 @@ export default function DaysOfMonth({
     if (el) el.scrollBy({ left: direction * el.clientWidth * 0.7, behavior: 'smooth' });
   };
 
-  const stepper = 'flex h-full w-5 shrink-0 items-center justify-center text-gray-400 transition-colors enabled:hover:text-[#0012FF] disabled:cursor-not-allowed disabled:opacity-30 enabled:cursor-pointer';
-  const box = 'flex items-stretch rounded-[8px] border border-[#e2e2e2] bg-white';
+  const stepper = 'flex h-full w-6 shrink-0 items-center justify-center text-gray-400 transition-colors enabled:hover:text-[#0012FF] disabled:cursor-not-allowed disabled:opacity-30 enabled:cursor-pointer';
+  const box = 'flex items-stretch rounded-[10px] border border-[#e2e2e2] bg-white';
 
   return (
-    <div className={cn('flex flex-wrap items-stretch gap-2 sm:flex-nowrap', className)}>
+    <div className={cn('flex flex-wrap items-stretch gap-2.5 sm:flex-nowrap', className)}>
       {/* Month */}
-      <div className={cn(box, 'order-1 h-[52px] px-1.5')}>
+      <div className={cn(box, 'order-1 h-[64px] px-2')}>
         <button type="button" aria-label="Previous month" disabled={atMinMonth} onClick={() => shiftMonth(-1)} className={stepper}>
-          <ChevronLeft size={14} />
+          <ChevronLeft size={16} />
         </button>
-        <div className="flex min-w-[78px] flex-col items-center justify-center px-1 leading-tight" aria-live="polite">
-          <span className="text-[9px] text-gray-400">Month</span>
-          <span className="text-xs font-semibold text-black">{MONTH_NAMES[month]}</span>
+        <div className="flex min-w-[88px] flex-col items-center justify-center px-1.5 leading-tight" aria-live="polite">
+          <span className="text-[10px] text-gray-400">Month</span>
+          <span className="text-sm font-semibold text-black">{MONTH_NAMES[month]}</span>
         </div>
         <button type="button" aria-label="Next month" disabled={atMaxMonth} onClick={() => shiftMonth(1)} className={stepper}>
-          <ChevronRight size={14} />
+          <ChevronRight size={16} />
         </button>
       </div>
 
       {/* Days of the month */}
-      <div className={cn(box, 'order-3 h-[52px] w-full min-w-0 items-center px-1 sm:order-2 sm:w-auto sm:flex-1')}>
+      <div className={cn(box, 'order-3 h-[64px] w-full min-w-0 items-center px-1.5 sm:order-2 sm:w-auto sm:flex-1')}>
         <button type="button" aria-label="Scroll days left" disabled={!canScroll.left} onClick={() => scrollStrip(-1)} className={stepper}>
-          <ChevronLeft size={14} />
+          <ChevronLeft size={16} />
         </button>
         <div
           ref={stripRef}
           onScroll={updateScrollState}
-          className="no-scrollbar relative flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto"
+          className="no-scrollbar relative flex min-w-0 flex-1 items-center gap-1 overflow-x-auto"
         >
           {days.map(({ iso, day, weekday, disabled }) => {
             const selected = selectedDates.includes(iso);
@@ -169,7 +169,7 @@ export default function DaysOfMonth({
                 aria-label={`${weekday} ${day} ${MONTH_NAMES[month]} ${year}`}
                 onClick={() => onDateClick(iso)}
                 className={cn(
-                  'relative flex h-9 min-w-[38px] flex-1 flex-col items-center justify-center rounded-[6px] leading-tight transition-colors',
+                  'relative flex h-11 min-w-[44px] flex-1 flex-col items-center justify-center rounded-[8px] leading-tight transition-colors',
                   disabled ? 'cursor-not-allowed text-gray-300' : 'cursor-pointer',
                   active
                     ? 'bg-[#0012FF] text-white'
@@ -178,31 +178,31 @@ export default function DaysOfMonth({
                       : !disabled && 'text-black hover:bg-gray-100'
                 )}
               >
-                <span className={cn('text-[9px]', active ? 'text-white/80' : disabled ? 'text-gray-300' : 'text-gray-400')}>{weekday}</span>
-                <span className="text-[11px] font-medium">{String(day).padStart(2, '0')}</span>
+                <span className={cn('text-[10px]', active ? 'text-white/80' : disabled ? 'text-gray-300' : 'text-gray-400')}>{weekday}</span>
+                <span className="text-[13px] font-semibold">{String(day).padStart(2, '0')}</span>
                 {hasMark && !active && (
-                  <span className="absolute bottom-0.5 h-1 w-1 rounded-full bg-[#0012FF]" aria-hidden="true" />
+                  <span className="absolute bottom-1 h-1.5 w-1.5 rounded-full bg-[#0012FF]" aria-hidden="true" />
                 )}
               </button>
             );
           })}
         </div>
         <button type="button" aria-label="Scroll days right" disabled={!canScroll.right} onClick={() => scrollStrip(1)} className={stepper}>
-          <ChevronRight size={14} />
+          <ChevronRight size={16} />
         </button>
       </div>
 
       {/* Year */}
-      <div className={cn(box, 'order-2 ml-auto h-[52px] px-1.5 sm:order-3 sm:ml-0')}>
+      <div className={cn(box, 'order-2 ml-auto h-[64px] px-2 sm:order-3 sm:ml-0')}>
         <button type="button" aria-label="Previous year" disabled={year <= firstYear} onClick={() => shiftYear(-1)} className={stepper}>
-          <ChevronLeft size={14} />
+          <ChevronLeft size={16} />
         </button>
-        <div className="flex min-w-[52px] flex-col items-center justify-center px-1 leading-tight" aria-live="polite">
-          <span className="text-[9px] text-gray-400">Year</span>
-          <span className="text-xs font-semibold text-black">{year}</span>
+        <div className="flex min-w-[60px] flex-col items-center justify-center px-1.5 leading-tight" aria-live="polite">
+          <span className="text-[10px] text-gray-400">Year</span>
+          <span className="text-sm font-semibold text-black">{year}</span>
         </div>
         <button type="button" aria-label="Next year" disabled={year >= maxYear} onClick={() => shiftYear(1)} className={stepper}>
-          <ChevronRight size={14} />
+          <ChevronRight size={16} />
         </button>
       </div>
     </div>

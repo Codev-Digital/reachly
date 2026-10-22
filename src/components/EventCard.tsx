@@ -1,6 +1,7 @@
 'use client';
 
-import { Calendar, Clock, Eye, EyeOff, MapPin } from 'lucide-react';
+import Link from 'next/link';
+import { Calendar, Clock, Eye, EyeOff, MapPin, Pencil } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
 export interface EventCardData {
@@ -18,12 +19,20 @@ export interface EventCardData {
 
 interface EventCardProps {
   event: EventCardData;
+  /** Opens hide / unhide confirmation (creator manage view). */
   onToggleVisibility?: (id: string) => void;
+  /** When true, shows the edit control linking to the edit page. */
+  showEdit?: boolean;
   onClick?: (id: string) => void;
 }
 
 /** Event tile: full grid-cell width, 270px tall, 8px radius. */
-export default function EventCard({ event, onToggleVisibility, onClick }: EventCardProps) {
+export default function EventCard({
+  event,
+  onToggleVisibility,
+  showEdit = false,
+  onClick,
+}: EventCardProps) {
   return (
     <div
       role={onClick ? 'button' : undefined}
@@ -67,20 +76,41 @@ export default function EventCard({ event, onToggleVisibility, onClick }: EventC
       {/* Readability overlay: dark on top, brand blue at the bottom */}
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/45 via-black/30 to-[#0012FF]/55" />
 
-      {/* Visibility toggle (creator manage view only) */}
-      {onToggleVisibility && (
-        <button
-          type="button"
-          aria-label={event.visible ? 'Hide event' : 'Show event'}
-          title={event.visible ? 'Visible to followers' : 'Hidden from followers'}
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleVisibility(event.id);
-          }}
-          className="absolute right-3 top-3 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-white/25 text-white backdrop-blur-sm transition-colors hover:bg-white/40"
-        >
-          {event.visible ? <Eye size={14} /> : <EyeOff size={14} />}
-        </button>
+      {/* Creator actions */}
+      {(onToggleVisibility || showEdit) && (
+        <div className="absolute right-3 top-3 z-10 flex items-center gap-2">
+          {showEdit && (
+            <Link
+              href={`/creators/events/${event.id}/edit`}
+              aria-label="Edit event"
+              title="Edit event"
+              onClick={(e) => e.stopPropagation()}
+              className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-white/25 text-white backdrop-blur-sm transition-colors hover:bg-white/45"
+            >
+              <Pencil size={14} strokeWidth={2.25} />
+            </Link>
+          )}
+          {onToggleVisibility && (
+            <button
+              type="button"
+              aria-label={event.visible ? 'Hide event' : 'Show event'}
+              title={event.visible ? 'Visible to followers' : 'Hidden from followers'}
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleVisibility(event.id);
+              }}
+              className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-white/25 text-white backdrop-blur-sm transition-colors hover:bg-white/45"
+            >
+              {event.visible ? <Eye size={14} /> : <EyeOff size={14} />}
+            </button>
+          )}
+        </div>
+      )}
+
+      {!event.visible && (
+        <span className="absolute left-3 top-3 z-10 rounded-full bg-black/45 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-white/95 backdrop-blur-sm">
+          Hidden
+        </span>
       )}
 
       {/* Details */}

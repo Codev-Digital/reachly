@@ -20,6 +20,7 @@ interface ConversationInfo {
   id: string;
   conversationId: string;
   type?: 'dm' | 'broadcast';
+  eventId?: string | null;
   /** Channel title (event title for broadcasts). */
   creator: string;
   /** Real creator display name (for message labels in broadcasts). */
@@ -36,6 +37,8 @@ interface ConversationInfo {
   image: string;
   meetingUrl?: string | null;
   isLocked: boolean;
+  /** Broadcast: this user cannot send (mute all or individually muted). */
+  isMutedForMe?: boolean;
   lastMessage: string;
   lastMessageTime: string | null;
   lastMessageSenderRole?: string | null;
@@ -156,6 +159,10 @@ export default function UserChatsPage() {
     } catch (e) {}
   }, []);
   const [isOtherUserOnline, setIsOtherUserOnline] = useState(false);
+  const [onlineCount, setOnlineCount] = useState(0);
+  const [typingUsers, setTypingUsers] = useState<
+    { id: string; name: string; avatar: string; role: 'creator' | 'user' }[]
+  >([]);
   const [isOtherUserTyping, setIsOtherUserTyping] = useState(false);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastTypingSentRef = useRef<boolean>(false);
@@ -435,6 +442,7 @@ export default function UserChatsPage() {
           id: c.id,
           conversationId: c.conversationId,
           type: c.type === 'broadcast' ? 'broadcast' : 'dm',
+          eventId: c.eventId ? String(c.eventId) : null,
           // Broadcast channel name = event title (API `follower` / `creator`)
           creator: c.type === 'broadcast'
             ? (c.follower || c.creator || 'Event')
@@ -451,6 +459,7 @@ export default function UserChatsPage() {
           image: c.image || c.avatar || '/avatar.png',
           meetingUrl: c.meetingUrl || null,
           isLocked: c.isLocked,
+          isMutedForMe: Boolean(c.isMutedForMe),
           lastMessage: c.lastMessage || '',
           lastMessageTime: c.lastMessageTime || null,
           lastMessageSenderRole: c.lastMessageSenderRole || null,
@@ -502,16 +511,20 @@ export default function UserChatsPage() {
     return () => clearInterval(interval);
   }, []);
 
-  // Auto-activate chat if bookingRef is passed in URL query
+  // Auto-activate chat if bookingRef or eventId is passed in URL query
   useEffect(() => {
     if (typeof window !== 'undefined' && conversations.length > 0) {
       const params = new URLSearchParams(window.location.search);
       const bookingRef = params.get('bookingRef');
+      const eventId = params.get('eventId');
       if (bookingRef) {
-        const found = conversations.find(c => c.ref === bookingRef);
-        if (found) {
-          setActiveChat(found.id);
-        }
+        const found = conversations.find((c) => c.ref === bookingRef);
+        if (found) setActiveChat(found.id);
+      } else if (eventId) {
+        const found = conversations.find(
+          (c) => c.type === 'broadcast' && c.eventId && String(c.eventId) === String(eventId)
+        );
+        if (found) setActiveChat(found.id);
       }
     }
   }, [conversations]);
@@ -537,6 +550,9 @@ export default function UserChatsPage() {
     const currentConv = conversations.find(c => c.id === activeChat);
 
     setIsOtherUserOnline(false);
+    setOnlineCount(0);
+    setTypingUsers([]);
+    setIsOtherUserTyping(false);
     if (!activeChat) {
       setMessages([]);
       setParticipantProfiles({});
@@ -709,15 +725,50 @@ export default function UserChatsPage() {
               })
           );
         } else if (data.type === 'presence' && data.conversationId === activeChat) {
-          setIsOtherUserOnline(data.count > 1);
+          const count = Number(data.count) || 0;
+          setOnlineCount(count);
+          setIsOtherUserOnline(count > 1);
         } else if (data.type === 'typing' && data.conversationId === activeChat) {
-          setIsOtherUserTyping(data.isTyping);
+          const tid = String(data.senderId || data.senderRole || 'unknown');
+          const entry = {
+            id: tid,
+            name: data.senderName || (data.senderRole === 'creator' ? 'Creator' : 'User'),
+            avatar: data.senderAvatar || '/avatar.png',
+            role: (data.senderRole === 'creator' ? 'creator' : 'user') as 'creator' | 'user',
+          };
+          setTypingUsers((prev) => {
+            if (data.isTyping) {
+              const without = prev.filter((u) => u.id !== tid);
+              return [...without, entry];
+            }
+            return prev.filter((u) => u.id !== tid);
+          });
+          setIsOtherUserTyping(Boolean(data.isTyping));
         } else if (data.type === 'read_receipt' && data.conversationId === activeChat) {
           setMessages(prev => prev.map(m => ({ ...m, read: true })));
         } else if (data.type === 'lock_status' && data.conversationId === activeChat) {
           setConversations(prev =>
             prev.map(c => (c.id === data.conversationId ? { ...c, isLocked: data.isLocked } : c))
           );
+        } else if (data.type === 'mute_status' && data.conversationId === activeChat) {
+          setConversations((prev) =>
+            prev.map((c) => {
+              if (c.id !== data.conversationId) return c;
+              const mutedIds: string[] = Array.isArray(data.mutedUserIds) ? data.mutedUserIds : [];
+              const isMutedForMe =
+                Boolean(data.muteAll) || (userId ? mutedIds.includes(userId) : false);
+              return { ...c, isMutedForMe };
+            })
+          );
+        } else if (data.type === 'message_rejected' && data.conversationId === activeChat) {
+          if (data.tempId) {
+            setMessages((prev) => prev.filter((m) => m.tempId !== data.tempId && m.id !== data.tempId));
+          }
+          if (data.reason === 'muted') {
+            setConversations((prev) =>
+              prev.map((c) => (c.id === data.conversationId ? { ...c, isMutedForMe: true } : c))
+            );
+          }
         } else if (data.type === 'chat_cleared' && data.conversationId === activeChat) {
           setMessages([]);
           setParticipantProfiles({});
@@ -816,6 +867,9 @@ export default function UserChatsPage() {
       type: 'typing',
       conversationId: activeChat,
       senderRole: 'user',
+      senderId: userId,
+      senderName: displayName || 'User',
+      senderAvatar: profilePhoto || '/avatar.png',
       isTyping: typingState
     }));
     lastTypingSentRef.current = typingState;
@@ -995,6 +1049,8 @@ export default function UserChatsPage() {
 
   const activeConv = conversations.find(c => c.id === activeChat);
   const isChatLocked = activeConv?.isLocked ?? false;
+  const isMutedForMe = activeConv?.isMutedForMe ?? false;
+  const canSendMessages = !isChatLocked && !isMutedForMe;
 
   const handleArchiveChat = async (archive: boolean) => {
     if (!activeChat) return;
@@ -1252,12 +1308,12 @@ export default function UserChatsPage() {
                           style={{ width: 44, height: 44 }}
                         />
                       </div>
-                      <div className={`absolute bottom-0 right-0 w-3.5 h-3.5 border-3 border-white rounded-full ${activeConv.isOnline ? 'bg-[#12B76A]' : 'bg-gray-400'}`}></div>
+                      <div className={`absolute bottom-0 right-0 w-3.5 h-3.5 border-3 border-white rounded-full ${onlineCount > 1 ? 'bg-[#12B76A]' : 'bg-gray-400'}`}></div>
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1 overflow-visible">
                         <h3 className="text-sm sm:text-base font-bold text-gray-900 truncate whitespace-nowrap max-w-[110px] sm:max-w-none">
-                          {activeConv.creator}
+                          {activeConv.type === 'broadcast' ? 'Event Chat' : activeConv.creator}
                         </h3>
                         {activeConv.type !== 'broadcast' && (
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="shrink-0">
@@ -1266,11 +1322,51 @@ export default function UserChatsPage() {
                           </svg>
                         )}
                       </div>
-                      <span className="text-xs text-gray-400 block mt-0.5 truncate">
-                        {activeConv.type === 'broadcast'
-                          ? (activeConv.session || 'Event Broadcast')
-                          : `@${activeConv.username}`}
-                      </span>
+                      {(() => {
+                        const isBroadcast = activeConv.type === 'broadcast';
+                        const creatorTyping = typingUsers.find((u) => u.role === 'creator');
+                        const displayTypers = creatorTyping ? [creatorTyping] : typingUsers;
+
+                        if (displayTypers.length > 0) {
+                          const multi = !creatorTyping && displayTypers.length > 1;
+                          return (
+                            <div className="mt-0.5 flex min-w-0 items-center gap-1.5">
+                              <div className="flex shrink-0 -space-x-1.5">
+                                {(multi ? displayTypers.slice(0, 3) : displayTypers.slice(0, 1)).map((u) => (
+                                  <img
+                                    key={u.id}
+                                    src={u.avatar || '/avatar.png'}
+                                    alt=""
+                                    className="h-4 w-4 rounded-full object-cover ring-1 ring-white"
+                                  />
+                                ))}
+                              </div>
+                              <span className="truncate text-xs font-medium text-[#0012FF]">
+                                {creatorTyping
+                                  ? `${creatorTyping.name} Typing...`
+                                  : multi
+                                    ? `${displayTypers.length} Members Typing...`
+                                    : `${displayTypers[0].name} Typing...`}
+                              </span>
+                            </div>
+                          );
+                        }
+
+                        if (isBroadcast) {
+                          return (
+                            <span className="mt-0.5 flex items-center gap-1.5 text-xs font-medium text-gray-400">
+                              <span className={`h-2 w-2 rounded-full ${onlineCount > 1 ? 'bg-[#12B76A]' : 'bg-gray-400'}`} />
+                              {onlineCount > 1 ? `${onlineCount} Online` : 'Offline'}
+                            </span>
+                          );
+                        }
+
+                        return (
+                          <span className="mt-0.5 block truncate text-xs text-gray-400">
+                            @{activeConv.username}
+                          </span>
+                        );
+                      })()}
                     </div>
                   </div>
 
@@ -1465,39 +1561,63 @@ export default function UserChatsPage() {
                       )}
 
                       {/* Real-time Typing Indicator Bubble */}
-                      {isOtherUserTyping && (
-                        <div className="flex items-end gap-3 max-w-[85%] self-start animate-fade-in select-none">
-                          <div
-                            className="shrink-0 overflow-hidden rounded-full bg-gray-200"
-                            style={{ width: 44, height: 44, minWidth: 44, minHeight: 44 }}
-                          >
-                            <img
-                              src={
-                                activeConv.type === 'broadcast'
-                                  ? (activeConv.creatorAvatar || activeConv.image)
-                                  : activeConv.image
-                              }
-                              alt="Avatar"
-                              className="object-cover"
-                              style={{ width: 44, height: 44 }}
-                            />
+                      {typingUsers.length > 0 && (() => {
+                        const creatorTyping = typingUsers.find((u) => u.role === 'creator');
+                        const displayTypers = creatorTyping ? [creatorTyping] : typingUsers;
+                        const lead = displayTypers[0];
+                        return (
+                          <div className="flex max-w-[85%] animate-fade-in select-none items-end gap-3 self-start">
+                            <div className="flex shrink-0 -space-x-2">
+                              {(displayTypers.length > 1 ? displayTypers.slice(0, 2) : [lead]).map((u) => (
+                                <div
+                                  key={u.id}
+                                  className="overflow-hidden rounded-full bg-gray-200 ring-2 ring-white"
+                                  style={{ width: 44, height: 44, minWidth: 44, minHeight: 44 }}
+                                >
+                                  <img
+                                    src={u.avatar || '/avatar.png'}
+                                    alt=""
+                                    className="object-cover"
+                                    style={{ width: 44, height: 44 }}
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                            <div className="flex min-w-[70px] flex-col gap-1">
+                              <span className="text-[11px] font-medium text-gray-500">
+                                {creatorTyping
+                                  ? `${creatorTyping.name} Typing...`
+                                  : displayTypers.length > 1
+                                    ? `${displayTypers.length} Members Typing...`
+                                    : `${lead.name} Typing...`}
+                              </span>
+                              <div className="flex items-center gap-1.5 rounded-[8px] rounded-tl-none bg-[#F8F8F8] px-5 py-3.5">
+                                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#0012FF]" style={{ animationDelay: '0ms' }} />
+                                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#0012FF]" style={{ animationDelay: '150ms' }} />
+                                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#0012FF]" style={{ animationDelay: '300ms' }} />
+                              </div>
+                            </div>
                           </div>
-                          <div className="flex min-w-[70px] items-center gap-1.5 rounded-[8px] rounded-tl-none bg-[#F8F8F8] px-5 py-3.5">
-                            <span className="w-1.5 h-1.5 bg-[#0012FF] rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-                            <span className="w-1.5 h-1.5 bg-[#0012FF] rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                            <span className="w-1.5 h-1.5 bg-[#0012FF] rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
-                          </div>
-                        </div>
-                      )}
+                        );
+                      })()}
 
                       <div ref={messagesEndRef} />
                     </div>
 
                     {/* Input Area / Recording Panel */}
-                    {isChatLocked ? (
+                    {!canSendMessages ? (
                       <div className="p-5 sm:p-6 bg-gray-50 border-t border-gray-100 flex items-center justify-center text-sm text-gray-400 font-medium select-none shrink-0 gap-2">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
-                        <span>You can't send a message unless creator unlocks this chat</span>
+                        {isMutedForMe ? (
+                          <>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 5L6 9H2v6h4l5 4V5z" /><line x1="23" y1="9" x2="17" y2="15" /><line x1="17" y1="9" x2="23" y2="15" /></svg>
+                            <span>You are muted in this event chat</span>
+                          </>
+                        ) : (
+                          <>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                            <span>You can't send a message unless creator unlocks this chat</span>
+                          </>
+                        )}
                       </div>
                     ) : (
                       <div className="p-3 mb-3 mx-3 bg-white border border-[#0012FF]/10 rounded-2xl shadow-[0_4px_24px_rgba(0,18,255,0.06)] shrink-0">

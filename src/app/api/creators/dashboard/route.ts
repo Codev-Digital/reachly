@@ -110,10 +110,22 @@ export async function GET(req: NextRequest) {
       : [];
     const cpMap = new Map<string, string>(cpDocs.map((cp) => [cp.userId.toString(), cp.profilePhoto]));
 
+    /** YYYY-MM-DD from noon-UTC scheduledDate (avoids local timezone day-shift). */
+    const toScheduledDateIso = (value: string | Date | undefined | null) => {
+      if (!value) return '';
+      const d = value instanceof Date ? value : new Date(value);
+      if (Number.isNaN(d.getTime())) return '';
+      const y = d.getUTCFullYear();
+      const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(d.getUTCDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    };
+
     // Format incoming bookings
     const formattedIncoming = incomingBookings.map((b) => {
+      const scheduledDateIso = toScheduledDateIso(b.scheduledDate);
       const scheduledDateStr = new Date(b.scheduledDate).toLocaleDateString('en-US', {
-        weekday: 'short', month: 'short', day: 'numeric',
+        weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC',
       });
       const duration = (b.sessionTypeId as any)?.duration || 30;
       let avatarUrl = '/avatar.png';
@@ -138,15 +150,27 @@ export async function GET(req: NextRequest) {
         amount: `${b.finalPrice} PKR`,
         status: b.status,
         scheduledDate: b.scheduledDate,
+        scheduledDateIso,
+        scheduledTime: b.scheduledTime || '',
+        durationMins: duration,
+        createdAt: b.createdAt || null,
         meetingUrl: b.meetingUrl,
+        meetingStarted: Boolean(b.meetingStartedAt),
+        meetingEnded: Boolean(
+          b.meetingEndedAt ||
+            b.status === 'completed' ||
+            (b.meetingEndsAt && new Date(b.meetingEndsAt).getTime() <= Date.now())
+        ),
+        meetingEndsAt: b.meetingEndsAt || null,
         bookingRef: b.bookingRef,
         isCreatorBooker: false,
       };
     });
 
     const formattedOutgoing = outgoingBookings.map((b) => {
+      const scheduledDateIso = toScheduledDateIso(b.scheduledDate);
       const scheduledDateStr = new Date(b.scheduledDate).toLocaleDateString('en-US', {
-        weekday: 'short', month: 'short', day: 'numeric',
+        weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC',
       });
       const duration = (b.sessionTypeId as any)?.duration || 30;
       const creatorIdStr = b.creatorId?.toString();
@@ -166,16 +190,32 @@ export async function GET(req: NextRequest) {
         amount: `${b.finalPrice} PKR`,
         status: b.status,
         scheduledDate: b.scheduledDate,
+        scheduledDateIso,
+        scheduledTime: b.scheduledTime || '',
+        durationMins: duration,
+        createdAt: b.createdAt || null,
         meetingUrl: b.meetingUrl,
+        meetingStarted: Boolean(b.meetingStartedAt),
+        meetingEnded: Boolean(
+          b.meetingEndedAt ||
+            b.status === 'completed' ||
+            (b.meetingEndsAt && new Date(b.meetingEndsAt).getTime() <= Date.now())
+        ),
+        meetingEndsAt: b.meetingEndsAt || null,
         bookingRef: b.bookingRef,
         isCreatorBooker: true,
       };
     });
 
-    // Merge and sort combined list by scheduledDate descending
-    const allBookings = [...formattedIncoming, ...formattedOutgoing].sort((a, b) =>
-      new Date(b.scheduledDate).getTime() - new Date(a.scheduledDate).getTime()
-    );
+    // Nearest upcoming first; within the same day prefer newest bookings
+    const allBookings = [...formattedIncoming, ...formattedOutgoing].sort((a, b) => {
+      const dateDiff =
+        new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime();
+      if (dateDiff !== 0) return dateDiff;
+      const createdA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const createdB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return createdB - createdA;
+    });
 
     return NextResponse.json({
       success: true,

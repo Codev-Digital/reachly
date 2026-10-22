@@ -1,54 +1,109 @@
 'use client';
 
+import { useCallback, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
+import AdminReviewReportCard, {
+  type AdminReviewReportItem,
+} from '@/components/admin/AdminReviewReportCard';
 
-const ReviewsPage = () => {
+export default function ReviewsPage() {
+  const [filter, setFilter] = useState<'pending' | 'all' | 'verified' | 'dismissed'>('pending');
+  const [reports, setReports] = useState<AdminReviewReportItem[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  const loadReports = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/admin/reviews?status=${filter}`, { cache: 'no-store' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error || 'Could not load reports.');
+        return;
+      }
+      setReports(data.reports || []);
+      setTotal(Number(data.total) || (data.reports || []).length);
+    } catch (err) {
+      console.error(err);
+      toast.error('Could not load reports.');
+    } finally {
+      setLoading(false);
+    }
+  }, [filter]);
+
+  useEffect(() => {
+    void loadReports();
+  }, [loadReports]);
+
   return (
     <motion.div
       initial={{ y: 20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ delay: 0.2 }}
+      transition={{ delay: 0.15 }}
+      className="pb-12"
     >
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="font-serif text-2xl font-bold text-[#F9F6F2]">Reviews</h2>
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-3xl sm:text-4xl font-bold font-sans text-black">
+            Review <span className="text-[#0012FF] font-black">Reports</span>
+          </h1>
+          <p className="mt-1 text-sm text-gray-500 font-sans">
+            Review creator reports of client feedback
+            {total > 0 ? <span className="text-gray-400"> · {total} total</span> : null}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {(['pending', 'verified', 'dismissed', 'all'] as const).map((f) => (
+            <button
+              key={f}
+              type="button"
+              onClick={() => setFilter(f)}
+              className={`rounded-full px-4 py-1.5 text-xs font-bold capitalize transition-colors cursor-pointer ${
+                filter === f
+                  ? 'bg-[#0012FF] text-white shadow-sm shadow-[#0012FF]/20'
+                  : 'border border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
       </div>
-      
-      <motion.div
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.3 }}
-        className="space-y-4"
-      >
-        {[
-          { user: 'Mariam Hussain', creator: 'Ahad Raza Mir', rating: 5, comment: 'Amazing session!', date: '2025-06-28' },
-          { user: 'Sara Ahmed', creator: 'Mahira Khan', rating: 5, comment: 'Very helpful.', date: '2025-06-28' },
-        ].map((review, index) => (
-          <div key={index} className="bg-[#141414] border border-[rgba(200,169,126,0.2)] rounded-xl p-5">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-full overflow-hidden">
-                <img src="/ahad raza mir.png" alt="User" className="w-full h-full object-cover" />
-              </div>
-              <div>
-                <p className="font-sans text-sm text-[#F9F6F2]">{review.user}</p>
-                <p className="font-sans text-xs text-[#F9F6F2] opacity-60">for {review.creator}</p>
-              </div>
-              <div className="ml-auto">
-                <div className="flex gap-1">
-                  {[...Array(review.rating)].map((_, i) => (
-                    <svg key={i} width="14" height="14" viewBox="0 0 24 24" fill="#C8A97E">
-                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                    </svg>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <p className="font-sans text-sm text-[#F9F6F2] opacity-80">{review.comment}</p>
-            <p className="font-sans text-xs text-[#F9F6F2] opacity-50 mt-2">{review.date}</p>
+
+      <div className="rounded-[32px] border border-gray-100 bg-white p-6 sm:p-8 shadow-sm">
+        {loading ? (
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div
+                key={i}
+                className="min-h-[220px] animate-pulse rounded-[8px] border border-gray-100 bg-[#F8F8FA]"
+              />
+            ))}
           </div>
-        ))}
-      </motion.div>
+        ) : reports.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-gray-200 bg-[#F8F8FA] px-6 py-16 text-center">
+            <p className="text-sm font-semibold text-gray-600">
+              No {filter === 'all' ? '' : `${filter} `}reports
+            </p>
+            <p className="mt-1 text-xs text-gray-400">
+              Reported reviews from creators will show up here for moderation.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {reports.map((rep, idx) => (
+              <AdminReviewReportCard
+                key={rep.id}
+                report={rep}
+                commaIdx={idx}
+                showActions={rep.status === 'pending'}
+                onResolved={() => void loadReports()}
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </motion.div>
   );
-};
-
-export default ReviewsPage;
+}

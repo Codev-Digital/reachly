@@ -8,6 +8,7 @@ import Booking from '@/models/Booking';
 import SessionType from '@/models/SessionType';
 import User from '@/models/User';
 import CreatorProfile from '@/models/CreatorProfile';
+import EventPurchase from '@/models/EventPurchase';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -93,9 +94,13 @@ export async function GET(request: NextRequest) {
         ));
 
         // Also load creator profiles for broadcast channels (buyer side shows creator)
-        const broadcastCreatorIds = filteredConversations
-            .filter((c) => c.type === 'broadcast')
-            .map((c) => c.creatorId.toString());
+        const broadcastConversations = filteredConversations.filter((c) => c.type === 'broadcast');
+        const broadcastCreatorIds = broadcastConversations.map((c) => c.creatorId.toString());
+        // Full participant lists only for chats this user owns (creator dashboard)
+        const creatorOwnedBroadcasts = broadcastConversations.filter(
+            (c) => c.creatorId.toString() === userId && c.eventId
+        );
+        const creatorOwnedEventIds = creatorOwnedBroadcasts.map((c) => c.eventId);
         const allProfileUserIds = Array.from(new Set([...otherUserIds, ...broadcastCreatorIds]));
 
         // Build pair matching for bookings (DMs only)
@@ -106,13 +111,14 @@ export async function GET(request: NextRequest) {
                 userId: c.userId,
             }));
 
-        // Batch fetch users, profiles, messages, and bookings concurrently
+        // Batch fetch users, profiles, messages, bookings, and event ticket holders
         const [
             otherUsers,
             creatorProfiles,
             lastMessagesAgg,
             unreadCountsAgg,
-            bookingsList
+            bookingsList,
+            eventPurchases,
         ] = await Promise.all([
             User.find({ _id: { $in: otherUserIds } }).select('_id name email profilePhoto lastActiveAt').lean(),
             CreatorProfile.find({ userId: { $in: allProfileUserIds } }).select('userId displayName username profilePhoto').lean(),
@@ -138,8 +144,74 @@ export async function GET(request: NextRequest) {
                     .sort({ scheduledDate: -1 })
                     .populate({ path: 'sessionTypeId', model: SessionType, select: 'title duration' })
                     .lean()
-                : []
+                : [],
+            creatorOwnedEventIds.length > 0
+                ? EventPurchase.find({
+                    eventId: { $in: creatorOwnedEventIds },
+                    status: { $ne: 'cancelled' },
+                  })
+                    .select('eventId userId buyerEmail tierTitle quantity createdAt')
+                    .sort({ createdAt: -1 })
+                    .lean()
+                : [],
         ]);
+
+        const buyerIds = Array.from(
+            new Set((eventPurchases as any[]).map((p) => p.userId?.toString()).filter(Boolean))
+        );
+        const buyerUsers = buyerIds.length
+            ? await User.find({ _id: { $in: buyerIds } }).select('_id name email profilePhoto').lean()
+            : [];
+        const buyerUsersMap = new Map<string, any>(
+            (buyerUsers as any[]).map((u) => [u._id.toString(), u])
+        );
+
+        // eventId -> participants[]
+        const participantsByEventId = new Map<
+            string,
+            {
+                userId: string;
+                name: string;
+                email: string;
+                avatar: string;
+                tierTitle: string;
+                quantity: number;
+            }[]
+        >();
+
+        for (const purchase of eventPurchases as any[]) {
+            const eventKey = purchase.eventId?.toString();
+            const uid = purchase.userId?.toString();
+            if (!eventKey || !uid) continue;
+
+            if (!participantsByEventId.has(eventKey)) participantsByEventId.set(eventKey, []);
+            const list = participantsByEventId.get(eventKey)!;
+            const existing = list.find((p) => p.userId === uid);
+            const tier = (purchase.tierTitle || '').trim();
+            const profile = buyerUsersMap.get(uid);
+
+            if (existing) {
+                if (tier && !existing.tierTitle.split(', ').includes(tier)) {
+                    existing.tierTitle = existing.tierTitle === '—'
+                        ? tier
+                        : `${existing.tierTitle}, ${tier}`;
+                }
+                existing.quantity += purchase.quantity || 0;
+            } else {
+                list.push({
+                    userId: uid,
+                    name: profile?.name || 'User',
+                    email: profile?.email || purchase.buyerEmail || '',
+                    avatar: profile?.profilePhoto || '/avatar.png',
+                    tierTitle: tier || '—',
+                    quantity: purchase.quantity || 1,
+                });
+            }
+        }
+
+        for (const [, list] of participantsByEventId) {
+            list.sort((a, b) => a.name.localeCompare(b.name));
+        }
 
         const otherUsersMap = new Map<string, any>((otherUsers as any[]).map((u) => [u._id.toString(), u]));
         const creatorProfilesMap = new Map<string, any>((creatorProfiles as any[]).map((cp) => [cp.userId.toString(), cp]));
@@ -181,6 +253,20 @@ export async function GET(request: NextRequest) {
                 const createdIso = conv.createdAt ? new Date(conv.createdAt).toISOString() : '';
                 const participantCount = Array.isArray(conv.participantIds) ? conv.participantIds.length : 0;
 
+                const muteAll = Boolean(conv.muteAll);
+                const mutedUserIds = (conv.mutedUserIds || []).map((id: any) => id.toString());
+                const mutedSet = new Set(mutedUserIds);
+                const isMutedForMe =
+                    !isCreator && (muteAll || mutedSet.has(userId));
+
+                const rawParticipants = isCreator && conv.eventId
+                    ? (participantsByEventId.get(String(conv.eventId)) || [])
+                    : [];
+                const participants = rawParticipants.map((p) => ({
+                    ...p,
+                    isMuted: muteAll || mutedSet.has(p.userId),
+                }));
+
                 return {
                     id: convId,
                     conversationId: convId,
@@ -189,6 +275,9 @@ export async function GET(request: NextRequest) {
                     creatorId: conv.creatorId.toString(),
                     userId: null,
                     isLocked: conv.isLocked,
+                    muteAll,
+                    mutedUserIds,
+                    isMutedForMe,
                     isCreator,
                     // Channel display name = event title (both creator & user views)
                     follower: title,
@@ -212,7 +301,8 @@ export async function GET(request: NextRequest) {
                     duration: participantCount > 0 ? `${participantCount} members` : '',
                     price: '',
                     ref: conv.eventId ? `EVT-${String(conv.eventId).slice(-6).toUpperCase()}` : '',
-                    participantCount,
+                    participantCount: isCreator ? participants.length : participantCount,
+                    participants: isCreator ? participants : undefined,
                     isArchivedByCreator: isCreator ? Boolean(conv.isArchivedByCreator) : false,
                     isArchivedByUser: !isCreator ? Boolean(conv.isArchivedByUser) : false,
                 };

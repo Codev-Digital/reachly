@@ -16,6 +16,19 @@ import { isRichTextEmpty, richTextPreview } from '@/lib/richText';
 import ActionDialog from '@/components/ActionDialog';
 import PriceTag from '@/components/PriceTag';
 import { usePreloadImages } from '@/lib/usePreloadImages';
+import { toast } from 'sonner';
+
+interface ClientReviewItem {
+  id: string;
+  name: string;
+  avatar: string;
+  rating: number;
+  comment: string;
+  dateLabel: string;
+  reported: boolean;
+  reportStatus: string | null;
+  commaIdx: number;
+}
 
 function ModalShell({
   onClose,
@@ -144,10 +157,13 @@ export default function CreatorSettings() {
 
   usePreloadImages(['/assets/cancel-appointment-sm.webp', '/assets/booking-confirm-sm.webp']);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  // Reviews tab: which review the report popup is for, and which ones were already reported (UI only)
-  const [reviewToReport, setReviewToReport] = useState<number | null>(null);
+  // Reviews tab
+  const [clientReviews, setClientReviews] = useState<ClientReviewItem[]>([]);
+  const [loadingReviews, setLoadingReviews] = useState(false);
+  const [reviewToReport, setReviewToReport] = useState<ClientReviewItem | null>(null);
+  const [reportReason, setReportReason] = useState('');
   const [reportSubmitted, setReportSubmitted] = useState(false);
-  const [reportedReviews, setReportedReviews] = useState<number[]>([]);
+  const [reportSaving, setReportSaving] = useState(false);
   const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
   const [deletingSession, setDeletingSession] = useState(false);
   const [showLastSessionModal, setShowLastSessionModal] = useState(false);
@@ -202,6 +218,63 @@ export default function CreatorSettings() {
     }
     if (tab || saved) window.history.replaceState(null, '', window.location.pathname);
   }, []);
+
+  const loadClientReviews = async () => {
+    setLoadingReviews(true);
+    try {
+      const res = await fetch('/api/creators/reviews', { cache: 'no-store' });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
+        setClientReviews(data.reviews || []);
+      }
+    } catch (err) {
+      console.error('Failed to load reviews:', err);
+    } finally {
+      setLoadingReviews(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'Reviews') {
+      void loadClientReviews();
+    }
+  }, [activeTab]);
+
+  const submitReviewReport = async () => {
+    if (!reviewToReport || reportSaving) return;
+    const reason = reportReason.trim();
+    if (!reason) {
+      toast.error('Please tell us why you are reporting this review.');
+      return;
+    }
+    setReportSaving(true);
+    try {
+      const res = await fetch(`/api/creators/reviews/${reviewToReport.id}/report`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error || 'Could not submit report.');
+        return;
+      }
+      setClientReviews((prev) =>
+        prev.map((r) =>
+          r.id === reviewToReport.id
+            ? { ...r, reported: true, reportStatus: 'pending' }
+            : r
+        )
+      );
+      setReportSubmitted(true);
+      toast.success('Report sent to admin for verification.');
+    } catch (err) {
+      console.error(err);
+      toast.error('Could not submit report.');
+    } finally {
+      setReportSaving(false);
+    }
+  };
 
   // Load cached settings on mount
   useEffect(() => {
@@ -1346,65 +1419,100 @@ export default function CreatorSettings() {
                 <p className="text-gray-500 text-sm">See what clients are saying about your sessions.</p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[
-                  { name: 'Jordan L', location: 'Los Angeles, CA', commaIdx: 0, text: 'Ayesha helped me find my style, stay consistent, and grow my engagement. I feel much more confident creating content. One of the best investments I’ve made for my personal brand!' },
-                  { name: 'Jordan L', location: 'Los Angeles, CA', commaIdx: 1, text: 'Ayesha helped me find my style, stay consistent, and grow my engagement. I feel much more confident creating content. One of the best investments I’ve made for my personal brand!' },
-                  { name: 'Jordan L', location: 'Los Angeles, CA', commaIdx: 2, text: 'Ayesha helped me find my style, stay consistent, and grow my engagement. I feel much more confident creating content. One of the best investments I’ve made for my personal brand!' },
-                  { name: 'Jordan L', location: 'Los Angeles, CA', commaIdx: 1, text: 'Ayesha helped me find my style, stay consistent, and grow my engagement. I feel much more confident creating content. One of the best investments I’ve made for my personal brand!' },
-                  { name: 'Jordan L', location: 'Los Angeles, CA', commaIdx: 2, text: 'Ayesha helped me find my style, stay consistent, and grow my engagement. I feel much more confident creating content. One of the best investments I’ve made for my personal brand!' },
-                  { name: 'Jordan L', location: 'Los Angeles, CA', commaIdx: 0, text: 'Ayesha helped me find my style, stay consistent, and grow my engagement. I feel much more confident creating content. One of the best investments I’ve made for my personal brand!' },
-                ].map((rev, i) => (
-                  <div
-                    key={i}
-                    className="relative bg-[#F8F8FA] border border-[#e2e2e2] rounded-[8px] p-6 flex flex-col justify-between min-h-[220px] transition-all hover:shadow-sm hover:scale-[1.01]"
-                  >
-                    {/* Quotation Mark Badge Asset */}
-                    <img
-                      src={COMMA_SVGS[rev.commaIdx]}
-                      alt="quote"
-                      className="absolute top-4 right-4 w-14 h-14 pointer-events-none object-contain"
-                    />
+              {loadingReviews ? (
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="h-[220px] animate-pulse rounded-[8px] bg-gray-100" />
+                  ))}
+                </div>
+              ) : clientReviews.length === 0 ? (
+                <div className="rounded-[8px] border border-dashed border-[#e2e2e2] bg-[#F8F8FA] px-6 py-14 text-center">
+                  <p className="text-base font-semibold text-gray-700">No reviews yet</p>
+                  <p className="mt-1 text-sm text-gray-400">
+                    When clients leave a review after a session, it will show up here.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {clientReviews.map((rev) => (
+                    <div
+                      key={rev.id}
+                      className="relative bg-[#F8F8FA] border border-[#e2e2e2] rounded-[8px] p-6 flex flex-col justify-between min-h-[220px] transition-all hover:shadow-sm hover:scale-[1.01]"
+                    >
+                      {/* Quotation Mark Badge Asset */}
+                      <img
+                        src={COMMA_SVGS[rev.commaIdx % 3]}
+                        alt="quote"
+                        className="absolute top-4 right-4 w-14 h-14 pointer-events-none object-contain"
+                      />
 
-                    <div>
-                      {/* Reviewer Meta */}
-                      <div className="flex items-center gap-3 mb-4 pr-10">
-                        <div className="w-11 h-11 rounded-full overflow-hidden shrink-0 border border-gray-200 bg-gray-200">
-                          <Image src="/Avatars/8.jpg" alt={rev.name} width={44} height={44} className="w-full h-full object-cover" />
+                      <div>
+                        {/* Reviewer Meta */}
+                        <div className="flex items-center gap-3 mb-4 pr-10">
+                          <div className="w-11 h-11 rounded-full overflow-hidden shrink-0 border border-gray-200 bg-gray-200">
+                            <Image
+                              src={rev.avatar || '/avatar.png'}
+                              alt={rev.name}
+                              width={44}
+                              height={44}
+                              className="w-full h-full object-cover"
+                              unoptimized
+                            />
+                          </div>
+                          <div>
+                            <p className="font-extrabold text-sm sm:text-base text-black leading-tight">
+                              {rev.name}
+                            </p>
+                            <p className="text-xs text-gray-400 font-medium mt-0.5">
+                              {rev.dateLabel || 'Recent'}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-extrabold text-sm sm:text-base text-black leading-tight">{rev.name}</p>
-                          <p className="text-xs text-gray-400 font-medium mt-0.5">{rev.location}</p>
-                        </div>
+
+                        <div className="w-full h-px bg-gray-200/80 mb-4" />
+
+                        {/* Review Text */}
+                        <p className="text-xs sm:text-sm text-gray-500 font-medium leading-relaxed font-sans mb-4">
+                          &ldquo;{rev.comment || 'No written feedback.'}&rdquo;
+                        </p>
                       </div>
 
-                      <div className="w-full h-px bg-gray-200/80 mb-4" />
-
-                      {/* Review Text */}
-                      <p className="text-xs sm:text-sm text-gray-500 font-medium leading-relaxed font-sans mb-4">
-                        &ldquo;{rev.text}&rdquo;
-                      </p>
+                      {/* Stars (left) + Report (right) */}
+                      <div className="flex items-center justify-between gap-3 pt-2">
+                        <div className="flex items-center gap-0.5">
+                          {Array.from({ length: 5 }).map((_, si) => (
+                            <Star
+                              key={si}
+                              className={`h-3.5 w-3.5 ${
+                                si < rev.rating
+                                  ? 'fill-[#F5C542] text-[#F5C542]'
+                                  : 'fill-gray-200 text-gray-200'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        {rev.reported ? (
+                          <span className="text-xs text-gray-400 font-bold shrink-0">
+                            {rev.reportStatus === 'pending' ? 'Reported' : 'Reported'}
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setReportSubmitted(false);
+                              setReportReason('');
+                              setReviewToReport(rev);
+                            }}
+                            className="text-xs text-[#FF3B3B] hover:underline font-bold cursor-pointer shrink-0"
+                          >
+                            Report
+                          </button>
+                        )}
+                      </div>
                     </div>
-
-                    {/* Report Action */}
-                    <div className="flex justify-end pt-2">
-                      {reportedReviews.includes(i) ? (
-                        <span className="text-xs text-gray-400 font-bold">Reported</span>
-                      ) : (
-                        <button
-                          onClick={() => {
-                            setReportSubmitted(false);
-                            setReviewToReport(i);
-                          }}
-                          className="text-xs text-[#FF3B3B] hover:underline font-bold cursor-pointer"
-                        >
-                          Report
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -1464,41 +1572,78 @@ export default function CreatorSettings() {
         </div>
       )}
 
-      {/* ============ REPORT REVIEW POPUP (UI only) ============ */}
+      {/* ============ REPORT REVIEW POPUP ============ */}
       <ActionDialog
         open={reviewToReport !== null}
         onOpenChange={(open) => {
-          if (!open) setReviewToReport(null);
+          if (!open && !reportSaving) {
+            setReviewToReport(null);
+            setReportReason('');
+            setReportSubmitted(false);
+          }
         }}
+        classNames={{ content: 'max-w-[484px]' }}
         image={
           reportSubmitted
             ? { src: '/assets/booking-confirm-sm.webp', alt: 'Review reported' }
             : { src: '/assets/cancel-appointment-sm.webp', alt: 'Report review' }
         }
-        title={reportSubmitted ? 'Review Reported' : 'Report this review?'}
+        title={reportSubmitted ? 'Report sent to admin' : 'Report this review?'}
         description={
           reportSubmitted
-            ? 'Thanks for letting us know. Our team will look into this review within 24 hours.'
-            : 'If this review is abusive, fake or breaks our guidelines, report it and our team will review it within 24 hours.'
+            ? 'Thanks for letting us know. An admin will verify this report within 24 hours.'
+            : 'Tell us why this review should be reviewed. Your note goes to admin for verification.'
         }
         actions={
           reportSubmitted
-            ? [{ label: 'Done', onClick: () => setReviewToReport(null) }]
-            : [
-                { label: 'Cancel', variant: 'outline', onClick: () => setReviewToReport(null) },
+            ? [
                 {
-                  label: 'Report',
-                  variant: 'destructive',
+                  label: 'Done',
                   onClick: () => {
-                    if (reviewToReport !== null) {
-                      setReportedReviews((prev) => [...prev, reviewToReport]);
-                    }
-                    setReportSubmitted(true);
+                    setReviewToReport(null);
+                    setReportReason('');
+                    setReportSubmitted(false);
                   },
                 },
               ]
+            : [
+                {
+                  label: 'Cancel',
+                  variant: 'outline',
+                  onClick: () => {
+                    setReviewToReport(null);
+                    setReportReason('');
+                  },
+                  disabled: reportSaving,
+                },
+                {
+                  label: reportSaving ? 'Sending…' : 'Submit Report',
+                  variant: 'destructive',
+                  onClick: () => void submitReviewReport(),
+                  disabled: reportSaving || !reportReason.trim(),
+                },
+              ]
         }
-      />
+      >
+        {!reportSubmitted && (
+          <div className="mb-4 w-full text-left">
+            <label className="mb-1.5 block text-xs font-semibold text-gray-600">
+              Reason <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              value={reportReason}
+              onChange={(e) => setReportReason(e.target.value.slice(0, 250))}
+              rows={4}
+              maxLength={250}
+              placeholder="Explain why this review is abusive, fake, or against guidelines…"
+              className="w-full resize-none rounded-2xl border border-gray-200 bg-[#F8F8FA] px-4 py-3 text-sm text-gray-800 outline-none transition-colors placeholder:text-gray-400 focus:border-[#0012FF] focus:bg-white"
+            />
+            <p className="mt-1 text-right text-[11px] text-gray-400">
+              {reportReason.length}/250
+            </p>
+          </div>
+        )}
+      </ActionDialog>
 
       {/* ============ DELETE SESSION CONFIRM ============ */}
       <ActionDialog

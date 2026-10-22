@@ -16,6 +16,10 @@ export interface IConversation extends Document {
   /** Required for 1:1 DMs; omitted for broadcast channels. */
   userId?: mongoose.Types.ObjectId | null;
   isLocked: boolean;
+  /** Broadcast: mute every ticket holder from sending (creator can still send). */
+  muteAll?: boolean;
+  /** Broadcast: specific user ids muted from sending when muteAll is false. */
+  mutedUserIds?: mongoose.Types.ObjectId[];
   creatorClearedAt?: Date;
   userClearedAt?: Date;
   isArchivedByCreator?: boolean;
@@ -69,6 +73,14 @@ const ConversationSchema = new Schema<IConversation>(
     isLocked: {
       type: Boolean,
       default: true,
+    },
+    muteAll: {
+      type: Boolean,
+      default: false,
+    },
+    mutedUserIds: {
+      type: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+      default: [],
     },
     creatorClearedAt: {
       type: Date,

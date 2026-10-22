@@ -104,3 +104,20 @@ export async function addBuyerToEventBroadcast(
 
   return channel;
 }
+
+/** Remove a refunded / cancelled buyer from the event broadcast channel. */
+export async function removeBuyerFromEventBroadcast(
+  eventId: string | mongoose.Types.ObjectId,
+  userId: string | mongoose.Types.ObjectId
+) {
+  const eid = new mongoose.Types.ObjectId(String(eventId));
+  const uid = new mongoose.Types.ObjectId(String(userId));
+
+  await Conversation.updateOne(
+    { type: 'broadcast', eventId: eid },
+    {
+      $pull: { participantIds: uid },
+      $set: { updatedAt: new Date() },
+    }
+  );
+}

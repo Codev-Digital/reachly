@@ -223,6 +223,14 @@ export async function GET(request: NextRequest) {
                 rescheduleStatus: booking.rescheduleRequest?.status,
                 isLocked: booking.isLocked !== undefined ? booking.isLocked : !lastMsgDoc,
                 meetingUrl: booking.meetingUrl,
+                meetingStarted: Boolean(booking.meetingStartedAt),
+                meetingEnded: Boolean(
+                    booking.meetingEndedAt ||
+                        booking.status === 'completed' ||
+                        (booking.meetingEndsAt &&
+                            new Date(booking.meetingEndsAt).getTime() <= Date.now())
+                ),
+                meetingEndsAt: booking.meetingEndsAt || null,
                 lastMessage: lastMsgDoc ? lastMsgDoc.content : '',
                 lastMessageTime: lastMsgDoc ? lastMsgDoc.createdAt : null,
                 unreadCount: unreadCount,

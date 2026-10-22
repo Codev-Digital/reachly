@@ -1,16 +1,36 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import CreatorDashboardNav from '@/components/CreatorDashboardNav';
 import LoadingAnimation from '@/components/LoadingAnimation';
+import DaysOfMonth from '@/components/DaysOfMonth';
 import { TrendingUp, BookOpen, Calendar, Eye, Users, Copy, Check, Bookmark, Target, Presentation } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Cell, Tooltip } from 'recharts';
 import DailyCall from '@/components/DailyCall';
+import SessionReviewModal, {
+  type SessionReviewTarget,
+} from '@/components/booking/SessionReviewModal';
 import { isMeetingPassed } from '@/lib/time';
+import { fromISODate, toISODate } from '@/lib/eventTicketing';
+import { parse12h } from '@/lib/slots';
+
+/** Prefer API scheduledDateIso (UTC-safe); fall back to UTC parts of scheduledDate. */
+function bookingDateIso(booking: { scheduledDateIso?: string; scheduledDate?: string | Date }) {
+  if (booking.scheduledDateIso && /^\d{4}-\d{2}-\d{2}$/.test(booking.scheduledDateIso)) {
+    return booking.scheduledDateIso;
+  }
+  if (!booking.scheduledDate) return '';
+  const d = new Date(booking.scheduledDate);
+  if (Number.isNaN(d.getTime())) return '';
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(d.getUTCDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
 
 import {
   Card,
@@ -39,10 +59,7 @@ const CreatorDashboard = () => {
   const [displayName, setDisplayName] = useState<string>('');
   const [username, setUsername] = useState<string>('');
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
-  const [monthDropdownOpen, setMonthDropdownOpen] = useState(false);
-  const [yearDropdownOpen, setYearDropdownOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  const selectedDayRef = useRef<HTMLButtonElement | null>(null);
 
   // Real stats & bookings state
   const [dashboardStats, setDashboardStats] = useState({
@@ -82,15 +99,6 @@ const CreatorDashboard = () => {
   const [loadingChart, setLoadingChart] = useState(true);
   const [chartYearDropdownOpen, setChartYearDropdownOpen] = useState(false);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (selectedDayRef.current) {
-        selectedDayRef.current.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-      }
-    }, 100);
-    return () => clearTimeout(timer);
-  }, [currentDate, loadingData]);
-
   // Reschedule & Cancel Modal States
   const [showCancelModal, setShowCancelModal] = useState<boolean>(false);
   const [bookingToCancel, setBookingToCancel] = useState<any | null>(null);
@@ -109,28 +117,83 @@ const CreatorDashboard = () => {
   const [successModalType, setSuccessModalType] = useState<'cancelled' | 'rescheduled'>('cancelled');
 
   // Meeting Modal States
-  const [meetingToJoin, setMeetingToJoin] = useState<{ url: string; ref: string } | null>(null);
+  const [meetingToJoin, setMeetingToJoin] = useState<{
+    id: string;
+    url: string;
+    ref: string;
+    peerName: string;
+    durationMins: number;
+    meetingEndsAt?: string | null;
+  } | null>(null);
   const [activeCallUrl, setActiveCallUrl] = useState<string | null>(null);
+  const [startingMeeting, setStartingMeeting] = useState(false);
+  const [reviewTarget, setReviewTarget] = useState<SessionReviewTarget | null>(null);
+
+  const handleCreatorStartMeeting = async () => {
+    if (!meetingToJoin || startingMeeting) return;
+    setStartingMeeting(true);
+    try {
+      const res = await fetch(`/api/creators/bookings/${meetingToJoin.id || meetingToJoin.ref}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ startMeeting: true }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert(data.error || 'Could not start the meeting.');
+        return;
+      }
+      const endsAt =
+        data.meeting?.meetingEndsAt ||
+        data.meetingEndsAt ||
+        meetingToJoin.meetingEndsAt ||
+        null;
+      setMeetingToJoin((prev) =>
+        prev
+          ? {
+              ...prev,
+              meetingEndsAt: endsAt ? String(endsAt) : prev.meetingEndsAt,
+              durationMins:
+                data.meeting?.totalMeetingMins ||
+                data.totalMeetingMins ||
+                prev.durationMins,
+            }
+          : prev
+      );
+      setActiveCallUrl(meetingToJoin.url);
+    } catch (err) {
+      console.error(err);
+      alert('Could not start the meeting.');
+    } finally {
+      setStartingMeeting(false);
+    }
+  };
+
+  const handleCreatorLeaveMeeting = () => {
+    const ctx = meetingToJoin;
+    setActiveCallUrl(null);
+    setMeetingToJoin(null);
+    if (ctx?.id) {
+      setBookingsList((prev) =>
+        prev.map((b) =>
+          String(b.id) === String(ctx.id)
+            ? { ...b, meetingEnded: true, meetingStarted: true, status: 'completed' }
+            : b
+        )
+      );
+      setReviewTarget({
+        bookingId: ctx.id,
+        peerName: ctx.peerName || 'your client',
+        durationMins: ctx.durationMins || 15,
+      });
+    }
+  };
 
   const handleCopyLink = () => {
     const linkStr = window.location.origin + `/creators/${username || displayName.toLowerCase().replace(/\s+/g, '-')}`;
     navigator.clipboard.writeText(linkStr);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
-
-  const selectMonth = (monthIndex: number) => {
-    const d = new Date(currentDate);
-    d.setMonth(monthIndex);
-    setCurrentDate(d);
-    setMonthDropdownOpen(false);
-  };
-
-  const selectYear = (year: number) => {
-    const d = new Date(currentDate);
-    d.setFullYear(year);
-    setCurrentDate(d);
-    setYearDropdownOpen(false);
   };
 
   const chartConfig = {
@@ -174,15 +237,46 @@ const CreatorDashboard = () => {
 
   useEffect(() => { loadEarningsChart(chartYear, chartTimeframe); }, [chartYear, chartTimeframe]);
 
+  const writeDashboardCache = (patch: {
+    displayName?: string;
+    profilePhoto?: string | null;
+    username?: string;
+    dashboardStats?: typeof dashboardStats;
+    bookingsList?: any[];
+  }) => {
+    try {
+      const prevRaw = sessionStorage.getItem('reachly_creator_dashboard_cache');
+      const prev = prevRaw ? JSON.parse(prevRaw) : {};
+      sessionStorage.setItem(
+        'reachly_creator_dashboard_cache',
+        JSON.stringify({
+          displayName: patch.displayName ?? prev.displayName ?? '',
+          profilePhoto: patch.profilePhoto !== undefined ? patch.profilePhoto : prev.profilePhoto ?? null,
+          username: patch.username ?? prev.username ?? '',
+          dashboardStats: patch.dashboardStats ?? prev.dashboardStats ?? null,
+          bookingsList: patch.bookingsList ?? prev.bookingsList ?? [],
+        })
+      );
+    } catch (e) {
+      /* ignore quota / private mode */
+    }
+  };
+
   // Helper to load fresh stats & bookings
   const loadDashboardData = async () => {
     try {
-      const statsRes = await fetch('/api/creators/dashboard');
+      const statsRes = await fetch('/api/creators/dashboard', { cache: 'no-store' });
       if (statsRes.ok) {
         const data = await statsRes.json();
         if (data.success) {
+          const list = data.bookings || [];
           setDashboardStats(data.stats);
-          setBookingsList(data.bookings || []);
+          setBookingsList(list);
+          jumpToNearestBookingDay(list);
+          writeDashboardCache({
+            dashboardStats: data.stats,
+            bookingsList: list,
+          });
         }
       }
     } catch (err) {
@@ -190,50 +284,87 @@ const CreatorDashboard = () => {
     }
   };
 
-  // Load profile and dashboard stats in parallel
+  // Load profile and dashboard stats once on mount (avoid refetch races from profile state deps)
   useEffect(() => {
+    let cancelled = false;
+
     async function loadData() {
       try {
         const [profileRes, statsRes] = await Promise.all([
-          fetch('/api/user/me'),
-          fetch('/api/creators/dashboard')
+          fetch('/api/user/me', { cache: 'no-store' }),
+          fetch('/api/creators/dashboard', { cache: 'no-store' }),
         ]);
+
+        let nextName = '';
+        let nextPhoto: string | null = null;
+        let nextUsername = '';
 
         if (profileRes.ok) {
           const data = await profileRes.json();
-          const name = data.creatorProfile?.displayName || data.user?.name || '';
-          const photo = data.creatorProfile?.profilePhoto || null;
-          setDisplayName(name);
-          setProfilePhoto(photo);
-          setUsername(data.creatorProfile?.username || '');
+          nextName = data.creatorProfile?.displayName || data.user?.name || '';
+          nextPhoto = data.creatorProfile?.profilePhoto || null;
+          nextUsername = data.creatorProfile?.username || '';
+          if (!cancelled) {
+            setDisplayName(nextName);
+            setProfilePhoto(nextPhoto);
+            setUsername(nextUsername);
+          }
         }
 
         if (statsRes.ok) {
           const data = await statsRes.json();
-          if (data.success) {
+          if (data.success && !cancelled) {
+            const list = data.bookings || [];
             setDashboardStats(data.stats);
-            setBookingsList(data.bookings || []);
-
-            // Save to cache
-            try {
-              sessionStorage.setItem('reachly_creator_dashboard_cache', JSON.stringify({
-                displayName: displayName || (data.creatorProfile?.displayName || data.user?.name || ''),
-                profilePhoto: profilePhoto || (data.creatorProfile?.profilePhoto || null),
-                username: username || (data.creatorProfile?.username || ''),
-                dashboardStats: data.stats,
-                bookingsList: data.bookings || []
-              }));
-            } catch (e) { }
+            setBookingsList(list);
+            jumpToNearestBookingDay(list);
+            writeDashboardCache({
+              displayName: nextName,
+              profilePhoto: nextPhoto,
+              username: nextUsername,
+              dashboardStats: data.stats,
+              bookingsList: list,
+            });
           }
         }
       } catch (err) {
         console.error('Failed to load dashboard:', err);
       } finally {
-        setLoadingData(false);
+        if (!cancelled) setLoadingData(false);
       }
     }
     loadData();
-  }, [displayName, profilePhoto, username]);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const didAutoJumpDate = useRef(false);
+
+  const jumpToNearestBookingDay = (list: any[]) => {
+    if (didAutoJumpDate.current || !list.length) return;
+    didAutoJumpDate.current = true;
+
+    const todayIso = toISODate(new Date());
+    const hasToday = list.some((b) => bookingDateIso(b) === todayIso);
+    if (hasToday) return;
+
+    const upcomingIsos = list
+      .map((b) => bookingDateIso(b))
+      .filter((iso: string) => iso && iso >= todayIso)
+      .sort();
+    if (upcomingIsos[0]) {
+      setCurrentDate(fromISODate(upcomingIsos[0]));
+      return;
+    }
+
+    const pastIsos = list
+      .map((b) => bookingDateIso(b))
+      .filter(Boolean)
+      .sort();
+    const last = pastIsos[pastIsos.length - 1];
+    if (last) setCurrentDate(fromISODate(last));
+  };
 
   // Fetch reschedule slots when date changes
   useEffect(() => {
@@ -498,22 +629,38 @@ const CreatorDashboard = () => {
               const passed = booking.scheduledDate ? isMeetingPassed(booking.scheduledDate, booking.time) : false;
               return (
                 <>
-                  <button
-                    disabled={passed}
-                    onClick={() => {
-                      if (booking.meetingUrl && booking.bookingRef) {
-                        setMeetingToJoin({ url: booking.meetingUrl, ref: booking.bookingRef });
-                      } else {
-                        alert('Meeting link is not available yet.');
-                      }
-                    }}
-                    className={`w-full py-2.5 rounded-full text-xs font-bold text-center transition-all shadow-md ${passed
-                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
-                      : 'bg-[#0012FF] hover:bg-[#0012FF]/90 text-white shadow-[#0012FF]/20 cursor-pointer'
-                      }`}
-                  >
-                    {passed ? 'Meeting Ended' : 'Join Meeting'}
-                  </button>
+                  {booking.meetingEnded || booking.status === 'completed' ? (
+                    <div className="w-full py-2.5 rounded-full text-xs font-bold text-center bg-gray-100 text-gray-500 border border-gray-200 select-none">
+                      Meeting Completed
+                    </div>
+                  ) : (
+                    <button
+                      disabled={passed}
+                      onClick={() => {
+                        if (booking.meetingUrl && booking.bookingRef) {
+                          const minsMatch = String(booking.time || '').match(/(\d+)\s*mins?/i);
+                          setMeetingToJoin({
+                            id: String(booking.id),
+                            url: booking.meetingUrl,
+                            ref: booking.bookingRef,
+                            peerName: booking.name || 'your client',
+                            durationMins:
+                              Number(booking.durationMins) ||
+                              (minsMatch ? Number(minsMatch[1]) : 15),
+                            meetingEndsAt: booking.meetingEndsAt || null,
+                          });
+                        } else {
+                          alert('Meeting link is not available yet.');
+                        }
+                      }}
+                      className={`w-full py-2.5 rounded-full text-xs font-bold text-center transition-all shadow-md ${passed
+                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
+                        : 'bg-[#0012FF] hover:bg-[#0012FF]/90 text-white shadow-[#0012FF]/20 cursor-pointer'
+                        }`}
+                    >
+                      {passed ? 'Meeting Ended' : booking.meetingStarted ? 'Rejoin Meeting' : 'Start Meeting'}
+                    </button>
+                  )}
 
                   {passed ? (
                     <button
@@ -547,14 +694,31 @@ const CreatorDashboard = () => {
     </motion.div>
   );
 
-  // Filter bookings based on Month / Year / Day selectors
-  const filteredBookingsList = bookingsList.filter((booking) => {
-    if (!booking.scheduledDate) return false;
-    const date = new Date(booking.scheduledDate);
-    return date.getDate() === currentDate.getDate() &&
-      date.getMonth() === currentDate.getMonth() &&
-      date.getFullYear() === currentDate.getFullYear();
-  });
+  const selectedDateIso = toISODate(currentDate);
+
+  // Days that have at least one booking (dots on the month strip)
+  const markedBookingDates = useMemo(() => {
+    const set = new Set<string>();
+    for (const booking of bookingsList) {
+      const iso = bookingDateIso(booking);
+      if (iso) set.add(iso);
+    }
+    return Array.from(set);
+  }, [bookingsList]);
+
+  // Filter to selected day; newest bookings first within that day
+  const filteredBookingsList = useMemo(() => {
+    return bookingsList
+      .filter((booking) => bookingDateIso(booking) === selectedDateIso)
+      .sort((a, b) => {
+        const createdDiff =
+          new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+        if (createdDiff !== 0) return createdDiff;
+        const minsA = parse12h(String(a.scheduledTime || '').split(/to|-/i)[0].trim()) ?? 0;
+        const minsB = parse12h(String(b.scheduledTime || '').split(/to|-/i)[0].trim()) ?? 0;
+        return minsA - minsB;
+      });
+  }, [bookingsList, selectedDateIso]);
 
   if (loadingData) {
     return (
@@ -784,94 +948,17 @@ const CreatorDashboard = () => {
           </div>
         </div>
 
-        {/* Date Filter Strip Bar */}
-        <div className="w-full bg-white rounded-2xl border border-gray-100 p-3 sm:p-4 mb-8 flex flex-wrap items-center justify-between gap-y-4 gap-x-2 shadow-xs">
-          {/* Left: Month Selector Button */}
-          <div className="relative flex-shrink-0 order-1">
-            <button
-              onClick={() => { setMonthDropdownOpen(!monthDropdownOpen); setYearDropdownOpen(false); }}
-              className="flex items-center gap-2 bg-gray-50 hover:bg-gray-100 border border-gray-200/80 rounded-xl px-3 py-2 text-xs font-semibold text-gray-700 transition-all cursor-pointer"
-            >
-              <span className="text-gray-400 font-normal">Month</span>
-              <span className="font-bold">{currentDate.toLocaleString('default', { month: 'long' })}</span>
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
-            </button>
-            {monthDropdownOpen && (
-              <div className="absolute left-0 top-[calc(100%+6px)] w-40 bg-white rounded-2xl shadow-xl border border-gray-100 py-1.5 z-50 max-h-60 overflow-y-auto">
-                {['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].map((m, idx) => (
-                  <button
-                    key={m}
-                    onClick={() => selectMonth(idx)}
-                    className={`w-full text-left px-4 py-2 text-xs font-semibold hover:bg-[#0012FF]/5 transition-colors cursor-pointer ${currentDate.getMonth() === idx ? 'text-[#0012FF] bg-[#0012FF]/5' : 'text-gray-600'}`}
-                  >
-                    {m}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Middle: Horizontal Days Strip */}
-          <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar py-1 px-1 w-full lg:w-auto lg:flex-1 order-3 lg:order-2">
-            {Array.from({ length: 31 }, (_, i) => {
-              const dayNum = i + 1;
-              const d = new Date(currentDate.getFullYear(), currentDate.getMonth(), dayNum);
-              const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
-              const isSelected = currentDate.getDate() === dayNum;
-
-              return (
-                <button
-                  key={dayNum}
-                  ref={isSelected ? selectedDayRef : null}
-                  onClick={() => {
-                    const newD = new Date(currentDate);
-                    newD.setDate(dayNum);
-                    setCurrentDate(newD);
-                  }}
-                  className={`flex flex-col items-center justify-center min-w-[46px] sm:min-w-[50px] h-[52px] py-1.5 px-1 rounded-[14px] transition-all cursor-pointer flex-shrink-0 ${isSelected
-                    ? 'bg-[#EEF2FF] border border-[#0012FF]/30 text-[#0012FF] shadow-xs'
-                    : 'text-[#64748B] hover:bg-gray-100 bg-transparent'
-                    }`}
-                >
-                  <span className={`text-[9px] uppercase font-bold tracking-wider ${isSelected ? 'text-[#0012FF]/80' : 'text-[#64748B]'}`}>
-                    {dayName}
-                  </span>
-                  <span className={`text-xs sm:text-sm font-extrabold mt-0.5 ${isSelected ? 'text-[#0012FF]' : 'text-gray-800'}`}>
-                    {String(dayNum).padStart(2, '0')}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Right: Year Selector Button */}
-          <div className="relative flex-shrink-0 order-2 lg:order-3 ml-auto lg:ml-0">
-            <button
-              onClick={() => { setYearDropdownOpen(!yearDropdownOpen); setMonthDropdownOpen(false); }}
-              className="flex items-center gap-2 bg-gray-50 hover:bg-gray-100 border border-gray-200/80 rounded-xl px-3 py-2 text-xs font-semibold text-gray-700 transition-all cursor-pointer"
-            >
-              <span className="text-gray-400 font-normal">Year</span>
-              <span className="font-bold">{currentDate.getFullYear()}</span>
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
-            </button>
-            {yearDropdownOpen && (
-              <div className="absolute right-0 top-[calc(100%+6px)] w-28 bg-white rounded-2xl shadow-xl border border-gray-100 py-1.5 z-50">
-                {[2024, 2025, 2026, 2027, 2028].map((y) => (
-                  <button
-                    key={y}
-                    onClick={() => selectYear(y)}
-                    className={`w-full text-left px-4 py-2 text-xs font-semibold hover:bg-[#0012FF]/5 transition-colors cursor-pointer ${currentDate.getFullYear() === y ? 'text-[#0012FF] bg-[#0012FF]/5' : 'text-gray-600'}`}
-                  >
-                    {y}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+        {/* Date filter — shared DaysOfMonth calendar */}
+        <div className="mb-8 w-full rounded-2xl border border-gray-100 bg-white p-3 shadow-xs sm:p-4">
+          <DaysOfMonth
+            selectedDates={[selectedDateIso]}
+            activeDate={selectedDateIso}
+            onDateClick={(iso) => setCurrentDate(fromISODate(iso))}
+            minDate={new Date(2020, 0, 1)}
+            yearsBehind={0}
+            yearsAhead={5}
+            markedDates={markedBookingDates}
+          />
         </div>
 
         {/* Upcoming Bookings Section */}
@@ -885,15 +972,23 @@ const CreatorDashboard = () => {
                 height={220}
                 className="mb-8 opacity-85"
               />
-              <h2 className="text-xl font-bold text-black mb-2">No Appointments Today</h2>
+              <h2 className="text-xl font-bold text-black mb-2">No Appointments</h2>
               <p className="text-gray-500 max-w-sm text-sm">
-                You are free! There are no sessions scheduled for this date. Click other dates to view bookings.
+                There are no sessions scheduled for this date. Marked days on the calendar have bookings — tap one to view them.
               </p>
             </div>
           ) : (
             <>
+              <div className="flex items-end justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-bold text-black sm:text-xl">Latest Bookings</h2>
+                  <p className="text-xs text-gray-400 sm:text-sm">
+                    Newest appointments for the selected day
+                  </p>
+                </div>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredBookingsList.slice(0, 3).map((booking, idx) => renderBookingCard(booking, idx))}
+                {filteredBookingsList.slice(0, 6).map((booking, idx) => renderBookingCard(booking, idx))}
               </div>
 
               {/* Show All button redirecting to calendar page */}
@@ -1220,9 +1315,9 @@ const CreatorDashboard = () => {
               <img src="/assets/meeting.png" alt="Meeting" className="w-full h-full object-contain" />
             </div>
 
-            <h3 className="text-2xl font-extrabold text-black mb-2 tracking-tight">Ready to join?</h3>
+            <h3 className="text-2xl font-extrabold text-black mb-2 tracking-tight">Ready to start?</h3>
             <p className="text-gray-500 text-sm mb-4">
-              Your meeting is ready. Make sure your camera and microphone are connected before joining.
+              Starting the meeting lets your client join. Make sure your camera and microphone are ready.
             </p>
 
             <div className="w-full bg-gray-50 border border-gray-100 rounded-xl p-3 mb-6">
@@ -1231,19 +1326,33 @@ const CreatorDashboard = () => {
             </div>
 
             <button
-              onClick={() => setActiveCallUrl(meetingToJoin.url)}
-              className="w-full bg-[#0012FF] text-white px-8 py-3.5 rounded-full font-bold text-sm hover:opacity-90 transition-all shadow-lg shadow-[#0012FF]/20 cursor-pointer"
+              onClick={() => void handleCreatorStartMeeting()}
+              disabled={startingMeeting}
+              className="w-full bg-[#0012FF] text-white px-8 py-3.5 rounded-full font-bold text-sm hover:opacity-90 transition-all shadow-lg shadow-[#0012FF]/20 cursor-pointer disabled:opacity-60"
             >
-              Start Meeting
+              {startingMeeting ? 'Starting…' : 'Start Meeting'}
             </button>
           </div>
         </div>
       )}
 
       {/* Active Daily Call Modal */}
-      {activeCallUrl && (
-        <DailyCall url={activeCallUrl} onLeave={() => setActiveCallUrl(null)} />
+      {activeCallUrl && meetingToJoin && (
+        <DailyCall
+          url={activeCallUrl}
+          bookingId={meetingToJoin.id}
+          role="creator"
+          meetingEndsAt={meetingToJoin.meetingEndsAt}
+          onLeave={handleCreatorLeaveMeeting}
+        />
       )}
+
+      <SessionReviewModal
+        open={!!reviewTarget}
+        onClose={() => setReviewTarget(null)}
+        target={reviewTarget}
+        role="creator"
+      />
     </div>
   );
 };

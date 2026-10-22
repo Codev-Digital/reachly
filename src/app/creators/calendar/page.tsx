@@ -1,17 +1,22 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import CreatorDashboardNav from '@/components/CreatorDashboardNav';
 import LoadingAnimation from '@/components/LoadingAnimation';
+import DaysOfMonth from '@/components/DaysOfMonth';
 import { Calendar, Clock, Video, MapPin, MessageSquare, AlertTriangle, CheckCircle, ArrowUpRight, X } from 'lucide-react';
 import DailyCall from '@/components/DailyCall';
+import SessionReviewModal, {
+  type SessionReviewTarget,
+} from '@/components/booking/SessionReviewModal';
 import OutsideSessionModal, { type OutsideBlock } from '@/components/creator/OutsideSessions';
 import { format12h, parse12h } from '@/lib/slots';
 import { isMeetingPassed } from '@/lib/time';
+import { fromISODate, toISODate } from '@/lib/eventTicketing';
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -32,9 +37,14 @@ interface BookingType {
   amount: string;
   selectedDate: string;
   selectedTime: string;
-  status: 'confirmed' | 'cancelled' | 'completed';
+  status: 'confirmed' | 'cancelled' | 'completed' | string;
+  statusRaw?: string;
   isRescheduled?: boolean;
   meetingUrl?: string;
+  meetingStarted?: boolean;
+  meetingEnded?: boolean;
+  meetingEndsAt?: string | null;
+  durationMins?: number;
   bookingRef?: string;
   isCreatorBooker?: boolean;
   isPackage?: boolean;
@@ -48,10 +58,6 @@ export default function CreatorCalendar() {
   const [displayName, setDisplayName] = useState<string>('');
   const [username, setUsername] = useState<string>('');
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
-  const selectedDayRef = useRef<HTMLButtonElement | null>(null);
-
-  const [monthDropdownOpen, setMonthDropdownOpen] = useState(false);
-  const [yearDropdownOpen, setYearDropdownOpen] = useState(false);
 
   const [bookings, setBookings] = useState<BookingType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,15 +79,6 @@ export default function CreatorCalendar() {
     }
   }, []);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (selectedDayRef.current) {
-        selectedDayRef.current.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-      }
-    }, 100);
-    return () => clearTimeout(timer);
-  }, [currentDate, loading]);
-
   // Reschedule & Cancel Modal States
   const [showCancelModal, setShowCancelModal] = useState<boolean>(false);
   const [bookingToCancel, setBookingToCancel] = useState<BookingType | null>(null);
@@ -100,28 +97,76 @@ export default function CreatorCalendar() {
   const [successModalType, setSuccessModalType] = useState<'cancelled' | 'rescheduled'>('cancelled');
 
   // Meeting Modal States
-  const [meetingToJoin, setMeetingToJoin] = useState<{ url: string; ref: string } | null>(null);
+  const [meetingToJoin, setMeetingToJoin] = useState<{
+    id: string;
+    url: string;
+    ref: string;
+    peerName: string;
+    durationMins: number;
+    meetingEndsAt?: string | null;
+  } | null>(null);
   const [activeCallUrl, setActiveCallUrl] = useState<string | null>(null);
+  const [startingMeeting, setStartingMeeting] = useState(false);
+  const [reviewTarget, setReviewTarget] = useState<SessionReviewTarget | null>(null);
 
-  const selectMonth = (monthIndex: number) => {
-    const d = new Date(currentDate);
-    d.setMonth(monthIndex);
-    setCurrentDate(d);
-    setMonthDropdownOpen(false);
+  const handleCreatorStartMeeting = async () => {
+    if (!meetingToJoin || startingMeeting) return;
+    setStartingMeeting(true);
+    try {
+      const res = await fetch(`/api/creators/bookings/${meetingToJoin.id || meetingToJoin.ref}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ startMeeting: true }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert(data.error || 'Could not start the meeting.');
+        return;
+      }
+      const endsAt =
+        data.meeting?.meetingEndsAt ||
+        data.meetingEndsAt ||
+        meetingToJoin.meetingEndsAt ||
+        null;
+      setMeetingToJoin((prev) =>
+        prev
+          ? {
+              ...prev,
+              meetingEndsAt: endsAt ? String(endsAt) : prev.meetingEndsAt,
+              durationMins:
+                data.meeting?.totalMeetingMins ||
+                data.totalMeetingMins ||
+                prev.durationMins,
+            }
+          : prev
+      );
+      setActiveCallUrl(meetingToJoin.url);
+    } catch (err) {
+      console.error(err);
+      alert('Could not start the meeting.');
+    } finally {
+      setStartingMeeting(false);
+    }
   };
 
-  const selectYear = (year: number) => {
-    const d = new Date(currentDate);
-    d.setFullYear(year);
-    setCurrentDate(d);
-    setYearDropdownOpen(false);
-  };
-
-  const getDaysInMonth = () => {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
-    const numDays = new Date(year, month + 1, 0).getDate();
-    return Array.from({ length: numDays }, (_, i) => (i + 1).toString().padStart(2, '0'));
+  const handleCreatorLeaveMeeting = () => {
+    const ctx = meetingToJoin;
+    setActiveCallUrl(null);
+    setMeetingToJoin(null);
+    if (ctx?.id) {
+      setBookings((prev) =>
+        prev.map((b) =>
+          String(b.id) === String(ctx.id)
+            ? { ...b, meetingEnded: true, meetingStarted: true, status: 'completed', statusRaw: 'completed' }
+            : b
+        )
+      );
+      setReviewTarget({
+        bookingId: ctx.id,
+        peerName: ctx.peerName || 'your client',
+        durationMins: ctx.durationMins || 15,
+      });
+    }
   };
 
   // Fetch creator profile & bookings
@@ -164,27 +209,31 @@ export default function CreatorCalendar() {
         const data = await bookingsRes.json();
         if (data.bookings) {
           // Format bookings for UI
-          list = data.bookings.map((b: any) => ({
-            id: b.id,
-            _id: b.id,
-            name: b.follower || 'Client',
-            handle: b.email || '@client',
-            avatar: b.avatar || '/Avatars/3.jpg',
-            time: b.time || 'N/A',
-            type: b.type || 'Online',
-            note: b.preSessionQuestion || 'No notes provided',
-            amount: b.amount || '2,500 PKR',
-            selectedDate: b.scheduledDate,
-            selectedTime: b.time,
-            status: b.statusRaw,
-            isRescheduled: b.isRescheduled || false,
-            meetingUrl: b.meetingUrl,
-            bookingRef: b.bookingRef,
-            isCreatorBooker: b.isCreatorBooker || false,
-            isPackage: b.isPackage || false,
-            sessionNumber: b.sessionNumber,
-            rescheduleStatus: b.rescheduleStatus,
-          }));
+          list = data.bookings.map((b: any) => {
+            const minsMatch = String(b.duration || '').match(/(\d+)/);
+            return {
+              id: b.id,
+              _id: b.id,
+              name: b.follower || 'Client',
+              handle: b.email || '@client',
+              avatar: b.avatar || '/Avatars/3.jpg',
+              time: b.time || 'N/A',
+              type: b.type || 'Online',
+              note: b.preSessionQuestion || 'No notes provided',
+              amount: b.amount || '2,500 PKR',
+              selectedDate: b.scheduledDate,
+              selectedTime: b.time,
+              status: b.statusRaw,
+              isRescheduled: b.isRescheduled || false,
+              meetingUrl: b.meetingUrl,
+              bookingRef: b.bookingRef,
+              durationMins: minsMatch ? Number(minsMatch[1]) : 15,
+              isCreatorBooker: b.isCreatorBooker || false,
+              isPackage: b.isPackage || false,
+              sessionNumber: b.sessionNumber,
+              rescheduleStatus: b.rescheduleStatus,
+            };
+          });
           setBookings(list);
         }
       }
@@ -306,37 +355,20 @@ export default function CreatorCalendar() {
     });
   }, [bookings, currentDate]);
 
-  // Days list for horizontal selector (memoized to avoid repeated Date object creation)
-  const daysInMonthList = useMemo(() => {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
-    const daysCount = new Date(year, month + 1, 0).getDate();
-    return Array.from({ length: daysCount }, (_, i) => {
-      const dayNum = i + 1;
-      const d = new Date(year, month, dayNum);
-      const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
-      return { dayNum, dayName };
-    });
-  }, [currentDate]);
+  const selectedDateIso = toISODate(currentDate);
 
-  // Set of dates with bookings in current month for indicator dots
-  const bookedDaysInCurrentMonth = useMemo(() => {
-    const set = new Set<number>();
-    const curMonth = currentDate.getMonth();
-    const curYear = currentDate.getFullYear();
+  // Dates with bookings or outside blocks (dots on DaysOfMonth)
+  const markedCalendarDates = useMemo(() => {
+    const set = new Set<string>();
     for (const b of bookings) {
       if (!b.selectedDate) continue;
-      const d = new Date(b.selectedDate);
-      if (d.getMonth() === curMonth && d.getFullYear() === curYear) {
-        set.add(d.getDate());
-      }
+      set.add(toISODate(new Date(b.selectedDate)));
     }
     for (const ob of outsideBlocks) {
-      const [y, m, d] = ob.date.split('-').map(Number);
-      if (m - 1 === curMonth && y === curYear) set.add(d);
+      if (ob.date) set.add(ob.date);
     }
-    return set;
-  }, [bookings, outsideBlocks, currentDate]);
+    return Array.from(set);
+  }, [bookings, outsideBlocks]);
 
   const handleCancelClick = (booking: BookingType) => {
     setBookingToCancel(booking);
@@ -524,95 +556,17 @@ export default function CreatorCalendar() {
           onSaved={loadOutsideBlocks}
         />
 
-        {/* Date Filter Strip Bar */}
-        <div className="w-full bg-white rounded-2xl border border-gray-100 p-3 sm:p-4 mb-8 flex flex-wrap items-center justify-between gap-y-4 gap-x-2 shadow-xs">
-          {/* Left: Month Selector Button */}
-          <div className="relative flex-shrink-0 order-1">
-            <button
-              onClick={() => { setMonthDropdownOpen(!monthDropdownOpen); setYearDropdownOpen(false); }}
-              className="flex items-center gap-2 bg-gray-50 hover:bg-gray-100 border border-gray-200/80 rounded-xl px-3 py-2 text-xs font-semibold text-gray-700 transition-all cursor-pointer"
-            >
-              <span className="text-gray-400 font-normal">Month</span>
-              <span className="font-bold">{currentDate.toLocaleString('default', { month: 'long' })}</span>
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
-            </button>
-            {monthDropdownOpen && (
-              <div className="absolute left-0 top-[calc(100%+6px)] w-40 bg-white rounded-2xl shadow-xl border border-gray-100 py-1.5 z-50 max-h-60 overflow-y-auto">
-                {['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].map((m, idx) => (
-                  <button
-                    key={m}
-                    onClick={() => selectMonth(idx)}
-                    className={`w-full text-left px-4 py-2 text-xs font-semibold hover:bg-[#0012FF]/5 transition-colors cursor-pointer ${currentDate.getMonth() === idx ? 'text-[#0012FF] bg-[#0012FF]/5' : 'text-gray-600'}`}
-                  >
-                    {m}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Middle: Horizontal Days Strip */}
-          <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar py-1 px-1 w-full lg:w-auto lg:flex-1 order-3 lg:order-2">
-            {daysInMonthList.map(({ dayNum, dayName }) => {
-              const isSelected = currentDate.getDate() === dayNum;
-              const hasBooking = bookedDaysInCurrentMonth.has(dayNum);
-
-              return (
-                <button
-                  key={dayNum}
-                  ref={isSelected ? selectedDayRef : null}
-                  onClick={() => {
-                    const newD = new Date(currentDate);
-                    newD.setDate(dayNum);
-                    setCurrentDate(newD);
-                  }}
-                  className={`flex flex-col items-center justify-center min-w-[46px] sm:min-w-[50px] h-[52px] py-1.5 px-1 rounded-[14px] transition-all cursor-pointer flex-shrink-0 relative ${isSelected
-                    ? 'bg-[#EEF2FF] border border-[#0012FF]/30 text-[#0012FF] shadow-xs'
-                    : 'text-[#64748B] hover:bg-gray-100 bg-transparent'
-                    }`}
-                >
-                  <span className={`text-[9px] uppercase font-bold tracking-wider ${isSelected ? 'text-[#0012FF]/80' : 'text-[#64748B]'}`}>
-                    {dayName}
-                  </span>
-                  <span className={`text-xs sm:text-sm font-extrabold mt-0.5 ${isSelected ? 'text-[#0012FF]' : 'text-gray-800'}`}>
-                    {String(dayNum).padStart(2, '0')}
-                  </span>
-                  {hasBooking && !isSelected && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#0012FF] mt-0.5" />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Right: Year Selector Button */}
-          <div className="relative flex-shrink-0 order-2 lg:order-3 ml-auto lg:ml-0">
-            <button
-              onClick={() => { setYearDropdownOpen(!yearDropdownOpen); setMonthDropdownOpen(false); }}
-              className="flex items-center gap-2 bg-gray-50 hover:bg-gray-100 border border-gray-200/80 rounded-xl px-3 py-2 text-xs font-semibold text-gray-700 transition-all cursor-pointer"
-            >
-              <span className="text-gray-400 font-normal">Year</span>
-              <span className="font-bold">{currentDate.getFullYear()}</span>
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
-            </button>
-            {yearDropdownOpen && (
-              <div className="absolute right-0 top-[calc(100%+6px)] w-28 bg-white rounded-2xl shadow-xl border border-gray-100 py-1.5 z-50">
-                {[2024, 2025, 2026, 2027, 2028].map((y) => (
-                  <button
-                    key={y}
-                    onClick={() => selectYear(y)}
-                    className={`w-full text-left px-4 py-2 text-xs font-semibold hover:bg-[#0012FF]/5 transition-colors cursor-pointer ${currentDate.getFullYear() === y ? 'text-[#0012FF] bg-[#0012FF]/5' : 'text-gray-600'}`}
-                  >
-                    {y}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+        {/* Date filter — shared DaysOfMonth calendar */}
+        <div className="mb-8 w-full rounded-2xl border border-gray-100 bg-white p-3 shadow-xs sm:p-4">
+          <DaysOfMonth
+            selectedDates={[selectedDateIso]}
+            activeDate={selectedDateIso}
+            onDateClick={(iso) => setCurrentDate(fromISODate(iso))}
+            minDate={new Date(2020, 0, 1)}
+            yearsBehind={0}
+            yearsAhead={5}
+            markedDates={markedCalendarDates}
+          />
         </div>
 
         {/* Bookings Grid or Empty State */}
@@ -692,22 +646,35 @@ export default function CreatorCalendar() {
                         const passed = booking.selectedDate ? isMeetingPassed(booking.selectedDate, booking.time) : false;
                         return (
                           <>
-                            <button
-                              disabled={passed}
-                              onClick={() => {
-                                if (booking.meetingUrl && booking.bookingRef) {
-                                  setMeetingToJoin({ url: booking.meetingUrl, ref: booking.bookingRef });
-                                } else {
-                                  alert('Meeting link is not available yet.');
-                                }
-                              }}
-                              className={`w-full py-2.5 rounded-full text-xs font-bold text-center transition-all shadow-md ${passed
-                                ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
-                                : 'bg-[#0012FF] hover:bg-[#0012FF]/90 text-white shadow-[#0012FF]/20 cursor-pointer'
-                                }`}
-                            >
-                              {passed ? 'Meeting Ended' : 'Join Meeting'}
-                            </button>
+                            {booking.meetingEnded || booking.statusRaw === 'completed' || booking.status === 'completed' ? (
+                              <div className="w-full py-2.5 rounded-full text-xs font-bold text-center bg-gray-100 text-gray-500 border border-gray-200 select-none">
+                                Meeting Completed
+                              </div>
+                            ) : (
+                              <button
+                                disabled={passed}
+                                onClick={() => {
+                                  if (booking.meetingUrl && booking.bookingRef) {
+                                    setMeetingToJoin({
+                                      id: String(booking.id),
+                                      url: booking.meetingUrl,
+                                      ref: booking.bookingRef,
+                                      peerName: booking.name || 'your client',
+                                      durationMins: Number(booking.durationMins) || 15,
+                                      meetingEndsAt: booking.meetingEndsAt || null,
+                                    });
+                                  } else {
+                                    alert('Meeting link is not available yet.');
+                                  }
+                                }}
+                                className={`w-full py-2.5 rounded-full text-xs font-bold text-center transition-all shadow-md ${passed
+                                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
+                                  : 'bg-[#0012FF] hover:bg-[#0012FF]/90 text-white shadow-[#0012FF]/20 cursor-pointer'
+                                  }`}
+                              >
+                                {passed ? 'Meeting Ended' : booking.meetingStarted ? 'Rejoin Meeting' : 'Start Meeting'}
+                              </button>
+                            )}
 
                             {passed ? (
                               <button
@@ -1156,9 +1123,9 @@ export default function CreatorCalendar() {
               <img src="/assets/meeting.png" alt="Meeting" className="w-full h-full object-contain" />
             </div>
 
-            <h3 className="text-2xl font-extrabold text-black mb-2 tracking-tight">Ready to join?</h3>
+            <h3 className="text-2xl font-extrabold text-black mb-2 tracking-tight">Ready to start?</h3>
             <p className="text-gray-500 text-sm mb-4">
-              Your meeting is ready. Make sure your camera and microphone are connected before joining.
+              Starting the meeting lets your client join. Make sure your camera and microphone are ready.
             </p>
 
             <div className="w-full bg-gray-50 border border-gray-100 rounded-xl p-3 mb-6">
@@ -1167,19 +1134,33 @@ export default function CreatorCalendar() {
             </div>
 
             <button
-              onClick={() => setActiveCallUrl(meetingToJoin.url)}
-              className="w-full bg-[#0012FF] text-white px-8 py-3.5 rounded-full font-bold text-sm hover:opacity-90 transition-all shadow-lg shadow-[#0012FF]/20 cursor-pointer"
+              onClick={() => void handleCreatorStartMeeting()}
+              disabled={startingMeeting}
+              className="w-full bg-[#0012FF] text-white px-8 py-3.5 rounded-full font-bold text-sm hover:opacity-90 transition-all shadow-lg shadow-[#0012FF]/20 cursor-pointer disabled:opacity-60"
             >
-              Start Meeting
+              {startingMeeting ? 'Starting…' : 'Start Meeting'}
             </button>
           </div>
         </div>
       )}
 
       {/* Active Daily Call Modal */}
-      {activeCallUrl && (
-        <DailyCall url={activeCallUrl} onLeave={() => setActiveCallUrl(null)} />
+      {activeCallUrl && meetingToJoin && (
+        <DailyCall
+          url={activeCallUrl}
+          bookingId={meetingToJoin.id}
+          role="creator"
+          meetingEndsAt={meetingToJoin.meetingEndsAt}
+          onLeave={handleCreatorLeaveMeeting}
+        />
       )}
+
+      <SessionReviewModal
+        open={!!reviewTarget}
+        onClose={() => setReviewTarget(null)}
+        target={reviewTarget}
+        role="creator"
+      />
     </div>
   );
 }

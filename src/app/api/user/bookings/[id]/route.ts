@@ -185,10 +185,16 @@ export async function PUT(
     if (selectedDate) {
       updatePayload.scheduledDate = parseDateToNoonUTC(selectedDate, timeZone);
       updatePayload.isRescheduled = true;
+      updatePayload.meetingStartedAt = null;
+      updatePayload.meetingEndsAt = null;
+      updatePayload.meetingEndedAt = null;
     }
     if (selectedTime) {
       updatePayload.scheduledTime = selectedTime;
       updatePayload.isRescheduled = true;
+      updatePayload.meetingStartedAt = null;
+      updatePayload.meetingEndsAt = null;
+      updatePayload.meetingEndedAt = null;
     }
 
     const updatedBooking = await Booking.findByIdAndUpdate(

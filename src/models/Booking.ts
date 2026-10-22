@@ -44,6 +44,12 @@ export interface IBooking extends Document {
 
     meetingUrl?: string; // Daily.co room URL
     meetingRoomName?: string; // Daily.co room name
+    /** Set when the creator presses Start Meeting — users can join only after this. */
+    meetingStartedAt?: Date | null;
+    /** Absolute end time = startedAt + (session duration + buffer). */
+    meetingEndsAt?: Date | null;
+    /** Set when creator leaves, timer hits 0, or meeting is force-ended. */
+    meetingEndedAt?: Date | null;
 
     createdAt: Date;
     updatedAt: Date;
@@ -145,6 +151,18 @@ const BookingSchema = new Schema<IBooking>(
         },
         meetingRoomName: {
             type: String,
+        },
+        meetingStartedAt: {
+            type: Date,
+            default: null,
+        },
+        meetingEndsAt: {
+            type: Date,
+            default: null,
+        },
+        meetingEndedAt: {
+            type: Date,
+            default: null,
         },
     },
     { timestamps: true }

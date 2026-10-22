@@ -1,10 +1,12 @@
 'use client';
 
 import { AdminDashboardSkeleton } from '@/components/admin/AdminSkeletons';
+import AdminReviewReportCard, {
+  type AdminReviewReportItem,
+} from '@/components/admin/AdminReviewReportCard';
 
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Cell, Tooltip } from 'recharts';
 import { ChevronLeft, ChevronRight, TrendingUp } from 'lucide-react';
@@ -87,6 +89,10 @@ const AdminDashboard = () => {
   const [loadingChart, setLoadingChart] = useState(true);
   const [chartYearDropdownOpen, setChartYearDropdownOpen] = useState(false);
 
+  const [reviewReports, setReviewReports] = useState<AdminReviewReportItem[]>([]);
+  const [reviewReportsTotal, setReviewReportsTotal] = useState(0);
+  const [loadingReports, setLoadingReports] = useState(true);
+
   const loadEarningsChart = async (year: number, timeframe: 'weekly' | 'monthly') => {
     setLoadingChart(true);
     try {
@@ -117,21 +123,56 @@ const AdminDashboard = () => {
 
   useEffect(() => { loadEarningsChart(chartYear, chartTimeframe); }, [chartYear, chartTimeframe]);
 
+  const loadReviewReports = async () => {
+    setLoadingReports(true);
+    try {
+      const res = await fetch('/api/admin/reviews?status=pending&limit=3', { cache: 'no-store' });
+      const ct = res.headers.get('content-type') || '';
+      if (!ct.includes('application/json')) {
+        setReviewReports([]);
+        setReviewReportsTotal(0);
+        return;
+      }
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setReviewReports(data.reports || []);
+        setReviewReportsTotal(Number(data.total) || 0);
+      }
+    } catch (err) {
+      console.error('Failed to load review reports:', err);
+    } finally {
+      setLoadingReports(false);
+    }
+  };
+
   useEffect(() => {
-    fetchDashboardData();
+    void fetchDashboardData();
+    void loadReviewReports();
   }, []);
 
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/admin/dashboard');
-      const data = await res.json();
+      setError(null);
+      const res = await fetch('/api/admin/dashboard', { cache: 'no-store' });
+      const ct = res.headers.get('content-type') || '';
+      if (!ct.includes('application/json')) {
+        setError('Dashboard API is unavailable. Please refresh the page.');
+        return;
+      }
+      const data = await res.json().catch(() => ({}));
+
+      if (res.status === 401 || res.status === 403) {
+        window.location.href = `/login?callbackUrl=${encodeURIComponent('/admin/dashboard')}`;
+        return;
+      }
 
       if (res.ok && data.success) {
         setStats(data.stats);
         setCategories(data.categories || []);
         setTopCreators(data.topCreators || []);
         setAdminName(data.adminName || 'Admin');
+        setError(null);
       } else {
         setError(data.error || 'Failed to load dashboard data');
       }
@@ -150,7 +191,7 @@ const AdminDashboard = () => {
       <div className="bg-red-50 text-red-600 p-6 rounded-2xl border border-red-100 my-8 text-center">
         <p className="font-semibold">{error}</p>
         <button
-          onClick={fetchDashboardData}
+          onClick={() => void fetchDashboardData()}
           className="mt-4 px-4 py-2 bg-red-600 text-white rounded-xl text-xs font-bold hover:bg-red-700 transition"
         >
           Try Again
@@ -549,6 +590,81 @@ const AdminDashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Full-width Review Reports (top 5) */}
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.35 }}
+        className="mt-8 w-full"
+      >
+        <div className="rounded-[32px] border border-gray-100 bg-white p-6 sm:p-8 shadow-sm">
+          <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h2 className="text-xl sm:text-2xl font-bold font-sans text-black">
+                Review Reports
+              </h2>
+              <p className="mt-1 text-sm text-gray-500 font-sans">
+                Latest creator reports waiting for admin review
+                {reviewReportsTotal > 0 ? (
+                  <span className="text-gray-400"> · {reviewReportsTotal} pending</span>
+                ) : null}
+              </p>
+            </div>
+            {reviewReportsTotal > 3 && (
+              <Link
+                href="/admin/reviews"
+                className="inline-flex items-center justify-center rounded-full bg-[#0012FF] px-5 py-2.5 text-xs font-bold text-white shadow-sm shadow-[#0012FF]/20 transition-opacity hover:opacity-90"
+              >
+                Show All
+              </Link>
+            )}
+          </div>
+
+          {loadingReports ? (
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="min-h-[220px] animate-pulse rounded-[8px] border border-gray-100 bg-[#F8F8FA]"
+                />
+              ))}
+            </div>
+          ) : reviewReports.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-gray-200 bg-[#F8F8FA] px-6 py-14 text-center">
+              <p className="text-sm font-semibold text-gray-600">No pending review reports</p>
+              <p className="mt-1 text-xs text-gray-400">
+                When creators report a client review, it will appear here.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+              {reviewReports.map((rep, idx) => (
+                <AdminReviewReportCard
+                  key={rep.id}
+                  report={rep}
+                  commaIdx={idx}
+                  onResolved={(id) => {
+                    setReviewReports((prev) => prev.filter((r) => r.id !== id));
+                    setReviewReportsTotal((t) => Math.max(0, t - 1));
+                  }}
+                />
+              ))}
+            </div>
+          )}
+
+          {reviewReportsTotal > 3 && (
+            <div className="mt-6 flex justify-center sm:hidden">
+              <Link
+                href="/admin/reviews"
+                className="inline-flex w-full items-center justify-center rounded-full border border-gray-200 bg-white px-5 py-2.5 text-xs font-bold text-gray-800 transition-colors hover:bg-gray-50"
+              >
+                Show All Reports
+              </Link>
+            </div>
+          )}
+        </div>
+      </motion.div>
     </motion.div>
   );
 };

@@ -8,7 +8,17 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import DailyCall from '@/components/DailyCall';
-import { isMeetingPassed } from '@/lib/time';
+import ModificationWindowBlockedModal from '@/components/booking/ModificationWindowBlockedModal';
+import MeetingNotStartedModal from '@/components/booking/MeetingNotStartedModal';
+import SessionReviewModal, {
+  type SessionReviewTarget,
+} from '@/components/booking/SessionReviewModal';
+import {
+  checkSessionModificationWindow,
+  isMeetingPassed,
+  type SessionModificationAction,
+} from '@/lib/time';
+import { toast } from 'sonner';
 
 function FadeUp({ children, delay = 0, className = '' }: { children: React.ReactNode; delay?: number; className?: string }) {
   const ref = useRef(null);
@@ -41,7 +51,11 @@ interface Booking {
   scheduledDate: string;
   isRescheduled: boolean;
   meetingUrl?: string;
+  meetingStarted?: boolean;
+  meetingEnded?: boolean;
+  meetingEndsAt?: string | null;
   bookingRef?: string;
+  durationMins?: number;
   isPackage?: boolean;
   sessionNumber?: number;
   isEvent?: boolean;
@@ -87,12 +101,30 @@ export default function UserBookingsPage() {
   // Custom Cancel / Reschedule Alerts to Modals
   const [showCancelConfirmModal, setShowCancelConfirmModal] = useState<boolean>(false);
   const [bookingToCancelId, setBookingToCancelId] = useState<string | null>(null);
+  const [showRefundConfirmModal, setShowRefundConfirmModal] = useState(false);
+  const [eventToRefund, setEventToRefund] = useState<Booking | null>(null);
+  const [refundSaving, setRefundSaving] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false);
-  const [successModalType, setSuccessModalType] = useState<'cancelled' | 'rescheduled'>('cancelled');
+  const [successModalType, setSuccessModalType] = useState<'cancelled' | 'rescheduled' | 'refunded'>('cancelled');
+  const [blockedWindow, setBlockedWindow] = useState<{
+    action: SessionModificationAction;
+    kind: 'session' | 'event';
+    startMs: number | null;
+  } | null>(null);
 
   // Meeting Modal States
-  const [meetingToJoin, setMeetingToJoin] = useState<{ url: string; ref: string } | null>(null);
+  const [meetingToJoin, setMeetingToJoin] = useState<{
+    id: string;
+    url: string;
+    ref: string;
+    peerName: string;
+    durationMins: number;
+    meetingEndsAt?: string | null;
+  } | null>(null);
   const [activeCallUrl, setActiveCallUrl] = useState<string | null>(null);
+  const [waitingCreatorName, setWaitingCreatorName] = useState<string | null>(null);
+  const [joiningMeetingId, setJoiningMeetingId] = useState<string | null>(null);
+  const [reviewTarget, setReviewTarget] = useState<SessionReviewTarget | null>(null);
   const [expandedBios, setExpandedBios] = useState<Record<string, boolean>>({});
 
   // Read guestEmail from URL on mount
@@ -168,7 +200,11 @@ export default function UserBookingsPage() {
               scheduledDate: b.scheduledDate,
               isRescheduled: b.isRescheduled || false,
               meetingUrl: b.meetingUrl,
+              meetingStarted: Boolean(b.meetingStarted),
+              meetingEnded: Boolean(b.meetingEnded),
+              meetingEndsAt: b.meetingEndsAt || null,
               bookingRef: b.bookingRef,
+              durationMins: Number(b.durationMins) || 15,
               isPackage: b.isPackage || false,
               sessionNumber: b.sessionNumber,
               isEvent: !!b.isEvent,
@@ -233,8 +269,41 @@ export default function UserBookingsPage() {
     fetchRescheduleSlots();
   }, [rescheduleDate, showRescheduleModal, bookingToReschedule]);
 
-  const handleCancelClick = (bookingId: string) => {
-    setBookingToCancelId(bookingId);
+  const openBlockedWindow = (
+    booking: Pick<Booking, 'scheduledDate' | 'time' | 'isEvent'>,
+    action: SessionModificationAction
+  ) => {
+    const check = checkSessionModificationWindow(
+      booking.scheduledDate,
+      booking.time,
+      'Asia/Karachi',
+      action
+    );
+    setBlockedWindow({
+      action,
+      kind: booking.isEvent ? 'event' : 'session',
+      startMs: check.sessionStartUTC?.getTime() ?? null,
+    });
+  };
+
+  const assertModificationAllowed = (
+    booking: Pick<Booking, 'scheduledDate' | 'time' | 'isEvent'>,
+    action: SessionModificationAction
+  ) => {
+    const check = checkSessionModificationWindow(
+      booking.scheduledDate,
+      booking.time,
+      'Asia/Karachi',
+      action
+    );
+    if (check.allowed) return true;
+    openBlockedWindow(booking, action);
+    return false;
+  };
+
+  const handleCancelClick = (booking: Booking) => {
+    if (!assertModificationAllowed(booking, 'cancel')) return;
+    setBookingToCancelId(booking.id);
     setShowCancelConfirmModal(true);
   };
 
@@ -248,21 +317,28 @@ export default function UserBookingsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'cancelled' })
       });
+      const data = await res.json().catch(() => ({}));
       if (res.ok) {
         setSuccessModalType('cancelled');
         setShowSuccessModal(true);
         loadData();
       } else {
-        alert('Failed to cancel appointment');
+        const booking = bookings.find((b) => b.id === bookingToCancelId);
+        if (booking && data.error?.includes('24 hours')) {
+          openBlockedWindow(booking, 'cancel');
+        } else {
+          toast.error(data.error || 'Failed to cancel appointment');
+        }
       }
     } catch (err) {
-      alert('Error cancelling appointment');
+      toast.error('Error cancelling appointment');
     } finally {
       setBookingToCancelId(null);
     }
   };
 
   const handleRescheduleClick = (booking: Booking) => {
+    if (!assertModificationAllowed(booking, 'reschedule')) return;
     setBookingToReschedule(booking);
     setRescheduleDate(booking.scheduledDate ? new Date(booking.scheduledDate) : new Date());
     setShowRescheduleModal(true);
@@ -270,7 +346,7 @@ export default function UserBookingsPage() {
 
   const handleConfirmReschedule = async () => {
     if (!bookingToReschedule || !selectedRescheduleTimeSlot) {
-      alert('Please select a new time slot');
+      toast.error('Please select a new time slot');
       return;
     }
     try {
@@ -287,16 +363,125 @@ export default function UserBookingsPage() {
           selectedTime: selectedRescheduleTimeSlot,
         })
       });
+      const data = await res.json().catch(() => ({}));
       if (res.ok) {
         setShowRescheduleModal(false);
         setSuccessModalType('rescheduled');
         setShowSuccessModal(true);
         loadData();
       } else {
-        alert('Failed to reschedule appointment');
+        if (data.error?.includes('24 hours')) {
+          openBlockedWindow(bookingToReschedule, 'reschedule');
+          setShowRescheduleModal(false);
+        } else {
+          toast.error(data.error || 'Failed to reschedule appointment');
+        }
       }
     } catch (err) {
-      alert('Error rescheduling appointment');
+      toast.error('Error rescheduling appointment');
+    }
+  };
+
+  const handleUserJoinMeeting = async (booking: Booking) => {
+    if (booking.meetingEnded || booking.status === 'Past' || booking.originalStatus === 'completed') {
+      toast.error('This meeting is already completed.');
+      return;
+    }
+    if (!booking.meetingUrl || !booking.bookingRef) {
+      toast.error('Meeting link is not available yet.');
+      return;
+    }
+    if (joiningMeetingId) return;
+    setJoiningMeetingId(booking.id);
+    try {
+      const res = await fetch(`/api/user/bookings/${booking.id}/meeting`, { cache: 'no-store' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error || 'Could not check meeting status.');
+        return;
+      }
+      if (data.meetingEnded) {
+        setBookings((prev) =>
+          prev.map((b) => (b.id === booking.id ? { ...b, meetingEnded: true } : b))
+        );
+        toast.error('This meeting is already completed.');
+        return;
+      }
+      if (!data.meetingStarted) {
+        setWaitingCreatorName(data.creatorName || booking.creator || 'Your creator');
+        return;
+      }
+      setMeetingToJoin({
+        id: booking.id,
+        url: data.meetingUrl || booking.meetingUrl,
+        ref: data.bookingRef || booking.bookingRef,
+        peerName: data.creatorName || booking.creator || 'your creator',
+        durationMins: data.totalMeetingMins || booking.durationMins || 15,
+        meetingEndsAt: data.meetingEndsAt || null,
+      });
+    } catch (err) {
+      console.error(err);
+      toast.error('Could not check meeting status.');
+    } finally {
+      setJoiningMeetingId(null);
+    }
+  };
+
+  const handleUserLeaveMeeting = (reason?: 'left' | 'ended' | 'timeout') => {
+    const ctx = meetingToJoin;
+    setActiveCallUrl(null);
+    const completed = reason === 'ended' || reason === 'timeout';
+    if (ctx?.id) {
+      if (completed) {
+        setBookings((prev) =>
+          prev.map((b) => (b.id === ctx.id ? { ...b, meetingEnded: true } : b))
+        );
+      }
+      setMeetingToJoin(null);
+      if (completed) {
+        setReviewTarget({
+          bookingId: ctx.id,
+          peerName: ctx.peerName || 'your creator',
+          durationMins: ctx.durationMins || 15,
+        });
+      }
+    } else {
+      setMeetingToJoin(null);
+    }
+  };
+
+  const handleRefundClick = (booking: Booking) => {
+    if (!assertModificationAllowed(booking, 'refund')) return;
+    setEventToRefund(booking);
+    setShowRefundConfirmModal(true);
+  };
+
+  const handleConfirmRefund = async () => {
+    if (!eventToRefund || refundSaving) return;
+    setRefundSaving(true);
+    try {
+      const res = await fetch(`/api/user/event-purchases/${eventToRefund.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'refund' }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setShowRefundConfirmModal(false);
+        setEventToRefund(null);
+        setSuccessModalType('refunded');
+        setShowSuccessModal(true);
+        loadData();
+      } else if (data.error?.includes('24 hours') || data.remainingMs != null) {
+        setShowRefundConfirmModal(false);
+        openBlockedWindow(eventToRefund, 'refund');
+      } else {
+        toast.error(data.error || 'Could not refund this ticket.');
+      }
+    } catch (err) {
+      toast.error('Could not refund this ticket.');
+    } finally {
+      setRefundSaving(false);
     }
   };
 
@@ -557,17 +742,44 @@ export default function UserBookingsPage() {
                         const isPast = activeTab === 'Past' || passed;
 
                         if (booking.isEvent) {
+                          if (isCancelled || isPast) {
+                            return (
+                              <button
+                                onClick={() =>
+                                  router.push(
+                                    booking.eventId
+                                      ? `/user/chats?eventId=${booking.eventId}`
+                                      : '/user/chats'
+                                  )
+                                }
+                                className="w-full py-2.5 bg-[#0012FF] hover:bg-[#0012FF]/90 text-white rounded-full text-xs font-bold text-center transition-all cursor-pointer shadow-md shadow-[#0012FF]/20"
+                              >
+                                View Session Chat
+                              </button>
+                            );
+                          }
+
                           return (
-                            <button
-                              onClick={() =>
-                                router.push(
-                                  booking.eventId ? `/user/events/${booking.eventId}` : '/user/events'
-                                )
-                              }
-                              className="w-full py-2.5 bg-[#0012FF] hover:bg-[#0012FF]/90 text-white rounded-full text-xs font-bold text-center transition-all cursor-pointer shadow-md shadow-[#0012FF]/20"
-                            >
-                              View Event
-                            </button>
+                            <div className="flex items-center gap-3">
+                              <button
+                                onClick={() =>
+                                  router.push(
+                                    booking.eventId
+                                      ? `/user/chats?eventId=${booking.eventId}`
+                                      : '/user/chats'
+                                  )
+                                }
+                                className="flex-1 py-2.5 bg-[#0012FF] hover:bg-[#0012FF]/90 text-white rounded-full text-xs font-bold text-center transition-all cursor-pointer shadow-md shadow-[#0012FF]/20"
+                              >
+                                View Session Chat
+                              </button>
+                              <button
+                                onClick={() => handleRefundClick(booking)}
+                                className="flex-1 py-2.5 bg-[#FFF0F0] border border-red-100 hover:bg-red-100 text-[#FF3B3B] rounded-full text-xs font-semibold text-center transition-all cursor-pointer"
+                              >
+                                Refund
+                              </button>
+                            </div>
                           );
                         }
 
@@ -585,18 +797,19 @@ export default function UserBookingsPage() {
                         // Otherwise, it's upcoming and active
                         return (
                           <>
-                            <button
-                              onClick={() => {
-                                if (booking.meetingUrl && booking.bookingRef) {
-                                  setMeetingToJoin({ url: booking.meetingUrl, ref: booking.bookingRef });
-                                } else {
-                                  alert('Meeting link is not available yet.');
-                                }
-                              }}
-                              className="w-full py-2.5 rounded-full text-xs font-bold text-center transition-all shadow-md bg-[#0012FF] hover:bg-[#0012FF]/90 text-white shadow-[#0012FF]/20 cursor-pointer"
-                            >
-                              Join Meeting
-                            </button>
+                            {booking.meetingEnded ? (
+                              <div className="w-full py-2.5 rounded-full text-xs font-bold text-center bg-gray-100 text-gray-500 border border-gray-200 select-none">
+                                Meeting Completed
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => void handleUserJoinMeeting(booking)}
+                                disabled={joiningMeetingId === booking.id}
+                                className="w-full py-2.5 rounded-full text-xs font-bold text-center transition-all shadow-md bg-[#0012FF] hover:bg-[#0012FF]/90 text-white shadow-[#0012FF]/20 cursor-pointer disabled:opacity-60"
+                              >
+                                {joiningMeetingId === booking.id ? 'Checking…' : 'Join Meeting'}
+                              </button>
+                            )}
                             {booking.isPackage ? (
                               <p className="text-[11px] text-gray-400 font-medium text-center">
                                 Package sessions can&apos;t be cancelled or rescheduled by you. Your creator can
@@ -611,7 +824,7 @@ export default function UserBookingsPage() {
                                 Reschedule
                               </button>
                               <button
-                                onClick={() => handleCancelClick(booking.id)}
+                                onClick={() => handleCancelClick(booking)}
                                 className="flex-1 py-2 bg-[#FFF0F0] border border-red-100 hover:bg-red-100 text-[#FF3B3B] rounded-full text-xs font-semibold text-center transition-all cursor-pointer"
                               >
                                 Cancel Appointment
@@ -833,7 +1046,74 @@ export default function UserBookingsPage() {
         </div>
       )}
 
-      {/* Success Modal (Cancelled or Rescheduled) */}
+      {/* Refund Confirmation Modal (events) */}
+      {showRefundConfirmModal && eventToRefund && (
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[100] p-4 cursor-pointer"
+          onClick={() => {
+            if (!refundSaving) {
+              setShowRefundConfirmModal(false);
+              setEventToRefund(null);
+            }
+          }}
+        >
+          <div
+            className="relative bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl border border-gray-100 w-full max-w-md p-6 sm:p-8 flex flex-col items-center text-center overflow-hidden cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => {
+                if (!refundSaving) {
+                  setShowRefundConfirmModal(false);
+                  setEventToRefund(null);
+                }
+              }}
+              className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 transition-colors p-1.5 rounded-full hover:bg-gray-100 cursor-pointer"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+
+            <div className="w-40 sm:w-52 h-auto my-2">
+              <Image
+                src="/assets/cancel-appointment.webp"
+                alt="Refund ticket"
+                width={220}
+                height={160}
+                className="w-full h-auto object-contain"
+              />
+            </div>
+
+            <h3 className="text-xl sm:text-2xl font-extrabold text-black mb-2 tracking-tight">
+              Request a refund?
+            </h3>
+            <p className="text-xs sm:text-sm text-gray-400 font-medium leading-relaxed mb-6 max-w-[280px]">
+              Your ticket for &ldquo;{eventToRefund.bio || 'this event'}&rdquo; will be cancelled and marked for
+              refund. This cannot be undone.
+            </p>
+
+            <button
+              onClick={() => void handleConfirmRefund()}
+              disabled={refundSaving}
+              className="w-full max-w-[260px] py-3.5 bg-[#E32A2A] hover:bg-[#c92222] text-white rounded-full font-bold text-sm sm:text-base transition-all shadow-md active:scale-98 cursor-pointer disabled:opacity-60"
+            >
+              {refundSaving ? 'Processing…' : 'Confirm Refund'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      <ModificationWindowBlockedModal
+        open={!!blockedWindow}
+        onClose={() => setBlockedWindow(null)}
+        startMs={blockedWindow?.startMs ?? null}
+        action={blockedWindow?.action || 'cancel'}
+        kind={blockedWindow?.kind || 'session'}
+      />
+
+      {/* Success Modal (Cancelled / Rescheduled / Refunded) */}
       {showSuccessModal && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[100] p-4">
           <div className="relative bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl border border-gray-100 w-full max-w-md p-6 sm:p-8 flex flex-col items-center text-center overflow-hidden">
@@ -852,9 +1132,9 @@ export default function UserBookingsPage() {
             <div className="w-40 sm:w-52 h-auto my-2">
               <Image
                 src={
-                  successModalType === 'cancelled'
-                    ? '/assets/cancel-appointment.webp'
-                    : '/assets/reschedule.webp'
+                  successModalType === 'rescheduled'
+                    ? '/assets/reschedule.webp'
+                    : '/assets/cancel-appointment.webp'
                 }
                 alt="Success"
                 width={220}
@@ -867,14 +1147,18 @@ export default function UserBookingsPage() {
             <h3 className="text-xl sm:text-2xl font-extrabold text-black mb-2 tracking-tight">
               {successModalType === 'cancelled'
                 ? 'Booking Cancelled'
-                : 'Booking Rescheduled'}
+                : successModalType === 'refunded'
+                  ? 'Refund Requested'
+                  : 'Booking Rescheduled'}
             </h3>
 
             {/* Description */}
             <p className="text-xs sm:text-sm text-gray-400 font-medium leading-relaxed mb-6 max-w-[260px] sm:max-w-[280px]">
               {successModalType === 'cancelled'
                 ? 'Your booking has been cancelled successfully.'
-                : 'Your booking has been rescheduled successfully.'}
+                : successModalType === 'refunded'
+                  ? 'Your event ticket has been cancelled and marked for refund.'
+                  : 'Your booking has been rescheduled successfully.'}
             </p>
 
             {/* Close Button */}
@@ -908,7 +1192,7 @@ export default function UserBookingsPage() {
 
             <h3 className="text-2xl font-extrabold text-black mb-2 tracking-tight">Ready to join?</h3>
             <p className="text-gray-500 text-sm mb-4">
-              Your meeting is ready. Make sure your camera and microphone are connected before joining.
+              Your creator has started the meeting. Make sure your camera and microphone are connected before joining.
             </p>
 
             <div className="w-full bg-gray-50 border border-gray-100 rounded-xl p-3 mb-6">
@@ -920,16 +1204,35 @@ export default function UserBookingsPage() {
               onClick={() => setActiveCallUrl(meetingToJoin.url)}
               className="w-full bg-[#0012FF] text-white px-8 py-3.5 rounded-full font-bold text-sm hover:opacity-90 transition-all shadow-lg shadow-[#0012FF]/20 cursor-pointer"
             >
-              Start Meeting
+              Join Meeting
             </button>
           </div>
         </div>
       )}
 
+      <MeetingNotStartedModal
+        open={!!waitingCreatorName}
+        onClose={() => setWaitingCreatorName(null)}
+        creatorName={waitingCreatorName || 'Your creator'}
+      />
+
       {/* Active Daily Call Modal */}
-      {activeCallUrl && (
-        <DailyCall url={activeCallUrl} onLeave={() => setActiveCallUrl(null)} />
+      {activeCallUrl && meetingToJoin && (
+        <DailyCall
+          url={activeCallUrl}
+          bookingId={meetingToJoin.id}
+          role="user"
+          meetingEndsAt={meetingToJoin.meetingEndsAt}
+          onLeave={handleUserLeaveMeeting}
+        />
       )}
+
+      <SessionReviewModal
+        open={!!reviewTarget}
+        onClose={() => setReviewTarget(null)}
+        target={reviewTarget}
+        role="user"
+      />
     </div>
   );
 }

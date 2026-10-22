@@ -174,6 +174,88 @@ export async function PUT(req: NextRequest, context: RouteContext) {
   }
 }
 
+/**
+ * PATCH — show / hide only (`{ visible: boolean }` → published | draft).
+ * Unhiding re-validates the stored event so incomplete drafts stay private.
+ */
+export async function PATCH(req: NextRequest, context: RouteContext) {
+  try {
+    const creatorId = await currentCreatorId();
+    if (!creatorId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const { id } = await context.params;
+    const event = await ownedEvent(creatorId, id);
+    if (!event) return NextResponse.json({ error: 'Event not found.' }, { status: 404 });
+    if (event.status === 'cancelled') {
+      return NextResponse.json({ error: 'Cancelled events cannot be shown or hidden.' }, { status: 409 });
+    }
+
+    const body = await req.json().catch(() => ({}));
+    const visible = body?.visible === true;
+    const status: EventStatusInput = visible ? 'published' : 'draft';
+
+    if (status === event.status) {
+      return NextResponse.json({ success: true, event: serialize(event) });
+    }
+
+    if (status === 'published') {
+      if (!event.bannerUrl) {
+        return NextResponse.json(
+          {
+            error: 'Add a banner image before showing this event. Open Edit to finish setup.',
+            field: 'banner',
+          },
+          { status: 422 }
+        );
+      }
+
+      const plain = typeof event.toObject === 'function' ? event.toObject() : event;
+      const cleaned = cleanEventPayload(
+        {
+          title: plain.title,
+          description: plain.description,
+          bannerUrl: plain.bannerUrl,
+          category: plain.category,
+          dates: plain.dates,
+          refundPolicy: plain.refundPolicy,
+          termsAndConditions: plain.termsAndConditions,
+        },
+        'published',
+        { hasBannerUpload: false }
+      );
+      if ('error' in cleaned) {
+        return NextResponse.json(
+          {
+            error: `${cleaned.error} Open Edit to finish the event before showing it.`,
+            field: cleaned.field,
+          },
+          { status: 422 }
+        );
+      }
+    }
+
+    event.status = status;
+    if (status === 'published' && !event.publishedAt) {
+      event.publishedAt = new Date();
+    }
+    await event.save();
+
+    if (status === 'published') {
+      try {
+        await ensureEventBroadcastChannel(event);
+      } catch (chatErr) {
+        console.error('[PATCH /api/creators/events/:id] broadcast channel:', chatErr);
+      }
+    }
+
+    return NextResponse.json({ success: true, event: serialize(event) });
+  } catch (err) {
+    console.error('[PATCH /api/creators/events/:id]', err);
+    const { status, body } = eventSaveError(err);
+    return NextResponse.json(body, { status });
+  }
+}
+
 /** DELETE — remove a draft, or mark a published event cancelled. */
 export async function DELETE(_req: NextRequest, context: RouteContext) {
   const creatorId = await currentCreatorId();

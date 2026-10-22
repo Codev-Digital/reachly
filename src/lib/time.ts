@@ -160,17 +160,33 @@ export interface SessionModificationCheck {
   diffHours?: number;
 }
 
+export type SessionModificationAction = 'reschedule' | 'cancel' | 'refund';
+
+/** e.g. "7 hours 32 mins" or "45 mins" or "Less than a minute". */
+export function formatRemainingDuration(diffMs: number): string {
+  if (!Number.isFinite(diffMs) || diffMs <= 0) return '0 mins';
+
+  const totalMins = Math.floor(diffMs / (1000 * 60));
+  const days = Math.floor(totalMins / (60 * 24));
+  const hours = Math.floor((totalMins % (60 * 24)) / 60);
+  const mins = totalMins % 60;
+
+  const parts: string[] = [];
+  if (days > 0) parts.push(`${days} ${days === 1 ? 'day' : 'days'}`);
+  if (hours > 0) parts.push(`${hours} ${hours === 1 ? 'hour' : 'hours'}`);
+  if (mins > 0 || parts.length === 0) parts.push(`${Math.max(mins, 0)} ${mins === 1 ? 'min' : 'mins'}`);
+  return parts.join(' ');
+}
+
 /**
- * Validates whether a booking can be rescheduled or cancelled.
- * Rule:
- * 1. Must be at least 24 hours before session start time.
- * 2. Cannot cancel or reschedule if within 24 hours or if session has already passed.
+ * Validates whether a booking/event can be rescheduled, cancelled, or refunded.
+ * Rule: at least 24 hours before start; not allowed once the start time has passed.
  */
 export function checkSessionModificationWindow(
   scheduledDate: string | Date,
   scheduledTime: string,
   timeZone: string = 'Asia/Karachi',
-  action: 'reschedule' | 'cancel' = 'reschedule'
+  action: SessionModificationAction = 'reschedule'
 ): SessionModificationCheck {
   if (!scheduledDate) {
     return {
@@ -192,13 +208,15 @@ export function checkSessionModificationWindow(
   const diffMs = sessionMs - nowMs;
   const diffHours = diffMs / (1000 * 60 * 60);
 
-  const actionVerb = action === 'cancel' ? 'cancelled' : 'rescheduled';
+  const actionVerb =
+    action === 'cancel' ? 'cancelled' : action === 'refund' ? 'refunded' : 'rescheduled';
+  const noun = action === 'refund' ? 'Events' : 'Sessions';
 
   // If session is in the past
   if (diffMs <= 0) {
     return {
       allowed: false,
-      errorMessage: `This session has already passed and cannot be ${actionVerb}.`,
+      errorMessage: `This ${action === 'refund' ? 'event' : 'session'} has already passed and cannot be ${actionVerb}.`,
       sessionStartUTC,
       diffMs,
       diffHours
@@ -210,7 +228,7 @@ export function checkSessionModificationWindow(
   if (diffMs < TWENTY_FOUR_HOURS_MS) {
     return {
       allowed: false,
-      errorMessage: `Sessions can only be ${actionVerb} at least 24 hours before the scheduled start time.`,
+      errorMessage: `${noun} can only be ${actionVerb} at least 24 hours before the scheduled start time.`,
       sessionStartUTC,
       diffMs,
       diffHours

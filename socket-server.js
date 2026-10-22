@@ -54,6 +54,8 @@ const ConversationSchema = new mongoose.Schema(
     creatorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false, default: null },
     isLocked: { type: Boolean, default: true },
+    muteAll: { type: Boolean, default: false },
+    mutedUserIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   },
   { timestamps: true }
 );
@@ -208,10 +210,38 @@ wss.on('connection', (ws) => {
           return;
         }
 
-        // The frontend already prevents users from sending messages if the chat is locked.
-        // Bypassing the DB check here ensures instant delivery for both creators and users.
-
         const roomClients = rooms.get(conversationId);
+
+        // Enforce mute for ticket holders in broadcast chats (creator always allowed)
+        if (senderRole === 'user') {
+          try {
+            const conv = await Conversation.findById(conversationId)
+              .select('type muteAll mutedUserIds isLocked')
+              .lean();
+            if (conv) {
+              const mutedIds = (conv.mutedUserIds || []).map((id) => id.toString());
+              const isMuted =
+                conv.type === 'broadcast' &&
+                (Boolean(conv.muteAll) || mutedIds.includes(String(senderId)));
+              if (isMuted || conv.isLocked) {
+                if (ws.readyState === WebSocket.OPEN) {
+                  ws.send(
+                    JSON.stringify({
+                      type: 'message_rejected',
+                      conversationId,
+                      tempId: tempId || data.tempId || undefined,
+                      reason: isMuted ? 'muted' : 'locked',
+                    })
+                  );
+                }
+                return;
+              }
+            }
+          } catch (muteErr) {
+            console.error('Mute check error:', muteErr);
+          }
+        }
+
         const isRead = roomClients && roomClients.size > 1;
 
         const attachments = Array.isArray(data.attachments) && data.attachments.length
@@ -286,6 +316,26 @@ wss.on('connection', (ws) => {
         }
       }
 
+      // ── MUTE STATUS ───────────────────────────────────────────────────────
+      else if (data.type === 'mute_status') {
+        const { conversationId, muteAll, mutedUserIds } = data;
+        const roomClients = rooms.get(conversationId);
+        if (roomClients) {
+          roomClients.forEach(client => {
+            if (client.readyState === WebSocket.OPEN) {
+              client.send(
+                JSON.stringify({
+                  type: 'mute_status',
+                  conversationId,
+                  muteAll: Boolean(muteAll),
+                  mutedUserIds: Array.isArray(mutedUserIds) ? mutedUserIds : [],
+                })
+              );
+            }
+          });
+        }
+      }
+
       // ── CHAT CLEARED ───────────────────────────────────────────────────────
       else if (data.type === 'chat_cleared') {
         const { conversationId } = data;
@@ -301,13 +351,21 @@ wss.on('connection', (ws) => {
 
       // ── TYPING STATUS ──────────────────────────────────────────────────────
       else if (data.type === 'typing') {
-        const { conversationId, senderRole, isTyping } = data;
+        const { conversationId, senderRole, isTyping, senderId, senderName, senderAvatar } = data;
         const roomClients = rooms.get(conversationId);
         if (roomClients) {
           roomClients.forEach(client => {
             // Send typing notification to everyone in the room except the sender
             if (client !== ws && client.readyState === WebSocket.OPEN) {
-              client.send(JSON.stringify({ type: 'typing', conversationId, senderRole, isTyping }));
+              client.send(JSON.stringify({
+                type: 'typing',
+                conversationId,
+                senderRole,
+                senderId: senderId || null,
+                senderName: senderName || (senderRole === 'creator' ? 'Creator' : 'User'),
+                senderAvatar: senderAvatar || '/avatar.png',
+                isTyping: Boolean(isTyping),
+              }));
             }
           });
         }

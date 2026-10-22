@@ -3,8 +3,10 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
+import { toast } from 'sonner';
 import CreatorDashboardNav from '@/components/CreatorDashboardNav';
 import EventCard, { EventCardData } from '@/components/EventCard';
+import ActionDialog from '@/components/ActionDialog';
 import { richTextPreview } from '@/lib/richText';
 import { formatEventCardDate, formatEventCardTime } from '@/lib/eventDisplay';
 
@@ -13,6 +15,8 @@ export default function CreatorEventsPage() {
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [events, setEvents] = useState<EventCardData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [visibilityTarget, setVisibilityTarget] = useState<EventCardData | null>(null);
+  const [visibilitySaving, setVisibilitySaving] = useState(false);
 
   useEffect(() => {
     const cachedName = localStorage.getItem('creator_display_name');
@@ -60,8 +64,40 @@ export default function CreatorEventsPage() {
     })();
   }, []);
 
-  const toggleVisibility = (id: string) =>
-    setEvents((prev) => prev.map((e) => (e.id === id ? { ...e, visible: !e.visible } : e)));
+  const requestVisibilityToggle = (id: string) => {
+    const target = events.find((e) => e.id === id) || null;
+    if (target) setVisibilityTarget(target);
+  };
+
+  const confirmVisibilityToggle = async () => {
+    if (!visibilityTarget || visibilitySaving) return;
+    const nextVisible = !visibilityTarget.visible;
+    setVisibilitySaving(true);
+    try {
+      const res = await fetch(`/api/creators/events/${visibilityTarget.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ visible: nextVisible }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error || 'Could not update event visibility.');
+        return;
+      }
+      setEvents((prev) =>
+        prev.map((e) => (e.id === visibilityTarget.id ? { ...e, visible: nextVisible } : e))
+      );
+      toast.success(nextVisible ? 'Event is now visible' : 'Event is now hidden');
+      setVisibilityTarget(null);
+    } catch (err) {
+      console.error(err);
+      toast.error('Could not update event visibility.');
+    } finally {
+      setVisibilitySaving(false);
+    }
+  };
+
+  const hiding = visibilityTarget?.visible === true;
 
   return (
     <div className="min-h-screen bg-[#F8F8FA]">
@@ -109,11 +145,62 @@ export default function CreatorEventsPage() {
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 lg:gap-6">
             {events.map((event) => (
-              <EventCard key={event.id} event={event} onToggleVisibility={toggleVisibility} />
+              <EventCard
+                key={event.id}
+                event={event}
+                showEdit
+                onToggleVisibility={requestVisibilityToggle}
+              />
             ))}
           </div>
         )}
       </main>
+
+      <ActionDialog
+        open={!!visibilityTarget}
+        onOpenChange={(open) => {
+          if (!open && !visibilitySaving) setVisibilityTarget(null);
+        }}
+        image={{
+          src: hiding ? '/assets/cancel-appointment-sm.webp' : '/assets/booking-confirm-sm.webp',
+          alt: hiding ? 'Hide event' : 'Show event',
+        }}
+        title={hiding ? 'Hide this event?' : 'Show this event?'}
+        description={
+          hiding
+            ? [
+                `"${visibilityTarget?.title || 'This event'}" will be hidden from your public profile and followers.`,
+                'You can show it again anytime from this page.',
+              ]
+            : [
+                `"${visibilityTarget?.title || 'This event'}" will appear on your public profile for followers to discover and book.`,
+                'Make sure all details are ready before showing it.',
+              ]
+        }
+        actions={[
+          {
+            label: 'Cancel',
+            variant: 'outline',
+            onClick: () => setVisibilityTarget(null),
+            disabled: visibilitySaving,
+          },
+          {
+            label: visibilitySaving
+              ? hiding
+                ? 'Hiding…'
+                : 'Showing…'
+              : hiding
+                ? 'Hide Event'
+                : 'Show Event',
+            variant: hiding ? 'destructive' : 'default',
+            onClick: () => void confirmVisibilityToggle(),
+            disabled: visibilitySaving,
+            className: hiding
+              ? undefined
+              : 'bg-[#0012FF] hover:bg-[#0010d0] text-white',
+          },
+        ]}
+      />
     </div>
   );
 }

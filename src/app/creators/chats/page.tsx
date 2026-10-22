@@ -16,6 +16,16 @@ import {
   type ChatAttachment,
 } from '@/lib/chatAttachments';
 
+type EventParticipant = {
+  userId: string;
+  name: string;
+  email: string;
+  avatar: string;
+  tierTitle: string;
+  quantity: number;
+  isMuted: boolean;
+};
+
 interface ConversationInfo {
   id: string;
   conversationId: string;
@@ -30,6 +40,10 @@ interface ConversationInfo {
   scheduledDate: string;
   meetingUrl?: string | null;
   isLocked: boolean;
+  muteAll?: boolean;
+  mutedUserIds?: string[];
+  /** Loaded with conversations for event chats (creator only). */
+  participants?: EventParticipant[];
   lastMessage: string;
   lastMessageTime: string | null;
   lastMessageSenderRole?: string | null;
@@ -156,6 +170,10 @@ export default function ChatsPage() {
     } catch (e) {}
   }, []);
   const [isOtherUserOnline, setIsOtherUserOnline] = useState(false);
+  const [onlineCount, setOnlineCount] = useState(0);
+  const [typingUsers, setTypingUsers] = useState<
+    { id: string; name: string; avatar: string; role: 'creator' | 'user' }[]
+  >([]);
   const [isChatLocked, setIsChatLocked] = useState(false);
   const [showLockModal, setShowLockModal] = useState(false);
   const [isLockingLoading, setIsLockingLoading] = useState(false);
@@ -163,6 +181,10 @@ export default function ChatsPage() {
   const [showDotsMenu, setShowDotsMenu] = useState(false);
   const [showClearModal, setShowClearModal] = useState(false);
   const [isClearingChat, setIsClearingChat] = useState(false);
+  const [showParticipantsModal, setShowParticipantsModal] = useState(false);
+  const [participantSearch, setParticipantSearch] = useState('');
+  const [mutingActionKey, setMutingActionKey] = useState<string | null>(null);
+  const [muteConfirmUser, setMuteConfirmUser] = useState<EventParticipant | null>(null);
   const [showArchived, setShowArchived] = useState(false);
   const [isArchivingChat, setIsArchivingChat] = useState(false);
   // Persistent ref — never reset by React state, survives tab switches & polls
@@ -443,6 +465,9 @@ export default function ChatsPage() {
             avatar: c.avatar || c.image || '/avatar.png',
             meetingUrl: c.meetingUrl || null,
             isLocked: c.isLocked,
+            muteAll: Boolean(c.muteAll),
+            mutedUserIds: Array.isArray(c.mutedUserIds) ? c.mutedUserIds : [],
+            participants: Array.isArray(c.participants) ? c.participants : [],
             lastMessage: c.lastMessage || '',
             lastMessageTime: c.lastMessageTime || null,
             lastMessageSenderRole: c.lastMessageSenderRole || null,
@@ -525,6 +550,9 @@ export default function ChatsPage() {
   // WebSocket + message history
   useEffect(() => {
     setIsOtherUserOnline(false);
+    setOnlineCount(0);
+    setTypingUsers([]);
+    setIsOtherUserTyping(false);
     const currentConv = conversations.find(c => c.id === activeChat);
     setIsChatLocked(currentConv?.isLocked ?? false);
 
@@ -699,9 +727,25 @@ export default function ChatsPage() {
               })
           );
         } else if (data.type === 'presence' && data.conversationId === activeChat) {
-          setIsOtherUserOnline(data.count > 1);
+          const count = Number(data.count) || 0;
+          setOnlineCount(count);
+          setIsOtherUserOnline(count > 1);
         } else if (data.type === 'typing' && data.conversationId === activeChat) {
-          setIsOtherUserTyping(data.isTyping);
+          const tid = String(data.senderId || data.senderRole || 'unknown');
+          const entry = {
+            id: tid,
+            name: data.senderName || (data.senderRole === 'creator' ? 'Creator' : 'User'),
+            avatar: data.senderAvatar || '/avatar.png',
+            role: (data.senderRole === 'creator' ? 'creator' : 'user') as 'creator' | 'user',
+          };
+          setTypingUsers((prev) => {
+            if (data.isTyping) {
+              const without = prev.filter((u) => u.id !== tid);
+              return [...without, entry];
+            }
+            return prev.filter((u) => u.id !== tid);
+          });
+          setIsOtherUserTyping(Boolean(data.isTyping));
         } else if (data.type === 'read_receipt' && data.conversationId === activeChat) {
           setMessages(prev => prev.map(m => ({ ...m, read: true })));
         } else if (data.type === 'lock_status' && data.conversationId === activeChat) {
@@ -807,6 +851,9 @@ export default function ChatsPage() {
       type: 'typing',
       conversationId: activeChat,
       senderRole: myRoleTyping,
+      senderId: creatorId,
+      senderName: displayName || 'Creator',
+      senderAvatar: profilePhoto || '/avatar.png',
       isTyping: typingState
     }));
     lastTypingSentRef.current = typingState;
@@ -1076,6 +1123,75 @@ export default function ChatsPage() {
     }
   };
 
+  const openParticipantsModal = () => {
+    setShowDotsMenu(false);
+    setParticipantSearch('');
+    setShowParticipantsModal(true);
+  };
+
+  const applyMuteResponse = (data: {
+    muteAll?: boolean;
+    mutedUserIds?: string[];
+  }) => {
+    if (!activeChat) return;
+    const muteAll = Boolean(data.muteAll);
+    const mutedIds = new Set(data.mutedUserIds || []);
+    setConversations((prev) =>
+      prev.map((c) => {
+        if (c.id !== activeChat) return c;
+        return {
+          ...c,
+          muteAll,
+          mutedUserIds: data.mutedUserIds || [],
+          participants: (c.participants || []).map((p) => ({
+            ...p,
+            isMuted: muteAll || mutedIds.has(p.userId),
+          })),
+        };
+      })
+    );
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(
+        JSON.stringify({
+          type: 'mute_status',
+          conversationId: activeChat,
+          muteAll,
+          mutedUserIds: data.mutedUserIds || [],
+        })
+      );
+    }
+  };
+
+  const handleMuteParticipant = async (userId: string, currentlyMuted: boolean) => {
+    if (!activeChat || mutingActionKey) return;
+    setMutingActionKey(userId);
+    try {
+      const res = await fetch('/api/conversations/mute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(
+          currentlyMuted
+            ? { conversationId: activeChat, unmuteUserId: userId }
+            : { conversationId: activeChat, muteUserId: userId }
+        ),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        applyMuteResponse(data);
+        setMuteConfirmUser(null);
+      }
+    } catch (err) {
+      console.error('Error muting participant:', err);
+    } finally {
+      setMutingActionKey(null);
+    }
+  };
+
+  const confirmMuteParticipant = () => {
+    if (!muteConfirmUser) return;
+    handleMuteParticipant(muteConfirmUser.userId, false);
+  };
+
   const sidebarChatName = (chat: ConversationInfo) =>
     chat.type === 'broadcast' ? 'Event Chat' : (chat.follower || 'User');
 
@@ -1300,16 +1416,61 @@ export default function ChatsPage() {
                           style={{ width: 44, height: 44 }}
                         />
                       </div>
-                      <div className={`absolute bottom-0 right-0 w-3.5 h-3.5 border-3 border-white rounded-full ${activeConv.isOnline ? 'bg-[#12B76A]' : 'bg-gray-400'}`}></div>
+                      <div className={`absolute bottom-0 right-0 w-3.5 h-3.5 border-3 border-white rounded-full ${onlineCount > 1 ? 'bg-[#12B76A]' : 'bg-gray-400'}`}></div>
                     </div>
-                    <div>
-                      <h3 className="text-base font-bold text-gray-900">{activeConv.follower}</h3>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className={`w-2 h-2 rounded-full ${activeConv.isOnline ? 'bg-[#12B76A]' : 'bg-gray-400'}`}></span>
-                        <span className="text-xs text-gray-400 font-medium">
-                          {activeConv.isOnline ? 'Online' : 'Offline'}
-                        </span>
-                      </div>
+                    <div className="min-w-0">
+                      <h3 className="text-base font-bold text-gray-900 truncate">{activeConv.follower}</h3>
+                      {(() => {
+                        const isBroadcast = activeConv.type === 'broadcast';
+                        const creatorTyping = typingUsers.find((u) => u.role === 'creator');
+                        const displayTypers = creatorTyping ? [creatorTyping] : typingUsers;
+                        const isTypingNow = displayTypers.length > 0;
+
+                        if (isTypingNow) {
+                          const multi = !creatorTyping && displayTypers.length > 1;
+                          return (
+                            <div className="mt-0.5 flex min-w-0 items-center gap-1.5">
+                              <div className="flex shrink-0 -space-x-1.5">
+                                {(multi ? displayTypers.slice(0, 3) : displayTypers.slice(0, 1)).map((u) => (
+                                  <img
+                                    key={u.id}
+                                    src={u.avatar || '/avatar.png'}
+                                    alt=""
+                                    className="h-4 w-4 rounded-full object-cover ring-1 ring-white"
+                                  />
+                                ))}
+                              </div>
+                              <span className="truncate text-xs font-medium text-[#0012FF]">
+                                {creatorTyping
+                                  ? `${creatorTyping.name} Typing...`
+                                  : multi
+                                    ? `${displayTypers.length} Members Typing...`
+                                    : `${displayTypers[0].name} Typing...`}
+                              </span>
+                            </div>
+                          );
+                        }
+
+                        if (isBroadcast) {
+                          return (
+                            <div className="mt-0.5 flex items-center gap-1.5">
+                              <span className={`h-2 w-2 rounded-full ${onlineCount > 1 ? 'bg-[#12B76A]' : 'bg-gray-400'}`} />
+                              <span className="text-xs font-medium text-gray-400">
+                                {onlineCount > 1 ? `${onlineCount} Online` : 'Offline'}
+                              </span>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <div className="mt-0.5 flex items-center gap-1.5">
+                            <span className={`h-2 w-2 rounded-full ${onlineCount > 1 ? 'bg-[#12B76A]' : 'bg-gray-400'}`} />
+                            <span className="text-xs font-medium text-gray-400">
+                              {onlineCount > 1 ? 'Online' : 'Offline'}
+                            </span>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
 
@@ -1365,6 +1526,19 @@ export default function ChatsPage() {
                                       {isLockingLoading ? 'Locking...' : 'Lock Chat'}
                                     </>
                                   )}
+                                </button>
+                                <div className="border-t border-gray-100 my-1" />
+                              </>
+                            )}
+                            {/* Participants — event / broadcast chats only */}
+                            {activeConv?.type === 'broadcast' && activeConv?.isCreator !== false && (
+                              <>
+                                <button
+                                  onClick={openParticipantsModal}
+                                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+                                >
+                                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+                                  Participants
                                 </button>
                                 <div className="border-t border-gray-100 my-1" />
                               </>
@@ -1568,26 +1742,45 @@ export default function ChatsPage() {
                       )}
 
                       {/* Real-time Typing Indicator Bubble */}
-                      {isOtherUserTyping && (
-                        <div className="flex items-end gap-3 max-w-[85%] self-start animate-fade-in select-none">
-                          <div
-                            className="shrink-0 overflow-hidden rounded-full bg-gray-200"
-                            style={{ width: 44, height: 44, minWidth: 44, minHeight: 44 }}
-                          >
-                            <img
-                              src={activeConv.avatar}
-                              alt="Avatar"
-                              className="object-cover"
-                              style={{ width: 44, height: 44 }}
-                            />
+                      {typingUsers.length > 0 && (() => {
+                        const creatorTyping = typingUsers.find((u) => u.role === 'creator');
+                        const displayTypers = creatorTyping ? [creatorTyping] : typingUsers;
+                        const lead = displayTypers[0];
+                        return (
+                          <div className="flex max-w-[85%] animate-fade-in select-none items-end gap-3 self-start">
+                            <div className="flex shrink-0 -space-x-2">
+                              {(displayTypers.length > 1 ? displayTypers.slice(0, 2) : [lead]).map((u) => (
+                                <div
+                                  key={u.id}
+                                  className="overflow-hidden rounded-full bg-gray-200 ring-2 ring-white"
+                                  style={{ width: 44, height: 44, minWidth: 44, minHeight: 44 }}
+                                >
+                                  <img
+                                    src={u.avatar || '/avatar.png'}
+                                    alt=""
+                                    className="object-cover"
+                                    style={{ width: 44, height: 44 }}
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                            <div className="flex min-w-[70px] flex-col gap-1">
+                              <span className="text-[11px] font-medium text-gray-500">
+                                {creatorTyping
+                                  ? `${creatorTyping.name} Typing...`
+                                  : displayTypers.length > 1
+                                    ? `${displayTypers.length} Members Typing...`
+                                    : `${lead.name} Typing...`}
+                              </span>
+                              <div className="flex items-center gap-1.5 rounded-[8px] rounded-tl-none bg-[#F8F8F8] px-5 py-3.5">
+                                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#0012FF]" style={{ animationDelay: '0ms' }} />
+                                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#0012FF]" style={{ animationDelay: '150ms' }} />
+                                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#0012FF]" style={{ animationDelay: '300ms' }} />
+                              </div>
+                            </div>
                           </div>
-                          <div className="flex min-w-[70px] items-center gap-1.5 rounded-[8px] rounded-tl-none bg-[#F8F8F8] px-5 py-3.5">
-                            <span className="w-1.5 h-1.5 bg-[#0012FF] rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-                            <span className="w-1.5 h-1.5 bg-[#0012FF] rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                            <span className="w-1.5 h-1.5 bg-[#0012FF] rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
-                          </div>
-                        </div>
-                      )}
+                        );
+                      })()}
 
                       <div ref={messagesEndRef} />
                     </div>
@@ -1799,7 +1992,7 @@ export default function ChatsPage() {
 
       {/* Lock Confirmation Modal */}
       {showLockModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] transition-opacity">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[110] transition-opacity">
           <div className="bg-white rounded-[32px] p-8 max-w-[420px] w-full mx-4 relative flex flex-col items-center text-center shadow-2xl">
             <button
               onClick={() => setShowLockModal(false)}
@@ -1808,12 +2001,12 @@ export default function ChatsPage() {
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
             </button>
             <div className="mb-6 mt-4 w-[200px] h-[150px] relative">
-              <Image src="/assets/lock-chat.webp" alt="Lock Chat" fill className="object-contain" />
+              <Image src="/assets/lock-chat.webp" alt="Lock Conversation" fill className="object-contain" />
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Are You Sure?</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Lock Conversation?</h3>
             <p className="text-sm text-gray-400 leading-relaxed mb-6 max-w-[280px]">
-              Are you sure you want to lock this chat? <br />
-              You can unlock this anytime.
+              Are you sure you want to lock this conversation?
+              Participants won’t be able to send messages until you unlock it.
             </p>
             <button
               onClick={() => handleLockAction(true)}
@@ -1821,7 +2014,7 @@ export default function ChatsPage() {
               className="w-full bg-[#0012FF] hover:bg-[#0010d0] text-white font-semibold py-4 rounded-full shadow-lg shadow-[#0012FF]/20 transition-all flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50"
             >
               {isLockingLoading && <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>}
-              <span>Lock Chat</span>
+              <span>Lock Conversation</span>
             </button>
           </div>
         </div>
@@ -1852,6 +2045,261 @@ export default function ChatsPage() {
               {isClearingChat && <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>}
               <span>{isClearingChat ? 'Deleting...' : 'Delete Chat'}</span>
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Event chat participants — data already loaded with conversations */}
+      {showParticipantsModal && (() => {
+        const list = activeConv?.participants || [];
+        const conversationLocked = isChatLocked || Boolean(activeConv?.isLocked);
+        const q = participantSearch.trim().toLowerCase();
+        const filteredParticipants = q
+          ? list.filter(
+              (p) =>
+                p.name.toLowerCase().includes(q) ||
+                p.email.toLowerCase().includes(q) ||
+                p.tierTitle.toLowerCase().includes(q)
+            )
+          : list;
+        const mutedCount = list.filter((p) => p.isMuted).length;
+
+        return (
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 backdrop-blur-[2px]"
+            onClick={() => setShowParticipantsModal(false)}
+          >
+            <div
+              className="relative flex max-h-[88vh] w-full max-w-[520px] flex-col overflow-hidden rounded-[24px] border border-gray-100 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.18)]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="relative overflow-hidden border-b border-gray-100 bg-gradient-to-br from-[#F7F8FF] via-white to-white px-6 pb-5 pt-6">
+                <div className="pointer-events-none absolute -right-8 -top-10 h-32 w-32 rounded-full bg-[#0012FF]/[0.06]" />
+                <div className="relative flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-[#0012FF]/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-[#0012FF]">
+                      Event chat
+                    </div>
+                    <h3 className="text-xl font-bold tracking-tight text-gray-900">Participants</h3>
+                    <p className="mt-1 text-sm text-gray-500">
+                      {`${list.length} member${list.length === 1 ? '' : 's'}${
+                        mutedCount > 0 ? ` · ${mutedCount} muted` : ''
+                      }`}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowParticipantsModal(false)}
+                    className="rounded-full border border-gray-200 bg-white p-2 text-gray-400 shadow-sm transition-colors hover:border-gray-300 hover:text-gray-700"
+                    aria-label="Close"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                  </button>
+                </div>
+
+                <div className="relative mt-5 flex items-center justify-between gap-3 rounded-2xl border border-[#E8EAFF] bg-white/90 px-4 py-3.5 shadow-sm">
+                  <div className="flex min-w-0 items-start gap-3">
+                    <div className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${conversationLocked ? 'bg-[#0012FF]/10 text-[#0012FF]' : 'bg-gray-100 text-gray-500'}`}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                        <path d={conversationLocked ? 'M7 11V7a5 5 0 0 1 10 0v4' : 'M7 11V7a5 5 0 0 1 9.9-1'} />
+                      </svg>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-gray-900">Lock Conversation</p>
+                      <p className="mt-0.5 text-xs text-gray-400">
+                        {conversationLocked
+                          ? 'Everyone is locked from sending messages'
+                          : 'Lock all participants from sending messages'}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={conversationLocked}
+                    disabled={isLockingLoading}
+                    onClick={() => {
+                      if (conversationLocked) handleLockAction(false);
+                      else setShowLockModal(true);
+                    }}
+                    className={`relative h-7 w-12 shrink-0 rounded-full transition-colors disabled:opacity-60 ${
+                      conversationLocked ? 'bg-[#0012FF]' : 'bg-gray-200'
+                    }`}
+                  >
+                    <span
+                      className={`absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform ${
+                        conversationLocked ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {list.length > 0 && (
+                  <div className="relative mt-3">
+                    <svg
+                      className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-gray-400"
+                      width="15"
+                      height="15"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <circle cx="11" cy="11" r="7" />
+                      <path d="M21 21l-4.3-4.3" />
+                    </svg>
+                    <input
+                      type="search"
+                      value={participantSearch}
+                      onChange={(e) => setParticipantSearch(e.target.value)}
+                      placeholder="Search by name, email, or tier"
+                      className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pr-3 pl-10 text-sm text-gray-800 outline-none transition-all placeholder:text-gray-400 focus:border-[#0012FF]/40 focus:ring-2 focus:ring-[#0012FF]/10"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="min-h-0 flex-1 overflow-y-auto bg-[#FAFBFC] px-4 py-3">
+                {list.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-gray-200 bg-white px-6 py-16 text-center">
+                    <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#EEF0FF] text-[#0012FF]">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                      </svg>
+                    </div>
+                    <p className="text-sm font-semibold text-gray-800">No participants yet</p>
+                    <p className="mt-1 text-xs text-gray-400">Ticket buyers will appear here after purchase.</p>
+                  </div>
+                ) : filteredParticipants.length === 0 ? (
+                  <div className="rounded-2xl border border-gray-100 bg-white px-6 py-12 text-center text-sm text-gray-400">
+                    No matches for “{participantSearch.trim()}”
+                  </div>
+                ) : (
+                  <ul className="space-y-2.5">
+                    {filteredParticipants.map((p) => (
+                      <li
+                        key={p.userId}
+                        className={`flex items-center gap-3 rounded-2xl border bg-white px-3.5 py-3 shadow-sm transition-colors ${
+                          p.isMuted ? 'border-amber-100 bg-amber-50/40' : 'border-gray-100'
+                        }`}
+                      >
+                        <div className="relative shrink-0">
+                          <div className="h-12 w-12 overflow-hidden rounded-full bg-gray-100 ring-2 ring-white">
+                            <img
+                              src={p.avatar || '/avatar.png'}
+                              alt=""
+                              className="h-full w-full object-cover"
+                            />
+                          </div>
+                          {p.isMuted && (
+                            <span className="absolute -right-0.5 -bottom-0.5 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-amber-500 text-white">
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                <path d="M11 5L6 9H2v6h4l5 4V5z" />
+                                <line x1="23" y1="9" x2="17" y2="15" />
+                                <line x1="17" y1="9" x2="23" y2="15" />
+                              </svg>
+                            </span>
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="truncate text-sm font-semibold text-gray-900">{p.name}</p>
+                            <span className="inline-flex max-w-full truncate rounded-md bg-[#EEF0FF] px-2 py-0.5 text-[10px] font-semibold text-[#0012FF]">
+                              {p.tierTitle}
+                              {p.quantity > 1 ? ` · ×${p.quantity}` : ''}
+                            </span>
+                          </div>
+                          <p className="mt-0.5 truncate text-xs text-gray-400">{p.email || 'No email'}</p>
+                          {p.isMuted && (
+                            <p className="mt-1 text-[10px] font-medium text-amber-600">Muted</p>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          disabled={mutingActionKey === p.userId}
+                          onClick={() => {
+                            if (p.isMuted) handleMuteParticipant(p.userId, true);
+                            else setMuteConfirmUser(p);
+                          }}
+                          className={`shrink-0 rounded-full px-3.5 py-2 text-xs font-semibold transition-all disabled:opacity-50 ${
+                            p.isMuted
+                              ? 'border border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+                              : 'bg-[#0012FF] text-white hover:bg-[#0010d0]'
+                          }`}
+                        >
+                          {mutingActionKey === p.userId
+                            ? '…'
+                            : p.isMuted
+                              ? 'Unmute'
+                              : 'Mute'}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Mute participant confirmation */}
+      {muteConfirmUser && (
+        <div
+          className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 p-4"
+          onClick={() => setMuteConfirmUser(null)}
+        >
+          <div
+            className="relative w-full max-w-[400px] rounded-[28px] bg-white p-7 text-center shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setMuteConfirmUser(null)}
+              className="absolute top-5 right-5 text-gray-400 transition-colors hover:text-gray-600"
+              aria-label="Close"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-50 text-amber-600">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M11 5L6 9H2v6h4l5 4V5z" />
+                <line x1="23" y1="9" x2="17" y2="15" />
+                <line x1="17" y1="9" x2="23" y2="15" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-gray-900">Mute this participant?</h3>
+            <p className="mx-auto mt-2 max-w-[280px] text-sm leading-relaxed text-gray-400">
+              Do you want to mute <span className="font-semibold text-gray-700">{muteConfirmUser.name}</span>?
+              They won’t be able to send messages in this event chat.
+            </p>
+            <div className="mt-6 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setMuteConfirmUser(null)}
+                className="flex-1 rounded-full border border-gray-200 bg-white py-3 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmMuteParticipant}
+                disabled={mutingActionKey === muteConfirmUser.userId}
+                className="flex-1 rounded-full bg-[#0012FF] py-3 text-sm font-semibold text-white shadow-lg shadow-[#0012FF]/20 transition-all hover:bg-[#0010d0] disabled:opacity-50"
+              >
+                {mutingActionKey === muteConfirmUser.userId ? 'Muting…' : 'Mute'}
+              </button>
+            </div>
           </div>
         </div>
       )}

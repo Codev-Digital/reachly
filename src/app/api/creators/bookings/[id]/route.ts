@@ -6,6 +6,7 @@ import connectDB from '@/lib/mongodb';
 import Booking from '@/models/Booking';
 import User from '@/models/User';
 import { checkSessionModificationWindow, checkNewSessionTime, parseDateToNoonUTC } from '@/lib/time';
+import SessionType from '@/models/SessionType';
 
 export async function PUT(request: NextRequest, context: { params: Promise<{ id: string }> }) {
     try {
@@ -33,8 +34,8 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
         }
 
         const body = await request.json();
-        const { status, selectedDate, selectedTime, isLocked } = body;
-        
+        const { status, selectedDate, selectedTime, isLocked, startMeeting, endMeeting } = body;
+
         if (status && !['confirmed', 'cancelled', 'completed'].includes(status)) {
             return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
         }
@@ -126,13 +127,95 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
         if (selectedDate) {
             updatePayload.scheduledDate = parseDateToNoonUTC(selectedDate, timeZone);
             updatePayload.isRescheduled = true;
+            // New slot — creator must start again
+            updatePayload.meetingStartedAt = null;
+            updatePayload.meetingEndsAt = null;
+            updatePayload.meetingEndedAt = null;
         }
         if (selectedTime) {
             updatePayload.scheduledTime = selectedTime;
             updatePayload.isRescheduled = true;
+            updatePayload.meetingStartedAt = null;
+            updatePayload.meetingEndsAt = null;
+            updatePayload.meetingEndedAt = null;
         }
         if (typeof isLocked === 'boolean') {
             updatePayload.isLocked = isLocked;
+        }
+
+        let meetingMeta: {
+            meetingStartedAt?: Date;
+            meetingEndsAt?: Date | null;
+            durationMins?: number;
+            bufferMins?: number;
+            totalMeetingMins?: number;
+        } = {};
+
+        if (startMeeting === true) {
+            if (booking.status === 'cancelled' || booking.status === 'completed') {
+                return NextResponse.json(
+                    { error: 'This session cannot be started.' },
+                    { status: 400 }
+                );
+            }
+            if (booking.meetingEndedAt) {
+                return NextResponse.json(
+                    { error: 'This meeting has already ended.' },
+                    { status: 400 }
+                );
+            }
+            if (!booking.meetingUrl) {
+                return NextResponse.json(
+                    { error: 'Meeting link is not available yet.' },
+                    { status: 400 }
+                );
+            }
+
+            const sessionType = await SessionType.findById(booking.sessionTypeId)
+                .select('duration bufferTime')
+                .lean();
+            const durationMins = Math.max(1, Number((sessionType as any)?.duration) || 15);
+            const bufferMins = Math.max(0, Number((sessionType as any)?.bufferTime) || 0);
+            const totalMeetingMins = durationMins + bufferMins;
+
+            if (!booking.meetingStartedAt) {
+                const startedAt = new Date();
+                const endsAt = new Date(startedAt.getTime() + totalMeetingMins * 60 * 1000);
+                updatePayload.meetingStartedAt = startedAt;
+                updatePayload.meetingEndsAt = endsAt;
+                updatePayload.meetingEndedAt = null;
+                meetingMeta = {
+                    meetingStartedAt: startedAt,
+                    meetingEndsAt: endsAt,
+                    durationMins,
+                    bufferMins,
+                    totalMeetingMins,
+                };
+            } else {
+                meetingMeta = {
+                    meetingStartedAt: booking.meetingStartedAt,
+                    meetingEndsAt: booking.meetingEndsAt || null,
+                    durationMins,
+                    bufferMins,
+                    totalMeetingMins,
+                };
+                if (!booking.meetingEndsAt) {
+                    const endsAt = new Date(
+                        new Date(booking.meetingStartedAt).getTime() + totalMeetingMins * 60 * 1000
+                    );
+                    updatePayload.meetingEndsAt = endsAt;
+                    meetingMeta.meetingEndsAt = endsAt;
+                }
+            }
+        }
+
+        if (endMeeting === true) {
+            if (!booking.meetingEndedAt) {
+                updatePayload.meetingEndedAt = new Date();
+            }
+            if (booking.status === 'confirmed' || booking.status === 'pending') {
+                updatePayload.status = 'completed';
+            }
         }
 
         const updatedBooking = await Booking.findByIdAndUpdate(
@@ -141,10 +224,21 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
             { new: true }
         ).exec();
 
-        // Notify user if booking is rescheduled or cancelled
+        // Notify user if booking is rescheduled or cancelled or meeting started
         if (booking.userId) {
             try {
                 const Notification = (await import('@/models/Notification')).default;
+
+                if (startMeeting === true && !booking.meetingStartedAt) {
+                    await new Notification({
+                        userId: booking.userId,
+                        title: 'Meeting Started',
+                        message: 'Your creator has started the meeting. You can join now.',
+                        type: 'booking',
+                        read: false,
+                        time: 'Just now',
+                    }).save();
+                }
                 
                 // Rescheduled Notification
                 if (selectedDate || selectedTime) {
@@ -183,7 +277,28 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
             }
         }
 
-        return NextResponse.json({ success: true, booking: updatedBooking || booking });
+        return NextResponse.json({
+            success: true,
+            booking: updatedBooking || booking,
+            meeting: meetingMeta.meetingStartedAt
+                ? {
+                    meetingStartedAt: meetingMeta.meetingStartedAt,
+                    meetingEndsAt: meetingMeta.meetingEndsAt,
+                    durationMins: meetingMeta.durationMins,
+                    bufferMins: meetingMeta.bufferMins,
+                    totalMeetingMins: meetingMeta.totalMeetingMins,
+                    meetingEnded: Boolean(
+                        (updatedBooking as any)?.meetingEndedAt || booking.meetingEndedAt
+                    ),
+                }
+                : endMeeting
+                    ? {
+                        meetingEnded: true,
+                        meetingEndedAt:
+                            (updatedBooking as any)?.meetingEndedAt || updatePayload.meetingEndedAt,
+                    }
+                    : undefined,
+        });
     } catch (error: any) {
         console.error('PUT /api/creators/bookings/[id] error:', error?.message ?? error, error);
         return NextResponse.json({ error: error?.message ?? 'Server error' }, { status: 500 });

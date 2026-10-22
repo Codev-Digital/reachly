@@ -14,9 +14,11 @@ import PolicyFields, {
   type PolicyErrors,
   type PolicyValues,
 } from '@/components/events/PolicyFields';
-import { emptyTicketing, type TicketingValues } from '@/lib/eventTicketing';
+import { emptyTicketing, newTierId, type EventDayData, type TicketingValues } from '@/lib/eventTicketing';
 import {
   emptyScheduleSlots,
+  emptySlot,
+  newSlotId,
   syncSlotsWithDates,
   type ScheduleSlotsValues,
 } from '@/lib/eventSlots';
@@ -78,9 +80,71 @@ function buildPayloadDates(
   });
 }
 
+function hydrateFromEvent(event: any): {
+  basicInfo: BasicInfoValues;
+  bannerUrl: string;
+  ticketing: TicketingValues;
+  scheduleSlots: ScheduleSlotsValues;
+  policy: PolicyValues;
+} {
+  const dates: string[] = [];
+  const days: Record<string, EventDayData> = {};
+  const scheduleSlots: ScheduleSlotsValues = {};
 
-export default function CreateEventPage() {
+  for (const d of event.dates || []) {
+    const iso = typeof d?.date === 'string' ? d.date : '';
+    if (!iso) continue;
+    dates.push(iso);
+    days[iso] = {
+      startHour: d.startHour || '',
+      startMinute: d.startMinute || '',
+      startPeriod: d.startPeriod === 'PM' ? 'PM' : 'AM',
+      endHour: d.endHour || '',
+      endMinute: d.endMinute || '',
+      endPeriod: d.endPeriod === 'AM' ? 'AM' : 'PM',
+      tiers: (d.tiers || []).map((t: any) => ({
+        id: newTierId(),
+        title: t.title || '',
+        price: t.price == null ? '' : String(t.price),
+        persons: t.persons == null ? '' : String(t.persons),
+        quantity: t.quantity == null ? '' : String(t.quantity),
+      })),
+      selectedTierId: null,
+    };
+    const rawSlots = d.slots || [];
+    scheduleSlots[iso] = rawSlots.length
+      ? rawSlots.map((s: any) => ({
+          id: newSlotId(),
+          description: s.description || '',
+          showDescription: Boolean(s.description),
+        }))
+      : [emptySlot()];
+  }
+
+  return {
+    basicInfo: {
+      title: event.title || '',
+      description: event.description || '',
+      banner: null,
+    },
+    bannerUrl: event.bannerUrl || '',
+    ticketing: {
+      category: event.category || '',
+      dates,
+      activeDate: dates[0] || null,
+      days,
+    },
+    scheduleSlots,
+    policy: {
+      refundPolicy: event.refundPolicy || '',
+      termsAndConditions: event.termsAndConditions || '',
+    },
+  };
+}
+
+export function EventEditor({ eventId }: { eventId?: string }) {
   const router = useRouter();
+  const isEdit = Boolean(eventId);
   const [displayName, setDisplayName] = useState('');
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [openSection, setOpenSection] = useState<SectionId | null>('basic');
@@ -91,9 +155,10 @@ export default function CreateEventPage() {
   const [scheduleSlots, setScheduleSlots] = useState<ScheduleSlotsValues>(emptyScheduleSlots());
   const [policy, setPolicy] = useState<PolicyValues>(emptyPolicy());
   const [policyErrors, setPolicyErrors] = useState<PolicyErrors>({});
-  const [savedEventId, setSavedEventId] = useState<string | null>(null);
+  const [savedEventId, setSavedEventId] = useState<string | null>(eventId || null);
   const [bannerUrl, setBannerUrl] = useState('');
   const [saving, setSaving] = useState(false);
+  const [loadingEvent, setLoadingEvent] = useState(isEdit);
 
   useEffect(() => {
     const cachedName = localStorage.getItem('creator_display_name');
@@ -114,6 +179,43 @@ export default function CreateEventPage() {
     })();
   }, []);
 
+  useEffect(() => {
+    if (!eventId) return;
+    let cancelled = false;
+
+    (async () => {
+      setLoadingEvent(true);
+      try {
+        const res = await fetch(`/api/creators/events/${eventId}`);
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          toast.error(data.error || 'Could not load this event.');
+          router.replace('/creators/events');
+          return;
+        }
+        if (cancelled) return;
+        const hydrated = hydrateFromEvent(data.event);
+        setSavedEventId(data.event.id);
+        setBasicInfo(hydrated.basicInfo);
+        setBannerUrl(hydrated.bannerUrl);
+        setTicketing(hydrated.ticketing);
+        setScheduleSlots(hydrated.scheduleSlots);
+        setPolicy(hydrated.policy);
+        setOpenSection('basic');
+      } catch (err) {
+        console.error(err);
+        toast.error('Could not load this event.');
+        router.replace('/creators/events');
+      } finally {
+        if (!cancelled) setLoadingEvent(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [eventId, router]);
+
   // Keep schedule rows in sync when dates are added or removed in Ticketing
   const handleTicketingChange = (next: TicketingValues) => {
     setTicketing(next);
@@ -133,7 +235,7 @@ export default function CreateEventPage() {
   };
 
   const saveEvent = async (status: 'draft' | 'published') => {
-    if (saving) return;
+    if (saving || loadingEvent) return;
     if (!basicInfo.title.trim()) {
       setBasicErrors({ title: 'Event title is required.' });
       setOpenSection('basic');
@@ -184,9 +286,9 @@ export default function CreateEventPage() {
       }
 
       if (status === 'draft') {
-        toast.success('Draft saved');
+        toast.success(isEdit ? 'Changes saved as draft' : 'Draft saved');
       } else {
-        toast.success('Event published');
+        toast.success(isEdit ? 'Event updated' : 'Event published');
         router.push('/creators/events');
       }
     } catch (err) {
@@ -215,86 +317,109 @@ export default function CreateEventPage() {
             Back to Events
           </Link>
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-black tracking-tight font-sans">
-            Create Your Next <span className="text-[#0012FF]">Event</span>{' '}
-            <span className="text-gray-400 font-normal text-base sm:text-lg">in simple steps</span>
+            {isEdit ? (
+              <>
+                Edit Your <span className="text-[#0012FF]">Event</span>{' '}
+                <span className="text-gray-400 font-normal text-base sm:text-lg">in simple steps</span>
+              </>
+            ) : (
+              <>
+                Create Your Next <span className="text-[#0012FF]">Event</span>{' '}
+                <span className="text-gray-400 font-normal text-base sm:text-lg">in simple steps</span>
+              </>
+            )}
           </h1>
         </div>
 
-        <div className="flex flex-col gap-4">
-          {SECTIONS.map((section) => (
-            <EventFormSection
-              key={section.id}
-              title={section.title}
-              description={section.description}
-              open={openSection === section.id}
-              onToggle={() => toggle(section.id)}
-            >
-              {section.id === 'basic' ? (
-                <BasicInfoFields
-                  values={basicInfo}
-                  errors={basicErrors}
-                  bannerUrl={bannerUrl}
-                  onClearBannerUrl={() => setBannerUrl('')}
-                  onChange={(patch) => setBasicInfo((prev) => ({ ...prev, ...patch }))}
-                  clearError={(key) =>
-                    setBasicErrors((prev) => (prev[key] ? { ...prev, [key]: undefined } : prev))
-                  }
-                />
-              ) : section.id === 'ticketing' ? (
-                <TicketingFields values={ticketing} onChange={handleTicketingChange} />
-              ) : section.id === 'slots' ? (
-                <ScheduleSlotsFields
-                  dates={ticketing.dates}
-                  category={ticketing.category}
-                  days={ticketing.days}
-                  values={scheduleSlots}
-                  onChange={setScheduleSlots}
-                />
-              ) : (
-                <PolicyFields
-                  values={policy}
-                  errors={policyErrors}
-                  onChange={(patch) => setPolicy((prev) => ({ ...prev, ...patch }))}
-                  clearError={(key) =>
-                    setPolicyErrors((prev) => (prev[key] ? { ...prev, [key]: undefined } : prev))
-                  }
-                />
-              )}
-            </EventFormSection>
-          ))}
-        </div>
-
-        {/* Footer actions from the Policy design */}
-        <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
-          <button
-            type="button"
-            onClick={goBack}
-            className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-[#e2e2e2] bg-white px-6 py-3 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-50"
-          >
-            <ArrowLeft size={14} />
-            Back
-          </button>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={saveDraft}
-              disabled={saving}
-              className="cursor-pointer rounded-full border border-[#0012FF] disabled:cursor-not-allowed disabled:opacity-60 bg-white px-6 py-3 text-sm font-semibold text-[#0012FF] transition-colors hover:bg-[#0012FF]/5"
-            >
-              {saving ? 'Saving…' : 'Save as Draft'}
-            </button>
-            <button
-              type="button"
-              onClick={publishEvent}
-              disabled={saving}
-              className="cursor-pointer rounded-full bg-[#0012FF] disabled:cursor-not-allowed disabled:opacity-60 px-6 py-3 text-sm font-semibold text-white shadow-md transition-colors hover:bg-[#0010d0]"
-            >
-              {saving ? 'Publishing…' : 'Publish Event'}
-            </button>
+        {loadingEvent ? (
+          <div className="space-y-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-24 w-full animate-pulse rounded-[12px] bg-gray-200" />
+            ))}
           </div>
-        </div>
+        ) : (
+          <>
+            <div className="flex flex-col gap-4">
+              {SECTIONS.map((section) => (
+                <EventFormSection
+                  key={section.id}
+                  title={section.title}
+                  description={section.description}
+                  open={openSection === section.id}
+                  onToggle={() => toggle(section.id)}
+                >
+                  {section.id === 'basic' ? (
+                    <BasicInfoFields
+                      values={basicInfo}
+                      errors={basicErrors}
+                      bannerUrl={bannerUrl}
+                      onClearBannerUrl={() => setBannerUrl('')}
+                      onChange={(patch) => setBasicInfo((prev) => ({ ...prev, ...patch }))}
+                      clearError={(key) =>
+                        setBasicErrors((prev) => (prev[key] ? { ...prev, [key]: undefined } : prev))
+                      }
+                    />
+                  ) : section.id === 'ticketing' ? (
+                    <TicketingFields values={ticketing} onChange={handleTicketingChange} />
+                  ) : section.id === 'slots' ? (
+                    <ScheduleSlotsFields
+                      dates={ticketing.dates}
+                      category={ticketing.category}
+                      days={ticketing.days}
+                      values={scheduleSlots}
+                      onChange={setScheduleSlots}
+                    />
+                  ) : (
+                    <PolicyFields
+                      values={policy}
+                      errors={policyErrors}
+                      onChange={(patch) => setPolicy((prev) => ({ ...prev, ...patch }))}
+                      clearError={(key) =>
+                        setPolicyErrors((prev) => (prev[key] ? { ...prev, [key]: undefined } : prev))
+                      }
+                    />
+                  )}
+                </EventFormSection>
+              ))}
+            </div>
+
+            {/* Footer actions from the Policy design */}
+            <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={goBack}
+                className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-[#e2e2e2] bg-white px-6 py-3 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-50"
+              >
+                <ArrowLeft size={14} />
+                Back
+              </button>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={saveDraft}
+                  disabled={saving}
+                  className="cursor-pointer rounded-full border border-[#0012FF] disabled:cursor-not-allowed disabled:opacity-60 bg-white px-6 py-3 text-sm font-semibold text-[#0012FF] transition-colors hover:bg-[#0012FF]/5"
+                >
+                  {saving ? 'Saving…' : 'Save as Draft'}
+                </button>
+                <button
+                  type="button"
+                  onClick={publishEvent}
+                  disabled={saving}
+                  className="cursor-pointer rounded-full bg-[#0012FF] disabled:cursor-not-allowed disabled:opacity-60 px-6 py-3 text-sm font-semibold text-white shadow-md transition-colors hover:bg-[#0010d0]"
+                >
+                  {saving ? (isEdit ? 'Updating…' : 'Publishing…') : isEdit ? 'Update Event' : 'Publish Event'}
+                </button>
+              </div>
+            </div>
+          </>
+        )}
       </main>
     </div>
   );
+}
+
+export default function CreateEventPage() {
+  return <EventEditor />;
 }

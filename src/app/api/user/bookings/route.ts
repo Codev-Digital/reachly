@@ -156,6 +156,7 @@ export async function GET(request: NextRequest) {
                 tags: [displayStatus],
                 ref: `RCH-${bIdStr.slice(-8).toUpperCase()}`,
                 duration: `${booking.sessionTypeId?.duration || 0} minutes`,
+                durationMins: Number(booking.sessionTypeId?.duration) || 15,
                 price: pkgLabels.get(bIdStr) || `PKR ${booking.finalPrice}`,
                 paymentAmount: pkgPaid.has(bIdStr) ? pkgPaid.get(bIdStr) : booking.finalPrice,
                 paymentMethod: booking.paymentMethod || 'Guest',
@@ -169,6 +170,14 @@ export async function GET(request: NextRequest) {
                 rescheduleStatus: booking.rescheduleRequest?.status,
                 isLocked: booking.isLocked !== undefined ? booking.isLocked : !lastMsgDoc,
                 meetingUrl: booking.meetingUrl,
+                meetingStarted: Boolean(booking.meetingStartedAt),
+                meetingEnded: Boolean(
+                    booking.meetingEndedAt ||
+                        booking.status === 'completed' ||
+                        (booking.meetingEndsAt &&
+                            new Date(booking.meetingEndsAt).getTime() <= Date.now())
+                ),
+                meetingEndsAt: booking.meetingEndsAt || null,
                 bookingRef: booking.bookingRef,
                 lastMessage: lastMsgDoc ? lastMsgDoc.content : "",
                 lastMessageTime: lastMsgDoc ? lastMsgDoc.createdAt : null,
