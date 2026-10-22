@@ -278,7 +278,7 @@ export default function UsersPage() {
         {/* Table Content */}
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[800px]">
-            <thead>
+            <thead className="bg-white">
               <tr className="border-b border-gray-200">
                 <th className="py-4 px-4 text-xs font-semibold text-gray-500">User ID</th>
                 <th className="py-4 px-4 text-xs font-semibold text-gray-500">User</th>
@@ -289,7 +289,7 @@ export default function UsersPage() {
                 <th className="py-4 px-4 text-xs font-semibold text-gray-500 text-center">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-200 bg-[#F8F8F8] border-b border-gray-200">
               {loading ? (
                 <tr>
                   <td colSpan={7} className="py-8 text-center text-sm font-semibold text-gray-400">
@@ -301,7 +301,7 @@ export default function UsersPage() {
                   <tr
                     key={user.id}
                     onClick={() => openDetail(user)}
-                    className="hover:bg-gray-50/70 transition-colors cursor-pointer"
+                    className="hover:bg-[#EFEFEF] transition-colors cursor-pointer"
                   >
                     {/* User ID */}
                     <td className="py-4 px-4 text-sm font-medium text-gray-500">{user.id}</td>

@@ -345,7 +345,7 @@ export default function AdminCreatorsPage() {
         {/* Table Content */}
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[800px]">
-            <thead>
+            <thead className="bg-white">
               <tr className="border-b border-gray-200">
                 <th className="py-4 px-4 text-xs font-semibold text-gray-500">Creator ID</th>
                 <th className="py-4 px-4 text-xs font-semibold text-gray-500">Creator</th>
@@ -357,7 +357,7 @@ export default function AdminCreatorsPage() {
                 <th className="py-4 px-4 text-xs font-semibold text-gray-500">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-200 bg-[#F8F8F8] border-b border-gray-200">
               {loading ? (
                 <tr>
                   <td colSpan={8} className="py-8 text-center text-sm font-semibold text-gray-400">
@@ -369,7 +369,7 @@ export default function AdminCreatorsPage() {
                   <tr
                     key={creator.id}
                     onClick={() => openDetail(creator)}
-                    className="hover:bg-gray-50/70 transition-colors cursor-pointer"
+                    className="hover:bg-[#EFEFEF] transition-colors cursor-pointer"
                   >
                     {/* Creator ID */}
                     <td className="py-4 px-4 text-sm font-medium text-gray-500">{creator.id}</td>

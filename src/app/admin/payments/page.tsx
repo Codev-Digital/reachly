@@ -264,7 +264,7 @@ export default function AdminPaymentsPage() {
         {/* Table Content */}
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[800px]">
-            <thead>
+            <thead className="bg-white">
               <tr className="border-b border-gray-200">
                 <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Transaction ID</th>
                 <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">User</th>
@@ -277,13 +277,13 @@ export default function AdminPaymentsPage() {
                 <th className="py-4 px-4 text-xs font-bold text-gray-400 text-center uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-200 bg-[#F8F8F8] border-b border-gray-200">
               {filteredPayments.length > 0 ? (
                 filteredPayments.map((payment) => (
                   <tr
                     key={payment.id}
                     onClick={() => openDetail(payment)}
-                    className="hover:bg-gray-50/70 transition-colors cursor-pointer"
+                    className="hover:bg-[#EFEFEF] transition-colors cursor-pointer"
                   >
                     {/* ID */}
                     <td className="py-4 px-4 text-sm font-semibold text-gray-500">{payment.id}</td>
