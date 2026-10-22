@@ -773,76 +773,12 @@ export default function ExploreCreatorsPage() {
             </button>
           </div>
 
-          {/* Right Action Buttons: Favourites, Saved & Filter */}
+          {/* Right Action Buttons: Filter only */}
           <div className="flex items-center gap-2 shrink-0">
-            {/* Favourites tab — heart */}
-            <button
-              onClick={() => {
-                if (!isAuthenticated) {
-                  setLoginCallbackUrl('');
-                  setLoginModalMode('favourite');
-                  setShowLoginModal(true);
-                  return;
-                }
-                const next = !showFavouritesOnly;
-                setShowFavouritesOnly(next);
-                if (next) setShowSavedOnly(false);
-                setSelectedCategory('all');
-                setCurrentPage(1);
-              }}
-              className={`h-[40px] px-3 sm:px-4 rounded-[8px] flex items-center gap-1.5 text-xs font-semibold whitespace-nowrap transition-all border cursor-pointer ${
-                showFavouritesOnly
-                  ? 'bg-red-500 text-white border-red-500'
-                  : 'bg-white text-[#6B7280] border-[#E5E7EB] hover:border-red-400 hover:text-red-500'
-              }`}
-            >
-              <svg className="w-4 h-4" fill={showFavouritesOnly ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-              </svg>
-              <span>Favourites</span>
-              {isAuthenticated && favourites.length > 0 && (
-                <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none ${showFavouritesOnly ? 'bg-white/25 text-white' : 'bg-red-100 text-red-500'}`}>
-                  {favourites.length}
-                </span>
-              )}
-            </button>
-
-            {/* Saved tab — bookmark */}
-            <button
-              onClick={() => {
-                if (!isAuthenticated) {
-                  setLoginCallbackUrl('');
-                  setLoginModalMode('favourite');
-                  setShowLoginModal(true);
-                  return;
-                }
-                const next = !showSavedOnly;
-                setShowSavedOnly(next);
-                if (next) setShowFavouritesOnly(false);
-                setSelectedCategory('all');
-                setCurrentPage(1);
-              }}
-              className={`h-[40px] px-3 sm:px-4 rounded-[8px] flex items-center gap-1.5 text-xs font-semibold whitespace-nowrap transition-all border cursor-pointer ${
-                showSavedOnly
-                  ? 'bg-[#0012FF] text-white border-[#0012FF]'
-                  : 'bg-white text-[#6B7280] border-[#E5E7EB] hover:border-[#0012FF]/40 hover:text-[#0012FF]'
-              }`}
-            >
-              <svg className="w-4 h-4" fill={showSavedOnly ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-              </svg>
-              <span>Saved</span>
-              {isAuthenticated && saved.length > 0 && (
-                <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none ${showSavedOnly ? 'bg-white/25 text-white' : 'bg-[#EEF2FF] text-[#0012FF]'}`}>
-                  {saved.length}
-                </span>
-              )}
-            </button>
-
             {/* Filter */}
             <button
               onClick={() => setShowFilterPanel(!showFilterPanel)}
-              className={`h-[40px] px-3 sm:px-4 rounded-[8px] flex items-center gap-1.5 text-xs font-semibold whitespace-nowrap border transition-all cursor-pointer ${
+              className={`h-[40px] px-3.5 sm:px-4 rounded-[8px] flex items-center gap-1.5 text-xs font-semibold whitespace-nowrap border transition-all cursor-pointer ${
                 showFilterPanel
                   ? 'bg-[#0012FF] text-white border-[#0012FF]'
                   : 'bg-white text-[#6B7280] border-[#E5E7EB] hover:border-[#0012FF]/40 hover:text-[#0012FF]'
