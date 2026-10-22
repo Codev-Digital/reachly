@@ -105,6 +105,8 @@ function formatUser(user: any, request?: any) {
     email: user.email,
     joinedDate,
     time,
+    deletedDate,
+    deletedTime,
     status,
     avatar: user.profilePhoto || '/avatar.png',
     city: request?.city || '',

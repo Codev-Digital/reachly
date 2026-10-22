@@ -110,6 +110,8 @@ export async function GET(req: NextRequest) {
         email: user.email,
         joinedDate,
         time,
+        deletedDate,
+        deletedTime,
         status,
         avatar: profile?.profilePhoto || user.profilePhoto || '/avatar.png',
         coverPhoto: profile?.coverPhoto || '',
