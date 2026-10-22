@@ -4,7 +4,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
 import Review from '@/models/Review';
-import ReviewReport from '@/models/ReviewReport';
+import ReviewReport, { type ReviewReportStatus } from '@/models/ReviewReport';
 import User from '@/models/User';
 import CreatorProfile from '@/models/CreatorProfile';
 
@@ -13,6 +13,8 @@ function isAdmin(email?: string | null) {
   const adminEmails = ['abdullahgotaccess@gmail.com', 'admin@reachly.com'];
   return adminEmails.includes(email.toLowerCase());
 }
+
+const REPORT_STATUSES: ReviewReportStatus[] = ['pending', 'verified', 'dismissed'];
 
 /** GET — review reports for admin. Supports ?status=&limit= */
 export async function GET(req: NextRequest) {
@@ -25,11 +27,18 @@ export async function GET(req: NextRequest) {
     await connectDB();
 
     const url = new URL(req.url);
-    const status = url.searchParams.get('status') || 'pending';
+    const statusParam = url.searchParams.get('status') || 'pending';
     const limitParam = url.searchParams.get('limit');
     const limit = limitParam ? Math.max(1, Math.min(100, Number(limitParam) || 0)) : null;
 
-    const filter = status === 'all' ? {} : { status };
+    const filter: { status?: ReviewReportStatus } =
+      statusParam === 'all'
+        ? {}
+        : {
+            status: REPORT_STATUSES.includes(statusParam as ReviewReportStatus)
+              ? (statusParam as ReviewReportStatus)
+              : 'pending',
+          };
     const total = await ReviewReport.countDocuments(filter);
 
     let query = ReviewReport.find(filter).sort({ createdAt: -1 });

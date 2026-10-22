@@ -118,7 +118,7 @@ export async function POST(req: NextRequest) {
         revieweeId,
         rating,
         comment,
-        sessionDurationMins,
+        ...(sessionDurationMins != null ? { sessionDurationMins } : {}),
       });
     }
 

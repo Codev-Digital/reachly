@@ -149,7 +149,7 @@ export default function DailyCall({
   useEffect(() => {
     if (!containerRef.current) return;
     let cancelled = false;
-    let newCallFrame: DailyCallType | null = DailyIframe.getCallInstance();
+    let newCallFrame: DailyCallType | null = DailyIframe.getCallInstance() ?? null;
 
     const initFrame = async () => {
       try {

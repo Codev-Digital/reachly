@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     if (conv.creatorId.toString() === user._id.toString()) {
       conv.creatorClearedAt = new Date();
       conv.userClearedAt = new Date();
-    } else if (conv.userId.toString() === user._id.toString()) {
+    } else if (conv.userId && conv.userId.toString() === user._id.toString()) {
       conv.userClearedAt = new Date();
     } else {
       return NextResponse.json({ error: 'Only participants can clear this chat' }, { status: 403 });

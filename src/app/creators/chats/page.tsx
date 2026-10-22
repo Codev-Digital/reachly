@@ -908,7 +908,7 @@ export default function ChatsPage() {
         const file = new File([audioBlob], 'Voice message.webm', { type: 'audio/webm' });
 
         setIsUploading(true);
-        setUploadFile(file);
+        setUploadFiles([file]);
         setUploadProgress(0);
         setUploadError(false);
 
@@ -977,7 +977,7 @@ export default function ChatsPage() {
                 })
             );
           }
-          setUploadFile(null);
+          setUploadFiles([]);
         } catch (uploadErr) {
           console.error('Voice upload failed:', uploadErr);
           setUploadError(true);
