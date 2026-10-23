@@ -11,7 +11,9 @@ export interface AdminUser {
   email: string;
   joinedDate: string;
   time: string;
-  status: 'Active' | 'Pending' | 'Inactive' | 'Suspended' | 'Rejected';
+  deletedDate?: string;
+  deletedTime?: string;
+  status: 'Active' | 'Pending' | 'Inactive' | 'Suspended' | 'Rejected' | 'Deleted';
   avatar: string;
   city?: string;
   country?: string;
@@ -28,6 +30,7 @@ const statusColor: Record<AdminUser['status'], string> = {
   Inactive: 'text-rose-500',
   Suspended: 'text-gray-500',
   Rejected: 'text-rose-500',
+  Deleted: 'text-red-600',
 };
 
 const Field = ({ label, value, className = '' }: { label: string; value?: string; className?: string }) => (
@@ -116,18 +119,28 @@ export default function UserDetailDialog({
                   Suspend User
                 </button>
               )}
-              {(user.status === 'Suspended' || user.status === 'Rejected') && (
+              {(user.status === 'Suspended' || user.status === 'Rejected' || user.status === 'Deleted') && (
                 <button disabled={busy} onClick={() => run('activate')} className={`${btn} bg-emerald-600 hover:bg-emerald-700`}>
-                  Re-activate User
+                  {user.status === 'Deleted' ? 'Restore User' : 'Re-activate User'}
                 </button>
               )}
-              <button
-                disabled={busy}
-                onClick={() => onDelete(user)}
-                className="px-5 py-2 bg-red-50 border border-red-200 text-red-600 rounded-full text-xs sm:text-sm font-semibold hover:bg-red-100 hover:border-red-300 transition-all cursor-pointer ml-auto"
-              >
-                Delete Account
-              </button>
+              {user.status !== 'Deleted' && (
+
+                <button
+
+                  disabled={busy}
+
+                  onClick={() => onDelete(user)}
+
+                  className="px-5 py-2 bg-red-50 border border-red-200 text-red-600 rounded-full text-xs sm:text-sm font-semibold hover:bg-red-100 hover:border-red-300 transition-all cursor-pointer ml-auto"
+
+                >
+
+                  Delete Account
+
+                </button>
+
+              )}
             </div>
           </>
         )}

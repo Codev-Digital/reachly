@@ -17,7 +17,7 @@ interface Creator {
   joinedDate: string;
   time: string;
   eventsCreated: string;
-  status: 'Active' | 'Pending' | 'Inactive' | 'Suspended' | 'Rejected';
+  status: 'Active' | 'Pending' | 'Inactive' | 'Suspended' | 'Rejected' | 'Deleted';
   avatar: string;
   city?: string;
   country?: string;

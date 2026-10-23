@@ -254,10 +254,35 @@ export default function CreatorOnboardingStep2() {
 
     const missing = getMissingFields();
     if (missing.length > 0) {
-      setError(
-        `Please fill in: ${missing.map(k => REQUIRED[k]).join(', ')}`
-      );
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      const photosMissing: string[] = [];
+      if (missing.includes('profilePhoto')) photosMissing.push('Profile photo');
+      if (missing.includes('coverPhoto')) photosMissing.push('Cover photo');
+
+      const textFieldsMissing = missing
+        .filter(k => k !== 'profilePhoto' && k !== 'coverPhoto')
+        .map(k => REQUIRED[k]);
+
+      let errorMessage = '';
+      if (photosMissing.length > 0 && textFieldsMissing.length === 0) {
+        if (photosMissing.length === 2) {
+          errorMessage = 'Please upload both your Profile photo and Cover photo before continuing.';
+        } else {
+          errorMessage = `Please upload your ${photosMissing[0]} before continuing.`;
+        }
+      } else if (photosMissing.length > 0 && textFieldsMissing.length > 0) {
+        errorMessage = `Please upload your ${photosMissing.join(' and ')} and fill in: ${textFieldsMissing.join(', ')}.`;
+      } else {
+        errorMessage = `Please fill in: ${textFieldsMissing.join(', ')}.`;
+      }
+
+      setError(errorMessage);
+
+      if (photosMissing.length > 0) {
+        const photoSection = document.getElementById('photo-upload-section');
+        photoSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
       return;
     }
 
@@ -364,25 +389,52 @@ export default function CreatorOnboardingStep2() {
         {error && <FormError className="mb-6">{error}</FormError>}
 
         {/* ─── Cover and Profile Photos ───────────────────────────────────────────────── */}
-        <div className="bg-white rounded-2xl p-4 sm:p-8 mb-6">
-          <FormLabel required className="mb-3">Cover &amp; Profile Photo</FormLabel>
+        <div id="photo-upload-section" className="bg-white rounded-2xl p-4 sm:p-8 mb-6 scroll-mt-6">
+          <div className="flex items-center justify-between mb-3">
+            <FormLabel required className="mb-0">Cover &amp; Profile Photo</FormLabel>
+            {isFieldInvalid('coverPhoto') && (
+              <FormError>Cover photo is required</FormError>
+            )}
+          </div>
+
           {/* Cover Photo */}
           <div className="relative mb-16 sm:mb-20">
-            <label className="block">
-              <div className={`w-full h-48 bg-gradient-to-r from-gray-100 to-gray-200 rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all ${coverPhotoPreview ? 'bg-transparent' : ''} ${isFieldInvalid('coverPhoto') ? 'border-2 border-red-500' : ''}`}>
+            <label className="block relative group">
+              <div
+                className={`w-full h-48 rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all overflow-hidden ${
+                  coverPhotoPreview
+                    ? 'bg-transparent'
+                    : isFieldInvalid('coverPhoto')
+                    ? 'bg-red-50/50 border-2 border-dashed border-red-500'
+                    : 'bg-gradient-to-r from-gray-100 to-gray-200 border-2 border-dashed border-gray-300 hover:border-[#0012FF]/60'
+                }`}
+              >
                 {coverPhotoPreview ? (
-                  <img src={coverPhotoPreview} alt="Cover" className="w-full h-full object-cover rounded-2xl" />
+                  <>
+                    <img src={coverPhotoPreview} alt="Cover" className="w-full h-full object-cover rounded-2xl" />
+                    <div className="absolute top-3 right-3 bg-black/60 hover:bg-black/80 text-white text-xs font-semibold px-3 py-1.5 rounded-full backdrop-blur-xs flex items-center gap-1.5 transition-all shadow-sm">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                      </svg>
+                      Change Cover
+                    </div>
+                  </>
                 ) : (
                   <div className="flex flex-col items-center gap-2">
-                    <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2">
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${isFieldInvalid('coverPhoto') ? 'bg-red-100' : 'bg-gray-200'}`}>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={isFieldInvalid('coverPhoto') ? '#EF4444' : '#0012FF'} strokeWidth="2">
                         <rect x="3" y="7" width="18" height="14" rx="3" />
                         <circle cx="12" cy="14" r="3.5" />
                         <path d="M8 7l1.5-2h5L16 7" />
                       </svg>
                     </div>
-                    <p className="text-sm font-medium text-gray-600">Upload Cover photo</p>
-                    <p className="text-xs text-gray-400">16:9 ratio recommended</p>
+                    <p className={`text-sm font-medium ${isFieldInvalid('coverPhoto') ? 'text-red-600 font-semibold' : 'text-gray-600'}`}>
+                      Upload Cover photo <span className="text-red-500">*</span>
+                    </p>
+                    <p className={`text-xs ${isFieldInvalid('coverPhoto') ? 'text-red-500 font-medium' : 'text-gray-400'}`}>
+                      {isFieldInvalid('coverPhoto') ? 'Please upload a 16:9 cover image' : '16:9 ratio recommended'}
+                    </p>
                   </div>
                 )}
               </div>
@@ -390,14 +442,28 @@ export default function CreatorOnboardingStep2() {
             </label>
 
             {/* Profile Photo - Overlapping the cover photo */}
-            <div className="absolute -bottom-12 sm:-bottom-20 left-4 sm:left-8 flex flex-row items-end gap-3 sm:gap-6">
+            <div className="absolute -bottom-14 sm:-bottom-20 left-4 sm:left-8 flex flex-row items-end gap-3 sm:gap-6">
               <div className="relative">
                 <label className="block">
-                  <div className={`w-24 h-24 sm:w-36 sm:h-36 rounded-full bg-[#FAFAFA] border-[4px] sm:border-[5px] border-white shadow-md flex items-center justify-center cursor-pointer overflow-hidden ${isFieldInvalid('profilePhoto') ? 'border-red-500' : 'border-white'}`}>
+                  <div
+                    className={`w-24 h-24 sm:w-36 sm:h-36 rounded-full bg-[#FAFAFA] flex items-center justify-center cursor-pointer overflow-hidden transition-all ${
+                      isFieldInvalid('profilePhoto')
+                        ? 'border-[4px] sm:border-[5px] border-red-500 ring-4 ring-red-100 shadow-md'
+                        : 'border-[4px] sm:border-[5px] border-white shadow-md'
+                    }`}
+                  >
                     {profilePhotoPreview ? (
                       <img src={profilePhotoPreview} alt="Profile" className="w-full h-full object-cover" />
                     ) : (
-                      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#9E9E9E" strokeWidth="1.5" className="sm:w-[56px] sm:h-[56px]">
+                      <svg
+                        width="40"
+                        height="40"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke={isFieldInvalid('profilePhoto') ? '#EF4444' : '#9E9E9E'}
+                        strokeWidth="1.5"
+                        className="sm:w-[56px] sm:h-[56px]"
+                      >
                         <circle cx="12" cy="9" r="4" />
                         <path d="M4 20c0-4 4-7 8-7s8 3 8 7" />
                       </svg>
@@ -406,24 +472,29 @@ export default function CreatorOnboardingStep2() {
                   <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleProfilePhotoChange} className="hidden" />
                 </label>
               </div>
-              <div className="flex flex-col gap-1 pb-1  sm:pb-3">
-                <label className="bg-[#0012FF]  text-white px-3 py-1.5 sm:px-5 sm:py-2 rounded-full text-[10px] sm:text-sm font-bold hover:bg-[#0010d0] transition-all shadow-md active:scale-95 w-fit flex items-center gap-2 cursor-pointer whitespace-nowrap">
-                  <span className="hidden sm:inline">Upload Profile Photo</span>
-                  <span className="sm:hidden">Upload Photo</span>
+              <div className="flex flex-col gap-1 pb-1 sm:pb-3">
+                <label
+                  className={`text-white px-3 py-1.5 sm:px-5 sm:py-2 rounded-full text-[10px] sm:text-sm font-bold transition-all shadow-md active:scale-95 w-fit flex items-center gap-2 cursor-pointer whitespace-nowrap ${
+                    isFieldInvalid('profilePhoto')
+                      ? 'bg-red-600 hover:bg-red-700'
+                      : 'bg-[#0012FF] hover:bg-[#0010d0]'
+                  }`}
+                >
+                  <span className="hidden sm:inline">Upload Profile Photo *</span>
+                  <span className="sm:hidden">Upload Photo *</span>
                   <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleProfilePhotoChange} className="hidden" />
                 </label>
                 <p className="pl-1 sm:pl-2 text-gray-400 text-[9px] sm:text-xs font-semibold whitespace-nowrap">
                   JPG or PNG, max 10MB
                 </p>
+                {isFieldInvalid('profilePhoto') && (
+                  <FormError className="pl-1 sm:pl-2 mt-0.5">
+                    Profile photo is required
+                  </FormError>
+                )}
               </div>
             </div>
           </div>
-          {(isFieldInvalid('coverPhoto') || isFieldInvalid('profilePhoto')) && (
-            <div className="space-y-2">
-              {isFieldInvalid('coverPhoto') && <FormError>Cover photo is required</FormError>}
-              {isFieldInvalid('profilePhoto') && <FormError>Profile photo is required</FormError>}
-            </div>
-          )}
         </div>
 
         {/* ─── Display Name & Username ───────────────────────────────────────────────── */}

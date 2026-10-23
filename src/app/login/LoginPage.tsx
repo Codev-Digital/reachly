@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import Image from 'next/image';
@@ -19,6 +19,20 @@ export default function LoginPage({ callbackUrl }: { callbackUrl: string }) {
   const [passwordError, setPasswordError] = useState('');
   const [loading, setLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+
+  // Load remembered email on mount
+  useEffect(() => {
+    try {
+      const savedEmail = localStorage.getItem('reachly_remember_email');
+      if (savedEmail) {
+        setEmail(savedEmail);
+        setRememberMe(true);
+      }
+    } catch {
+      /* ignore storage access issues */
+    }
+  }, []);
 
   const signupUrl = `/signup?callbackUrl=${encodeURIComponent(callbackUrl)}`;
 
@@ -80,6 +94,16 @@ export default function LoginPage({ callbackUrl }: { callbackUrl: string }) {
             setError('Unable to sign in. Please try again.');
         }
       } else {
+        try {
+          if (rememberMe) {
+            localStorage.setItem('reachly_remember_email', email.trim());
+          } else {
+            localStorage.removeItem('reachly_remember_email');
+          }
+        } catch {
+          /* ignore storage access issues */
+        }
+
         const redirectRes = await fetch('/api/user/login-redirect-info', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -182,12 +206,16 @@ export default function LoginPage({ callbackUrl }: { callbackUrl: string }) {
 
                 {/* Remember / Forgot */}
                 <div className="flex items-center justify-between pt-1">
-                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <label className="flex items-center gap-2 cursor-pointer select-none group">
                     <input
                       type="checkbox"
-                      className="w-4 h-4 rounded border-gray-300 text-[#0012FF] focus:ring-[#0012FF]"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      className="w-4 h-4 rounded border-gray-300 text-[#0012FF] focus:ring-[#0012FF] cursor-pointer accent-[#0012FF]"
                     />
-                    <span className="font-sans text-xs text-gray-500 font-medium">Remember me</span>
+                    <span className="font-sans text-xs text-gray-500 font-medium group-hover:text-gray-700 transition-colors">
+                      Remember me
+                    </span>
                   </label>
                   <button
                     type="button"

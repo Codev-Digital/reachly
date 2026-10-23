@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCallback, useEffect, useState } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { usePreloadImages } from '@/lib/usePreloadImages';
 import { EVENT_CATEGORIES } from '@/lib/eventConstants';
 
@@ -48,6 +49,7 @@ const EMPTY_KPIS: Kpis = {
 };
 
 export default function AdminEventsPage() {
+  const router = useRouter();
   usePreloadImages(['/assets/add-category-sm.webp']);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -72,6 +74,23 @@ export default function AdminEventsPage() {
   });
   const [loading, setLoading] = useState(true);
 
+  // Restore cache after hydration in useEffect to prevent SSR/hydration mismatch
+  useEffect(() => {
+    try {
+      const cachedEvents = sessionStorage.getItem('reachly_admin_events_cache');
+      const cachedKpis = sessionStorage.getItem('reachly_admin_kpis_cache');
+      if (cachedEvents) {
+        setEvents(JSON.parse(cachedEvents));
+        setLoading(false);
+      }
+      if (cachedKpis) {
+        setKpis(JSON.parse(cachedKpis));
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(searchQuery.trim()), 300);
     return () => clearTimeout(t);
@@ -83,7 +102,7 @@ export default function AdminEventsPage() {
 
   const loadEvents = useCallback(async () => {
     try {
-      setLoading(true);
+      if (events.length === 0) setLoading(true);
       const params = new URLSearchParams({
         page: String(currentPage),
         limit: '9',
@@ -98,6 +117,10 @@ export default function AdminEventsPage() {
       const data = await res.json();
       setEvents(data.events || []);
       if (data.kpis) setKpis(data.kpis);
+      try {
+        sessionStorage.setItem('reachly_admin_events_cache', JSON.stringify(data.events || []));
+        if (data.kpis) sessionStorage.setItem('reachly_admin_kpis_cache', JSON.stringify(data.kpis));
+      } catch {}
       if (data.pagination) setPagination(data.pagination);
       if (Array.isArray(data.categories) && data.categories.length > 0) {
         setCategories(data.categories);
@@ -112,6 +135,13 @@ export default function AdminEventsPage() {
   useEffect(() => {
     loadEvents();
   }, [loadEvents]);
+
+  const openEventDetail = (evt: EventItem) => {
+    try {
+      sessionStorage.setItem(`reachly_admin_active_event_${evt.id}`, JSON.stringify(evt));
+    } catch {}
+    router.push(`/admin/bookings/${evt.id}`);
+  };
 
   const handleAddEventTypeSubmit = () => {
     if (selectedEventType) {
@@ -312,7 +342,8 @@ export default function AdminEventsPage() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: idx * 0.05 }}
-              className="relative rounded-[24px] overflow-hidden shadow-sm group w-full h-64 sm:h-[280px]"
+              onClick={() => openEventDetail(evt)}
+              className="relative rounded-[24px] overflow-hidden shadow-sm group w-full h-64 sm:h-[280px] cursor-pointer"
             >
               <img
                 src={evt.image}
@@ -327,7 +358,13 @@ export default function AdminEventsPage() {
                 {evt.status}
               </span>
 
-              <button className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center hover:bg-white/30 transition-colors z-10 cursor-pointer shadow-sm">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
+                className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center hover:bg-white/30 transition-colors z-10 cursor-pointer shadow-sm"
+              >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="white" stroke="white" strokeWidth="2">
                   <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
                 </svg>
@@ -370,7 +407,14 @@ export default function AdminEventsPage() {
                     </div>
                   </div>
 
-                  <button className="shrink-0 px-4 sm:px-5 py-2 sm:py-2.5 bg-white rounded-full text-[#0012FF] text-[11px] sm:text-xs font-bold shadow-md hover:bg-gray-50 transition-colors cursor-pointer">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openEventDetail(evt);
+                    }}
+                    className="shrink-0 px-4 sm:px-5 py-2 sm:py-2.5 bg-white rounded-full text-[#0012FF] text-[11px] sm:text-xs font-bold shadow-md hover:bg-gray-50 active:scale-95 transition-all cursor-pointer"
+                  >
                     View
                   </button>
                 </div>

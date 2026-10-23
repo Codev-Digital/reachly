@@ -5,8 +5,6 @@ import { useSession } from "next-auth/react";
 import { Suspense, useEffect, useState, useRef } from "react";
 import LoadingAnimation from "@/components/LoadingAnimation";
 import WelcomeModal from "@/components/WelcomeModal";
-import Home from "../page";
-import { postAuthRoute } from "@/lib/postAuthRoute";
 
 function WelcomeContent() {
   const router = useRouter();
@@ -17,89 +15,79 @@ function WelcomeContent() {
   const [userData, setUserData] = useState<any>(null);
   const searchParams = useSearchParams();
   const ref = searchParams.get("ref");
-  const changing = searchParams.get("change") === "1";
-  console.log("Referral Code in Welcome Page:", ref); // Log the referral code to the console
   const hasSelected = useRef(false);
-
-  useEffect(() => {
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, []);
 
   useEffect(() => {
     if (status === "authenticated" && !redirected) {
       const redirectUser = async () => {
-        const res = await fetch("/api/user/me");
-        if (res.ok) {
-          const data = await res.json();
-          setUserData(data);
+        try {
+          const res = await fetch("/api/user/me");
+          if (res.ok) {
+            const data = await res.json();
+            setUserData(data);
 
-          const target = postAuthRoute({
-            ...data.user,
-            isAdmin: [
+            const user = data.user;
+            const isAdmin = [
               "admin@reachly.com",
               "abdullahgotaccess@gmail.com",
-            ].includes(data.user.email),
-          });
-          const canChange =
-            changing &&
-            data.user.approvalStatus === "none" &&
-            (data.user.onboardingStep || 0) <= 1;
-          if (target !== "/welcome" && !canChange) {
-            setRedirected(true);
-            hasSelected.current = true;
-            router.replace(target);
-            return;
+            ].includes(user?.email);
+
+            if (isAdmin) {
+              setRedirected(true);
+              hasSelected.current = true;
+              router.replace("/admin/dashboard");
+              return;
+            }
+
+            if (user?.approvalStatus === "approved" || user?.approvalStatus === "active") {
+              setRedirected(true);
+              hasSelected.current = true;
+              router.replace(user.hasCreatorProfile ? "/creators/dashboard" : "/user/dashboard");
+              return;
+            }
+
+            if (user?.approvalStatus === "pending") {
+              setRedirected(true);
+              hasSelected.current = true;
+              router.replace(user.hasCreatorProfile ? "/creators/pending-approval" : "/user/pending-approval");
+              return;
+            }
+
+            if (user?.approvalStatus === "rejected") {
+              setRedirected(true);
+              hasSelected.current = true;
+              router.replace("/rejected");
+              return;
+            }
+
+            if (user?.approvalStatus === "suspended") {
+              setRedirected(true);
+              hasSelected.current = true;
+              router.replace("/suspended");
+              return;
+            }
+
+            if (user?.approvalStatus === "deleted") {
+              setRedirected(true);
+              hasSelected.current = true;
+              router.replace("/account-deleted");
+              return;
+            }
+
+            // For unapproved users (approvalStatus === 'none'), let them stay on the welcome screen
+            // to choose their path without any automatic redirect or page reload.
           }
+        } catch (err) {
+          console.error("Error fetching user data in welcome page:", err);
+        } finally {
+          setIsLoading(false);
         }
-        setIsLoading(false);
       };
       redirectUser();
     } else if (status === "unauthenticated") {
       router.replace("/login");
     }
   }, [status, redirected, router]);
-
-  // The homepage behind the modal mounts under the loader. We keep the loader
-  // up until its hero background has painted, so the modal never opens on top
-  // of a white / half-rendered page.
-  const [bgReady, setBgReady] = useState(false);
-  const [showLoader, setShowLoader] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    let timer: ReturnType<typeof setTimeout>;
-    const start = Date.now();
-    const check = () => {
-      if (cancelled) return;
-      const img = document.querySelector(
-        'img[src*="new-bg-image"]',
-      ) as HTMLImageElement | null;
-      const loaded = !!img && img.complete && img.naturalWidth > 0;
-      const elapsed = Date.now() - start;
-      // 800ms lets the hero entrance animation finish behind the loader.
-      if ((loaded && elapsed >= 800) || elapsed >= 3000) {
-        setBgReady(true);
-      } else {
-        timer = setTimeout(check, 100);
-      }
-    };
-    check();
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, []);
-
-  const ready = !isLoading && status !== "loading" && bgReady;
-
-  useEffect(() => {
-    if (!ready) return;
-    const t = setTimeout(() => setShowLoader(false), 500);
-    return () => clearTimeout(t);
-  }, [ready]);
 
   const handleChoose = async (selected: "user" | "creator") => {
     if (hasSelected.current) return;
@@ -116,7 +104,7 @@ function WelcomeContent() {
           force: true,
         }),
       });
-      await update(); // refresh the session token so the middleware sees the new state
+      await update();
       router.push(
         selected === "creator"
           ? "/creator-onboarding/step-1"
@@ -134,28 +122,20 @@ function WelcomeContent() {
     }
   };
 
+  if (isLoading || status === "loading") {
+    return <LoadingAnimation />;
+  }
+
   const firstName =
     (userData?.user?.name || "").trim().split(" ")[0] || "there";
 
   return (
-    <div className="relative min-h-screen bg-white overflow-hidden">
-      {ready && (
-        <WelcomeModal
-          firstName={firstName}
-          onChoose={handleChoose}
-          loading={isLoadingButton}
-        />
-      )}
-
-      {showLoader && (
-        <div
-          className={`fixed inset-0 z-[9999] transition-opacity duration-500 ease-out ${
-            ready ? "opacity-0 pointer-events-none" : "opacity-100"
-          }`}
-        >
-          <LoadingAnimation />
-        </div>
-      )}
+    <div className="min-h-screen bg-[#F4F5F8] flex items-center justify-center p-4 sm:p-6 lg:p-8">
+      <WelcomeModal
+        firstName={firstName}
+        onChoose={handleChoose}
+        loading={isLoadingButton}
+      />
     </div>
   );
 }

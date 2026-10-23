@@ -7,6 +7,7 @@ import RichTextEditor from '@/components/RichTextEditor';
 import { InfoTooltip } from '@/components/ui/tooltip';
 import { SESSION_DESCRIPTION_MAX_LENGTH } from '@/lib/richText';
 import {
+  CUSTOM_BUFFER_OPTION,
   CUSTOM_DURATION_OPTION,
   DURATION_OPTIONS,
   NO_BUFFER_OPTION,
@@ -32,9 +33,14 @@ interface SessionFieldsProps {
  * Used by the Add/Edit session page and by the creator onboarding sessions step.
  */
 export default function SessionFields({ values, onChange, errors, clearError }: SessionFieldsProps) {
-  const { customDuration, duration } = values;
-  const bufferChoices = bufferChoicesFor(Number(duration));
-  const bufferOptions = [NO_BUFFER_OPTION, ...bufferChoices.map(bufferLabel)];
+  const { customDuration, duration, customBufferTime, bufferTime } = values;
+  const durationNum = Number(duration);
+  const bufferChoices = bufferChoicesFor(durationNum);
+  const bufferOptions = [
+    NO_BUFFER_OPTION,
+    ...bufferChoices.map(bufferLabel),
+    CUSTOM_BUFFER_OPTION,
+  ];
   const effectiveBuffer = effectiveBufferFor(values);
 
   const handleDurationSelect = (option: string) => {
@@ -50,6 +56,22 @@ export default function SessionFields({ values, onChange, errors, clearError }: 
       });
     }
     clearError('duration');
+  };
+
+  const handleBufferSelect = (option: string) => {
+    if (option === CUSTOM_BUFFER_OPTION) {
+      if (!customBufferTime) {
+        onChange({ customBufferTime: true, bufferTime: '' });
+      }
+    } else if (option === NO_BUFFER_OPTION) {
+      onChange({ customBufferTime: false, bufferTime: 0 });
+    } else {
+      onChange({
+        customBufferTime: false,
+        bufferTime: Number(option.replace(/\D/g, '')) || 0,
+      });
+    }
+    clearError('bufferTime');
   };
 
   return (
@@ -179,16 +201,36 @@ export default function SessionFields({ values, onChange, errors, clearError }: 
           }
           options={bufferOptions}
           // the field shows just the number; "min" sits in its own box at the end (like PKR)
-          value={effectiveBuffer === 0 ? NO_BUFFER_OPTION : String(effectiveBuffer)}
-          selectedOption={bufferLabel(effectiveBuffer)}
-          suffix="min"
-          onChange={(label) =>
-            onChange({
-              bufferTime: label === NO_BUFFER_OPTION ? 0 : Number(label.replace(/\D/g, '')) || 0,
-            })
+          value={
+            customBufferTime
+              ? String(bufferTime ?? '')
+              : effectiveBuffer === 0
+                ? NO_BUFFER_OPTION
+                : String(effectiveBuffer)
           }
-          disabled={bufferChoices.length === 0}
-          placeholder={bufferChoices.length === 0 ? 'Choose a duration first' : 'Select buffer time'}
+          selectedOption={
+            customBufferTime
+              ? CUSTOM_BUFFER_OPTION
+              : bufferLabel(effectiveBuffer)
+          }
+          suffix="min"
+          onChange={handleBufferSelect}
+          editable={customBufferTime}
+          onInputChange={(text) => {
+            onChange({ bufferTime: digitsOnly(text) });
+            clearError('bufferTime');
+          }}
+          inputMode="numeric"
+          inputMaxLength={4}
+          disabled={!durationNum || durationNum < 1}
+          placeholder={
+            !durationNum || durationNum < 1
+              ? 'Choose a duration first'
+              : customBufferTime
+                ? 'Enter buffer time'
+                : 'Select buffer time'
+          }
+          error={errors.bufferTime}
         />
       </div>
 

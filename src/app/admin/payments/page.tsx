@@ -264,8 +264,8 @@ export default function AdminPaymentsPage() {
         {/* Table Content */}
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[800px]">
-            <thead>
-              <tr className="border-b border-gray-100/80">
+            <thead className="bg-white">
+              <tr className="border-b border-gray-200">
                 <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Transaction ID</th>
                 <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">User</th>
                 <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Creator</th>
@@ -277,13 +277,13 @@ export default function AdminPaymentsPage() {
                 <th className="py-4 px-4 text-xs font-bold text-gray-400 text-center uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-gray-200 bg-[#F8F8F8] border-b border-gray-200">
               {filteredPayments.length > 0 ? (
                 filteredPayments.map((payment) => (
                   <tr
                     key={payment.id}
                     onClick={() => openDetail(payment)}
-                    className="hover:bg-gray-50/50 transition-colors cursor-pointer"
+                    className="hover:bg-[#EFEFEF] transition-colors cursor-pointer"
                   >
                     {/* ID */}
                     <td className="py-4 px-4 text-sm font-semibold text-gray-500">{payment.id}</td>
@@ -365,7 +365,7 @@ export default function AdminPaymentsPage() {
         </div>
 
         {/* Pagination Footer */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-4 border-t border-gray-50">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-4 border-t border-gray-200">
           <p className="text-xs font-semibold text-gray-400">Showing {filteredPayments.length} of {payments.length}</p>
           <div className="flex items-center gap-2">
             <button

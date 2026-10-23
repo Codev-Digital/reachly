@@ -70,6 +70,7 @@ export default function Home() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const [activeStep, setActiveStep] = useState(0);
+  const [heroHoveredBtn, setHeroHoveredBtn] = useState<'explore' | 'become' | null>(null);
   const [creatorPage, setCreatorPage] = useState(0);
   const [activeCategory, setActiveCategory] = useState('All Categories');
   const [favorites, setFavorites] = useState<string[]>(() => getStoredFavourites());
@@ -366,12 +367,27 @@ export default function Home() {
                 Book a 1 on 1 With<br />Your Favorite Creator
               </h1>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-                <Link href="/explore-creators" className="bg-white text-[#001F7D] font-sans font-semibold px-8 py-3 rounded-full text-sm hover:bg-white/90 transition-all">
+                <Link
+                  href="/explore-creators"
+                  onMouseEnter={() => setHeroHoveredBtn('explore')}
+                  onMouseLeave={() => setHeroHoveredBtn(null)}
+                  className={`font-sans font-semibold px-8 py-3 rounded-full text-sm inline-flex items-center justify-center select-none border transition-all duration-300 ${
+                    heroHoveredBtn === 'become'
+                      ? 'bg-transparent text-white border-white/60 hover:border-white shadow-none'
+                      : 'bg-white text-[#001F7D] border-white shadow-md hover:bg-white/95'
+                  }`}
+                >
                   Explore Creators
                 </Link>
                 <Link
                   href="/signup"
-                  className="btn-become-creator font-sans font-semibold px-8 py-3 rounded-full text-sm inline-flex items-center justify-center cursor-pointer"
+                  onMouseEnter={() => setHeroHoveredBtn('become')}
+                  onMouseLeave={() => setHeroHoveredBtn(null)}
+                  className={`font-sans font-semibold px-8 py-3 rounded-full text-sm inline-flex items-center justify-center cursor-pointer select-none border transition-all duration-300 ${
+                    heroHoveredBtn === 'become'
+                      ? 'bg-white text-[#001F7D] border-white shadow-md'
+                      : 'bg-transparent text-white border-white/60 hover:border-white shadow-none'
+                  }`}
                 >
                   Become a Creator
                 </Link>

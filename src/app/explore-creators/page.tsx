@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import UserNavbar from '@/components/UserNavbar';
@@ -15,7 +16,79 @@ import {
   subscribeFavourites,
 } from '@/lib/favouritesSync';
 
-const ITEMS_PER_PAGE = 8;
+const ITEMS_PER_PAGE = 12;
+
+function getCategoryIcon(name: string) {
+  const lower = (name || '').toLowerCase();
+  if (lower.includes('all')) {
+    return (
+      <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+      </svg>
+    );
+  }
+  if (lower.includes('lifestyle')) {
+    return (
+      <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+      </svg>
+    );
+  }
+  if (lower.includes('tech') || lower.includes('software') || lower.includes('developer') || lower.includes('code')) {
+    return (
+      <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+      </svg>
+    );
+  }
+  if (lower.includes('fitness') || lower.includes('health') || lower.includes('gym')) {
+    return (
+      <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+      </svg>
+    );
+  }
+  if (lower.includes('fashion') || lower.includes('style')) {
+    return (
+      <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+      </svg>
+    );
+  }
+  if (lower.includes('business') || lower.includes('marketing') || lower.includes('finance')) {
+    return (
+      <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+      </svg>
+    );
+  }
+  if (lower.includes('education')) {
+    return (
+      <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.168.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.168.477-4.5 1.253" />
+      </svg>
+    );
+  }
+  if (lower.includes('beauty')) {
+    return (
+      <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+      </svg>
+    );
+  }
+  if (lower.includes('food') || lower.includes('travel')) {
+    return (
+      <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m12.728 12.728l.707.707M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    );
+  }
+  return (
+    <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+    </svg>
+  );
+}
 
 export default function ExploreCreatorsPage() {
   const router = useRouter();
@@ -28,6 +101,29 @@ export default function ExploreCreatorsPage() {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [showFilterPanel, setShowFilterPanel] = useState(false);
+
+  const categoriesScrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+  const checkScroll = () => {
+    if (categoriesScrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = categoriesScrollRef.current;
+      setCanScrollLeft(scrollLeft > 10);
+      setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 10);
+    }
+  };
+
+  const scrollCategories = (direction: 'left' | 'right') => {
+    if (categoriesScrollRef.current) {
+      const scrollAmount = 330;
+      categoriesScrollRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth',
+      });
+      setTimeout(checkScroll, 350);
+    }
+  };
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isCreator, setIsCreator] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -274,6 +370,25 @@ export default function ExploreCreatorsPage() {
     { id: 'fashion', label: 'Fashion' },
     { id: 'business', label: 'Business' },
   ]);
+
+  const allFilterItems = useMemo(() => {
+    const items: Array<{ id: string; label: string; isFav?: boolean; isSaved?: boolean }> = [
+      ...categories,
+      { id: 'favourites', label: 'Favourites', isFav: true },
+      { id: 'saved', label: 'Saved', isSaved: true },
+    ];
+    return items;
+  }, [categories]);
+
+  useEffect(() => {
+    checkScroll();
+    const timer = setTimeout(checkScroll, 100);
+    window.addEventListener('resize', checkScroll);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', checkScroll);
+    };
+  }, [allFilterItems]);
 
   return (
     <div className="min-h-screen bg-[#F7F7FA] text-[#1a1a1a]">
@@ -536,104 +651,201 @@ export default function ExploreCreatorsPage() {
         )}
       </AnimatePresence>
 
-      {/* Page content */}
-      <main className="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-10 py-8">
-        {/* Hero text */}
-        <div className="mb-8">
-          <p className="text-gray-500 text-sm font-sans mb-1">Find the perfect match</p>
-          <h1 className="text-4xl font-black text-black font-anton tracking-tight">
-            Connect with Talented Creators <span className="text-[#0012FF] font-black italic font-anton">near you</span>
+      {/* Explore Creators Banner */}
+      <section className="relative w-full h-[180px] overflow-hidden flex flex-col items-center justify-center text-center mt-3 sm:mt-4">
+        <Image
+          src="/assets/explore-creators-banner.webp"
+          alt="Explore Creators"
+          fill
+          priority
+          className="object-cover object-top select-none pointer-events-none"
+        />
+        <div className="relative z-10 flex flex-col items-center justify-center px-4">
+          <h1 className="font-sans font-black text-3xl sm:text-4xl text-white tracking-tight">
+            Explore Creators
           </h1>
+          <div className="mt-2.5 flex items-center justify-center gap-2.5 text-xs sm:text-sm font-medium text-white/90">
+            <Link href="/" className="hover:text-white transition-colors">
+              Home
+            </Link>
+            <span className="inline-block w-4 sm:w-5 h-1 sm:h-1.5 bg-white/70 rounded-full" />
+            <span className="text-white font-medium">Explore Creators</span>
+          </div>
         </div>
+      </section>
 
-        {/* Category Filter Bar + Favourites tab */}
-        <div className="flex items-center gap-2 flex-wrap mb-8">
-          {categories.map(cat => (
+      {/* Page content */}
+      <main className="max-w-[1160px] mx-auto px-4 sm:px-6 lg:px-0 pt-8 pb-8">
+
+        {/* Category Filter Bar + Navigation Arrows + Action Filters */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-8 w-full max-w-[1160px] mx-auto">
+          {/* Categories Section (Shows 6 at a time, slides smoothly via arrow) */}
+          <div className="flex items-center gap-2">
+            <div className="relative flex items-center">
+              {/* Previous Arrow on Left (Floating overlay with fade, does NOT push pills) */}
+              {canScrollLeft && (
+                <div className="absolute left-0 top-0 bottom-0 z-20 flex items-center pr-3 bg-gradient-to-r from-[#F7F7FA] via-[#F7F7FA] to-transparent">
+                  <button
+                    type="button"
+                    onClick={() => scrollCategories('left')}
+                    className="w-10 h-10 rounded-full border border-[#0012FF] bg-white flex items-center justify-center text-[#0012FF] hover:bg-[#0012FF]/5 shrink-0 transition-all cursor-pointer shadow-xs"
+                    aria-label="Previous categories"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                </div>
+              )}
+
+              {/* Categories Display: Exact width of 6 pills, all items in track, smooth scroll */}
+              <div
+                ref={categoriesScrollRef}
+                onScroll={checkScroll}
+                className="flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth py-1 w-full max-w-[calc(100vw-120px)] sm:max-w-[645px]"
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+              >
+                {allFilterItems.map((item) => {
+                  if (item.isFav) {
+                    return (
+                      <button
+                        key="fav"
+                        type="button"
+                        onClick={() => {
+                          if (!isAuthenticated) {
+                            setLoginCallbackUrl('');
+                            setLoginModalMode('favourite');
+                            setShowLoginModal(true);
+                            return;
+                          }
+                          const next = !showFavouritesOnly;
+                          setShowFavouritesOnly(next);
+                          if (next) setShowSavedOnly(false);
+                          setSelectedCategory('all');
+                          setCurrentPage(1);
+                        }}
+                        className={`h-[40px] px-3.5 sm:px-4 shrink-0 rounded-[8px] flex items-center justify-center gap-2 text-xs font-semibold whitespace-nowrap transition-all border cursor-pointer select-none ${
+                          showFavouritesOnly
+                            ? '!bg-red-500 !text-white !border-red-500 shadow-xs'
+                            : 'bg-white text-[#6B7280] border-[#E5E7EB] hover:border-red-400 hover:text-red-500'
+                        }`}
+                      >
+                        <svg className={`w-4 h-4 shrink-0 ${showFavouritesOnly ? '!text-white' : ''}`} fill={showFavouritesOnly ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                        </svg>
+                        <span className={showFavouritesOnly ? '!text-white' : ''}>Favourites</span>
+                        {isAuthenticated && favourites.length > 0 && (
+                          <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none ${showFavouritesOnly ? 'bg-white/25 !text-white' : 'bg-red-100 text-red-500'}`}>
+                            {favourites.length}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  }
+
+                  if (item.isSaved) {
+                    return (
+                      <button
+                        key="saved"
+                        type="button"
+                        onClick={() => {
+                          if (!isAuthenticated) {
+                            setLoginCallbackUrl('');
+                            setLoginModalMode('favourite');
+                            setShowLoginModal(true);
+                            return;
+                          }
+                          const next = !showSavedOnly;
+                          setShowSavedOnly(next);
+                          if (next) setShowFavouritesOnly(false);
+                          setSelectedCategory('all');
+                          setCurrentPage(1);
+                        }}
+                        className={`h-[40px] px-3.5 sm:px-4 shrink-0 rounded-[8px] flex items-center justify-center gap-2 text-xs font-semibold whitespace-nowrap transition-all border cursor-pointer select-none ${
+                          showSavedOnly
+                            ? '!bg-[#0012FF] !text-white !border-[#0012FF] shadow-xs'
+                            : 'bg-white text-[#6B7280] border-[#E5E7EB] hover:border-[#0012FF]/40 hover:text-[#0012FF]'
+                        }`}
+                      >
+                        <svg className={`w-4 h-4 shrink-0 ${showSavedOnly ? '!text-white' : ''}`} fill={showSavedOnly ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                        </svg>
+                        <span className={showSavedOnly ? '!text-white' : ''}>Saved</span>
+                        {isAuthenticated && saved.length > 0 && (
+                          <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none ${showSavedOnly ? 'bg-white/25 text-white' : 'bg-[#EEF2FF] text-[#0012FF]'}`}>
+                            {saved.length}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  }
+
+                  const isActive = selectedCategory === item.id && !showFavouritesOnly && !showSavedOnly;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        setSelectedCategory(item.id);
+                        setShowFavouritesOnly(false);
+                        setShowSavedOnly(false);
+                        setCurrentPage(1);
+                      }}
+                      className={`h-[40px] px-3.5 sm:px-4 shrink-0 rounded-[8px] flex items-center justify-center gap-2 text-xs font-semibold whitespace-nowrap transition-all border cursor-pointer select-none ${
+                        isActive
+                          ? '!bg-[#0012FF] !text-white !border-[#0012FF] shadow-xs'
+                          : 'bg-white text-[#6B7280] border-[#E5E7EB] hover:border-[#0012FF]/40 hover:text-[#0012FF]'
+                      }`}
+                    >
+                      <span className={isActive ? '!text-white' : ''}>{getCategoryIcon(item.label || item.id)}</span>
+                      <span className={isActive ? '!text-white' : ''}>{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Forward/Return Arrow on Right (Place stays 100% fixed next to Business) */}
             <button
-              key={cat.id}
-              onClick={() => { setSelectedCategory(cat.id); setShowFavouritesOnly(false); setShowSavedOnly(false); setCurrentPage(1); }}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all border ${selectedCategory === cat.id && !showFavouritesOnly && !showSavedOnly
-                ? 'bg-[#0012FF] text-white border-[#0012FF]'
-                : 'bg-white text-[#444] border-[#ddd] hover:border-[#0012FF]/40 hover:text-[#0012FF]'
-                }`}
+              type="button"
+              onClick={() => {
+                if (canScrollRight) {
+                  scrollCategories('right');
+                } else {
+                  categoriesScrollRef.current?.scrollTo({ left: 0, behavior: 'smooth' });
+                  setTimeout(checkScroll, 350);
+                }
+              }}
+              className="w-10 h-10 rounded-full bg-[#0012FF] flex items-center justify-center text-white shadow-md shadow-[#0012FF]/20 hover:bg-[#0010d0] shrink-0 transition-all cursor-pointer"
+              aria-label={canScrollRight ? 'Next categories' : 'Back to first categories'}
+              title={canScrollRight ? 'Next categories' : 'Back to first categories'}
             >
-              {cat.label}
+              <svg className="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                {canScrollRight ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                )}
+              </svg>
             </button>
-          ))}
+          </div>
 
-          {/* Favourites tab — heart */}
-          <button
-            onClick={() => {
-              if (!isAuthenticated) {
-                setLoginCallbackUrl('');
-                setLoginModalMode('favourite');
-                setShowLoginModal(true);
-                return;
-              }
-
-              const next = !showFavouritesOnly;
-              setShowFavouritesOnly(next);
-              if (next) setShowSavedOnly(false);
-              setSelectedCategory('all');
-              setCurrentPage(1);
-            }}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-all border ${showFavouritesOnly
-              ? 'bg-red-500 text-white border-red-500'
-              : 'bg-white text-[#444] border-[#ddd] hover:border-red-400 hover:text-red-500'
+          {/* Right Action Buttons: Filter only */}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Filter */}
+            <button
+              onClick={() => setShowFilterPanel(!showFilterPanel)}
+              className={`h-[40px] px-3.5 sm:px-4 rounded-[8px] flex items-center gap-1.5 text-xs font-semibold whitespace-nowrap border transition-all cursor-pointer ${
+                showFilterPanel
+                  ? 'bg-[#0012FF] text-white border-[#0012FF]'
+                  : 'bg-white text-[#6B7280] border-[#E5E7EB] hover:border-[#0012FF]/40 hover:text-[#0012FF]'
               }`}
-          >
-
-            Favourites
-            {isAuthenticated && favourites.length > 0 && (
-              <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none ${showFavouritesOnly ? 'bg-white/25 text-white' : 'bg-red-100 text-red-500'}`}>
-                {favourites.length}
-              </span>
-            )}
-          </button>
-
-          {/* Saved tab — bookmark */}
-          <button
-            onClick={() => {
-              if (!isAuthenticated) {
-                setLoginCallbackUrl('');
-                setLoginModalMode('favourite');
-                setShowLoginModal(true);
-                return;
-              }
-
-              const next = !showSavedOnly;
-              setShowSavedOnly(next);
-              if (next) setShowFavouritesOnly(false);
-              setSelectedCategory('all');
-              setCurrentPage(1);
-            }}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-all border ${showSavedOnly
-              ? 'bg-[#0012FF] text-white border-[#0012FF]'
-              : 'bg-white text-[#444] border-[#ddd] hover:border-[#0012FF]/40 hover:text-[#0012FF]'
-              }`}
-          >
-
-            Saved
-            {isAuthenticated && saved.length > 0 && (
-              <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none ${showSavedOnly ? 'bg-white/25 text-white' : 'bg-[#EEF2FF] text-[#0012FF]'}`}>
-                {saved.length}
-              </span>
-            )}
-          </button>
-
-          <div className="flex-1" />
-
-          {/* Filter */}
-          <button
-            onClick={() => setShowFilterPanel(!showFilterPanel)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border transition-all ${showFilterPanel ? 'bg-[#0012FF] text-white border-[#0012FF]' : 'bg-white text-[#444] border-[#ddd] hover:border-[#0012FF]/40 hover:text-[#0012FF]'
-              }`}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="4" y1="6" x2="20" y2="6" /><line x1="8" y1="12" x2="16" y2="12" /><line x1="11" y1="18" x2="13" y2="18" />
-            </svg>
-            Filter
-          </button>
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="4" y1="6" x2="20" y2="6" /><line x1="8" y1="12" x2="16" y2="12" /><line x1="11" y1="18" x2="13" y2="18" />
+              </svg>
+              <span>Filter</span>
+            </button>
+          </div>
         </div>
 
         {/* Filter Panel */}
@@ -641,14 +853,19 @@ export default function ExploreCreatorsPage() {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-2xl border border-[#e0e0e0] shadow-sm p-6 mb-8 grid grid-cols-1 sm:grid-cols-2 gap-6"
+            className="bg-white rounded-2xl border border-[#e0e0e0] shadow-sm p-6 mb-8 grid grid-cols-1 sm:grid-cols-3 gap-6"
           >
             <div>
               <label className="block text-sm font-semibold text-[#333] mb-3">Minimum Rating</label>
               <div className="flex gap-2 flex-wrap">
-                {[null, 3.5, 4, 4.5].map(r => (
-                  <button key={String(r)} onClick={() => setMinRating(r)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${minRating === r ? 'bg-[#0012FF] text-white border-[#0012FF]' : 'bg-white text-[#555] border-[#ddd] hover:border-[#0012FF]/50'}`}>
+                {[null, 3.5, 4, 4.5].map((r) => (
+                  <button
+                    key={String(r)}
+                    onClick={() => setMinRating(r)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all cursor-pointer ${
+                      minRating === r ? 'bg-[#0012FF] text-white border-[#0012FF]' : 'bg-white text-[#555] border-[#ddd] hover:border-[#0012FF]/50'
+                    }`}
+                  >
                     {r === null ? 'Any' : `${r}+`}
                   </button>
                 ))}
@@ -656,13 +873,96 @@ export default function ExploreCreatorsPage() {
             </div>
             <div>
               <label className="block text-sm font-semibold text-[#333] mb-3">Verified Only</label>
-              <button onClick={() => setVerifiedOnly(v => !v)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border transition-all ${verifiedOnly ? 'bg-[#0012FF] text-white border-[#0012FF]' : 'bg-white text-[#555] border-[#ddd] hover:border-[#0012FF]/50'}`}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+              <button
+                onClick={() => setVerifiedOnly((v) => !v)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border transition-all cursor-pointer ${
+                  verifiedOnly ? 'bg-[#0012FF] text-white border-[#0012FF]' : 'bg-white text-[#555] border-[#ddd] hover:border-[#0012FF]/50'
+                }`}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                </svg>
                 {verifiedOnly ? 'Verified Only ✓' : 'Show All'}
               </button>
-              {(verifiedOnly || minRating !== null) && (
-                <button onClick={() => { setVerifiedOnly(false); setMinRating(null); }} className="mt-3 text-xs text-[#0012FF] underline hover:opacity-70">Reset filters</button>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-[#333] mb-3">Saved & Favourites</label>
+              <div className="flex gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!isAuthenticated) {
+                      setLoginCallbackUrl('');
+                      setLoginModalMode('favourite');
+                      setShowLoginModal(true);
+                      return;
+                    }
+                    const next = !showFavouritesOnly;
+                    setShowFavouritesOnly(next);
+                    if (next) setShowSavedOnly(false);
+                    setSelectedCategory('all');
+                    setCurrentPage(1);
+                  }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all cursor-pointer ${
+                    showFavouritesOnly
+                      ? 'bg-red-500 text-white border-red-500 shadow-xs'
+                      : 'bg-white text-gray-700 border-[#ddd] hover:border-red-400 hover:text-red-500'
+                  }`}
+                >
+                  <svg className="w-3.5 h-3.5" fill={showFavouritesOnly ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  </svg>
+                  <span>Favourites Only</span>
+                  {isAuthenticated && favourites.length > 0 && (
+                    <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none ${showFavouritesOnly ? 'bg-white/25 text-white' : 'bg-red-100 text-red-500'}`}>
+                      {favourites.length}
+                    </span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!isAuthenticated) {
+                      setLoginCallbackUrl('');
+                      setLoginModalMode('favourite');
+                      setShowLoginModal(true);
+                      return;
+                    }
+                    const next = !showSavedOnly;
+                    setShowSavedOnly(next);
+                    if (next) setShowFavouritesOnly(false);
+                    setSelectedCategory('all');
+                    setCurrentPage(1);
+                  }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all cursor-pointer ${
+                    showSavedOnly
+                      ? 'bg-[#0012FF] text-white border-[#0012FF] shadow-xs'
+                      : 'bg-white text-gray-700 border-[#ddd] hover:border-[#0012FF]/40 hover:text-[#0012FF]'
+                  }`}
+                >
+                  <svg className="w-3.5 h-3.5" fill={showSavedOnly ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                  </svg>
+                  <span>Saved Only</span>
+                  {isAuthenticated && saved.length > 0 && (
+                    <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full leading-none ${showSavedOnly ? 'bg-white/25 text-white' : 'bg-[#EEF2FF] text-[#0012FF]'}`}>
+                      {saved.length}
+                    </span>
+                  )}
+                </button>
+              </div>
+              {(verifiedOnly || minRating !== null || showFavouritesOnly || showSavedOnly) && (
+                <button
+                  onClick={() => {
+                    setVerifiedOnly(false);
+                    setMinRating(null);
+                    setShowFavouritesOnly(false);
+                    setShowSavedOnly(false);
+                  }}
+                  className="mt-3 text-xs text-[#0012FF] underline hover:opacity-70 cursor-pointer block"
+                >
+                  Reset all filters
+                </button>
               )}
             </div>
           </motion.div>
@@ -696,14 +996,20 @@ export default function ExploreCreatorsPage() {
 
         {/* Creator Grid */}
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5 sm:gap-6">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="animate-pulse space-y-3">
-                <div className="w-full aspect-[4/4.2] bg-gray-200 rounded-[20px]" />
-                <div className="space-y-2 px-1">
-                  <div className="h-4 w-3/4 bg-gray-200 rounded" />
-                  <div className="h-3 w-1/2 bg-gray-200 rounded" />
-                  <div className="h-3 w-full bg-gray-200 rounded" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 justify-items-center w-full max-w-[1160px] mx-auto">
+            {Array.from({ length: 12 }).map((_, i) => (
+              <div key={i} className="animate-pulse flex flex-col w-[275px] h-[465px] justify-between">
+                <div className="w-[275px] h-[300px] bg-gray-200 rounded-[20px]" />
+                <div className="space-y-2 pt-3 flex-1 flex flex-col justify-between">
+                  <div>
+                    <div className="h-4 w-3/4 bg-gray-200 rounded" />
+                    <div className="h-3 w-1/2 bg-gray-200 rounded mt-2" />
+                    <div className="h-3 w-full bg-gray-200 rounded mt-2" />
+                  </div>
+                  <div>
+                    <div className="h-4 w-1/3 bg-gray-200 rounded" />
+                    <div className="h-4 w-1/4 bg-gray-200 rounded mt-2" />
+                  </div>
                 </div>
               </div>
             ))}
@@ -717,7 +1023,7 @@ export default function ExploreCreatorsPage() {
             <p className="text-sm text-gray-400 mt-1">Try adjusting your filters</p>
           </div>
         ) : paginated.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5 sm:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 justify-items-center w-full max-w-[1160px] mx-auto">
             {paginated.map((creator, index) => {
               const isFav = favourites.includes(creator.username);
               return (
@@ -727,10 +1033,10 @@ export default function ExploreCreatorsPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.4, delay: index * 0.04 }}
-                  className="flex flex-col w-full group"
+                  className="flex flex-col w-[275px] h-[465px] justify-between group"
                 >
                   {/* Top Image Container */}
-                  <div className="relative w-full aspect-[4/4.2] rounded-[20px] overflow-hidden bg-gray-100 mb-3.5 shadow-xs transition-transform duration-300 group-hover:scale-[1.01]">
+                  <div className="relative w-[275px] h-[300px] rounded-[20px] overflow-hidden bg-gray-100 shrink-0 shadow-xs transition-transform duration-300 group-hover:scale-[1.01]">
                     <img
                       src={creator.profilePhoto || '/avatar.png'}
                       alt={creator.displayName || creator.name}
@@ -739,7 +1045,7 @@ export default function ExploreCreatorsPage() {
 
                     {/* Top Left Badge: Sponsored / Verified */}
                     <span
-                      className={`absolute top-3.5 left-3.5 px-3 py-1 rounded-full text-xs font-bold shadow-2xs tracking-wide ${
+                      className={`absolute top-3.5 left-3.5 px-3 py-1 rounded-full text-xs font-bold tracking-wide ${
                         creator.isVerified
                           ? 'bg-[#E6F9EE] text-[#12B76A]'
                           : 'bg-[#EEF2FF] text-[#0012FF]'
@@ -770,49 +1076,53 @@ export default function ExploreCreatorsPage() {
                   </div>
 
                   {/* Info Box Below Image */}
-                  <div className="px-0.5 space-y-1">
-                    {/* Title & Star Rating */}
-                    <div className="flex items-center justify-between gap-2">
-                      <h3 className="font-bold text-base sm:text-lg text-black font-sans flex items-center gap-1.5 leading-tight truncate">
-                        <span>{creator.displayName || creator.name}</span>
-                        {creator.isVerified && (
-                          <svg className="w-4.5 h-4.5 text-[#12B76A] fill-current shrink-0" viewBox="0 0 24 24">
-                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
-                          </svg>
-                        )}
-                      </h3>
-                      <span className="flex items-center gap-1 text-xs sm:text-sm font-bold text-amber-500 shrink-0">
-                        ★ {creator.rating || '4.9'}
-                      </span>
-                    </div>
-
-                    {/* Handle */}
-                    <p className="text-xs text-gray-400 font-medium font-sans">@{creator.username}</p>
-
-                    {/* Short Bio */}
-                    <p className="text-xs text-gray-400 font-sans leading-relaxed line-clamp-2 pt-1">
-                      {creator.shortBio || 'Ayesha Khan is one of Pakistan’s leading fashion and lifestyle content creators...'}
-                    </p>
-
-                    {/* Price Row */}
-                    <div className="pt-2 flex items-center gap-1 text-xs text-gray-400 font-sans">
-                      <span>Starting from</span>
-                      <strong className="text-black font-black text-sm sm:text-base ml-1">
-                        {creator.startingPrice ? `${creator.startingPrice} PKR` : '1200 PKR'}
-                      </strong>
-                    </div>
-
-                    {/* Book Now Link */}
-                    {!isAdmin && (
-                      <div>
-                        <span
-                          onClick={(e) => handleCreatorBooking(e, creator.username)}
-                          className="text-xs sm:text-sm font-bold text-[#0012FF] underline hover:text-[#0010d0] font-sans pt-1 inline-block cursor-pointer"
-                        >
-                          Book Now
+                  <div className="flex flex-col flex-1 justify-between pt-3 pb-1">
+                    <div>
+                      {/* Title & Star Rating */}
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="font-bold text-base text-black font-sans flex items-center gap-1.5 leading-tight truncate">
+                          <span className="truncate">{creator.displayName || creator.name}</span>
+                          {creator.isVerified && (
+                            <svg className="w-4 h-4 text-[#12B76A] fill-current shrink-0" viewBox="0 0 24 24">
+                              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                            </svg>
+                          )}
+                        </h3>
+                        <span className="flex items-center gap-1 text-xs font-bold text-amber-500 shrink-0">
+                          ★ {creator.rating || '4.9'}
                         </span>
                       </div>
-                    )}
+
+                      {/* Handle */}
+                      <p className="text-xs text-gray-400 font-medium font-sans mt-0.5">@{creator.username}</p>
+
+                      {/* Short Bio */}
+                      <p className="text-xs text-gray-500 font-sans leading-relaxed line-clamp-2 mt-1.5">
+                        {creator.shortBio || 'Ayesha Khan is one of Pakistan’s leading fashion and lifestyle content creators...'}
+                      </p>
+                    </div>
+
+                    <div>
+                      {/* Price Row */}
+                      <div className="flex items-center gap-1 text-xs text-gray-400 font-sans">
+                        <span>Starting from</span>
+                        <strong className="text-black font-black text-sm ml-1">
+                          {creator.startingPrice ? `${creator.startingPrice} PKR` : '1200 PKR'}
+                        </strong>
+                      </div>
+
+                      {/* Book Now Link */}
+                      {!isAdmin && (
+                        <div className="pt-1">
+                          <span
+                            onClick={(e) => handleCreatorBooking(e, creator.username)}
+                            className="text-xs sm:text-sm font-bold text-[#0012FF] underline hover:text-[#0010d0] font-sans inline-block cursor-pointer"
+                          >
+                            Book Now
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </motion.div>
               );
@@ -822,20 +1132,39 @@ export default function ExploreCreatorsPage() {
 
         {/* Pagination */}
         {!loading && totalPages > 1 && (
-          <div className="flex items-center justify-center gap-2 mt-12">
-            <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1}
-              className="w-9 h-9 flex items-center justify-center rounded-full border border-[#ddd] bg-white text-[#555] hover:border-[#0012FF] hover:text-[#0012FF] disabled:opacity-40 disabled:cursor-not-allowed transition-all">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6" /></svg>
+          <div className="w-full pt-8 mt-12 border-t border-gray-200 flex items-center justify-center gap-2 max-w-[1160px] mx-auto">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-[#0012FF] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              aria-label="Previous Page"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
             </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-              <button key={p} onClick={() => handlePageChange(p)}
-                className={`w-9 h-9 flex items-center justify-center rounded-full text-sm font-semibold border transition-all ${p === currentPage ? 'bg-[#0012FF] text-white border-[#0012FF]' : 'bg-white text-[#555] border-[#ddd] hover:border-[#0012FF] hover:text-[#0012FF]'}`}>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+              <button
+                key={p}
+                onClick={() => handlePageChange(p)}
+                className={`w-7 h-7 flex items-center justify-center rounded-md text-xs font-bold transition-all ${
+                  p === currentPage
+                    ? 'bg-[#0012FF] text-white shadow-xs'
+                    : 'bg-transparent text-gray-600 hover:text-[#0012FF]'
+                }`}
+              >
                 {p}
               </button>
             ))}
-            <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages}
-              className="w-9 h-9 flex items-center justify-center rounded-full border border-[#ddd] bg-white text-[#555] hover:border-[#0012FF] hover:text-[#0012FF] disabled:opacity-40 disabled:cursor-not-allowed transition-all">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6" /></svg>
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-[#0012FF] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              aria-label="Next Page"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
             </button>
           </div>
         )}

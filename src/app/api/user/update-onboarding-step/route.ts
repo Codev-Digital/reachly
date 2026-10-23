@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Role can be changed until the first step is finished (status none, step <= 1)
-    const canReset = force && user.approvalStatus === 'none' && (user.onboardingStep || 0) <= 1;
+    const canReset = force && user.approvalStatus === 'none';
     user.onboardingStep = canReset ? step : Math.max(user.onboardingStep || 0, step);
     user.hasSeenWelcome = true;
     await user.save();

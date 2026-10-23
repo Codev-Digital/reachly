@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
     const creatorUserIds = profiles.map((p: any) => p.userId.toString());
 
     // Fetch all users who are creators
-    const creatorUsers = await User.find({ _id: { $in: creatorUserIds }, approvalStatus: { $ne: 'deleted' } }).sort({ createdAt: -1 }).lean();
+    const creatorUsers = await User.find({ _id: { $in: creatorUserIds } }).sort({ createdAt: -1 }).lean();
 
     // Map database creator data to table shape
     const formattedCreators = creatorUsers.map((user: any) => {
@@ -65,19 +65,36 @@ export async function GET(req: NextRequest) {
         month: 'short',
         year: 'numeric'
       });
-      const time = d.toLocaleTimeString('en-US', {
+            const time = d.toLocaleTimeString('en-US', {
         hour: 'numeric',
         minute: '2-digit',
         hour12: true
       });
 
+      let deletedDate = '';
+      let deletedTime = '';
+      if (user.deletedAt) {
+        const dDel = new Date(user.deletedAt);
+        deletedDate = dDel.toLocaleDateString('en-GB', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric'
+        });
+        deletedTime = dDel.toLocaleTimeString('en-US', {
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true
+        });
+      }
+
       // Map status
       // Only an admin-approved account is Active; not-yet-applied ('none') is Inactive
-      let status: 'Active' | 'Pending' | 'Inactive' | 'Suspended' | 'Rejected' = 'Inactive';
+      let status: 'Active' | 'Pending' | 'Inactive' | 'Suspended' | 'Rejected' | 'Deleted' = 'Inactive';
       if (user.approvalStatus === 'approved') status = 'Active';
       else if (user.approvalStatus === 'pending') status = 'Pending';
       else if (user.approvalStatus === 'rejected') status = 'Rejected';
       else if (user.approvalStatus === 'suspended') status = 'Suspended';
+      else if (user.approvalStatus === 'deleted') status = 'Deleted';
 
       // Build contact details
       const contactInfo = [
@@ -93,6 +110,8 @@ export async function GET(req: NextRequest) {
         email: user.email,
         joinedDate,
         time,
+        deletedDate,
+        deletedTime,
         status,
         avatar: profile?.profilePhoto || user.profilePhoto || '/avatar.png',
         coverPhoto: profile?.coverPhoto || '',
@@ -137,7 +156,7 @@ export async function PUT(req: NextRequest) {
     await connectDB();
     const { userId, action } = await req.json();
 
-    if (!userId || !['approve', 'reject', 'suspend', 'activate'].includes(action)) {
+    if (!userId || !['approve', 'reject', 'suspend', 'activate', 'restore'].includes(action)) {
       return NextResponse.json({ error: 'Invalid data parameters' }, { status: 400 });
     }
 
