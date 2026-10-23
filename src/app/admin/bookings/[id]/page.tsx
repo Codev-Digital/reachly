@@ -82,13 +82,48 @@ const DEFAULT_SAMPLE_TIERS: EventTier[] = [
   { title: 'Early Bird', price: 2000 },
 ];
 
+function getInitialEvent(id: string): EventDetail | null {
+  if (typeof window === 'undefined' || !id) return null;
+  try {
+    const raw = sessionStorage.getItem(`reachly_admin_active_event_${id}`);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return {
+      id: parsed.id || id,
+      title: parsed.title || 'Event Details',
+      description: parsed.description || '',
+      bannerUrl: parsed.image || parsed.bannerUrl || '/assets/event-1.jpg',
+      category: parsed.category || 'Workshops',
+      status: parsed.status || 'Upcoming',
+      dates: parsed.dates || [],
+      formattedDate: parsed.date || '5 July 2026',
+      formattedTime: parsed.time || '2PM - 6PM',
+      venue: parsed.venue || 'Nishat Hotel, Gulberg, Lahore',
+      refundPolicy: parsed.refundPolicy || '',
+      termsAndConditions: parsed.termsAndConditions || '',
+      creator: parsed.creator || {
+        id: '',
+        displayName: parsed.creatorName || 'Creator',
+        username: parsed.creatorName ? parsed.creatorName.toLowerCase().replace(/\s+/g, '') : 'creator',
+      },
+      stats: parsed.stats || {
+        totalPurchases: 0,
+        totalTicketsSold: 2,
+        totalRevenue: 0,
+      },
+    };
+  } catch {
+    return null;
+  }
+}
+
 export default function AdminEventDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = typeof params?.id === 'string' ? params.id : '';
 
-  const [event, setEvent] = useState<EventDetail | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [event, setEvent] = useState<EventDetail | null>(() => getInitialEvent(id));
+  const [loading, setLoading] = useState<boolean>(() => !getInitialEvent(id));
   const [notFound, setNotFound] = useState(false);
 
   // Modals state
@@ -110,26 +145,35 @@ export default function AdminEventDetailPage() {
     }
 
     try {
-      setLoading(true);
+      // Only show full-screen skeleton if we don't have prefilled cached data
+      if (!event) {
+        setLoading(true);
+      }
       const res = await fetch(`/api/admin/events/${id}`);
       if (res.ok) {
         const data = await res.json();
         setEvent(data.event);
         setNotFound(false);
-      } else {
+        try {
+          sessionStorage.setItem(`reachly_admin_active_event_${id}`, JSON.stringify(data.event));
+        } catch {
+          /* ignore */
+        }
+      } else if (!event) {
         setNotFound(true);
       }
     } catch (err) {
       console.error('Failed to load event details:', err);
-      setNotFound(true);
+      if (!event) setNotFound(true);
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, event]);
 
   useEffect(() => {
     loadEvent();
-  }, [loadEvent]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   const handleAddVolunteerSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -141,28 +185,28 @@ export default function AdminEventDetailPage() {
     }, 1200);
   };
 
-  if (loading) {
+  if (loading && !event) {
     return (
-      <div className="pb-16 max-w-[1240px] mx-auto">
+      <div className="pb-16 max-w-[1240px] mx-auto animate-pulse">
         <div className="flex items-center justify-between mb-6">
-          <div className="h-6 w-32 bg-gray-200 animate-pulse rounded-md" />
-          <div className="h-10 w-36 bg-gray-200 animate-pulse rounded-full" />
+          <div className="h-6 w-32 bg-gray-200 rounded-md" />
+          <div className="h-10 w-36 bg-gray-200 rounded-full" />
         </div>
 
         <div className="bg-white rounded-[32px] p-6 sm:p-8 lg:p-10 border border-gray-100 shadow-sm">
           <div className="flex flex-col lg:flex-row items-start gap-8">
-            <div className="w-full lg:w-[590px] h-[311px] rounded-2xl bg-gray-200 animate-pulse flex-shrink-0" />
+            <div className="w-full lg:w-[590px] h-[311px] rounded-2xl bg-gray-200 flex-shrink-0" />
             <div className="w-full lg:w-[530px] min-h-[300px] flex flex-col justify-between">
               <div>
-                <div className="h-5 w-24 bg-gray-200 animate-pulse rounded-full mb-4" />
-                <div className="h-9 w-3/4 bg-gray-200 animate-pulse rounded-md mb-3" />
-                <div className="h-16 w-full bg-gray-200 animate-pulse rounded-md mb-6" />
-                <div className="h-5 w-64 bg-gray-200 animate-pulse rounded-md mb-6" />
+                <div className="h-5 w-24 bg-gray-200 rounded-full mb-4" />
+                <div className="h-9 w-3/4 bg-gray-200 rounded-md mb-3" />
+                <div className="h-16 w-full bg-gray-200 rounded-md mb-6" />
+                <div className="h-5 w-64 bg-gray-200 rounded-md mb-6" />
               </div>
               <div className="flex gap-3">
-                <div className="w-[170px] h-[66px] bg-gray-200 animate-pulse rounded-[8px]" />
-                <div className="w-[170px] h-[66px] bg-gray-200 animate-pulse rounded-[8px]" />
-                <div className="w-[170px] h-[66px] bg-gray-200 animate-pulse rounded-[8px]" />
+                <div className="w-[170px] h-[66px] bg-gray-200 rounded-[8px]" />
+                <div className="w-[170px] h-[66px] bg-gray-200 rounded-[8px]" />
+                <div className="w-[170px] h-[66px] bg-gray-200 rounded-[8px]" />
               </div>
             </div>
           </div>
@@ -210,12 +254,7 @@ export default function AdminEventDetailPage() {
     .trim() || 'Track your event performance, monitor audience engagement, and gain valuable insights to grow your community and create even more successful events.';
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25 }}
-      className="pb-16 max-w-[1240px] mx-auto"
-    >
+    <div className="pb-16 max-w-[1240px] mx-auto">
       {/* Top Header: Back Link + Add Volunteer Button */}
       <div className="flex items-center justify-between gap-4 mb-6">
         <Link
@@ -256,8 +295,8 @@ export default function AdminEventDetailPage() {
             <button
               type="button"
               onClick={() => setShowEditModal(true)}
-              className="absolute bottom-4 right-4 w-9 h-9 rounded-full bg-black/45 backdrop-blur-md flex items-center justify-center text-white hover:bg-black/60 transition-colors shadow-sm cursor-pointer active:scale-95"
-              title="Edit Event"
+              className="absolute bottom-4 right-4 w-9 h-9 rounded-full bg-black/45 flex items-center justify-center text-white hover:bg-black/65 transition-colors shadow-sm cursor-pointer active:scale-95"
+              title="Event Information"
             >
               <Pencil size={15} />
             </button>
@@ -346,22 +385,25 @@ export default function AdminEventDetailPage() {
         </div>
       </div>
 
-      {/* Add Volunteer Modal */}
+      {/* Add Volunteer Modal - Flicker-Free Motion Dialog */}
       <AnimatePresence>
         {showVolunteerModal && (
-          <div className="fixed inset-0 flex items-center justify-center z-[100] p-4">
+          <motion.div
+            key="volunteer-modal-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            onClick={() => setShowVolunteerModal(false)}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50"
+          >
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowVolunteerModal(false)}
-              className="absolute inset-0 bg-black/40 backdrop-blur-xs"
-            />
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
+              initial={{ scale: 0.96, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl p-6 sm:p-8 z-10"
+              exit={{ scale: 0.96, opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl p-6 sm:p-8"
             >
               <button
                 type="button"
@@ -448,26 +490,29 @@ export default function AdminEventDetailPage() {
                 </form>
               )}
             </motion.div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Edit Banner / Event Quick Modal */}
+      {/* Edit Banner / Event Information Modal - Flicker-Free Motion Dialog */}
       <AnimatePresence>
         {showEditModal && (
-          <div className="fixed inset-0 flex items-center justify-center z-[100] p-4">
+          <motion.div
+            key="edit-modal-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            onClick={() => setShowEditModal(false)}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50"
+          >
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowEditModal(false)}
-              className="absolute inset-0 bg-black/40 backdrop-blur-xs"
-            />
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
+              initial={{ scale: 0.96, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl p-6 sm:p-8 z-10"
+              exit={{ scale: 0.96, opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl p-6 sm:p-8"
             >
               <button
                 type="button"
@@ -509,9 +554,9 @@ export default function AdminEventDetailPage() {
                 </button>
               </div>
             </motion.div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
-    </motion.div>
+    </div>
   );
 }

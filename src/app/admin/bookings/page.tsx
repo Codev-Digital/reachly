@@ -64,15 +64,38 @@ export default function AdminEventsPage() {
   const [isTypeDropdownOpen, setIsTypeDropdownOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const [events, setEvents] = useState<EventItem[]>([]);
-  const [kpis, setKpis] = useState<Kpis>(EMPTY_KPIS);
+  const [events, setEvents] = useState<EventItem[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const cached = sessionStorage.getItem('reachly_admin_events_cache');
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [kpis, setKpis] = useState<Kpis>(() => {
+    if (typeof window === 'undefined') return EMPTY_KPIS;
+    try {
+      const cached = sessionStorage.getItem('reachly_admin_kpis_cache');
+      return cached ? JSON.parse(cached) : EMPTY_KPIS;
+    } catch {
+      return EMPTY_KPIS;
+    }
+  });
   const [pagination, setPagination] = useState<Pagination>({
     page: 1,
     limit: 9,
     total: 0,
     totalPages: 1,
   });
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return true;
+    try {
+      return !sessionStorage.getItem('reachly_admin_events_cache');
+    } catch {
+      return true;
+    }
+  });
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(searchQuery.trim()), 300);
@@ -85,7 +108,7 @@ export default function AdminEventsPage() {
 
   const loadEvents = useCallback(async () => {
     try {
-      setLoading(true);
+      if (events.length === 0) setLoading(true);
       const params = new URLSearchParams({
         page: String(currentPage),
         limit: '9',
@@ -100,6 +123,10 @@ export default function AdminEventsPage() {
       const data = await res.json();
       setEvents(data.events || []);
       if (data.kpis) setKpis(data.kpis);
+      try {
+        sessionStorage.setItem('reachly_admin_events_cache', JSON.stringify(data.events || []));
+        if (data.kpis) sessionStorage.setItem('reachly_admin_kpis_cache', JSON.stringify(data.kpis));
+      } catch {}
       if (data.pagination) setPagination(data.pagination);
       if (Array.isArray(data.categories) && data.categories.length > 0) {
         setCategories(data.categories);
@@ -114,6 +141,13 @@ export default function AdminEventsPage() {
   useEffect(() => {
     loadEvents();
   }, [loadEvents]);
+
+  const openEventDetail = (evt: EventItem) => {
+    try {
+      sessionStorage.setItem(`reachly_admin_active_event_${evt.id}`, JSON.stringify(evt));
+    } catch {}
+    router.push(`/admin/bookings/${evt.id}`);
+  };
 
   const handleAddEventTypeSubmit = () => {
     if (selectedEventType) {
@@ -314,7 +348,7 @@ export default function AdminEventsPage() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: idx * 0.05 }}
-              onClick={() => router.push(`/admin/bookings/${evt.id}`)}
+              onClick={() => openEventDetail(evt)}
               className="relative rounded-[24px] overflow-hidden shadow-sm group w-full h-64 sm:h-[280px] cursor-pointer"
             >
               <img
@@ -383,7 +417,7 @@ export default function AdminEventsPage() {
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      router.push(`/admin/bookings/${evt.id}`);
+                      openEventDetail(evt);
                     }}
                     className="shrink-0 px-4 sm:px-5 py-2 sm:py-2.5 bg-white rounded-full text-[#0012FF] text-[11px] sm:text-xs font-bold shadow-md hover:bg-gray-50 active:scale-95 transition-all cursor-pointer"
                   >
