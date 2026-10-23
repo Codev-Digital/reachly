@@ -5,7 +5,6 @@ import { useSession } from "next-auth/react";
 import { Suspense, useEffect, useState, useRef } from "react";
 import LoadingAnimation from "@/components/LoadingAnimation";
 import WelcomeModal from "@/components/WelcomeModal";
-import { postAuthRoute } from "@/lib/postAuthRoute";
 
 function WelcomeContent() {
   const router = useRouter();
@@ -16,15 +15,7 @@ function WelcomeContent() {
   const [userData, setUserData] = useState<any>(null);
   const searchParams = useSearchParams();
   const ref = searchParams.get("ref");
-  const changing = searchParams.get("change") === "1";
   const hasSelected = useRef(false);
-
-  useEffect(() => {
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, []);
 
   useEffect(() => {
     if (status === "authenticated" && !redirected) {
@@ -35,23 +26,56 @@ function WelcomeContent() {
             const data = await res.json();
             setUserData(data);
 
-            const target = postAuthRoute({
-              ...data.user,
-              isAdmin: [
-                "admin@reachly.com",
-                "abdullahgotaccess@gmail.com",
-              ].includes(data.user.email),
-            });
-            const canChange =
-              changing &&
-              data.user.approvalStatus === "none" &&
-              (data.user.onboardingStep || 0) <= 1;
-            if (target !== "/welcome" && !canChange) {
+            const user = data.user;
+            const isAdmin = [
+              "admin@reachly.com",
+              "abdullahgotaccess@gmail.com",
+            ].includes(user?.email);
+
+            if (isAdmin) {
               setRedirected(true);
               hasSelected.current = true;
-              router.replace(target);
+              router.replace("/admin/dashboard");
               return;
             }
+
+            if (user?.approvalStatus === "approved" || user?.approvalStatus === "active") {
+              setRedirected(true);
+              hasSelected.current = true;
+              router.replace(user.hasCreatorProfile ? "/creators/dashboard" : "/user/dashboard");
+              return;
+            }
+
+            if (user?.approvalStatus === "pending") {
+              setRedirected(true);
+              hasSelected.current = true;
+              router.replace(user.hasCreatorProfile ? "/creators/pending-approval" : "/user/pending-approval");
+              return;
+            }
+
+            if (user?.approvalStatus === "rejected") {
+              setRedirected(true);
+              hasSelected.current = true;
+              router.replace("/rejected");
+              return;
+            }
+
+            if (user?.approvalStatus === "suspended") {
+              setRedirected(true);
+              hasSelected.current = true;
+              router.replace("/suspended");
+              return;
+            }
+
+            if (user?.approvalStatus === "deleted") {
+              setRedirected(true);
+              hasSelected.current = true;
+              router.replace("/account-deleted");
+              return;
+            }
+
+            // For unapproved users (approvalStatus === 'none'), let them stay on the welcome screen
+            // to choose their path without any automatic redirect or page reload.
           }
         } catch (err) {
           console.error("Error fetching user data in welcome page:", err);
@@ -63,7 +87,7 @@ function WelcomeContent() {
     } else if (status === "unauthenticated") {
       router.replace("/login");
     }
-  }, [status, redirected, router, changing]);
+  }, [status, redirected, router]);
 
   const handleChoose = async (selected: "user" | "creator") => {
     if (hasSelected.current) return;
@@ -106,7 +130,7 @@ function WelcomeContent() {
     (userData?.user?.name || "").trim().split(" ")[0] || "there";
 
   return (
-    <div className="relative min-h-screen bg-white overflow-hidden">
+    <div className="min-h-screen bg-[#F4F5F8] flex items-center justify-center p-4 sm:p-6 lg:p-8">
       <WelcomeModal
         firstName={firstName}
         onChoose={handleChoose}

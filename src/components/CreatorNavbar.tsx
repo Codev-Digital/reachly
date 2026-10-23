@@ -196,7 +196,7 @@ export default function CreatorNavbar() {
 
                 <button
                   onClick={() => router.push("/signup")}
-                  className="border border-white text-white px-5 py-2 rounded-full font-sans font-medium text-sm hover:bg-white hover:text-[#001F7D] transition-all cursor-pointer"
+                  className="bg-white text-[#001F7D] px-5 py-2 rounded-full font-sans font-semibold text-sm hover:bg-white/90 transition-all cursor-pointer shadow-sm"
                 >
                   Sign up
                 </button>

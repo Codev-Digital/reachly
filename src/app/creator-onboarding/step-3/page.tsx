@@ -32,6 +32,7 @@ interface SessionData {
   maxBookings?: number;
   features?: string[];
   questions?: unknown[];
+  isDraft?: boolean;
 }
 
 // Simple unique id generator for local items
@@ -75,7 +76,7 @@ export default function CreatorOnboardingStep3() {
           const data = await res.json();
           if (Array.isArray(data.sessionTypes)) {
             // keep every stored field (questions, buffer, discounted price...) so saving doesn't drop them
-            setSessions(data.sessionTypes.map((s: any) => ({ ...s, _id: s._id })));
+            setSessions(data.sessionTypes.map((s: any) => ({ ...s, _id: s._id, isDraft: true })));
           }
         }
       } catch {
@@ -120,8 +121,8 @@ export default function CreatorOnboardingStep3() {
     setErrors({});
   };
 
-  /* ── Save session (local only — persisted on "Continue") ────────────── */
-  const handleSaveToList = () => {
+  /* ── Save session (auto-persists to draft in backend) ───────────────── */
+  const handleSaveToList = async () => {
     const next = validateSessionValues(values);
     setErrors(next);
     if (Object.keys(next).length > 0) {
@@ -131,21 +132,59 @@ export default function CreatorOnboardingStep3() {
 
     const payload = valuesToPayload(values);
 
-    setSessions(prev => {
-      if (editingIdx !== null) {
-        const copy = [...prev];
-        copy[editingIdx] = { ...copy[editingIdx], ...payload };
-        return copy;
-      }
-      return [...prev, { ...payload, features: [], _id: generateLocalId() }];
-    });
+    let updatedList: SessionData[] = [];
+    if (editingIdx !== null) {
+      updatedList = sessions.map((s, i) => (i === editingIdx ? { ...s, ...payload, isDraft: true } : s));
+    } else {
+      updatedList = [...sessions, { ...payload, features: [], isDraft: true, _id: generateLocalId() }];
+    }
+
+    setSessions(updatedList);
     closeForm();
     setPageError('');
+
+    // Auto-save draft to backend immediately so navigating away never loses progress
+    setSavingDraft(true);
+    try {
+      const result = await updateSessionTypes(updatedList);
+      if (result.success) {
+        setIsDraftSaved(true);
+        if (Array.isArray(result.sessionTypes)) {
+          setSessions(result.sessionTypes.map((s: any) => ({ ...s, _id: s._id, isDraft: true })));
+        }
+      } else {
+        setPageError(result.error || 'Failed to auto-save draft.');
+      }
+    } catch {
+      // Keep local session if network error occurs
+    } finally {
+      setSavingDraft(false);
+    }
   };
 
-  const deleteSession = (idx: number) => setSessions(prev => prev.filter((_, i) => i !== idx));
+  const deleteSession = async (idx: number) => {
+    const updated = sessions.filter((_, i) => i !== idx);
+    setSessions(updated);
+    if (updated.length > 0) {
+      setSavingDraft(true);
+      try {
+        const result = await updateSessionTypes(updated);
+        if (result.success) {
+          setIsDraftSaved(true);
+          if (Array.isArray(result.sessionTypes)) {
+            setSessions(result.sessionTypes.map((s: any) => ({ ...s, _id: s._id, isDraft: true })));
+          }
+        }
+      } catch {
+      } finally {
+        setSavingDraft(false);
+      }
+    } else {
+      setIsDraftSaved(false);
+    }
+  };
 
-  /* ── Continue — persist to DB ────────────────────────────────────────── */
+  /* ── Continue — persist to DB and advance ───────────────────────────── */
   const handleContinue = async () => {
     if (sessions.length === 0) {
       setPageError('Add at least one session type before continuing.');
@@ -175,6 +214,9 @@ export default function CreatorOnboardingStep3() {
       const result = await updateSessionTypes(sessions);
       if (result.success) {
         setIsDraftSaved(true);
+        if (Array.isArray(result.sessionTypes)) {
+          setSessions(result.sessionTypes.map((s: any) => ({ ...s, _id: s._id, isDraft: true })));
+        }
       } else {
         setPageError(result.error || 'Failed to save draft.');
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -183,6 +225,16 @@ export default function CreatorOnboardingStep3() {
       setPageError('Network error saving draft.');
     } finally {
       setSavingDraft(false);
+    }
+  };
+
+  /* ── Back button logic ──────────────────────────────────────────────── */
+  const handleBack = () => {
+    if (showForm) {
+      // If user was creating or editing a session, cancel and show the session list
+      closeForm();
+    } else {
+      router.push('/creator-onboarding/step-2');
     }
   };
 
@@ -217,17 +269,46 @@ export default function CreatorOnboardingStep3() {
                 key={session._id || idx}
                 className="bg-white border border-gray-200 rounded-xl p-5"
               >
-                <div className="flex flex-wrap items-center gap-2 mb-2">
-                  <span className="font-sans text-sm font-semibold text-black">{session.title}</span>
-                  <span className="bg-[#FFF7ED] text-[#C8A97E] text-xs px-3 py-1 rounded-full border border-[#C8A97E]/30">
-                    {formatDuration(session.duration)}
-                  </span>
-                  <PriceTag price={session.price} discountedPrice={session.discountedPrice} />
-                  {!!session.bufferTime && (
-                    <span className="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full border border-gray-200">
-                      {session.bufferTime} min buffer
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-sans text-sm font-semibold text-black">{session.title}</span>
+                    <span className="bg-amber-50 text-amber-700 text-xs px-2.5 py-0.5 rounded-full font-medium border border-amber-200">
+                      Draft
                     </span>
-                  )}
+                    <span className="bg-[#FFF7ED] text-[#C8A97E] text-xs px-3 py-1 rounded-full border border-[#C8A97E]/30">
+                      {formatDuration(session.duration)}
+                    </span>
+                    <PriceTag price={session.price} discountedPrice={session.discountedPrice} />
+                    {!!session.bufferTime && (
+                      <span className="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full border border-gray-200">
+                        {session.bufferTime} min buffer
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => openEditForm(idx)}
+                      className="text-gray-400 hover:text-[#0012FF] transition-all p-1.5 rounded-lg hover:bg-gray-50 cursor-pointer"
+                      title="Edit Session"
+                    >
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => deleteSession(idx)}
+                      className="text-gray-400 hover:text-red-600 transition-all p-1.5 rounded-lg hover:bg-red-50 cursor-pointer"
+                      title="Delete Session"
+                    >
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
                 <p className="font-sans text-gray-500 text-xs">{richTextPreview(session.description, 300)}</p>
               </div>
@@ -279,9 +360,10 @@ export default function CreatorOnboardingStep3() {
               <button
                 type="button"
                 onClick={handleSaveToList}
-                className="bg-[#0012FF] text-white px-6 py-2.5 rounded-full font-sans font-semibold text-sm hover:bg-[#0012FF]/90 transition-all"
+                disabled={savingDraft}
+                className="bg-[#0012FF] text-white px-6 py-2.5 rounded-full font-sans font-semibold text-sm hover:bg-[#0012FF]/90 transition-all disabled:opacity-50"
               >
-                {editingIdx !== null ? 'Save Changes' : 'Add Session'}
+                {savingDraft ? 'Saving...' : editingIdx !== null ? 'Save Changes' : 'Add Session'}
               </button>
             </div>
           </div>
@@ -291,7 +373,7 @@ export default function CreatorOnboardingStep3() {
         <div className="flex justify-between gap-3">
           <button
             type="button"
-            onClick={() => router.push('/creator-onboarding/step-2')}
+            onClick={handleBack}
             className="border border-gray-200 text-gray-700 px-6 py-2.5 rounded-full font-sans font-semibold text-sm hover:bg-gray-50 transition-all flex items-center gap-2"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

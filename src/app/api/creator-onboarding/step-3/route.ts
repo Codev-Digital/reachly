@@ -147,6 +147,7 @@ export async function PUT(req: NextRequest) {
       packagePeriod: (s.isPackage ? (s.packagePeriod === 'month' ? 'month' : 'week') : undefined) as 'week' | 'month' | undefined,
       order: index,
       isActive: true,
+      isDraft: s.isDraft !== undefined ? Boolean(s.isDraft) : true,
     });
 
     const existing = await SessionType.find({ userId: user._id }).select('_id').lean();

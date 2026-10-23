@@ -23,6 +23,7 @@ export const MAX_DURATION_MINUTES = 1440;
 // Buffer time (rest after a session) can never be longer than the session itself.
 // Short sessions: 5-minute steps (5, 10, 15 ...). From 1 hour up: 15-minute steps (15, 30, 45, 60 ...).
 export const NO_BUFFER_OPTION = 'No buffer';
+export const CUSTOM_BUFFER_OPTION = 'Custom Buffer';
 export const MAX_BUFFER_MINUTES = 120;
 
 export const bufferChoicesFor = (durationMinutes: number): number[] => {
@@ -59,8 +60,9 @@ export interface SessionFormValues {
   /** Minutes, as typed. */
   duration: string;
   customDuration: boolean;
-  /** Minutes. */
-  bufferTime: number;
+  /** Minutes, as typed or selected. */
+  bufferTime: number | string;
+  customBufferTime: boolean;
   price: string;
   discountedPrice: string;
   maxBookings: string;
@@ -76,6 +78,7 @@ export type SessionErrorKey =
   | 'title'
   | 'description'
   | 'duration'
+  | 'bufferTime'
   | 'price'
   | 'discountedPrice'
   | 'maxBookings'
@@ -89,6 +92,7 @@ export const emptySessionValues = (): SessionFormValues => ({
   duration: '60',
   customDuration: false,
   bufferTime: 0,
+  customBufferTime: false,
   price: '1200',
   discountedPrice: '',
   maxBookings: '4',
@@ -115,12 +119,17 @@ export const sessionToValues = (
   description: string
 ): SessionFormValues => {
   const dur = String(s.duration || '60');
+  const durNum = Number(dur);
+  const bufNum = Number(s.bufferTime) || 0;
+  const isPresetBuf = bufNum === 0 || (durNum > 0 && bufferChoicesFor(durNum).includes(bufNum));
+
   return {
     title: s.title || '',
     description,
     duration: dur,
     customDuration: !isPresetDuration(dur),
-    bufferTime: Number(s.bufferTime) || 0,
+    bufferTime: isPresetBuf ? bufNum : String(bufNum),
+    customBufferTime: !isPresetBuf,
     price: String(s.price ?? ''),
     discountedPrice:
       s.discountedPrice !== undefined && s.discountedPrice !== null ? String(s.discountedPrice) : '',
@@ -132,11 +141,23 @@ export const sessionToValues = (
   };
 };
 
-/** The buffer actually saved: the largest valid choice not above the picked one. */
-export const effectiveBufferFor = (values: SessionFormValues) =>
-  bufferChoicesFor(Number(values.duration))
-    .filter((m) => m <= values.bufferTime)
-    .pop() ?? 0;
+/** The buffer actually saved: custom value clamped or largest valid choice not above the picked one. */
+export const effectiveBufferFor = (values: SessionFormValues): number => {
+  const dur = Number(values.duration) || 0;
+  if (dur < 1) return 0;
+
+  if (values.customBufferTime) {
+    const buf = Number(values.bufferTime);
+    if (!Number.isFinite(buf) || buf <= 0) return 0;
+    return Math.min(Math.floor(buf), dur, MAX_BUFFER_MINUTES);
+  }
+
+  return (
+    bufferChoicesFor(dur)
+      .filter((m) => m <= Number(values.bufferTime))
+      .pop() ?? 0
+  );
+};
 
 export const validateSessionValues = (v: SessionFormValues): SessionErrors => {
   const next: SessionErrors = {};
@@ -149,6 +170,17 @@ export const validateSessionValues = (v: SessionFormValues): SessionErrors => {
     next.duration = v.customDuration
       ? `Enter a duration between 1 and ${MAX_DURATION_MINUTES} minutes`
       : 'Please choose a duration';
+  }
+
+  if (v.customBufferTime) {
+    const bufferNum = Number(v.bufferTime);
+    if (v.bufferTime === '' || isNaN(bufferNum) || !Number.isInteger(bufferNum) || bufferNum < 0) {
+      next.bufferTime = 'Enter a buffer time of 0 or more minutes';
+    } else if (durationNum > 0 && bufferNum > durationNum) {
+      next.bufferTime = `Buffer time cannot exceed session duration (${durationNum} mins)`;
+    } else if (bufferNum > MAX_BUFFER_MINUTES) {
+      next.bufferTime = `Buffer time cannot exceed ${MAX_BUFFER_MINUTES} mins`;
+    }
   }
 
   const priceNum = Number(v.price);

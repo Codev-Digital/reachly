@@ -25,6 +25,7 @@ export interface ISessionType extends Document {
   packagePeriod?: 'week' | 'month'; // display label only ("5 sessions per week")
   order: number;      // display order
   isActive: boolean;
+  isDraft?: boolean;  // draft status (e.g. while creator is completing onboarding)
   createdAt: Date;
   updatedAt: Date;
 }
@@ -118,6 +119,10 @@ const SessionTypeSchema = new Schema<ISessionType>(
       type: Boolean,
       default: true,
       index: true,
+    },
+    isDraft: {
+      type: Boolean,
+      default: false,
     },
   },
   { timestamps: true }
