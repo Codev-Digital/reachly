@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Calendar, Clock, MapPin, ChevronRight, Ticket, X } from 'lucide-react';
 import UserNavbar from '@/components/UserNavbar';
+import GuestLoginModal from '@/components/GuestLoginModal';
 import { formatEventCardDate, formatEventCardTime } from '@/lib/eventDisplay';
 import { isRichTextEmpty } from '@/lib/richText';
 import { cn } from '@/lib/cn';
@@ -80,6 +81,8 @@ export default function UserEventDetailPage() {
   const [selectedTierKey, setSelectedTierKey] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [buying, setBuying] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   useEffect(() => {
     try {
@@ -108,6 +111,7 @@ export default function UserEventDetailPage() {
 
         if (meRes.ok) {
           const data = await meRes.json();
+          setIsAuthenticated(true);
           setDisplayName(data.user?.name || '');
           setProfilePhoto(data.user?.profilePhoto || null);
         }
@@ -161,6 +165,10 @@ export default function UserEventDetailPage() {
   };
 
   const openConfirm = () => {
+    if (!isAuthenticated) {
+      setShowLoginModal(true);
+      return;
+    }
     if (!selectedTier) return;
     setConfirmOpen(true);
   };
@@ -552,6 +560,13 @@ export default function UserEventDetailPage() {
           </>
         )}
       </main>
+
+      <GuestLoginModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        mode="booking"
+        callbackUrl={`/user/events/${id}`}
+      />
     </div>
   );
 }
