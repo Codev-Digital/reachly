@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Avoid React Strict Mode double-mounting effects (duplicate API calls in dev)
+  reactStrictMode: false,
   allowedDevOrigins: ['10.173.131.145'],
 
   async redirects() {

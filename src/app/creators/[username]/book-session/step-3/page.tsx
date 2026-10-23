@@ -5,7 +5,13 @@ import { useState, useEffect } from 'react';
 import BookingProgress from '@/components/booking/BookingProgress';
 import CreatorProfileCard from '@/components/booking/CreatorProfileCard';
 import FormInput from '@/components/FormInput';
-import { useBooking } from '../layout';
+import RichTextEditor from '@/components/RichTextEditor';
+import { useBooking, type SessionQuestion } from '../layout';
+import { WHAT_TO_DISCUSS_MAX_LENGTH } from '@/lib/richText';
+
+function questionId(q: SessionQuestion, index: number) {
+  return String(q.id || q._id || `q-${index}`);
+}
 
 export default function BookSessionStep3() {
   const params = useParams();
@@ -21,6 +27,10 @@ export default function BookSessionStep3() {
 
   // Determine if user is logged in from userData
   const isLoggedIn = !!(userData?.user?.id);
+
+  const sessionQuestions: SessionQuestion[] = Array.isArray(booking.selectedSession?.questions)
+    ? booking.selectedSession!.questions!
+    : [];
 
   // Auto-fill user details if logged in and fields are empty
   useEffect(() => {
@@ -51,10 +61,42 @@ export default function BookSessionStep3() {
     }));
   };
 
+  const getAnswer = (qid: string): string => {
+    const found = (booking.answers || []).find((a) => a.questionId === qid);
+    if (!found) return '';
+    return Array.isArray(found.answer) ? found.answer[0] || '' : String(found.answer || '');
+  };
+
+  const updateAnswer = (q: SessionQuestion, index: number, value: string) => {
+    const qid = questionId(q, index);
+    setBooking((b) => {
+      const rest = (b.answers || []).filter((a) => a.questionId !== qid);
+      return {
+        ...b,
+        answers: [
+          ...rest,
+          {
+            questionId: qid,
+            question: q.question,
+            answer: value,
+            type: q.type,
+          },
+        ],
+      };
+    });
+  };
+
+  const requiredQuestionsAnswered = sessionQuestions.every((q, i) => {
+    if (q.required === false) return true;
+    const val = getAnswer(questionId(q, i)).trim();
+    return val.length > 0;
+  });
+
   const canProceed =
     booking.userDetails.fullName &&
     booking.userDetails.email &&
-    booking.userDetails.whatsapp;
+    booking.userDetails.whatsapp &&
+    requiredQuestionsAnswered;
 
   const step4Url = `/creators/${params.username}/book-session/step-4${queryStr}`;
 
@@ -195,22 +237,85 @@ export default function BookSessionStep3() {
                   className="pl-14"
                 />
 
-                <div>
-                  <label className="block text-xs font-bold text-gray-800 mb-2">
-                    What would you like to discuss
-                  </label>
-                  <textarea
-                    placeholder="Share a brief overview so the creator can prepare for a session"
-                    value={booking.userDetails.whatToDiscuss}
-                    onChange={e => updateUserDetails('whatToDiscuss', e.target.value)}
-                    rows={4}
-                    maxLength={140}
-                    className="w-full bg-white border border-gray-200 focus:border-gray-300 focus:outline-none rounded-xl px-4 py-3 text-xs font-bold text-gray-800 placeholder-gray-400 resize-none transition-all shadow-xs"
-                  />
-                  <div className="text-right text-[10px] font-bold text-gray-400 mt-1 select-none">
-                    {booking.userDetails.whatToDiscuss.length}/140
+                <RichTextEditor
+                  label="What would you like to discuss"
+                  value={booking.userDetails.whatToDiscuss}
+                  onChange={(html) => updateUserDetails('whatToDiscuss', html)}
+                  placeholder="Share a brief overview so the creator can prepare for a session"
+                  maxLength={WHAT_TO_DISCUSS_MAX_LENGTH}
+                  autoHeight
+                />
+
+                {/* Creator session intake questions (after discuss field) */}
+                {sessionQuestions.length > 0 && (
+                  <div className="space-y-5 pt-2 border-t border-gray-100">
+                    <div>
+                      <h4 className="text-sm font-extrabold text-gray-900">Session questions</h4>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        Please answer the questions set by this creator
+                      </p>
+                    </div>
+
+                    {sessionQuestions.map((q, index) => {
+                      const qid = questionId(q, index);
+                      const value = getAnswer(qid);
+                      const isRequired = q.required !== false;
+
+                      return (
+                        <div key={qid}>
+                          <label className="block text-xs font-bold text-gray-800 mb-2">
+                            {q.question}
+                            {isRequired && <span className="text-red-500 ml-0.5">*</span>}
+                          </label>
+
+                          {q.type === 'multiple_choice' ? (
+                            <div className="space-y-2">
+                              {(q.options || []).filter(Boolean).map((opt) => {
+                                const selected = value === opt;
+                                return (
+                                  <button
+                                    key={opt}
+                                    type="button"
+                                    onClick={() => updateAnswer(q, index, opt)}
+                                    className={`w-full text-left rounded-xl border px-4 py-3 text-xs font-semibold transition-all cursor-pointer ${
+                                      selected
+                                        ? 'border-[#0012FF] bg-[#EEF2FF] text-[#0012FF]'
+                                        : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                                    }`}
+                                  >
+                                    <span className="inline-flex items-center gap-2.5">
+                                      <span
+                                        className={`h-4 w-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                                          selected ? 'border-[#0012FF]' : 'border-gray-300'
+                                        }`}
+                                      >
+                                        {selected && (
+                                          <span className="h-2 w-2 rounded-full bg-[#0012FF]" />
+                                        )}
+                                      </span>
+                                      {opt}
+                                    </span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <textarea
+                              placeholder="Type your answer"
+                              value={value}
+                              onChange={(e) =>
+                                updateAnswer(q, index, e.target.value.slice(0, 300))
+                              }
+                              rows={3}
+                              maxLength={300}
+                              className="w-full bg-white border border-gray-200 focus:border-gray-300 focus:outline-none rounded-xl px-4 py-3 text-xs font-bold text-gray-800 placeholder-gray-400 resize-none transition-all shadow-xs"
+                            />
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
-                </div>
+                )}
               </div>
 
               {authError && (

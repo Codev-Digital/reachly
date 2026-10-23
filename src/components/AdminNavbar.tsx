@@ -232,7 +232,7 @@ export default function AdminNavbar() {
 
   return (
     <div className="max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-10 pt-4">
-      <nav className="bg-white shadow-sm border border-gray-100 sticky top-0 z-50 rounded-3xl px-6 sm:px-8 py-3 flex flex-col">
+      <nav className="bg-white border border-[#e2e2e2] sticky top-0 z-50 rounded-3xl px-6 sm:px-8 py-3 flex flex-col">
         <div className="flex w-full items-center justify-between">
           {/* Left: Brand Logo */}
           <Link href="/" className="flex items-center gap-2">

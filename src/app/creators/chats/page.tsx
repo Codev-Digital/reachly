@@ -509,12 +509,20 @@ export default function ChatsPage() {
     }
   };
 
+  // Load once on mount, then poll (single interval — do not add a second poller)
   useEffect(() => {
-    fetchConversations();
-    const interval = setInterval(() => {
-      fetchConversations();
-    }, 30000);
-    return () => clearInterval(interval);
+    void fetchConversations();
+    const id = setInterval(() => void fetchConversations(), 15000);
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        void fetchConversations();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   // Auto-activate chat if bookingRef is passed in URL query
@@ -530,22 +538,6 @@ export default function ChatsPage() {
       }
     }
   }, [conversations]);
-
-
-  // Poll every 15 seconds
-  useEffect(() => {
-    const id = setInterval(() => fetchConversations(), 7000);
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        fetchConversations();
-      }
-    };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => {
-      clearInterval(id);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, []);
 
   // WebSocket + message history
   useEffect(() => {

@@ -9,6 +9,15 @@ import CreatorDashboardNav from '@/components/CreatorDashboardNav';
 import UserNavbar from '@/components/UserNavbar';
 import OnboardingNavbar from '@/components/OnboardingNavbar';
 
+export interface SessionQuestion {
+  id?: string;
+  _id?: string;
+  type: 'multiple_choice' | 'short_answer';
+  question: string;
+  options?: string[];
+  required?: boolean;
+}
+
 export interface SessionType {
   id: string;
   title: string;
@@ -17,9 +26,17 @@ export interface SessionType {
   discountedPrice?: number | null;
   description: string;
   features: string[];
+  questions?: SessionQuestion[];
   isPackage?: boolean;
   packageSessions?: number;
   packagePeriod?: 'week' | 'month';
+}
+
+export interface BookingAnswer {
+  questionId: string;
+  question: string;
+  answer: string | string[];
+  type: 'multiple_choice' | 'short_answer';
 }
 
 interface UserDetails {
@@ -64,6 +81,8 @@ interface BookingState {
   selectedDate: Date | null;
   selectedTime: string | null;
   userDetails: UserDetails;
+  /** Answers to the selected session's intake questions */
+  answers: BookingAnswer[];
   step: number;
   bookingRef?: string;
 }
@@ -83,6 +102,7 @@ function deserializeBooking(raw: string): BookingState | null {
     const parsed = JSON.parse(raw);
     return {
       ...parsed,
+      answers: Array.isArray(parsed.answers) ? parsed.answers : [],
       selectedDate: parsed.selectedDate ? new Date(parsed.selectedDate) : null,
     };
   } catch {
@@ -104,6 +124,7 @@ const emptyBooking: BookingState = {
     whatToDiscuss: '',
     proceedAs: 'guest',
   },
+  answers: [],
   step: 1,
 };
 

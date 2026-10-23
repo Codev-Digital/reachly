@@ -73,3 +73,6 @@ export const DETAILED_BIO_MAX_LENGTH = 1000;
 
 /** Max visible characters allowed in a session description. */
 export const SESSION_DESCRIPTION_MAX_LENGTH = 5000;
+
+/** Max visible characters for booking “What would you like to discuss”. */
+export const WHAT_TO_DISCUSS_MAX_LENGTH = 250;

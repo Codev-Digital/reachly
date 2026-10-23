@@ -8,6 +8,8 @@ import User from '@/models/User';
 import CreatorProfile from '@/models/CreatorProfile';
 import SessionType from '@/models/SessionType';
 import Message from '@/models/Message';
+import Review from '@/models/Review';
+import { richTextToPlain } from '@/lib/richText';
 
 function convertTo24Hour(time12h: string): string {
     const [time, modifier] = time12h.split(' ');
@@ -87,12 +89,13 @@ export async function GET(request: NextRequest) {
             rawAllBookings.map((b: any) => b.guestDetails?.email?.toLowerCase()).filter(Boolean)
         )) as string[];
 
-        // ── 2. Batch fetch Users, Profiles, and Messages concurrently ─────
+        // ── 2. Batch fetch Users, Profiles, Messages, and my reviews concurrently ─────
         const [
             guestUsers,
             knownUsers,
             unreadCountsAgg,
-            lastMessagesAgg
+            lastMessagesAgg,
+            myReviews,
         ] = await Promise.all([
             guestEmails.length > 0
                 ? User.find({ email: { $in: guestEmails } }).select('_id email name profilePhoto').lean()
@@ -112,7 +115,13 @@ export async function GET(request: NextRequest) {
                     content: { $first: '$content' },
                     createdAt: { $first: '$createdAt' }
                 } }
-            ])
+            ]),
+            Review.find({
+                bookingId: { $in: allBookingIds },
+                reviewerId: user._id,
+            })
+                .select('bookingId')
+                .lean(),
         ]);
 
         // Collect all possible user IDs for creator profiles
@@ -128,6 +137,7 @@ export async function GET(request: NextRequest) {
         const profileByUserId = new Map<string, any>(creatorProfiles.map((cp) => [cp.userId.toString(), cp]));
         const unreadCountByBooking = new Map<string, number>(unreadCountsAgg.map((u: any) => [u._id.toString(), u.count]));
         const lastMsgByBooking = new Map<string, any>(lastMessagesAgg.map((m: any) => [m._id.toString(), m]));
+        const reviewedSet = new Set((myReviews as any[]).map((r) => String(r.bookingId)));
 
         // Enrich bookings synchronously without ANY additional DB queries
         const enrichBookingSync = (booking: any, isOutgoing: boolean) => {
@@ -212,7 +222,7 @@ export async function GET(request: NextRequest) {
                 statusRaw: booking.status,
                 paymentStatus: booking.paymentStatus,
                 paymentMethod: booking.paymentMethod,
-                preSessionQuestion: booking.guestDetails?.whatToDiscuss || '',
+                preSessionQuestion: richTextToPlain(booking.guestDetails?.whatToDiscuss) || '',
                 reason: '',
                 isPaid: booking.paymentStatus === 'paid',
                 bookedOn: bookedOn,
@@ -224,13 +234,10 @@ export async function GET(request: NextRequest) {
                 isLocked: booking.isLocked !== undefined ? booking.isLocked : !lastMsgDoc,
                 meetingUrl: booking.meetingUrl,
                 meetingStarted: Boolean(booking.meetingStartedAt),
-                meetingEnded: Boolean(
-                    booking.meetingEndedAt ||
-                        booking.status === 'completed' ||
-                        (booking.meetingEndsAt &&
-                            new Date(booking.meetingEndsAt).getTime() <= Date.now())
-                ),
+                // Only after the call was explicitly ended (timer / hang-up) — never on book
+                meetingEnded: Boolean(booking.meetingEndedAt),
                 meetingEndsAt: booking.meetingEndsAt || null,
+                hasReviewed: reviewedSet.has(bookingIdStr),
                 lastMessage: lastMsgDoc ? lastMsgDoc.content : '',
                 lastMessageTime: lastMsgDoc ? lastMsgDoc.createdAt : null,
                 unreadCount: unreadCount,

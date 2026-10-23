@@ -19,6 +19,8 @@ import {
   intervalsOverlap,
   parse12h,
 } from "@/lib/slots";
+import { sanitizeRichText } from "@/lib/sanitizeRichText";
+import { richTextToPlain, WHAT_TO_DISCUSS_MAX_LENGTH, richTextLength } from "@/lib/richText";
 
 // Helper to generate booking reference
 function generateBookingRef(): string {
@@ -364,6 +366,16 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    const whatToDiscussClean = sanitizeRichText(userDetails.whatToDiscuss || "");
+    if (richTextLength(whatToDiscussClean) > WHAT_TO_DISCUSS_MAX_LENGTH) {
+      return NextResponse.json(
+        {
+          error: `Discussion notes must be ${WHAT_TO_DISCUSS_MAX_LENGTH} characters or fewer.`,
+        },
+        { status: 400 },
+      );
+    }
+
     const booking = new Booking({
       bookingRef,
       creatorId: creatorProfile.userId,
@@ -375,7 +387,7 @@ export async function POST(request: NextRequest) {
         whatsapp: userDetails.whatsapp,
         notes: userDetails.notes || "",
         heardFrom: userDetails.heardFrom || "",
-        whatToDiscuss: userDetails.whatToDiscuss || "",
+        whatToDiscuss: whatToDiscussClean,
       },
       answers: Array.isArray(answers) ? answers : [],
       scheduledDate: scheduledDateUTC,
@@ -448,7 +460,7 @@ export async function POST(request: NextRequest) {
             userName: userDetails.fullName,
             userEmail: userDetails.email.toLowerCase(),
             whatsapp: userDetails.whatsapp,
-            whatToDiscuss: userDetails.whatToDiscuss,
+            whatToDiscuss: richTextToPlain(whatToDiscussClean) || whatToDiscussClean,
             meetLink: meetingUrl,
           });
 

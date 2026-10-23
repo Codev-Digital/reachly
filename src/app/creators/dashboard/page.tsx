@@ -8,7 +8,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import CreatorDashboardNav from '@/components/CreatorDashboardNav';
 import LoadingAnimation from '@/components/LoadingAnimation';
 import DaysOfMonth from '@/components/DaysOfMonth';
-import { TrendingUp, BookOpen, Calendar, Eye, Users, Copy, Check, Bookmark, Target, Presentation } from 'lucide-react';
+import { TrendingUp, BookOpen, Calendar, Eye, Users, Copy, Check, Bookmark, Target, Presentation, Star, CheckCircle, Video, MessageSquare, VideoOff } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Cell, Tooltip } from 'recharts';
 import DailyCall from '@/components/DailyCall';
 import SessionReviewModal, {
@@ -17,6 +17,7 @@ import SessionReviewModal, {
 import { isMeetingPassed } from '@/lib/time';
 import { fromISODate, toISODate } from '@/lib/eventTicketing';
 import { parse12h } from '@/lib/slots';
+import { useCreatorJoinNudge } from '@/hooks/useCreatorJoinNudge';
 
 /** Prefer API scheduledDateIso (UTC-safe); fall back to UTC parts of scheduledDate. */
 function bookingDateIso(booking: { scheduledDateIso?: string; scheduledDate?: string | Date }) {
@@ -143,16 +144,16 @@ const CreatorDashboard = () => {
         alert(data.error || 'Could not start the meeting.');
         return;
       }
-      const endsAt =
-        data.meeting?.meetingEndsAt ||
-        data.meetingEndsAt ||
-        meetingToJoin.meetingEndsAt ||
-        null;
+      const endsAt = data.meeting?.meetingEndsAt || data.meetingEndsAt || null;
+      if (!endsAt) {
+        alert('Could not start the session timer. Please try Join again.');
+        return;
+      }
       setMeetingToJoin((prev) =>
         prev
           ? {
               ...prev,
-              meetingEndsAt: endsAt ? String(endsAt) : prev.meetingEndsAt,
+              meetingEndsAt: String(endsAt),
               durationMins:
                 data.meeting?.totalMeetingMins ||
                 data.totalMeetingMins ||
@@ -160,6 +161,7 @@ const CreatorDashboard = () => {
             }
           : prev
       );
+      // Timer + user join unlock only after this startMeeting succeeds
       setActiveCallUrl(meetingToJoin.url);
     } catch (err) {
       console.error(err);
@@ -169,11 +171,44 @@ const CreatorDashboard = () => {
     }
   };
 
-  const handleCreatorLeaveMeeting = () => {
+  useCreatorJoinNudge({
+    waitingToJoin: Boolean(meetingToJoin && !activeCallUrl),
+    starting: startingMeeting,
+    bookingId: meetingToJoin?.id || meetingToJoin?.ref || null,
+    onAutoJoin: () => {
+      void handleCreatorStartMeeting();
+    },
+  });
+
+  const markBookingReviewed = (bookingId: string) => {
+    setBookingsList((prev) =>
+      prev.map((b) =>
+        String(b.id) === String(bookingId)
+          ? { ...b, hasReviewed: true, meetingEnded: true, meetingStarted: true, status: 'completed' }
+          : b
+      )
+    );
+    setReviewTarget(null);
+  };
+
+  const openReviewForBooking = (booking: any) => {
+    setReviewTarget({
+      bookingId: String(booking.id),
+      peerName: booking.name || 'your client',
+      durationMins: Number(booking.durationMins) || 15,
+    });
+  };
+
+  const handleCreatorLeaveMeeting = (
+    reason?: 'left' | 'ended' | 'timeout' | 'unavailable'
+  ) => {
     const ctx = meetingToJoin;
     setActiveCallUrl(null);
     setMeetingToJoin(null);
-    if (ctx?.id) {
+    // Review only after a real in-call end — not when join never happened
+    const showReview =
+      reason === 'ended' || reason === 'timeout' || reason === 'left';
+    if (ctx?.id && showReview) {
       setBookingsList((prev) =>
         prev.map((b) =>
           String(b.id) === String(ctx.id)
@@ -182,7 +217,7 @@ const CreatorDashboard = () => {
         )
       );
       setReviewTarget({
-        bookingId: ctx.id,
+        bookingId: String(ctx.id),
         peerName: ctx.peerName || 'your client',
         durationMins: ctx.durationMins || 15,
       });
@@ -630,9 +665,21 @@ const CreatorDashboard = () => {
               return (
                 <>
                   {booking.meetingEnded || booking.status === 'completed' ? (
-                    <div className="w-full py-2.5 rounded-full text-xs font-bold text-center bg-gray-100 text-gray-500 border border-gray-200 select-none">
-                      Meeting Completed
-                    </div>
+                    booking.hasReviewed ? (
+                      <div className="w-full py-2.5 rounded-full text-xs font-bold flex items-center justify-center gap-1.5 bg-gray-100 text-gray-500 border border-gray-200 select-none">
+                        <CheckCircle className="size-3.5 shrink-0" />
+                        Meeting Completed
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => openReviewForBooking(booking)}
+                        className="w-full py-2.5 rounded-full text-xs font-bold flex items-center justify-center gap-1.5 transition-all bg-gray-200 hover:bg-gray-300 text-gray-700 cursor-pointer"
+                      >
+                        <Star className="size-3.5 shrink-0" />
+                        Review {booking.name || 'Client'}
+                      </button>
+                    )
                   ) : (
                     <button
                       disabled={passed}
@@ -647,17 +694,23 @@ const CreatorDashboard = () => {
                             durationMins:
                               Number(booking.durationMins) ||
                               (minsMatch ? Number(minsMatch[1]) : 15),
-                            meetingEndsAt: booking.meetingEndsAt || null,
+                            // Timer starts only after Join → startMeeting
+                            meetingEndsAt: null,
                           });
                         } else {
                           alert('Meeting link is not available yet.');
                         }
                       }}
-                      className={`w-full py-2.5 rounded-full text-xs font-bold text-center transition-all shadow-md ${passed
+                      className={`w-full py-2.5 rounded-full text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-md ${passed
                         ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
                         : 'bg-[#0012FF] hover:bg-[#0012FF]/90 text-white shadow-[#0012FF]/20 cursor-pointer'
                         }`}
                     >
+                      {passed ? (
+                        <VideoOff className="size-3.5 shrink-0" />
+                      ) : (
+                        <Video className="size-3.5 shrink-0" />
+                      )}
                       {passed ? 'Meeting Ended' : booking.meetingStarted ? 'Rejoin Meeting' : 'Start Meeting'}
                     </button>
                   )}
@@ -665,8 +718,9 @@ const CreatorDashboard = () => {
                   {passed ? (
                     <button
                       onClick={() => router.push(`/creators/chats?bookingRef=${booking.bookingRef}`)}
-                      className="w-full py-2.5 bg-[#0012FF] hover:bg-[#0012FF]/90 text-white rounded-full text-xs font-bold text-center transition-all cursor-pointer shadow-md shadow-[#0012FF]/20"
+                      className="w-full py-2.5 bg-[#0012FF] hover:bg-[#0012FF]/90 text-white rounded-full text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md shadow-[#0012FF]/20"
                     >
+                      <MessageSquare className="size-3.5 shrink-0" />
                       Chat now
                     </button>
                   ) : (
@@ -1315,9 +1369,9 @@ const CreatorDashboard = () => {
               <img src="/assets/meeting.png" alt="Meeting" className="w-full h-full object-contain" />
             </div>
 
-            <h3 className="text-2xl font-extrabold text-black mb-2 tracking-tight">Ready to start?</h3>
+            <h3 className="text-2xl font-extrabold text-black mb-2 tracking-tight">Ready to join?</h3>
             <p className="text-gray-500 text-sm mb-4">
-              Starting the meeting lets your client join. Make sure your camera and microphone are ready.
+              Press Join to start the session timer and let your client enter. Make sure your camera and microphone are ready.
             </p>
 
             <div className="w-full bg-gray-50 border border-gray-100 rounded-xl p-3 mb-6">
@@ -1330,7 +1384,7 @@ const CreatorDashboard = () => {
               disabled={startingMeeting}
               className="w-full bg-[#0012FF] text-white px-8 py-3.5 rounded-full font-bold text-sm hover:opacity-90 transition-all shadow-lg shadow-[#0012FF]/20 cursor-pointer disabled:opacity-60"
             >
-              {startingMeeting ? 'Starting…' : 'Start Meeting'}
+              {startingMeeting ? 'Joining…' : 'Join Meeting'}
             </button>
           </div>
         </div>
@@ -1352,6 +1406,7 @@ const CreatorDashboard = () => {
         onClose={() => setReviewTarget(null)}
         target={reviewTarget}
         role="creator"
+        onSubmitted={markBookingReviewed}
       />
     </div>
   );

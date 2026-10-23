@@ -6,6 +6,8 @@ import User from '@/models/User';
 import CreatorProfile from '@/models/CreatorProfile';
 import Booking from '@/models/Booking';
 import SessionType from '@/models/SessionType';
+import Review from '@/models/Review';
+import { richTextToPlain } from '@/lib/richText';
 
 export async function GET(req: NextRequest) {
   try {
@@ -121,6 +123,20 @@ export async function GET(req: NextRequest) {
       return `${y}-${m}-${day}`;
     };
 
+    const allBookingIds = [...incomingBookings, ...outgoingBookings]
+      .map((b) => b._id)
+      .filter(Boolean);
+    const myReviews =
+      allBookingIds.length > 0
+        ? await Review.find({
+            bookingId: { $in: allBookingIds },
+            reviewerId: user._id,
+          })
+            .select('bookingId')
+            .lean()
+        : [];
+    const reviewedSet = new Set((myReviews as any[]).map((r) => String(r.bookingId)));
+
     // Format incoming bookings
     const formattedIncoming = incomingBookings.map((b) => {
       const scheduledDateIso = toScheduledDateIso(b.scheduledDate);
@@ -146,7 +162,10 @@ export async function GET(req: NextRequest) {
         avatar: avatarUrl,
         time: `${scheduledDateStr} at ${b.scheduledTime} (${duration} mins)`,
         type: b.paymentMethod || 'Online',
-        note: b.guestDetails?.notes || b.guestDetails?.whatToDiscuss || 'No special requirements listed.',
+        note:
+          b.guestDetails?.notes ||
+          richTextToPlain(b.guestDetails?.whatToDiscuss) ||
+          'No special requirements listed.',
         amount: `${b.finalPrice} PKR`,
         status: b.status,
         scheduledDate: b.scheduledDate,
@@ -156,12 +175,9 @@ export async function GET(req: NextRequest) {
         createdAt: b.createdAt || null,
         meetingUrl: b.meetingUrl,
         meetingStarted: Boolean(b.meetingStartedAt),
-        meetingEnded: Boolean(
-          b.meetingEndedAt ||
-            b.status === 'completed' ||
-            (b.meetingEndsAt && new Date(b.meetingEndsAt).getTime() <= Date.now())
-        ),
+        meetingEnded: Boolean(b.meetingEndedAt),
         meetingEndsAt: b.meetingEndsAt || null,
+        hasReviewed: reviewedSet.has(String(b._id)),
         bookingRef: b.bookingRef,
         isCreatorBooker: false,
       };
@@ -186,7 +202,9 @@ export async function GET(req: NextRequest) {
         avatar: avatarUrl,
         time: `${scheduledDateStr} at ${b.scheduledTime} (${duration} mins)`,
         type: b.paymentMethod || 'Online',
-        note: b.guestDetails?.whatToDiscuss || 'No special requirements listed.',
+        note:
+          richTextToPlain(b.guestDetails?.whatToDiscuss) ||
+          'No special requirements listed.',
         amount: `${b.finalPrice} PKR`,
         status: b.status,
         scheduledDate: b.scheduledDate,
@@ -196,12 +214,9 @@ export async function GET(req: NextRequest) {
         createdAt: b.createdAt || null,
         meetingUrl: b.meetingUrl,
         meetingStarted: Boolean(b.meetingStartedAt),
-        meetingEnded: Boolean(
-          b.meetingEndedAt ||
-            b.status === 'completed' ||
-            (b.meetingEndsAt && new Date(b.meetingEndsAt).getTime() <= Date.now())
-        ),
+        meetingEnded: Boolean(b.meetingEndedAt),
         meetingEndsAt: b.meetingEndsAt || null,
+        hasReviewed: reviewedSet.has(String(b._id)),
         bookingRef: b.bookingRef,
         isCreatorBooker: true,
       };

@@ -70,6 +70,7 @@ export default function BookSessionStep4() {
         date: booking.selectedDate ? toISO(booking.selectedDate) : null,
         time: booking.selectedTime,
         userDetails: booking.userDetails,
+        answers: booking.answers || [],
         proceedAs: booking.userDetails.proceedAs || 'guest',
         paymentMethod,
         promoApplied: null,

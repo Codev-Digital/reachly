@@ -6,7 +6,7 @@ import AdminReviewReportCard, {
 } from '@/components/admin/AdminReviewReportCard';
 
 import { motion } from 'framer-motion';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Cell, Tooltip } from 'recharts';
 import { ChevronLeft, ChevronRight, TrendingUp } from 'lucide-react';
@@ -121,7 +121,13 @@ const AdminDashboard = () => {
     }
   };
 
-  useEffect(() => { loadEarningsChart(chartYear, chartTimeframe); }, [chartYear, chartTimeframe]);
+  const earningsKeyRef = useRef('');
+  useEffect(() => {
+    const key = `${chartYear}:${chartTimeframe}`;
+    if (earningsKeyRef.current === key) return;
+    earningsKeyRef.current = key;
+    void loadEarningsChart(chartYear, chartTimeframe);
+  }, [chartYear, chartTimeframe]);
 
   const loadReviewReports = async () => {
     setLoadingReports(true);
@@ -145,7 +151,10 @@ const AdminDashboard = () => {
     }
   };
 
+  const adminBootstrappedRef = useRef(false);
   useEffect(() => {
+    if (adminBootstrappedRef.current) return;
+    adminBootstrappedRef.current = true;
     void fetchDashboardData();
     void loadReviewReports();
   }, []);

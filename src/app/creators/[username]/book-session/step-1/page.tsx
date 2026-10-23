@@ -124,7 +124,12 @@ export default function BookSessionStep1() {
   }, [params.username, setBooking]);
 
   const handleSelectSession = (session: SessionType) => {
-    setBooking(b => ({ ...b, selectedSession: session }));
+    setBooking((b) => ({
+      ...b,
+      selectedSession: session,
+      // Reset answers when switching sessions
+      answers: [],
+    }));
   };
 
   const handleContinue = () => {

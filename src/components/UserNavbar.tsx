@@ -276,7 +276,7 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
 
   return (
     <div className={`mx-auto pt-4 w-full ${isBookSession ? 'max-w-7xl px-4 sm:px-6' : 'max-w-[1536px] px-4 sm:px-6 lg:px-10'}`}>
-      <nav className="bg-white shadow-sm border border-gray-100 sticky top-0 z-50 rounded-3xl px-6 sm:px-8 py-3 flex flex-col">
+      <nav className="bg-white border border-[#e2e2e2] sticky top-0 z-50 rounded-3xl px-6 sm:px-8 py-3 flex flex-col">
         <div className="flex w-full items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">

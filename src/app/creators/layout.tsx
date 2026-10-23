@@ -5,6 +5,30 @@ import { useRouter, usePathname } from 'next/navigation';
 import CreatorNavbar from '@/components/CreatorNavbar';
 import LoadingAnimation from '@/components/LoadingAnimation';
 
+/** Session-scoped approval check — avoids /api/user/me on every creator route change */
+let approvalPromise: Promise<string | null> | null = null;
+let approvalCachedAt = 0;
+const APPROVAL_TTL_MS = 60_000;
+
+function fetchApprovalStatus(): Promise<string | null> {
+  const now = Date.now();
+  if (approvalPromise && now - approvalCachedAt < APPROVAL_TTL_MS) {
+    return approvalPromise;
+  }
+  approvalCachedAt = now;
+  approvalPromise = (async () => {
+    try {
+      const res = await fetch('/api/user/me');
+      if (!res.ok) return null;
+      const data = await res.json();
+      return (data.user?.approvalStatus as string) || null;
+    } catch {
+      return null;
+    }
+  })();
+  return approvalPromise;
+}
+
 export default function CreatorLayout({
   children,
 }: {
@@ -15,32 +39,31 @@ export default function CreatorLayout({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
+
     const checkApproval = async () => {
-      // Don't check on the pending-approval page itself to avoid infinite loops
       if (pathname === '/creators/pending-approval') {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
         return;
       }
 
-      try {
-        const res = await fetch('/api/user/me');
-        if (res.ok) {
-          const data = await res.json();
-          // If user is pending approval, redirect to pending page
-          if (data.user.approvalStatus && data.user.approvalStatus === 'pending') {
-            router.push('/creators/pending-approval');
-          }
-        }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
+      const status = await fetchApprovalStatus();
+      if (cancelled) return;
+
+      if (status === 'pending') {
+        router.push('/creators/pending-approval');
+        return;
       }
+      setLoading(false);
     };
-    checkApproval();
+
+    void checkApproval();
+    return () => {
+      cancelled = true;
+    };
   }, [pathname, router]);
 
-  const isDashboardRoute = 
+  const isDashboardRoute =
     pathname.startsWith('/creators/dashboard') ||
     pathname.startsWith('/creators/chats') ||
     pathname.startsWith('/creators/packages') ||
@@ -53,10 +76,9 @@ export default function CreatorLayout({
 
   return (
     <>
-      {pathname !== '/creators/pending-approval' && 
-       !pathname.includes('/book-session') && 
-       !isDashboardRoute && 
-       <CreatorNavbar />}
+      {pathname !== '/creators/pending-approval' &&
+        !pathname.includes('/book-session') &&
+        !isDashboardRoute && <CreatorNavbar />}
       {children}
     </>
   );

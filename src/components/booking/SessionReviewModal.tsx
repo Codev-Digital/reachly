@@ -9,7 +9,7 @@ const COMMENT_MAX = 250;
 
 const ratingStyles = {
   itemShapes: ThinStar,
-  activeFillColor: '#0012FF',
+  activeFillColor: '#FACC15',
   inactiveFillColor: '#E5E7EB',
 };
 
@@ -26,6 +26,8 @@ interface SessionReviewModalProps {
   target: SessionReviewTarget | null;
   /** user = both stars + note required; creator = both optional */
   role: 'user' | 'creator';
+  /** Called after a successful submit or skip so UI can switch to Meeting Completed */
+  onSubmitted?: (bookingId: string) => void;
 }
 
 /**
@@ -38,6 +40,7 @@ export default function SessionReviewModal({
   onClose,
   target,
   role,
+  onSubmitted,
 }: SessionReviewModalProps) {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
@@ -72,12 +75,19 @@ export default function SessionReviewModal({
     }
 
     if (!skip && role === 'creator' && !rating && !comment.trim()) {
+      onSubmitted?.(target.bookingId);
       onClose();
       return;
     }
 
     setSaving(true);
     try {
+      if (skip && role === 'creator') {
+        onSubmitted?.(target.bookingId);
+        onClose();
+        return;
+      }
+
       const res = await fetch('/api/reviews', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -94,6 +104,7 @@ export default function SessionReviewModal({
         return;
       }
       if (!skip) toast.success(required ? 'Thanks for your review!' : 'Feedback saved');
+      onSubmitted?.(target.bookingId);
       onClose();
     } catch (err) {
       console.error(err);
@@ -151,13 +162,10 @@ export default function SessionReviewModal({
             transition="zoom"
           />
         </div>
-        {!required && (
-          <p className="mb-3 text-[11px] font-medium text-gray-400">Stars are optional</p>
-        )}
 
         <div className="mb-2 w-full text-left">
           <label className="mb-1.5 block text-xs font-semibold text-gray-600">
-            Note {required ? <span className="text-red-500">*</span> : <span className="font-normal text-gray-400">(optional)</span>}
+            Note {required ? <span className="text-red-500">*</span> : null}
           </label>
           <textarea
             value={comment}

@@ -9,7 +9,7 @@ interface MeetingNotStartedModalProps {
 }
 
 /**
- * Shown when a user tries to join before the creator has pressed Start Meeting.
+ * Shown when a user tries to join before the creator has pressed Join Meeting.
  */
 export default function MeetingNotStartedModal({
   open,
@@ -60,15 +60,15 @@ export default function MeetingNotStartedModal({
           id="meeting-wait-title"
           className="mb-2 text-xl font-extrabold tracking-tight text-black sm:text-2xl"
         >
-          Meeting not started yet
+          Meeting hasn&apos;t started yet
         </h3>
 
-        <p className="mb-3 max-w-[300px] text-xs font-medium leading-relaxed text-gray-500 sm:text-sm">
-          <span className="font-bold text-gray-800">{name}</span> {" "} hasn&apos;t started the meeting yet.
+        <p className="mb-3 max-w-[320px] text-xs font-medium leading-relaxed text-gray-500 sm:text-sm">
+          <span className="font-bold text-gray-800">{name}</span> hasn&apos;t pressed Join yet.
+          You can join only after they start the meeting.
         </p>
-        <p className="mb-6 max-w-[300px] text-xs font-medium leading-relaxed text-gray-400 sm:text-sm">
-          We&apos;ll notify you via WhatsApp or email when{' '}
-          <span className="font-semibold text-gray-600">{name}</span> starts the meeting.
+        <p className="mb-6 max-w-[320px] text-xs font-medium leading-relaxed text-gray-400 sm:text-sm">
+          We&apos;ll notify you when the meeting starts.
         </p>
 
         <button

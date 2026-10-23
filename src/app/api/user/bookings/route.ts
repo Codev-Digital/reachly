@@ -9,6 +9,7 @@ import User from '@/models/User';
 import CreatorProfile from '@/models/CreatorProfile';
 import SessionType from '@/models/SessionType';
 import Message from '@/models/Message';
+import Review from '@/models/Review';
 import { verifyToken } from '@/lib/jwt';
 import { fromISODate } from '@/lib/eventTicketing';
 
@@ -64,11 +65,12 @@ export async function GET(request: NextRequest) {
         const allBookingIds = bookings.map((b: any) => b._id);
         const creatorIds = Array.from(new Set(bookings.map((b: any) => b.creatorId?.toString()).filter(Boolean)));
 
-        // Batch fetch CreatorProfiles, unread counts, and last messages concurrently
+        // Batch fetch CreatorProfiles, unread counts, last messages, and my reviews
         const [
             creatorProfiles,
             unreadCountsAgg,
-            lastMessagesAgg
+            lastMessagesAgg,
+            myReviews,
         ] = await Promise.all([
             creatorIds.length > 0 
                 ? CreatorProfile.find({ userId: { $in: creatorIds } }).lean()
@@ -89,13 +91,24 @@ export async function GET(request: NextRequest) {
                         createdAt: { $first: '$createdAt' }
                     } }
                 ])
-                : []
+                : [],
+            userId && allBookingIds.length > 0
+                ? Review.find({
+                    bookingId: { $in: allBookingIds },
+                    reviewerId: userId,
+                  })
+                    .select('bookingId')
+                    .lean()
+                : Promise.resolve([]),
         ]);
 
         const { labels: pkgLabels, paid: pkgPaid } = await packageInfo(bookings);
         const profileMap = new Map(creatorProfiles.map((cp: any) => [cp.userId.toString(), cp]));
         const unreadMap = new Map(unreadCountsAgg.map((item: any) => [item._id.toString(), item.count]));
         const lastMsgMap = new Map(lastMessagesAgg.map((item: any) => [item._id.toString(), item]));
+        const reviewedSet = new Set(
+            (myReviews as any[]).map((r) => String(r.bookingId))
+        );
 
         const now = new Date();
 
@@ -171,13 +184,10 @@ export async function GET(request: NextRequest) {
                 isLocked: booking.isLocked !== undefined ? booking.isLocked : !lastMsgDoc,
                 meetingUrl: booking.meetingUrl,
                 meetingStarted: Boolean(booking.meetingStartedAt),
-                meetingEnded: Boolean(
-                    booking.meetingEndedAt ||
-                        booking.status === 'completed' ||
-                        (booking.meetingEndsAt &&
-                            new Date(booking.meetingEndsAt).getTime() <= Date.now())
-                ),
+                // Only after the call was explicitly ended (timer / hang-up) — never on book
+                meetingEnded: Boolean(booking.meetingEndedAt),
                 meetingEndsAt: booking.meetingEndsAt || null,
+                hasReviewed: reviewedSet.has(bIdStr),
                 bookingRef: booking.bookingRef,
                 lastMessage: lastMsgDoc ? lastMsgDoc.content : "",
                 lastMessageTime: lastMsgDoc ? lastMsgDoc.createdAt : null,

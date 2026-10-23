@@ -355,7 +355,7 @@ export default function CreatorDashboardNav({
 
   return (
     <div className={`mx-auto pt-3 sm:pt-4 w-full ${isBookSession ? 'max-w-7xl px-4 sm:px-6' : 'max-w-[1536px] px-4 sm:px-6 lg:px-10'}`}>
-      <nav className="bg-white shadow-sm border border-gray-100 sticky top-0 z-50 rounded-2xl sm:rounded-3xl">
+      <nav className="bg-white border border-[#e2e2e2] sticky top-0 z-50 rounded-2xl sm:rounded-3xl">
         <div className="px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between gap-4">
             {/* Logo */}

@@ -19,6 +19,12 @@ import {
   type SessionModificationAction,
 } from '@/lib/time';
 import { toast } from 'sonner';
+import { Star, CheckCircle, Video, MessageSquare } from 'lucide-react';
+import {
+  clearPendingSessionReview,
+  readAnyPendingSessionReview,
+  storePendingSessionReview,
+} from '@/lib/pendingSessionReview';
 
 function FadeUp({ children, delay = 0, className = '' }: { children: React.ReactNode; delay?: number; className?: string }) {
   const ref = useRef(null);
@@ -54,6 +60,7 @@ interface Booking {
   meetingStarted?: boolean;
   meetingEnded?: boolean;
   meetingEndsAt?: string | null;
+  hasReviewed?: boolean;
   bookingRef?: string;
   durationMins?: number;
   isPackage?: boolean;
@@ -203,6 +210,7 @@ export default function UserBookingsPage() {
               meetingStarted: Boolean(b.meetingStarted),
               meetingEnded: Boolean(b.meetingEnded),
               meetingEndsAt: b.meetingEndsAt || null,
+              hasReviewed: Boolean(b.hasReviewed),
               bookingRef: b.bookingRef,
               durationMins: Number(b.durationMins) || 15,
               isPackage: b.isPackage || false,
@@ -427,24 +435,57 @@ export default function UserBookingsPage() {
     }
   };
 
-  const handleUserLeaveMeeting = (reason?: 'left' | 'ended' | 'timeout') => {
+  const markBookingReviewed = (bookingId: string) => {
+    clearPendingSessionReview(bookingId);
+    setBookings((prev) =>
+      prev.map((b) =>
+        b.id === bookingId ? { ...b, hasReviewed: true, meetingEnded: true } : b
+      )
+    );
+    setReviewTarget(null);
+  };
+
+  const openReviewForBooking = (booking: Booking) => {
+    setReviewTarget({
+      bookingId: booking.id,
+      peerName: booking.creator || 'your creator',
+      durationMins: booking.durationMins || 15,
+    });
+  };
+
+  // Reopen review only if this browser just finished a meeting (not on book / random load)
+  useEffect(() => {
+    if (loading || reviewTarget || activeCallUrl || meetingToJoin) return;
+    const pending = readAnyPendingSessionReview();
+    if (!pending) return;
+    const known = bookings.find((b) => String(b.id) === String(pending.bookingId));
+    if (known?.hasReviewed) {
+      clearPendingSessionReview(pending.bookingId);
+      return;
+    }
+    setReviewTarget(pending);
+  }, [loading, bookings, reviewTarget, activeCallUrl, meetingToJoin]);
+
+  const handleUserLeaveMeeting = (reason?: 'left' | 'ended' | 'timeout' | 'unavailable') => {
     const ctx = meetingToJoin;
     setActiveCallUrl(null);
     const completed = reason === 'ended' || reason === 'timeout';
     if (ctx?.id) {
       if (completed) {
-        setBookings((prev) =>
-          prev.map((b) => (b.id === ctx.id ? { ...b, meetingEnded: true } : b))
-        );
-      }
-      setMeetingToJoin(null);
-      if (completed) {
-        setReviewTarget({
-          bookingId: ctx.id,
+        const target = {
+          bookingId: String(ctx.id),
           peerName: ctx.peerName || 'your creator',
           durationMins: ctx.durationMins || 15,
-        });
+        };
+        storePendingSessionReview(target);
+        setBookings((prev) =>
+          prev.map((b) =>
+            b.id === ctx.id ? { ...b, meetingEnded: true, meetingStarted: true } : b
+          )
+        );
+        setReviewTarget(target);
       }
+      setMeetingToJoin(null);
     } else {
       setMeetingToJoin(null);
     }
@@ -787,8 +828,9 @@ export default function UserBookingsPage() {
                           return (
                             <button
                               onClick={() => router.push(`/user/chats?bookingRef=${booking.bookingRef}`)}
-                              className="w-full py-2.5 bg-[#0012FF] hover:bg-[#0012FF]/90 text-white rounded-full text-xs font-bold text-center transition-all cursor-pointer shadow-md shadow-[#0012FF]/20"
+                              className="w-full py-2.5 bg-[#0012FF] hover:bg-[#0012FF]/90 text-white rounded-full text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md shadow-[#0012FF]/20"
                             >
+                              <MessageSquare className="size-3.5 shrink-0" />
                               Chat now
                             </button>
                           );
@@ -798,15 +840,28 @@ export default function UserBookingsPage() {
                         return (
                           <>
                             {booking.meetingEnded ? (
-                              <div className="w-full py-2.5 rounded-full text-xs font-bold text-center bg-gray-100 text-gray-500 border border-gray-200 select-none">
-                                Meeting Completed
-                              </div>
+                              booking.hasReviewed ? (
+                                <div className="w-full py-2.5 rounded-full text-xs font-bold flex items-center justify-center gap-1.5 bg-gray-100 text-gray-500 border border-gray-200 select-none">
+                                  <CheckCircle className="size-3.5 shrink-0" />
+                                  Meeting Completed
+                                </div>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => openReviewForBooking(booking)}
+                                  className="w-full py-2.5 rounded-full text-xs font-bold flex items-center justify-center gap-1.5 transition-all bg-gray-200 hover:bg-gray-300 text-gray-700 cursor-pointer"
+                                >
+                                  <Star className="size-3.5 shrink-0" />
+                                  Review {booking.creator || 'Creator'}
+                                </button>
+                              )
                             ) : (
                               <button
                                 onClick={() => void handleUserJoinMeeting(booking)}
                                 disabled={joiningMeetingId === booking.id}
-                                className="w-full py-2.5 rounded-full text-xs font-bold text-center transition-all shadow-md bg-[#0012FF] hover:bg-[#0012FF]/90 text-white shadow-[#0012FF]/20 cursor-pointer disabled:opacity-60"
+                                className="w-full py-2.5 rounded-full text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-md bg-[#0012FF] hover:bg-[#0012FF]/90 text-white shadow-[#0012FF]/20 cursor-pointer disabled:opacity-60"
                               >
+                                <Video className="size-3.5 shrink-0" />
                                 {joiningMeetingId === booking.id ? 'Checking…' : 'Join Meeting'}
                               </button>
                             )}
@@ -1201,7 +1256,39 @@ export default function UserBookingsPage() {
             </div>
 
             <button
-              onClick={() => setActiveCallUrl(meetingToJoin.url)}
+              onClick={async () => {
+                try {
+                  const res = await fetch(
+                    `/api/user/bookings/${meetingToJoin.id}/meeting`,
+                    { cache: 'no-store' }
+                  );
+                  const data = await res.json().catch(() => ({}));
+                  if (!res.ok || data.meetingEnded) {
+                    toast.error(data.error || 'This meeting is not available.');
+                    setMeetingToJoin(null);
+                    return;
+                  }
+                  if (!data.meetingStarted) {
+                    const name = data.creatorName || meetingToJoin.peerName || 'Your creator';
+                    setMeetingToJoin(null);
+                    setWaitingCreatorName(name);
+                    return;
+                  }
+                  setMeetingToJoin((prev) =>
+                    prev
+                      ? {
+                          ...prev,
+                          meetingEndsAt: data.meetingEndsAt
+                            ? String(data.meetingEndsAt)
+                            : prev.meetingEndsAt,
+                        }
+                      : prev
+                  );
+                  setActiveCallUrl(meetingToJoin.url);
+                } catch {
+                  toast.error('Could not check meeting status.');
+                }
+              }}
               className="w-full bg-[#0012FF] text-white px-8 py-3.5 rounded-full font-bold text-sm hover:opacity-90 transition-all shadow-lg shadow-[#0012FF]/20 cursor-pointer"
             >
               Join Meeting
@@ -1224,14 +1311,22 @@ export default function UserBookingsPage() {
           role="user"
           meetingEndsAt={meetingToJoin.meetingEndsAt}
           onLeave={handleUserLeaveMeeting}
+          onWaitingForCreator={(name) => {
+            setActiveCallUrl(null);
+            setMeetingToJoin(null);
+            setWaitingCreatorName(name || 'Your creator');
+          }}
         />
       )}
 
       <SessionReviewModal
         open={!!reviewTarget}
-        onClose={() => setReviewTarget(null)}
+        onClose={() => {
+          /* user must submit — ignore dismiss */
+        }}
         target={reviewTarget}
         role="user"
+        onSubmitted={markBookingReviewed}
       />
     </div>
   );

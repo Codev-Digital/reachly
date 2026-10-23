@@ -62,25 +62,31 @@ async function meetingPayload(booking: any) {
   const bufferMins = Math.max(0, Number((sessionType as any)?.bufferTime) || 0);
   const totalMeetingMins = durationMins + bufferMins;
 
-  let meetingEndsAt = booking.meetingEndsAt || null;
-  if (booking.meetingStartedAt && !meetingEndsAt) {
-    meetingEndsAt = new Date(
-      new Date(booking.meetingStartedAt).getTime() + totalMeetingMins * 60 * 1000
-    );
+  const meetingStarted = Boolean(booking.meetingStartedAt);
+
+  // Timer end exists only after creator pressed Join (meetingStartedAt set)
+  let meetingEndsAt: Date | string | null = null;
+  if (meetingStarted) {
+    meetingEndsAt = booking.meetingEndsAt || null;
+    if (!meetingEndsAt && booking.meetingStartedAt) {
+      meetingEndsAt = new Date(
+        new Date(booking.meetingStartedAt).getTime() + totalMeetingMins * 60 * 1000
+      );
+    }
   }
 
+  // Live call status: ended when hang-up/timer wrote meetingEndedAt, or timer hit 0
+  const endsAtMs = meetingEndsAt ? new Date(meetingEndsAt).getTime() : null;
   const meetingEnded =
     Boolean(booking.meetingEndedAt) ||
-    booking.status === 'completed' ||
-    (meetingEndsAt && new Date(meetingEndsAt).getTime() <= Date.now());
+    (meetingStarted && endsAtMs != null && endsAtMs <= Date.now());
 
-  const remainingMs = meetingEndsAt
-    ? Math.max(0, new Date(meetingEndsAt).getTime() - Date.now())
-    : null;
+  const remainingMs =
+    endsAtMs != null ? Math.max(0, endsAtMs - Date.now()) : null;
 
   return {
     success: true,
-    meetingStarted: Boolean(booking.meetingStartedAt),
+    meetingStarted,
     meetingStartedAt: booking.meetingStartedAt || null,
     meetingEndsAt,
     meetingEndedAt: booking.meetingEndedAt || null,
@@ -110,17 +116,27 @@ export async function GET(_req: NextRequest, context: RouteContext) {
     if (forbidden) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     if (!booking) return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
 
-    // Auto-complete if timer already expired
-    if (
-      !booking.meetingEndedAt &&
-      booking.meetingEndsAt &&
-      new Date(booking.meetingEndsAt).getTime() <= Date.now()
-    ) {
-      booking.meetingEndedAt = new Date();
-      if (booking.status === 'confirmed' || booking.status === 'pending') {
-        booking.status = 'completed';
+    // Auto-complete if timer already expired (persist endsAt if missing)
+    if (!booking.meetingEndedAt && booking.meetingStartedAt) {
+      const sessionType = await SessionType.findById(booking.sessionTypeId)
+        .select('duration bufferTime')
+        .lean();
+      const durationMins = Math.max(1, Number((sessionType as any)?.duration) || 15);
+      const bufferMins = Math.max(0, Number((sessionType as any)?.bufferTime) || 0);
+      const endsAt = booking.meetingEndsAt
+        ? new Date(booking.meetingEndsAt)
+        : new Date(
+            new Date(booking.meetingStartedAt).getTime() +
+              (durationMins + bufferMins) * 60 * 1000
+          );
+      if (endsAt.getTime() <= Date.now()) {
+        if (!booking.meetingEndsAt) booking.meetingEndsAt = endsAt;
+        booking.meetingEndedAt = new Date();
+        if (booking.status === 'confirmed' || booking.status === 'pending') {
+          booking.status = 'completed';
+        }
+        await booking.save();
       }
-      await booking.save();
     }
 
     return NextResponse.json(await meetingPayload(booking));
@@ -155,8 +171,28 @@ export async function POST(req: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'Unsupported action.' }, { status: 400 });
     }
 
-    const timerExpired =
-      booking.meetingEndsAt && new Date(booking.meetingEndsAt).getTime() <= Date.now();
+    const now = Date.now();
+    const storedEndsAt = booking.meetingEndsAt
+      ? new Date(booking.meetingEndsAt)
+      : null;
+    let timerExpired = storedEndsAt != null && storedEndsAt.getTime() <= now;
+
+    // Fallback if endsAt was never persisted but session already started
+    if (!timerExpired && booking.meetingStartedAt) {
+      const sessionType = await SessionType.findById(booking.sessionTypeId)
+        .select('duration bufferTime')
+        .lean();
+      const durationMins = Math.max(1, Number((sessionType as any)?.duration) || 15);
+      const bufferMins = Math.max(0, Number((sessionType as any)?.bufferTime) || 0);
+      const startedAt = new Date(booking.meetingStartedAt);
+      const endsAt =
+        storedEndsAt ??
+        new Date(startedAt.getTime() + (durationMins + bufferMins) * 60 * 1000);
+      timerExpired = endsAt.getTime() <= now;
+      if (timerExpired && !booking.meetingEndsAt) {
+        booking.meetingEndsAt = endsAt;
+      }
+    }
 
     // Only creator (or expired timer) can force-end for everyone
     if (!isCreator && !timerExpired && !booking.meetingEndedAt) {
