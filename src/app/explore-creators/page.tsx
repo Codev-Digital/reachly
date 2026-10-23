@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import UserNavbar from '@/components/UserNavbar';
@@ -650,15 +651,31 @@ export default function ExploreCreatorsPage() {
         )}
       </AnimatePresence>
 
-      {/* Page content */}
-      <main className="max-w-[1160px] mx-auto px-4 sm:px-6 lg:px-0 py-8">
-        {/* Hero text */}
-        <div className="mb-8">
-          <p className="text-gray-500 text-sm font-sans mb-1">Find the perfect match</p>
-          <h1 className="text-4xl font-black text-black font-anton tracking-tight">
-            Connect with Talented Creators <span className="text-[#0012FF] font-black italic font-anton">near you</span>
+      {/* Explore Creators Banner */}
+      <section className="relative w-full h-[180px] overflow-hidden flex flex-col items-center justify-center text-center mt-3 sm:mt-4">
+        <Image
+          src="/assets/explore-creators-banner.webp"
+          alt="Explore Creators"
+          fill
+          priority
+          className="object-cover object-top select-none pointer-events-none"
+        />
+        <div className="relative z-10 flex flex-col items-center justify-center px-4">
+          <h1 className="font-sans font-black text-3xl sm:text-4xl text-white tracking-tight">
+            Explore Creators
           </h1>
+          <div className="mt-2.5 flex items-center justify-center gap-2.5 text-xs sm:text-sm font-medium text-white/90">
+            <Link href="/" className="hover:text-white transition-colors">
+              Home
+            </Link>
+            <span className="inline-block w-4 sm:w-5 h-1 sm:h-1.5 bg-white/70 rounded-full" />
+            <span className="text-white font-medium">Explore Creators</span>
+          </div>
         </div>
+      </section>
+
+      {/* Page content */}
+      <main className="max-w-[1160px] mx-auto px-4 sm:px-6 lg:px-0 pt-8 pb-8">
 
         {/* Category Filter Bar + Navigation Arrows + Action Filters */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-8 w-full max-w-[1160px] mx-auto">
