@@ -82,48 +82,13 @@ const DEFAULT_SAMPLE_TIERS: EventTier[] = [
   { title: 'Early Bird', price: 2000 },
 ];
 
-function getInitialEvent(id: string): EventDetail | null {
-  if (typeof window === 'undefined' || !id) return null;
-  try {
-    const raw = sessionStorage.getItem(`reachly_admin_active_event_${id}`);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    return {
-      id: parsed.id || id,
-      title: parsed.title || 'Event Details',
-      description: parsed.description || '',
-      bannerUrl: parsed.image || parsed.bannerUrl || '/assets/event-1.jpg',
-      category: parsed.category || 'Workshops',
-      status: parsed.status || 'Upcoming',
-      dates: parsed.dates || [],
-      formattedDate: parsed.date || '5 July 2026',
-      formattedTime: parsed.time || '2PM - 6PM',
-      venue: parsed.venue || 'Nishat Hotel, Gulberg, Lahore',
-      refundPolicy: parsed.refundPolicy || '',
-      termsAndConditions: parsed.termsAndConditions || '',
-      creator: parsed.creator || {
-        id: '',
-        displayName: parsed.creatorName || 'Creator',
-        username: parsed.creatorName ? parsed.creatorName.toLowerCase().replace(/\s+/g, '') : 'creator',
-      },
-      stats: parsed.stats || {
-        totalPurchases: 0,
-        totalTicketsSold: 2,
-        totalRevenue: 0,
-      },
-    };
-  } catch {
-    return null;
-  }
-}
-
 export default function AdminEventDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = typeof params?.id === 'string' ? params.id : '';
 
-  const [event, setEvent] = useState<EventDetail | null>(() => getInitialEvent(id));
-  const [loading, setLoading] = useState<boolean>(() => !getInitialEvent(id));
+  const [event, setEvent] = useState<EventDetail | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
   const [notFound, setNotFound] = useState(false);
 
   // Modals state
@@ -171,6 +136,39 @@ export default function AdminEventDetailPage() {
   }, [id, event]);
 
   useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(`reachly_admin_active_event_${id}`);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        setEvent({
+          id: parsed.id || id,
+          title: parsed.title || 'Event Details',
+          description: parsed.description || '',
+          bannerUrl: parsed.image || parsed.bannerUrl || '/assets/event-1.jpg',
+          category: parsed.category || 'Workshops',
+          status: parsed.status || 'Upcoming',
+          dates: parsed.dates || [],
+          formattedDate: parsed.date || '5 July 2026',
+          formattedTime: parsed.time || '2PM - 6PM',
+          venue: parsed.venue || 'Nishat Hotel, Gulberg, Lahore',
+          refundPolicy: parsed.refundPolicy || '',
+          termsAndConditions: parsed.termsAndConditions || '',
+          creator: parsed.creator || {
+            id: '',
+            displayName: parsed.creatorName || 'Creator',
+            username: parsed.creatorName ? parsed.creatorName.toLowerCase().replace(/\s+/g, '') : 'creator',
+          },
+          stats: parsed.stats || {
+            totalPurchases: 0,
+            totalTicketsSold: 2,
+            totalRevenue: 0,
+          },
+        });
+        setLoading(false);
+      }
+    } catch {
+      /* ignore */
+    }
     loadEvent();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);

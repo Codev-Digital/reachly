@@ -64,38 +64,32 @@ export default function AdminEventsPage() {
   const [isTypeDropdownOpen, setIsTypeDropdownOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const [events, setEvents] = useState<EventItem[]>(() => {
-    if (typeof window === 'undefined') return [];
-    try {
-      const cached = sessionStorage.getItem('reachly_admin_events_cache');
-      return cached ? JSON.parse(cached) : [];
-    } catch {
-      return [];
-    }
-  });
-  const [kpis, setKpis] = useState<Kpis>(() => {
-    if (typeof window === 'undefined') return EMPTY_KPIS;
-    try {
-      const cached = sessionStorage.getItem('reachly_admin_kpis_cache');
-      return cached ? JSON.parse(cached) : EMPTY_KPIS;
-    } catch {
-      return EMPTY_KPIS;
-    }
-  });
+  const [events, setEvents] = useState<EventItem[]>([]);
+  const [kpis, setKpis] = useState<Kpis>(EMPTY_KPIS);
   const [pagination, setPagination] = useState<Pagination>({
     page: 1,
     limit: 9,
     total: 0,
     totalPages: 1,
   });
-  const [loading, setLoading] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return true;
+  const [loading, setLoading] = useState(true);
+
+  // Restore cache after hydration in useEffect to prevent SSR/hydration mismatch
+  useEffect(() => {
     try {
-      return !sessionStorage.getItem('reachly_admin_events_cache');
+      const cachedEvents = sessionStorage.getItem('reachly_admin_events_cache');
+      const cachedKpis = sessionStorage.getItem('reachly_admin_kpis_cache');
+      if (cachedEvents) {
+        setEvents(JSON.parse(cachedEvents));
+        setLoading(false);
+      }
+      if (cachedKpis) {
+        setKpis(JSON.parse(cachedKpis));
+      }
     } catch {
-      return true;
+      /* ignore */
     }
-  });
+  }, []);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(searchQuery.trim()), 300);
