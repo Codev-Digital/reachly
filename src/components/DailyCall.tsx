@@ -351,6 +351,29 @@ export default function DailyCall({
         if (cancelled) return;
         joinedRef.current = true;
 
+        // Creator also kicks off cloud recording from the client (backup to server start)
+        if (role === 'creator') {
+          try {
+            await newCallFrame.startRecording({
+              type: 'cloud',
+              width: 1280,
+              height: 720,
+              layout: { preset: 'default', max_cam_streams: 5 },
+            } as any);
+          } catch (recErr) {
+            console.warn('[DailyCall] startRecording:', recErr);
+          }
+          try {
+            await (newCallFrame as any).startTranscription?.({
+              language: 'en',
+              model: 'nova-2-general',
+              punctuate: true,
+            });
+          } catch {
+            /* transcription optional / plan-dependent */
+          }
+        }
+
         // Arm session timer only after Join + in-room
         if (resolvedEndsAt) {
           setEndsAtIso(resolvedEndsAt);

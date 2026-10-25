@@ -15,6 +15,7 @@ import {
     parse12h,
     parse24h,
 } from '@/lib/slots';
+import { pktAddDaysISO, pktTodayISO } from '@/lib/pkt';
 
 const DAY_NAMES: Record<number, keyof typeof defaultDays> = {
     0: 'sunday',
@@ -152,15 +153,32 @@ export async function GET(
             // Without a session (calendar views etc.) we keep the old 30-minute grid.
             let sessionDuration = DEFAULT_SLOT_MINUTES;
             let sessionBuffer = 0;
+            let minAdvanceDays = 0;
             const sessionIdParam = searchParams.get('sessionId');
             if (sessionIdParam && mongoose.isValidObjectId(sessionIdParam)) {
                 const st = await SessionType.findOne({ _id: sessionIdParam, userId: profile.userId })
-                    .select('duration bufferTime')
+                    .select('duration bufferTime minAdvanceDays')
                     .lean() as any;
                 if (st) {
                     sessionDuration = Number(st.duration) > 0 ? Number(st.duration) : DEFAULT_SLOT_MINUTES;
                     sessionBuffer = Number(st.bufferTime) > 0 ? Number(st.bufferTime) : 0;
+                    minAdvanceDays = Math.max(0, Math.min(90, Number(st.minAdvanceDays) || 0));
                 }
+            }
+
+            // Enforce creator's minimum notice: earliest bookable day = today + N days (PKT)
+            const earliestBookableDate = pktAddDaysISO(minAdvanceDays, pktTodayISO());
+            if (dateStr < earliestBookableDate) {
+                return NextResponse.json({
+                    success: true,
+                    slots: [],
+                    date: dateStr,
+                    earliestBookableDate,
+                    minAdvanceDays,
+                    schedule: availability.schedule,
+                    timezone: timezone,
+                    blockedDates: availability.blockedDates,
+                });
             }
 
             // Candidate start times from each working range (9:00, then +duration+buffer, ...)
@@ -235,6 +253,8 @@ export async function GET(
                 success: true,
                 slots: availableSlots,
                 date: dateStr,
+                earliestBookableDate,
+                minAdvanceDays,
                 schedule: availability.schedule,
                 timezone: 'Asia/Karachi',
                 blockedDates: availability.blockedDates,

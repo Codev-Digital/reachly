@@ -29,6 +29,7 @@ interface SessionData {
   price: number;
   discountedPrice?: number;
   bufferTime?: number;
+  minAdvanceDays?: number;
   maxBookings?: number;
   features?: string[];
   questions?: unknown[];

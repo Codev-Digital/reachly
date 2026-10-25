@@ -32,7 +32,6 @@ import {
   readAnyPendingSessionReview,
   storePendingSessionReview,
 } from '@/lib/pendingSessionReview';
-
 function LoginToExplore() {
   const router = useRouter();
   return (
@@ -555,7 +554,7 @@ export default function UserDashboard() {
       return;
     }
     if (!assertModificationAllowed(booking, 'reschedule')) return;
-    router.push('/user/bookings');
+    router.push(`/user/bookings?reschedule=${encodeURIComponent(String(booking.id))}`);
   };
 
   const handleConfirmCancel = async () => {
@@ -891,7 +890,7 @@ export default function UserDashboard() {
                                   )}
                                 </h3>
                                 <span className="flex items-center gap-1 text-xs font-bold text-amber-500 shrink-0">
-                                  ★ {creator.rating || '4.9'}
+                                  ★ {creator.ratingDisplay || '5.0 (0)'}
                                 </span>
                               </div>
 

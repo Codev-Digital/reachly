@@ -212,6 +212,13 @@ export async function POST(req: NextRequest, context: RouteContext) {
       await booking.save();
     }
 
+    try {
+      const { finalizeRecordingStop } = await import('@/lib/meetingRecording');
+      await finalizeRecordingStop(String(booking._id));
+    } catch (recErr) {
+      console.error('[meeting end] recording finalize:', recErr);
+    }
+
     return NextResponse.json({
       success: true,
       meetingEnded: true,

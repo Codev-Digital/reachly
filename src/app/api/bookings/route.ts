@@ -137,6 +137,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Enforce minimum notice (days ahead clients must book)
+    {
+      const { pktAddDaysISO, pktTodayISO } = await import('@/lib/pkt');
+      const notice = Math.max(0, Math.min(90, Number((sessionType as any).minAdvanceDays) || 0));
+      const earliest = pktAddDaysISO(notice, pktTodayISO());
+      if (typeof date === 'string' && date < earliest) {
+        return NextResponse.json(
+          {
+            error: notice
+              ? `This session requires at least ${notice} day${notice === 1 ? '' : 's'} notice. Earliest bookable day is ${earliest}.`
+              : 'This date is no longer available.',
+          },
+          { status: 400 },
+        );
+      }
+    }
+
     // Price comes from the session itself (never from the client): the discounted price when set
     const listPrice = Number((sessionType as any).price);
     const discounted = Number((sessionType as any).discountedPrice);

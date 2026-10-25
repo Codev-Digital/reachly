@@ -19,6 +19,7 @@ const NAV_ITEMS = [
 const ACCOUNT_MENU_ITEMS = [
   { name: 'Wallet', href: '/creators/wallet' },
   { name: 'Settings', href: '/creators/settings' },
+  { name: 'Recordings', href: '/creators/recordings' },
 ];
 
 const ACTIVE_ICON_SRCS = [
@@ -601,6 +602,12 @@ export default function CreatorDashboardNav({
                               <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0-2.83l-.06-.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
                             </svg>
                           )}
+                          {item.name === 'Recordings' && (
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <rect x="2" y="4" width="20" height="16" rx="2" />
+                              <polygon points="10 9 16 12 10 15 10 9" fill="currentColor" stroke="none" />
+                            </svg>
+                          )}
                           {item.name}
                         </Link>
                       );
@@ -699,6 +706,11 @@ export default function CreatorDashboardNav({
                       >
                         {item.name === 'Wallet' ? (
                           <NavIcon icon="wallet" active={isActive} />
+                        ) : item.name === 'Recordings' ? (
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="flex-shrink-0">
+                            <rect x="2" y="4" width="20" height="16" rx="2" />
+                            <polygon points="10 9 16 12 10 15 10 9" fill="currentColor" stroke="none" />
+                          </svg>
                         ) : (
                           <NavIcon icon="settings" active={isActive} />
                         )}

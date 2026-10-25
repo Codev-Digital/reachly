@@ -1,10 +1,8 @@
 'use client';
 
 import { useState, createContext, useContext, ReactNode, useEffect, useRef, useCallback } from 'react';
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { useParams, usePathname, useRouter } from 'next/navigation';
 import Footer from '@/components/Footer';
-import { AnimatePresence, motion } from 'framer-motion';
 import CreatorDashboardNav from '@/components/CreatorDashboardNav';
 import UserNavbar from '@/components/UserNavbar';
 import OnboardingNavbar from '@/components/OnboardingNavbar';
@@ -27,6 +25,8 @@ export interface SessionType {
   description: string;
   features: string[];
   questions?: SessionQuestion[];
+  /** Days ahead clients must book (0 = same day allowed). */
+  minAdvanceDays?: number;
   isPackage?: boolean;
   packageSessions?: number;
   packagePeriod?: 'week' | 'month';
@@ -68,10 +68,18 @@ export interface CreatorInfo {
     tiktok?: string;
     twitter?: string;
   };
+  rating?: number;
+  ratingLabel?: string;
+  reviewCount?: number;
+  ratingDisplay?: string;
   stats?: {
     sessionsCompleted?: number;
     happyCustomers?: number;
     totalCategories?: number;
+    rating?: number;
+    ratingLabel?: string;
+    reviewCount?: number;
+    ratingDisplay?: string;
   };
 }
 
@@ -148,11 +156,12 @@ export function useBooking() {
 export default function BookSessionLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const params = useParams();
+  const routeUsername = String(params.username || '').toLowerCase();
   const [booking, setBookingRaw] = useState<BookingState>(emptyBooking);
   const [userData, setUserData] = useState<any>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState<'user' | 'creator' | null>(null);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isDraftSaved, setIsDraftSaved] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const handleClose = () => {
@@ -161,13 +170,19 @@ export default function BookSessionLayout({ children }: { children: ReactNode })
   };
   const lastDraftRef = useRef('');
 
-  // On mount: restore from localStorage draft first, then sessionStorage
+  const creatorMatchesRoute = (state: BookingState | null) => {
+    if (!state?.creator?.username || !routeUsername) return false;
+    return String(state.creator.username).toLowerCase() === routeUsername;
+  };
+
+  // Restore draft/session only when it belongs to this creator — never show another profile's photos
   useEffect(() => {
+    if (!routeUsername) return;
     try {
       const draft = localStorage.getItem(DRAFT_KEY);
       if (draft) {
         const restored = deserializeBooking(draft);
-        if (restored) {
+        if (restored && creatorMatchesRoute(restored)) {
           setBookingRaw(restored);
           lastDraftRef.current = draft;
           setIsDraftSaved(true);
@@ -177,11 +192,20 @@ export default function BookSessionLayout({ children }: { children: ReactNode })
       const session = sessionStorage.getItem(STORAGE_KEY);
       if (session) {
         const restored = deserializeBooking(session);
-        if (restored) setBookingRaw(restored);
+        if (restored && creatorMatchesRoute(restored)) {
+          setBookingRaw(restored);
+          return;
+        }
       }
-    } catch { }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+      // Different creator (or no saved state) — start clean so skeletons show, not stale images
+      setBookingRaw(emptyBooking);
+      setIsDraftSaved(false);
+      lastDraftRef.current = '';
+    } catch {
+      setBookingRaw(emptyBooking);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [routeUsername]);
 
   // Keep sessionStorage in sync + mark draft dirty when booking changes
   useEffect(() => {
@@ -265,8 +289,15 @@ export default function BookSessionLayout({ children }: { children: ReactNode })
       lastDraftRef.current = serialized;
       setIsDraftSaved(true);
     } catch { }
-  };  const nextStep = () => setBooking(b => ({ ...b, step: b.step + 1 }));
-  const prevStep = () => setBooking(b => ({ ...b, step: b.step - 1 }));
+  };
+
+  // Must be stable — step-1's fetch effect lists nextStep in its deps
+  const nextStep = useCallback(() => {
+    setBooking((b) => ({ ...b, step: b.step + 1 }));
+  }, [setBooking]);
+  const prevStep = useCallback(() => {
+    setBooking((b) => ({ ...b, step: b.step - 1 }));
+  }, [setBooking]);
 
   return (
     <BookingContext.Provider value={{ booking, setBooking, nextStep, prevStep, saveToStorage, saveDraft, isDraftSaved, userData }}>

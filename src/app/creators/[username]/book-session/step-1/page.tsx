@@ -1,12 +1,36 @@
 'use client';
 
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence, PanInfo } from 'framer-motion';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import Image from 'next/image';
+import { Star } from 'lucide-react';
 import BookingProgress from '@/components/booking/BookingProgress';
 import CreatorProfileCard from '@/components/booking/CreatorProfileCard';
+import EventCard, { type EventCardData } from '@/components/EventCard';
 import { useBooking, SessionType, sessionPrice } from '../layout';
-import { richTextToPlain } from '@/lib/richText';
+import { richTextToPlain, richTextPreview } from '@/lib/richText';
+import { formatEventCardDate, formatEventCardTime } from '@/lib/eventDisplay';
+
+const COMMA_SVGS = ['/assets/comma-1.svg', '/assets/comma-2.svg', '/assets/comma3.svg'];
+
+type PublicReview = {
+  id: string;
+  name: string;
+  avatar: string;
+  rating: number;
+  comment: string;
+  dateLabel: string;
+  commaIdx: number;
+};
+
+type CreatorEventRaw = {
+  id: string;
+  title: string;
+  description: string;
+  bannerUrl?: string;
+  category?: string;
+  dates?: any[];
+};
 
 export default function BookSessionStep1() {
   const params = useParams();
@@ -17,6 +41,8 @@ export default function BookSessionStep1() {
   const queryStr = fallbackUrl ? `?fallbackUrl=${encodeURIComponent(fallbackUrl)}` : '';
   const { booking, setBooking, nextStep } = useBooking();
   const [sessions, setSessions] = useState<SessionType[]>([]);
+  const [reviews, setReviews] = useState<PublicReview[]>([]);
+  const [creatorEvents, setCreatorEvents] = useState<CreatorEventRaw[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [isLoadingContinue, setIsLoadingContinue] = useState(false);
   const [isLoadingBack, setIsLoadingBack] = useState(false);
@@ -58,32 +84,61 @@ export default function BookSessionStep1() {
   }, [params.username, queryStr, router]);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const cached = sessionStorage.getItem(`reachly_sessions_${params.username}`);
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (parsed && parsed.length > 0) {
-            setSessions(parsed);
-            if (!wantedSessionId) setLoading(false);
-          }
+    const username = String(params.username || '');
+    if (!username) return;
+
+    let cancelled = false;
+    setLoading(true);
+    setReviews([]);
+    setCreatorEvents([]);
+
+    // Drop previous creator immediately so cover/avatar never flash the wrong person
+    setBooking((b) => {
+      const same =
+        b.creator?.username &&
+        String(b.creator.username).toLowerCase() === username.toLowerCase();
+      if (same) return b;
+      return { ...b, creator: null, selectedSession: null, selectedDate: null, selectedTime: null, answers: [] };
+    });
+
+    // Hydrate from this username's cache only (never another creator's)
+    try {
+      const cachedCreator = sessionStorage.getItem(`reachly_creator_${username}`);
+      const cachedSessions = sessionStorage.getItem(`reachly_sessions_${username}`);
+      if (cachedCreator) {
+        const creator = JSON.parse(cachedCreator);
+        if (creator?.username) {
+          setBooking((b) => ({ ...b, creator }));
         }
-      } catch (e) {}
+      }
+      if (cachedSessions) {
+        const parsed = JSON.parse(cachedSessions);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setSessions(parsed);
+        } else {
+          setSessions([]);
+        }
+      } else {
+        setSessions([]);
+      }
+    } catch {
+      setSessions([]);
     }
 
     async function fetchCreator() {
       try {
-        const res = await fetch(`/api/creators/${params.username}`);
+        const res = await fetch(`/api/creators/${username}`);
         const data = await res.json();
+        if (cancelled) return;
         if (data.success) {
           setSessions(data.sessions || []);
-          if (typeof window !== 'undefined') {
-            try {
-              sessionStorage.setItem(`reachly_sessions_${params.username}`, JSON.stringify(data.sessions || []));
-              sessionStorage.setItem(`reachly_creator_${params.username}`, JSON.stringify(data.creator));
-            } catch (e) {}
-          }
-          setBooking(b => ({
+          try {
+            sessionStorage.setItem(`reachly_sessions_${username}`, JSON.stringify(data.sessions || []));
+            sessionStorage.setItem(`reachly_creator_${username}`, JSON.stringify(data.creator));
+          } catch {}
+          setReviews(Array.isArray(data.reviews) ? data.reviews : []);
+          setCreatorEvents(Array.isArray(data.events) ? data.events : []);
+          setBooking((b) => ({
             ...b,
             creator: {
               id: data.creator.id,
@@ -98,30 +153,41 @@ export default function BookSessionStep1() {
               country: data.creator.country,
               languages: data.creator.languages || [],
               socialLinks: data.creator.socialLinks || {},
+              rating: data.creator.rating,
+              ratingLabel: data.creator.ratingLabel,
+              reviewCount: data.creator.reviewCount,
+              ratingDisplay: data.creator.ratingDisplay,
               stats: data.creator.stats,
             },
-            // ?session=<id> (from "My packages") preselects that session
             selectedSession: (() => {
-              const wanted = new URLSearchParams(window.location.search).get('session') || b.selectedSession?.id;
-              return wanted ? (data.sessions.find((s: SessionType) => s.id === wanted) || null) : null;
+              const wanted =
+                new URLSearchParams(window.location.search).get('session') || b.selectedSession?.id;
+              return wanted
+                ? data.sessions.find((s: SessionType) => s.id === wanted) || null
+                : null;
             })(),
           }));
 
-          // Coming from "My packages": the session is already chosen, go straight to date & time
-          if (wantedSessionId && (data.sessions || []).some((x: SessionType) => x.id === wantedSessionId)) {
+          if (
+            wantedSessionId &&
+            (data.sessions || []).some((x: SessionType) => x.id === wantedSessionId)
+          ) {
             nextStep();
-            router.replace(`/creators/${params.username}/book-session/step-2${queryStr}`);
-            return; // keep the loader up until the next page takes over
+            router.replace(`/creators/${username}/book-session/step-2${queryStr}`);
+            return;
           }
         }
       } catch (err) {
         console.error('Failed to fetch creator sessions:', err);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
     fetchCreator();
-  }, [params.username, setBooking]);
+    return () => {
+      cancelled = true;
+    };
+  }, [params.username, setBooking, wantedSessionId, nextStep, router, queryStr]);
 
   const handleSelectSession = (session: SessionType) => {
     setBooking((b) => ({
@@ -150,7 +216,29 @@ export default function BookSessionStep1() {
   };
 
 
-  const creator = booking.creator;
+  const routeUsername = String(params.username || '').toLowerCase();
+  // Only pass creator into the card when it matches this route (avoids stale photos)
+  const creator =
+    booking.creator &&
+    String(booking.creator.username || '').toLowerCase() === routeUsername
+      ? booking.creator
+      : null;
+
+  const upcomingEventCards: EventCardData[] = useMemo(() => {
+    return creatorEvents.map((e) => {
+      const first = e.dates?.[0];
+      return {
+        id: e.id,
+        title: e.title,
+        description: richTextPreview(e.description, 140) || 'No description yet.',
+        date: formatEventCardDate(first?.date),
+        time: formatEventCardTime(first),
+        location: e.category || 'Event',
+        image: e.bannerUrl || undefined,
+        visible: true,
+      };
+    });
+  }, [creatorEvents]);
 
   // Svg cards templates rotated
   const cardColors = ['#B7C0FF', '#FFEDB5', '#FFB3B3'];
@@ -166,19 +254,32 @@ export default function BookSessionStep1() {
       <BookingProgress currentStep={1} />
 
       <div className="grid grid-cols-1 lg:grid-cols-[410px_1fr] gap-8 items-start justify-items-center">
-        <CreatorProfileCard 
-          creator={creator} 
+        <CreatorProfileCard
+          key={routeUsername || 'loading'}
+          creator={creator}
           mobileMode={isMobileBookingStarted ? 'compact' : 'full'}
           onMobileBookClick={() => setIsMobileBookingStarted(true)}
         />
 
         {/* ============ RIGHT COLUMN: SESSIONS LIST ============ */}
         <div className={`flex-col w-full ${!isMobileBookingStarted ? 'hidden lg:flex' : 'flex'}`}>
-          {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 justify-items-center">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="w-full max-w-[285px] h-[390px] bg-gray-200 animate-pulse rounded-[14px]" />
-              ))}
+          {loading || !creator ? (
+            <div className="w-full max-w-[790px] space-y-6">
+              <div className="h-8 w-48 bg-gray-200 animate-pulse rounded-lg" />
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 justify-items-center">
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="w-full max-w-[285px] h-[390px] bg-gray-200 animate-pulse rounded-[14px]"
+                  />
+                ))}
+              </div>
+              <div className="h-6 w-40 bg-gray-200 animate-pulse rounded-lg mt-4" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {[1, 2].map((i) => (
+                  <div key={i} className="h-40 bg-gray-200 animate-pulse rounded-2xl" />
+                ))}
+              </div>
             </div>
           ) : sessions.length === 0 ? (
             <div className="bg-white border border-gray-200 rounded-3xl p-12 text-center shadow-sm w-full">
@@ -340,6 +441,103 @@ export default function BookSessionStep1() {
           )}
         </div>
       </div>
+
+      {/* Upcoming events — future published events only (below sessions / profile) */}
+      {!loading && upcomingEventCards.length > 0 && (
+        <section className="mt-10 w-full">
+          <div className="mb-5">
+            <h3 className="text-xl sm:text-2xl font-extrabold text-black font-sans tracking-tight">
+              Upcoming <span className="text-[#0012FF]">Events</span>
+            </h3>
+            <p className="text-sm text-gray-500 mt-1">
+              Live sessions and tickets from this creator.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+            {upcomingEventCards.map((event) => (
+              <EventCard
+                key={event.id}
+                event={event}
+                onClick={(eventId) => router.push(`/events/${eventId}`)}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Public client reviews — only when someone has rated */}
+      {!loading && reviews.length > 0 && (
+        <section className="mt-10 w-full">
+          <div className="bg-white rounded-[8px] border border-[#e2e2e2] p-6 sm:p-8 shadow-sm">
+            <div className="border-b border-[#e2e2e2] pb-5 mb-8 flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <h3 className="text-xl font-bold text-black mb-1">Client Reviews</h3>
+                <p className="text-gray-500 text-sm">What clients say after sessions with this creator.</p>
+              </div>
+              <span className="text-sm font-bold text-amber-500 shrink-0">
+                ★ {creator?.ratingDisplay || '5.0 (0)'}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {reviews.map((rev) => (
+                <div
+                  key={rev.id}
+                  className="relative bg-[#F8F8FA] border border-[#e2e2e2] rounded-[8px] p-6 flex flex-col justify-between min-h-[220px] transition-all hover:shadow-sm"
+                >
+                  <img
+                    src={COMMA_SVGS[rev.commaIdx % 3]}
+                    alt=""
+                    className="absolute top-4 right-4 w-14 h-14 pointer-events-none object-contain"
+                  />
+
+                  <div>
+                    <div className="flex items-center gap-3 mb-4 pr-10">
+                      <div className="w-11 h-11 rounded-full overflow-hidden shrink-0 border border-gray-200 bg-gray-200">
+                        <Image
+                          src={rev.avatar || '/avatar.png'}
+                          alt={rev.name}
+                          width={44}
+                          height={44}
+                          className="w-full h-full object-cover"
+                          unoptimized
+                        />
+                      </div>
+                      <div>
+                        <p className="font-extrabold text-sm sm:text-base text-black leading-tight">
+                          {rev.name}
+                        </p>
+                        <p className="text-xs text-gray-400 font-medium mt-0.5">
+                          {rev.dateLabel || 'Recent'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="w-full h-px bg-gray-200/80 mb-4" />
+
+                    <p className="text-xs sm:text-sm text-gray-500 font-medium leading-relaxed font-sans mb-4">
+                      &ldquo;{rev.comment || 'No written feedback.'}&rdquo;
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-0.5 pt-2">
+                    {Array.from({ length: 5 }).map((_, si) => (
+                      <Star
+                        key={si}
+                        className={`h-3.5 w-3.5 ${
+                          si < rev.rating
+                            ? 'fill-[#F5C542] text-[#F5C542]'
+                            : 'fill-gray-200 text-gray-200'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
     </div>
   );
 }

@@ -285,3 +285,76 @@ input[type="range"]::-webkit-slider-thumb {
 .ui-dialog-content[data-state='open'] { animation: ui-dialog-pop-in 0.22s cubic-bezier(0.16, 1, 0.3, 1) both; }
 .ui-dialog-content[data-state='closed'] { animation: ui-dialog-pop-out 0.15s ease-in both; }
 
+/* Auth hero: seamless vertical portrait marquee (GPU-friendly) */
+@keyframes auth-marquee-up {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(0, -50%, 0); }
+}
+@keyframes auth-marquee-down {
+  from { transform: translate3d(0, -50%, 0); }
+  to { transform: translate3d(0, 0, 0); }
+}
+.auth-marquee-card {
+  width: 300px;
+  height: 350px;
+}
+.auth-marquee-track-up,
+.auth-marquee-track-down {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  width: 100%;
+  will-change: transform;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+.auth-marquee-track-up {
+  animation-name: auth-marquee-up;
+}
+.auth-marquee-track-down {
+  animation-name: auth-marquee-down;
+}
+@media (prefers-reduced-motion: reduce) {
+  .auth-marquee-track-up,
+  .auth-marquee-track-down {
+    animation: none !important;
+  }
+}
+
+/* Why Reachly: verified creators horizontal marquee (constant speed) */
+@keyframes verified-marquee-left {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+@keyframes verified-marquee-right {
+  from { transform: translate3d(-50%, 0, 0); }
+  to { transform: translate3d(0, 0, 0); }
+}
+.verified-marquee-track {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: center;
+  gap: 1rem;
+  width: max-content;
+  will-change: transform;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  animation-duration: 45s;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+.verified-marquee-left {
+  animation-name: verified-marquee-left;
+}
+.verified-marquee-right {
+  animation-name: verified-marquee-right;
+}
+@media (prefers-reduced-motion: reduce) {
+  .verified-marquee-track {
+    animation: none !important;
+  }
+}
+

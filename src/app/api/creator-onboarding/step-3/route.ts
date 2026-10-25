@@ -23,6 +23,12 @@ export async function GET() {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
+    // Clear stale draft flags left by an older save path (completed sessions were marked draft)
+    await SessionType.updateMany(
+      { userId: user._id, isDraft: true, isActive: { $ne: false } },
+      { $set: { isDraft: false } }
+    );
+
     const sessionTypes = await SessionType.find({ userId: user._id }).sort({ order: 1 }).lean();
 
     return NextResponse.json({ sessionTypes });
@@ -108,6 +114,18 @@ export async function PUT(req: NextRequest) {
           );
         }
       }
+      // Older sessions may omit this field — default to 1 day notice
+      const noticeRaw =
+        s.minAdvanceDays === undefined || s.minAdvanceDays === null || s.minAdvanceDays === ''
+          ? 1
+          : Number(s.minAdvanceDays);
+      if (!Number.isInteger(noticeRaw) || noticeRaw < 0 || noticeRaw > 90) {
+        return NextResponse.json(
+          { error: `Session ${idx}: minimum notice must be a whole number from 0 to 90 days.` },
+          { status: 422 }
+        );
+      }
+      s.minAdvanceDays = noticeRaw;
       if (s.isPackage) {
         const n = Number(s.packageSessions);
         if (!Number.isInteger(n) || n < 2 || n > 100) {
@@ -139,6 +157,10 @@ export async function PUT(req: NextRequest) {
         ? Number(s.discountedPrice)
         : undefined,
       bufferTime: s.bufferTime ? Number(s.bufferTime) : 0,
+      minAdvanceDays:
+        s.minAdvanceDays === undefined || s.minAdvanceDays === null || s.minAdvanceDays === ''
+          ? 1
+          : Number(s.minAdvanceDays),
       questions: Array.isArray(s.questions) ? s.questions : [],
       features: (s.features || []).filter((f: string) => f?.trim()),
       maxBookings: s.maxBookings ? Number(s.maxBookings) : undefined,
@@ -146,8 +168,10 @@ export async function PUT(req: NextRequest) {
       packageSessions: s.isPackage ? Number(s.packageSessions) : undefined,
       packagePeriod: (s.isPackage ? (s.packagePeriod === 'month' ? 'month' : 'week') : undefined) as 'week' | 'month' | undefined,
       order: index,
-      isActive: true,
-      isDraft: s.isDraft !== undefined ? Boolean(s.isDraft) : true,
+      // Keep offline sessions offline; otherwise publish as live
+      isActive: s.isActive === false ? false : true,
+      // Only mark draft when explicitly set (settings/publish saves clear draft)
+      isDraft: s.isDraft === true,
     });
 
     const existing = await SessionType.find({ userId: user._id }).select('_id').lean();

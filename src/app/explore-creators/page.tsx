@@ -346,7 +346,7 @@ export default function ExploreCreatorsPage() {
         if (!matchesNiche && !matchesCat) return false;
       }
       if (verifiedOnly && !c.isVerified) return false;
-      if (minRating !== null && (parseFloat(c.rating) || 0) < minRating) return false;
+      if (minRating !== null && (Number(c.rating) || 0) < minRating) return false;
       return true;
     });
   }, [creators, showFavouritesOnly, favourites, showSavedOnly, saved, selectedCategory, verifiedOnly, minRating]);
@@ -1089,7 +1089,7 @@ export default function ExploreCreatorsPage() {
                           )}
                         </h3>
                         <span className="flex items-center gap-1 text-xs font-bold text-amber-500 shrink-0">
-                          ★ {creator.rating || '4.9'}
+                          ★ {creator.ratingDisplay || '5.0 (0)'}
                         </span>
                       </div>
 

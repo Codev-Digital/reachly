@@ -63,6 +63,8 @@ export function FormLabel({
 export interface FormInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'className'> {
   /** Label shown above the input. A red * is added when `required` is set. */
   label?: string;
+  /** Optional control beside the label (e.g. InfoTooltip). */
+  labelAddon?: ReactNode;
   /** Error message shown under the input. Nothing is rendered when empty. */
   error?: string;
   /** Left icon (e.g. a lucide icon). */
@@ -79,6 +81,7 @@ export interface FormInputProps extends Omit<InputHTMLAttributes<HTMLInputElemen
 
 export default function FormInput({
   label,
+  labelAddon,
   error,
   icon,
   suffix,
@@ -100,12 +103,21 @@ export default function FormInput({
 
   return (
     <div className={wrapperClassName}>
-      {label && (
-        <label htmlFor={inputId} className={twMerge(inter.variable, LABEL_CLASSES, labelClassName)}>
-          {label}
-          {required && <span className="text-red-500"> *</span>}
-        </label>
-      )}
+      {label &&
+        (labelAddon ? (
+          <div className="relative mb-2 flex items-center gap-1.5">
+            <label htmlFor={inputId} className={twMerge(inter.variable, LABEL_CLASSES, 'mb-0', labelClassName)}>
+              {label}
+              {required && <span className="text-red-500"> *</span>}
+            </label>
+            {labelAddon}
+          </div>
+        ) : (
+          <label htmlFor={inputId} className={twMerge(inter.variable, LABEL_CLASSES, labelClassName)}>
+            {label}
+            {required && <span className="text-red-500"> *</span>}
+          </label>
+        ))}
 
       <div
         className={twMerge(

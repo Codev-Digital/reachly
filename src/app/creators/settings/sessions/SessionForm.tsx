@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
+import { toast } from 'sonner';
+import ActionDialog from '@/components/ActionDialog';
 import CreatorDashboardNav from '@/components/CreatorDashboardNav';
 import { FormError } from '@/components/FormInput';
 import SessionFields from '@/components/SessionFields';
@@ -30,12 +32,15 @@ interface DBTypeSession {
   price: number | string;
   discountedPrice?: number | string | null;
   bufferTime?: number;
+  minAdvanceDays?: number;
   description: string;
   features?: string[];
   maxBookings?: number;
   isPackage?: boolean;
   packageSessions?: number;
   packagePeriod?: 'week' | 'month';
+  isDraft?: boolean;
+  isActive?: boolean;
 }
 
 /**
@@ -56,6 +61,13 @@ export default function SessionForm({ sessionId }: { sessionId?: string }) {
   const [formError, setFormError] = useState('');
   const [errors, setErrors] = useState<SessionErrors>({});
   const [values, setValues] = useState<SessionFormValues>(emptySessionValues);
+  const [isActive, setIsActive] = useState(true);
+  const [isDraft, setIsDraft] = useState(false);
+  const [confirmVisibility, setConfirmVisibility] = useState(false);
+  const [togglingVisibility, setTogglingVisibility] = useState(false);
+
+  const isLive = isActive !== false && isDraft !== true;
+  const visibilityLabel = isLive ? 'Offline' : 'Live';
 
   const updateValues = (patch: Partial<SessionFormValues>) =>
     setValues((prev) => ({ ...prev, ...patch }));
@@ -104,6 +116,8 @@ export default function SessionForm({ sessionId }: { sessionId?: string }) {
             setNotFound(true);
           } else {
             setValues(sessionToValues(current, toEditorHtml(current.description)));
+            setIsActive(current.isActive !== false);
+            setIsDraft(current.isDraft === true);
           }
         }
       } catch (err) {
@@ -134,9 +148,18 @@ export default function SessionForm({ sessionId }: { sessionId?: string }) {
       const payload = valuesToPayload(values);
 
       // Editing keeps whatever else is stored on the session (questions, older "included" bullets...)
-      const updatedList: DBTypeSession[] = isEdit
+      // Normalize minAdvanceDays so older sessions without the field don't fail API validation
+      const withNotice = (s: DBTypeSession): DBTypeSession => ({
+        ...s,
+        minAdvanceDays:
+          s.minAdvanceDays === undefined || s.minAdvanceDays === null || Number.isNaN(Number(s.minAdvanceDays))
+            ? 1
+            : Number(s.minAdvanceDays),
+      });
+      const updatedList: DBTypeSession[] = (isEdit
         ? sessions.map((s) => ((s.id || s._id) === sessionId ? { ...s, ...payload } : s))
-        : [...sessions, { ...payload, features: [], id: Date.now().toString() }];
+        : [...sessions, { ...payload, features: [], id: Date.now().toString() }]
+      ).map(withNotice);
 
       const res = await fetch('/api/creator-onboarding/step-3', {
         method: 'PUT',
@@ -166,6 +189,49 @@ export default function SessionForm({ sessionId }: { sessionId?: string }) {
       setFormError('Network error. Please try again.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const confirmToggleVisibility = async () => {
+    if (!sessionId) return;
+    const makeLive = !isLive;
+    setTogglingVisibility(true);
+    try {
+      const res = await fetch(`/api/creators/sessions/${sessionId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isActive: makeLive, isDraft: false }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data?.error || 'Could not update session visibility.');
+        return;
+      }
+      setIsActive(makeLive);
+      setIsDraft(false);
+      setSessions((prev) =>
+        prev.map((s) =>
+          (s.id || s._id) === sessionId ? { ...s, isActive: makeLive, isDraft: false } : s
+        )
+      );
+      try {
+        const cached = sessionStorage.getItem(SETTINGS_CACHE_KEY);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed.sessions)) {
+            parsed.sessions = parsed.sessions.map((s: DBTypeSession) =>
+              (s.id || s._id) === sessionId ? { ...s, isActive: makeLive, isDraft: false } : s
+            );
+            sessionStorage.setItem(SETTINGS_CACHE_KEY, JSON.stringify(parsed));
+          }
+        }
+      } catch {}
+      setConfirmVisibility(false);
+      toast.success(makeLive ? 'Session is now live for booking.' : 'Session is now offline.');
+    } catch {
+      toast.error('Network error. Please try again.');
+    } finally {
+      setTogglingVisibility(false);
     }
   };
 
@@ -243,6 +309,20 @@ export default function SessionForm({ sessionId }: { sessionId?: string }) {
               >
                 Cancel
               </Link>
+              {isEdit && (
+                <button
+                  type="button"
+                  onClick={() => setConfirmVisibility(true)}
+                  disabled={saving || togglingVisibility}
+                  className={`px-8 py-3 rounded-2xl font-bold text-sm transition-all cursor-pointer border ${
+                    isLive
+                      ? 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+                      : 'border-[#0012FF]/30 bg-[#EEF2FF] text-[#0012FF] hover:bg-[#E0E7FF]'
+                  } disabled:opacity-50`}
+                >
+                  {visibilityLabel}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={handleSave}
@@ -255,6 +335,38 @@ export default function SessionForm({ sessionId }: { sessionId?: string }) {
           </div>
         )}
       </main>
+
+      {isEdit && (
+        <ActionDialog
+          open={confirmVisibility}
+          onOpenChange={(open) => {
+            if (!open && !togglingVisibility) setConfirmVisibility(false);
+          }}
+          image={{
+            src: isLive ? '/assets/cancel-appointment-sm.webp' : '/assets/booking-confirm-sm.webp',
+            alt: 'Session visibility',
+          }}
+          title={isLive ? 'Take this session offline?' : 'Make this session live?'}
+          description={
+            isLive
+              ? 'Clients will no longer see or book this session. You can go live again anytime.'
+              : 'Clients will be able to book this session on your profile again.'
+          }
+          actions={[
+            {
+              label: 'Cancel',
+              variant: 'outline',
+              onClick: () => setConfirmVisibility(false),
+              disabled: togglingVisibility,
+            },
+            {
+              label: togglingVisibility ? 'Updating...' : visibilityLabel,
+              onClick: () => void confirmToggleVisibility(),
+              disabled: togglingVisibility,
+            },
+          ]}
+        />
+      )}
     </div>
   );
 }

@@ -88,9 +88,9 @@ function SignupForm() {
   };
 
   return (
-    <div className="lg:col-span-6 p-4 sm:p-6 md:p-8 flex flex-col justify-between">
+    <div className="flex min-h-screen flex-col justify-between bg-white px-6 py-8 sm:px-10 sm:py-10 lg:px-14 lg:py-12">
       {/* Top Logo */}
-      <div className="mb-8">
+      <div className="mb-6 sm:mb-8">
         <Image
           src="/assets/logo1.png"
           alt="Reachly Logo"
@@ -104,9 +104,9 @@ function SignupForm() {
       </div>
 
       {/* Central Form Container */}
-      <div className="my-auto max-w-md mx-auto w-full">
+      <div className="my-auto max-w-[400px] mx-auto w-full">
         <div className="text-center mb-8">
-          <h1 className="font-anton font-bold text-black text-2xl sm:text-3xl md:text-4xl leading-tight uppercase mb-3">
+          <h1 className="font-sans font-extrabold text-black text-3xl sm:text-4xl leading-tight tracking-tight mb-2">
             Create Account
           </h1>
           <p className="font-sans text-gray-400 text-sm">
@@ -149,7 +149,7 @@ function SignupForm() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-[#0012FF] hover:bg-[#000EB4] active:scale-[0.98] text-white font-sans font-bold py-3.5 px-6 rounded-full text-sm tracking-wide shadow-lg shadow-blue-500/20 transition-all disabled:opacity-50 mt-4 cursor-pointer"
+            className="w-full bg-[#0012FF] hover:bg-[#000EB4] active:scale-[0.98] text-white font-sans font-bold py-3.5 px-6 rounded-2xl text-sm tracking-wide shadow-lg shadow-[#0012FF]/25 transition-all disabled:opacity-50 mt-4 cursor-pointer"
           >
             {loading ? "Creating account..." : "Create Account"}
           </button>
@@ -167,7 +167,7 @@ function SignupForm() {
         <button
           onClick={handleGoogleSignIn}
           disabled={isGoogleLoading}
-          className="w-full bg-white border border-gray-200 rounded-full py-3 px-4 font-sans text-gray-700 text-xs font-bold flex items-center justify-center gap-2.5 hover:bg-gray-50 transition-all cursor-pointer active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-white border border-gray-200 rounded-2xl py-3.5 px-4 font-sans text-gray-700 text-xs font-bold flex items-center justify-center gap-2.5 hover:bg-gray-50 transition-all cursor-pointer active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isGoogleLoading ? (
             <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
@@ -196,20 +196,16 @@ function SignupForm() {
 
 export default function SignupPage() {
   return (
-    <div className="min-h-screen bg-[#F4F5F8] flex items-center justify-center p-4 sm:p-6 lg:p-8">
-      <div className="w-full max-w-7xl bg-white rounded-[32px] p-4 lg:p-6 shadow-xl border border-gray-100">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+    <div className="min-h-screen w-full bg-white">
+      <div className="grid min-h-screen w-full grid-cols-1 lg:grid-cols-2">
           <Suspense fallback={null}>
             <SignupForm />
           </Suspense>
 
-          {/* Right Side - Hero Image */}
-          <div className="hidden lg:block lg:col-span-6 relative">
-            <div className="h-full min-h-[600px] lg:min-h-[700px]">
-              <HeroImage />
-            </div>
+          {/* Right hero — full viewport half, no outer padding / rounded shell */}
+          <div className="relative hidden min-h-screen lg:block">
+            <HeroImage className="absolute inset-0 h-full w-full" />
           </div>
-        </div>
       </div>
     </div>
   );

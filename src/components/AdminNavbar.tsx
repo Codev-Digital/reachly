@@ -370,6 +370,22 @@ export default function AdminNavbar() {
               {/* Profile Dropdown */}
               {profileDropdownOpen && (
                 <div className="hidden md:block absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-2xl shadow-lg py-2 z-50">
+                  <Link
+                    href="/admin/recordings"
+                    onClick={() => setProfileDropdownOpen(false)}
+                    className={`flex w-full items-center gap-2 px-4 py-2.5 text-sm font-semibold transition-colors ${
+                      pathname === '/admin/recordings' || pathname.startsWith('/admin/recordings/')
+                        ? 'bg-[#0012FF]/8 text-[#0012FF]'
+                        : 'text-gray-700 hover:bg-gray-50 hover:text-[#0012FF]'
+                    }`}
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="2" y="4" width="20" height="16" rx="2" />
+                      <polygon points="10 9 16 12 10 15 10 9" fill="currentColor" stroke="none" />
+                    </svg>
+                    Recordings
+                  </Link>
+                  <div className="my-1.5 border-t border-gray-100" />
                   <button
                     onClick={() => {
                       setProfileDropdownOpen(false);
@@ -428,6 +444,22 @@ export default function AdminNavbar() {
                   </Link>
                 );
               })}
+
+              <Link
+                href="/admin/recordings"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={`flex items-center gap-3 p-3 rounded-2xl text-sm font-semibold transition-all ${
+                  pathname === '/admin/recordings' || pathname.startsWith('/admin/recordings/')
+                    ? 'bg-gray-50 text-[#0012FF]'
+                    : 'text-gray-500 hover:bg-gray-50'
+                }`}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="2" y="4" width="20" height="16" rx="2" />
+                  <polygon points="10 9 16 12 10 15 10 9" fill="currentColor" stroke="none" />
+                </svg>
+                <span>Recordings</span>
+              </Link>
 
               {/* Logout Button (Mobile Only) */}
               <button

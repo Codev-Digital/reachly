@@ -41,10 +41,10 @@ export default function WelcomeModal({
   loading: boolean;
 }) {
   return (
-    <div className="w-full max-w-7xl bg-white rounded-[32px] p-4 lg:p-6 shadow-xl border border-gray-100 min-h-[600px] lg:min-h-[700px] flex flex-col justify-between overflow-hidden">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch h-full">
+    <div className="min-h-screen w-full bg-white">
+      <div className="grid min-h-screen w-full grid-cols-1 lg:grid-cols-2">
         {/* Left side */}
-        <div className="lg:col-span-6 p-4 sm:p-6 md:p-8 flex flex-col justify-between">
+        <div className="flex min-h-screen flex-col justify-between bg-white px-6 py-8 sm:px-10 sm:py-10 lg:px-14 lg:py-12">
           <div className="mb-8">
             <Image
               src="/assets/logo1.png"
@@ -91,11 +91,9 @@ export default function WelcomeModal({
           <div />
         </div>
 
-        {/* Right hero side */}
-        <div className="hidden lg:block lg:col-span-6 relative">
-          <div className="h-full min-h-[600px] lg:min-h-[700px]">
-            <HeroImage />
-          </div>
+        {/* Right hero — full viewport half */}
+        <div className="relative hidden min-h-screen lg:block">
+          <HeroImage className="absolute inset-0 h-full w-full" />
         </div>
       </div>
     </div>

@@ -224,6 +224,24 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
             { new: true }
         ).exec();
 
+        // Cloud recording + MeetingRecording row when the creator starts / ends the call
+        if (startMeeting === true && !booking.meetingStartedAt) {
+            try {
+                const { ensureRecordingSession } = await import('@/lib/meetingRecording');
+                await ensureRecordingSession(String(booking._id));
+            } catch (recErr) {
+                console.error('Error starting meeting recording:', recErr);
+            }
+        }
+        if (endMeeting === true) {
+            try {
+                const { finalizeRecordingStop } = await import('@/lib/meetingRecording');
+                await finalizeRecordingStop(String(booking._id));
+            } catch (recErr) {
+                console.error('Error finalizing meeting recording:', recErr);
+            }
+        }
+
         // Notify user if booking is rescheduled or cancelled or meeting started
         if (booking.userId) {
             try {

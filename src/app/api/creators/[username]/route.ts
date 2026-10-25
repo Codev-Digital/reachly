@@ -4,7 +4,24 @@ import User from '@/models/User';
 import CreatorProfile from '@/models/CreatorProfile';
 import SessionType from '@/models/SessionType';
 import Booking from '@/models/Booking';
+import Review from '@/models/Review';
+import Event from '@/models/Event';
 import { sanitizeRichText } from '@/lib/sanitizeRichText';
+import { summarizeCreatorRating } from '@/lib/creatorRating';
+
+/** Today as YYYY-MM-DD in local time (matches event date storage). */
+function todayISODate() {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+}
+
+function eventHasFutureOrTodayDate(event: any, today: string) {
+    const dates = Array.isArray(event?.dates) ? event.dates : [];
+    return dates.some((d: any) => typeof d?.date === 'string' && d.date >= today);
+}
 
 export async function GET(
     request: NextRequest,
@@ -34,14 +51,28 @@ export async function GET(
         // Increment views in background without blocking the read response
         CreatorProfile.updateOne({ _id: profile._id }, { $inc: { views: 1 } }).exec().catch(() => {});
 
-        // Fetch User, Sessions, and Bookings concurrently in parallel
-        const [user, sessions, allBookings] = (await Promise.all([
+        // Fetch User, Sessions, Bookings, reviews, and published events concurrently
+        const [user, sessions, allBookings, clientReviews, publishedEvents] = (await Promise.all([
             User.findById(profile.userId).select('name isVerified email approvalStatus').lean(),
             SessionType.find({ userId: profile.userId }).sort({ order: 1 }).lean(),
             Booking.find({ creatorId: profile.userId, status: { $ne: 'cancelled' } })
                 .select('scheduledDate scheduledTime guestDetails.email')
-                .lean()
-        ])) as [any, any[], any[]];
+                .lean(),
+            Review.find({
+                revieweeId: profile.userId,
+                reviewerRole: 'user',
+                isHidden: { $ne: true },
+                rating: { $gte: 1 },
+            })
+                .sort({ createdAt: -1 })
+                .lean(),
+            Event.find({
+                creatorId: profile.userId,
+                status: 'published',
+            })
+                .sort({ publishedAt: -1, createdAt: -1 })
+                .lean(),
+        ])) as [any, any[], any[], any[], any[]];
 
         if (!user) {
             return NextResponse.json({ error: 'User data not found' }, { status: 404 });
@@ -86,6 +117,52 @@ export async function GET(
 
         const happyCustomers = uniqueEmails.size;
 
+        const reviewCount = clientReviews.length;
+        const avgRating =
+            reviewCount > 0
+                ? clientReviews.reduce((sum, r) => sum + (Number(r.rating) || 0), 0) / reviewCount
+                : null;
+        const ratingSummary = summarizeCreatorRating(avgRating, reviewCount);
+
+        const reviewerIds = [
+            ...new Set(clientReviews.map((r) => String(r.reviewerId)).filter(Boolean)),
+        ];
+        const [reviewerUsers, reviewerProfiles] = await Promise.all([
+            reviewerIds.length
+                ? User.find({ _id: { $in: reviewerIds } }).select('name profilePhoto').lean()
+                : Promise.resolve([]),
+            reviewerIds.length
+                ? CreatorProfile.find({ userId: { $in: reviewerIds } })
+                    .select('userId displayName profilePhoto')
+                    .lean()
+                : Promise.resolve([]),
+        ]);
+        const reviewerUserMap = new Map((reviewerUsers as any[]).map((u) => [String(u._id), u]));
+        const reviewerProfileMap = new Map(
+            (reviewerProfiles as any[]).map((p) => [String(p.userId), p])
+        );
+
+        const reviews = clientReviews.map((r: any, index: number) => {
+            const uid = String(r.reviewerId);
+            const ru = reviewerUserMap.get(uid);
+            const rp = reviewerProfileMap.get(uid);
+            return {
+                id: String(r._id),
+                name: rp?.displayName || ru?.name || 'Client',
+                avatar: rp?.profilePhoto || ru?.profilePhoto || '/avatar.png',
+                rating: r.rating || 0,
+                comment: r.comment || '',
+                dateLabel: r.createdAt
+                    ? new Date(r.createdAt).toLocaleDateString('en-GB', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric',
+                    })
+                    : '',
+                commaIdx: index % 3,
+            };
+        });
+
         return NextResponse.json({
             success: true,
             creator: {
@@ -105,10 +182,18 @@ export async function GET(
                 socialLinks: profile.socialLinks,
                 isVerified: user.isVerified,
                 isDeactivated: Boolean(profile.isDeactivated),
+                rating: ratingSummary.rating,
+                ratingLabel: ratingSummary.ratingLabel,
+                reviewCount: ratingSummary.reviewCount,
+                ratingDisplay: ratingSummary.display,
                 stats: {
                     sessionsCompleted: sessionsCompleted,
                     happyCustomers: happyCustomers,
-                    totalCategories: totalCategories
+                    totalCategories: totalCategories,
+                    rating: ratingSummary.rating,
+                    ratingLabel: ratingSummary.ratingLabel,
+                    reviewCount: ratingSummary.reviewCount,
+                    ratingDisplay: ratingSummary.display,
                 }
             },
             sessions: sessions
@@ -121,12 +206,28 @@ export async function GET(
                     durationMinutes: s.duration,
                     price: s.price,
                     discountedPrice: s.discountedPrice,
+                    minAdvanceDays: Math.max(0, Number(s.minAdvanceDays) || 0),
                     questions: s.questions || [],
                     features: s.features,
                     isPackage: !!s.isPackage,
                     packageSessions: s.packageSessions,
                     packagePeriod: s.packagePeriod,
                 })),
+            reviews,
+            events: (() => {
+                const today = todayISODate();
+                return publishedEvents
+                    .filter((e) => eventHasFutureOrTodayDate(e, today))
+                    .map((e) => ({
+                        id: String(e._id),
+                        title: e.title,
+                        description: e.description || '',
+                        bannerUrl: e.bannerUrl || '',
+                        category: e.category || '',
+                        dates: e.dates || [],
+                        publishedAt: e.publishedAt || null,
+                    }));
+            })(),
         });
     } catch (error: any) {
         console.error('Fetch creator profile error:', error);

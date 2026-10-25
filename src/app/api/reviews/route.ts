@@ -130,6 +130,12 @@ export async function POST(req: NextRequest) {
     // Notify creator when a user leaves a review
     if (reviewerRole === 'user' && booking.creatorId) {
       try {
+        const { invalidateCreatorsListCache } = await import('@/lib/creatorsListCache');
+        invalidateCreatorsListCache();
+      } catch {
+        /* ignore cache clear failures */
+      }
+      try {
         const Notification = (await import('@/models/Notification')).default;
         const clientName = user.name || booking.guestDetails?.fullName || 'A client';
         await new Notification({

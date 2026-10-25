@@ -161,6 +161,9 @@ export async function GET(request: NextRequest) {
                 username: creatorProfile?.username || '',
                 session: booking.sessionTypeId?.title || 'Session',
                 sessionType: booking.sessionTypeId?.title || 'Session',
+                sessionTypeId:
+                  booking.sessionTypeId?._id?.toString?.() ||
+                  (typeof booking.sessionTypeId === 'string' ? booking.sessionTypeId : null),
                 date: `${formattedShortDate} at ${booking.scheduledTime}`,
                 shortDate: formattedShortDate,
                 time: booking.scheduledTime,

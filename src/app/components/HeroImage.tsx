@@ -1,107 +1,106 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { twMerge } from 'tailwind-merge';
 
-export default function HeroImage() {
-  const column1 = [
-    '/Avatars/1.jpg',
-    '/Avatars/2.jpg',
-    '/Avatars/3.jpg',
-    '/Avatars/4.jpg',
-  ];
+/**
+ * Auth / welcome right panel: tilted portrait columns with seamless CSS marquee.
+ * Uses `/public/actors` images — fill parent edge-to-edge.
+ */
 
-  const column2 = [
-    '/Avatars/5.jpg',
-    '/Avatars/6.jpg',
-    '/Avatars/7.jpg',
-    '/Avatars/8.jpg',
-  ];
+const ACTORS = [
+  '/actors/ahsan_khan.jpg',
+  '/actors/ali_khan.jpg',
+  '/actors/bilal_abbas.png',
+  '/actors/dananeer_mobeen.png',
+  '/actors/danish_taimoor.png',
+  '/actors/dur_e_fishan.png',
+  '/actors/feroz_khan.jpg',
+  '/actors/hania_amir.png',
+  '/actors/maira_khan.png',
+  '/actors/mira_khan.jpg',
+  '/actors/sajal_aly.jpg',
+  '/actors/sara_ali_khan.jpg',
+];
 
-  const column3 = [
-    '/Avatars/9.jpg',
-    '/Avatars/10.jpg',
-    '/Avatars/11.jpg',
-    '/Avatars/12.jpg',
-  ];
+const COL_1 = [ACTORS[0], ACTORS[1], ACTORS[2], ACTORS[3]];
+const COL_2 = [ACTORS[4], ACTORS[5], ACTORS[6], ACTORS[7]];
+const COL_3 = [ACTORS[8], ACTORS[9], ACTORS[10], ACTORS[11]];
 
-  // Duplicate arrays to make them scroll seamlessly
-  const scroll1 = [...column1, ...column1, ...column1];
-  const scroll2 = [...column2, ...column2, ...column2];
-  const scroll3 = [...column3, ...column3, ...column3];
+function PortraitCard({ src }: { src: string }) {
+  return (
+    <div className="auth-marquee-card shrink-0 overflow-hidden rounded-xl border-2 border-white bg-[#0a1a8a] shadow-[0_6px_18px_rgba(0,0,0,0.22)]">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt=""
+        draggable={false}
+        className="pointer-events-none h-full w-full object-cover select-none"
+      />
+    </div>
+  );
+}
+
+function MarqueeColumn({
+  images,
+  direction,
+  durationSec,
+}: {
+  images: string[];
+  direction: 'up' | 'down';
+  durationSec: number;
+}) {
+  const loop = [...images, ...images];
 
   return (
-    <div className="relative w-full h-full overflow-hidden rounded-[24px] md:rounded-[32px] bg-gradient-to-b from-[#0014B4] to-[#000B9C] flex flex-col justify-between p-6 sm:p-8">
-      {/* Tilted Marquee Container */}
-      <div className="absolute inset-0 overflow-hidden pb-48">
-        <div className="w-[120%] h-[120%] -rotate-12 -translate-x-[10%] -translate-y-[10%] flex gap-4 justify-center">
-          
-          {/* Column 1 - Upwards */}
-          <div className="w-[30%] overflow-hidden relative h-full">
-            <motion.div
-              animate={{ y: ['0%', '-50%'] }}
-              transition={{ duration: 18, repeat: Infinity, ease: 'linear' }}
-              className="flex flex-col gap-4"
-            >
-              {scroll1.map((src, i) => (
-                <div
-                  key={i}
-                  className="aspect-[3/4] w-full rounded-2xl overflow-hidden border-2 border-white/10 shadow-lg bg-blue-950 shrink-0"
-                >
-                  <img src={src} alt="Creator" className="w-full h-full object-cover" />
-                </div>
-              ))}
-            </motion.div>
-          </div>
+    <div className="auth-marquee-col relative h-full w-[300px] shrink-0 overflow-hidden">
+      <div
+        className={
+          direction === 'up' ? 'auth-marquee-track-up' : 'auth-marquee-track-down'
+        }
+        style={{ animationDuration: `${durationSec}s` }}
+      >
+        {loop.map((src, i) => (
+          <PortraitCard key={`${src}-${i}`} src={src} />
+        ))}
+      </div>
+    </div>
+  );
+}
 
-          {/* Column 2 - Downwards */}
-          <div className="w-[30%] overflow-hidden relative h-full">
-            <motion.div
-              animate={{ y: ['-50%', '0%'] }}
-              transition={{ duration: 22, repeat: Infinity, ease: 'linear' }}
-              className="flex flex-col gap-4"
-            >
-              {scroll2.map((src, i) => (
-                <div
-                  key={i}
-                  className="aspect-[3/4] w-full rounded-2xl overflow-hidden border-2 border-white/10 shadow-lg bg-blue-950 shrink-0"
-                >
-                  <img src={src} alt="Creator" className="w-full h-full object-cover" />
-                </div>
-              ))}
-            </motion.div>
-          </div>
+export default function HeroImage({ className }: { className?: string }) {
+  return (
+    <div
+      className={twMerge(
+        'relative flex h-full w-full min-h-full flex-col overflow-hidden bg-[#0012FF]',
+        className
+      )}
+    >
+      <div
+        className="pointer-events-none absolute inset-0 opacity-40"
+        style={{
+          background:
+            'radial-gradient(ellipse 80% 60% at 50% 20%, rgba(255,255,255,0.18), transparent 55%)',
+        }}
+      />
 
-          {/* Column 3 - Upwards */}
-          <div className="w-[30%] overflow-hidden relative h-full">
-            <motion.div
-              animate={{ y: ['0%', '-50%'] }}
-              transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-              className="flex flex-col gap-4"
-            >
-              {scroll3.map((src, i) => (
-                <div
-                  key={i}
-                  className="aspect-[3/4] w-full rounded-2xl overflow-hidden border-2 border-white/10 shadow-lg bg-blue-950 shrink-0"
-                >
-                  <img src={src} alt="Creator" className="w-full h-full object-cover" />
-                </div>
-              ))}
-            </motion.div>
-          </div>
-
+      <div className="absolute inset-0 overflow-hidden pb-44 sm:pb-48">
+        <div className="auth-marquee-stage flex h-[140%] w-[140%] origin-center -translate-x-[14%] -translate-y-[12%] rotate-[14deg] justify-center gap-2.5 sm:gap-3">
+          <MarqueeColumn images={COL_1} direction="up" durationSec={26} />
+          <MarqueeColumn images={COL_2} direction="down" durationSec={32} />
+          <MarqueeColumn images={COL_3} direction="up" durationSec={29} />
         </div>
       </div>
 
-      {/* Bottom overlay for readability of text */}
-      <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-[#000B9C] via-[#000B9C]/90 to-transparent pointer-events-none z-10" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-[48%] bg-gradient-to-t from-[#0012FF] via-[#0012FF]/92 to-transparent" />
 
-      {/* Center/Bottom text content */}
-      <div className="mt-auto relative z-20 text-center max-w-lg mx-auto pb-4">
-        <h2 className="font-sans font-black text-2xl sm:text-3xl lg:text-4xl text-white tracking-tight uppercase mb-4">
+      <div className="relative z-20 mt-auto px-6 pb-8 pt-10 text-center sm:px-10 sm:pb-10">
+        <h2 className="mb-3 font-sans text-2xl font-black tracking-tight text-white uppercase sm:text-3xl lg:text-[2.15rem] lg:leading-tight">
           Learn from Pakistani Creators
         </h2>
-        <p className="font-sans text-xs sm:text-sm text-white/80 leading-relaxed">
-          Learn the skills, strategies, and systems behind successful content, brands, and online businesses—directly from the people who built them and achieved lasting success.
+        <p className="mx-auto max-w-md font-sans text-xs leading-relaxed text-white/85 sm:text-sm">
+          Learn the skills, strategies, and systems behind successful content, brands, and
+          online businesses—directly from the people who built them and achieved lasting
+          success.
         </p>
       </div>
     </div>

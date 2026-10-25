@@ -95,7 +95,9 @@ interface DBTypeSession {
   features: string[];
   maxBookings?: number;
   bufferTime?: number;
+  minAdvanceDays?: number;
   isDraft?: boolean;
+  isActive?: boolean;
 }
 
 export default function CreatorSettings() {
@@ -1148,7 +1150,12 @@ export default function CreatorSettings() {
                   <p className="text-gray-400 font-medium text-sm">No sessions created yet.</p>
                 </div>
               ) : (
-                sessions.map((session) => (
+                sessions.map((session) => {
+                  const isOffline = session.isActive === false;
+                  const isDraft = session.isDraft === true;
+                  const isLive = !isOffline && !isDraft;
+
+                  return (
                   <div
                     key={session.id || session._id}
                     className="bg-white rounded-[8px] border border-[#e2e2e2] p-6 shadow-sm flex flex-col sm:flex-row sm:items-start justify-between gap-4 hover:border-gray-300 transition-all"
@@ -1156,7 +1163,17 @@ export default function CreatorSettings() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3 flex-wrap mb-3">
                         <h3 className="text-lg sm:text-xl font-bold text-black">{session.title}</h3>
-                        {session.isDraft && (
+                        {isLive && (
+                          <span className="bg-emerald-50 text-emerald-700 text-xs px-2.5 py-0.5 rounded-full font-medium border border-emerald-200">
+                            Live
+                          </span>
+                        )}
+                        {isOffline && (
+                          <span className="bg-gray-100 text-gray-600 text-xs px-2.5 py-0.5 rounded-full font-medium border border-gray-200">
+                            Offline
+                          </span>
+                        )}
+                        {isDraft && (
                           <span className="bg-amber-50 text-amber-700 text-xs px-2.5 py-0.5 rounded-full font-medium border border-amber-200">
                             Draft
                           </span>
@@ -1181,7 +1198,7 @@ export default function CreatorSettings() {
                       )}
                     </div>
 
-                    <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 self-start sm:self-auto shrink-0">
                       <button
                         onClick={() => handleOpenEditModal(session)}
                         className="text-gray-400 hover:text-[#0012FF] transition-all p-2 rounded-xl hover:bg-gray-50 cursor-pointer border border-transparent hover:border-gray-200"
@@ -1202,7 +1219,8 @@ export default function CreatorSettings() {
                       </button>
                     </div>
                   </div>
-                ))
+                  );
+                })
               )}
             </div>
           )}

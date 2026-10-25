@@ -132,7 +132,12 @@ export default function CreatorProfileCard({ creator, mobileMode = 'compact', on
         {/* Cover Photo Container (Clean - No Text Overlay) */}
         <div className={`relative w-full rounded-[15px] overflow-hidden bg-gray-100 ${mobileMode === 'compact' ? 'h-[90px] lg:h-[140px]' : 'h-[140px]'}`}>
           {creator?.coverPhoto ? (
-            <img src={creator.coverPhoto} alt="cover" className="w-full h-full object-cover" />
+            <img
+              key={creator.coverPhoto}
+              src={creator.coverPhoto}
+              alt="cover"
+              className="w-full h-full object-cover"
+            />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-[#0012FF] via-indigo-600 to-purple-700" />
           )}
@@ -168,17 +173,29 @@ export default function CreatorProfileCard({ creator, mobileMode = 'compact', on
 
         {/* Profile Avatar overlapping bottom-left of cover photo */}
         <div className={`relative z-10 rounded-full border-4 border-white shadow-xl overflow-hidden bg-white ml-3 ${mobileMode === 'compact' ? '-mt-10 w-[80px] h-[80px] lg:-mt-14 lg:w-[115px] lg:h-[115px]' : '-mt-14 w-[115px] h-[115px]'}`}>
-          <img src={creator?.profilePhoto || '/avatar.png'} alt={creator?.displayName} className="w-full h-full object-cover" />
+          <img
+            key={creator?.profilePhoto || 'avatar'}
+            src={creator?.profilePhoto || '/avatar.png'}
+            alt={creator?.displayName || 'Creator'}
+            className="w-full h-full object-cover"
+          />
         </div>
 
         {/* Name & Handle */}
         <div className={`px-2 ${mobileMode === 'compact' ? 'mt-1.5 lg:mt-3' : 'mt-3'}`}>
-          <h3 className="font-extrabold text-2xl text-black font-sans leading-tight">
-            {creator?.displayName || 'Sophia Reed'}
-          </h3>
-          <p className="text-sm text-gray-400 font-medium font-sans mt-0.5">
-            @{creator?.username || 'sophiareed'}
-          </p>
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <h3 className="font-extrabold text-2xl text-black font-sans leading-tight truncate">
+                {creator?.displayName || 'Sophia Reed'}
+              </h3>
+              <p className="text-sm text-gray-400 font-medium font-sans mt-0.5">
+                @{creator?.username || 'sophiareed'}
+              </p>
+            </div>
+            <span className="flex items-center gap-1 text-sm font-bold text-amber-500 shrink-0 pt-1">
+              ★ {creator?.ratingDisplay || creator?.stats?.ratingDisplay || '5.0 (0)'}
+            </span>
+          </div>
         </div>
 
         {/* Location & Languages Row */}
@@ -201,7 +218,7 @@ export default function CreatorProfileCard({ creator, mobileMode = 'compact', on
           </span>
         </div>
 
-        {/* 3 Stats Columns */}
+        {/* Stats Columns — sessions + rating */}
         <div className={`grid grid-cols-3 gap-2 border-y border-gray-100 text-center ${mobileMode === 'compact' ? 'mt-4 py-2.5 lg:mt-6 lg:py-4' : 'mt-6 py-4'}`}>
           <div className="flex flex-col items-center justify-center">
             <span className={`font-black text-black font-sans leading-tight ${mobileMode === 'compact' ? 'text-xl lg:text-2xl' : 'text-2xl'}`}>
@@ -213,20 +230,20 @@ export default function CreatorProfileCard({ creator, mobileMode = 'compact', on
           </div>
 
           <div className="flex flex-col items-center justify-center border-x border-gray-100 px-1">
-            <span className={`font-black text-black font-sans leading-tight ${mobileMode === 'compact' ? 'text-xl lg:text-2xl' : 'text-2xl'}`}>
-              {formatNumber(creator?.stats?.happyCustomers ?? 0)}
+            <span className={`font-black text-amber-500 font-sans leading-tight ${mobileMode === 'compact' ? 'text-xl lg:text-2xl' : 'text-2xl'}`}>
+              {creator?.stats?.ratingLabel || creator?.ratingLabel || '5.0'}
             </span>
             <span className={`text-xs text-gray-400 font-medium font-sans leading-snug ${mobileMode === 'compact' ? 'mt-0.5 lg:mt-1' : 'mt-1'}`}>
-              Happy Users
+              Rating ({creator?.stats?.reviewCount ?? creator?.reviewCount ?? 0})
             </span>
           </div>
 
           <div className="flex flex-col items-center justify-center">
             <span className={`font-black text-black font-sans leading-tight ${mobileMode === 'compact' ? 'text-xl lg:text-2xl' : 'text-2xl'}`}>
-              {creator?.stats?.totalCategories ?? 0}
+              {formatNumber(creator?.stats?.happyCustomers ?? 0)}
             </span>
             <span className={`text-xs text-gray-400 font-medium font-sans leading-snug ${mobileMode === 'compact' ? 'mt-0.5 lg:mt-1' : 'mt-1'}`}>
-              Total Categories
+              Happy Users
             </span>
           </div>
         </div>

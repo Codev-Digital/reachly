@@ -113,6 +113,13 @@ const AdminSidebar = ({
             <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
           </svg>
         );
+      case 'recordings':
+        return (
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="2" y="4" width="20" height="16" rx="2" />
+            <polygon points="10 9 16 12 10 15 10 9" fill="currentColor" stroke="none" />
+          </svg>
+        );
       case 'reviews':
         return (
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -181,6 +188,21 @@ const AdminSidebar = ({
       </nav>
 
       <div className="mt-6 pt-4 border-t border-[rgba(255,255,255,0.1)] space-y-2">
+        <Link
+          href="/admin/recordings"
+          onClick={() => {
+            setActiveItem('Recordings');
+            onClose?.();
+          }}
+          className={`w-full flex items-center gap-3 px-2 py-2 rounded text-left text-sm font-sans transition-all ${
+            activeItem === 'Recordings' || pathname.startsWith('/admin/recordings')
+              ? 'text-[#C8A97E]'
+              : 'text-[#F9F6F2] opacity-70 hover:text-[#C8A97E] hover:opacity-100'
+          }`}
+        >
+          {getIcon('recordings')}
+          Recordings
+        </Link>
         <button 
           onClick={() => setIsLogoutModalOpen(true)}
           className="w-full flex items-center gap-3 px-2 py-2 rounded text-left text-sm font-sans text-[#F9F6F2] opacity-70 hover:text-[#C8A97E] hover:opacity-100 transition-all"

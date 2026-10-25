@@ -25,6 +25,10 @@ import {
   readAnyPendingSessionReview,
   storePendingSessionReview,
 } from '@/lib/pendingSessionReview';
+import AvailabilityDateTimePicker, {
+  dateToISO,
+} from '@/components/booking/AvailabilityDateTimePicker';
+import { pktToday } from '@/lib/pkt';
 
 function FadeUp({ children, delay = 0, className = '' }: { children: React.ReactNode; delay?: number; className?: string }) {
   const ref = useRef(null);
@@ -63,6 +67,7 @@ interface Booking {
   hasReviewed?: boolean;
   bookingRef?: string;
   durationMins?: number;
+  sessionTypeId?: string | null;
   isPackage?: boolean;
   sessionNumber?: number;
   isEvent?: boolean;
@@ -100,9 +105,7 @@ export default function UserBookingsPage() {
   // Reschedule States
   const [showRescheduleModal, setShowRescheduleModal] = useState<boolean>(false);
   const [bookingToReschedule, setBookingToReschedule] = useState<Booking | null>(null);
-  const [rescheduleDate, setRescheduleDate] = useState<Date>(new Date());
-  const [rescheduleSlots, setRescheduleSlots] = useState<string[]>([]);
-  const [loadingSlots, setLoadingSlots] = useState(false);
+  const [rescheduleDate, setRescheduleDate] = useState<Date | null>(null);
   const [selectedRescheduleTimeSlot, setSelectedRescheduleTimeSlot] = useState<string>('');
 
   // Custom Cancel / Reschedule Alerts to Modals
@@ -213,6 +216,7 @@ export default function UserBookingsPage() {
               hasReviewed: Boolean(b.hasReviewed),
               bookingRef: b.bookingRef,
               durationMins: Number(b.durationMins) || 15,
+              sessionTypeId: b.sessionTypeId || null,
               isPackage: b.isPackage || false,
               sessionNumber: b.sessionNumber,
               isEvent: !!b.isEvent,
@@ -242,40 +246,28 @@ export default function UserBookingsPage() {
     loadData();
   }, [loadData]);
 
-  // Load slots for creator availability when reschedule date changes
+  // Open reschedule modal when arriving from dashboard (?reschedule=bookingId)
   useEffect(() => {
-    const booking = bookingToReschedule;
-    if (!showRescheduleModal || !booking) return;
+    if (loading || bookings.length === 0 || showRescheduleModal) return;
+    const params = new URLSearchParams(window.location.search);
+    const rescheduleId = params.get('reschedule');
+    if (!rescheduleId) return;
 
-    async function fetchRescheduleSlots() {
-      if (!booking) return;
-      setLoadingSlots(true);
-      setSelectedRescheduleTimeSlot('');
-      try {
-        const usernameWithoutAt = booking.username.replace('@', '');
-        const year = rescheduleDate.getFullYear();
-        const month = String(rescheduleDate.getMonth() + 1).padStart(2, '0');
-        const day = String(rescheduleDate.getDate()).padStart(2, '0');
-        const dateStr = `${year}-${month}-${day}`;
-
-        const res = await fetch(`/api/creators/${usernameWithoutAt}/availability?date=${dateStr}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data.success && data.slots) {
-            setRescheduleSlots(data.slots);
-          } else {
-            setRescheduleSlots([]);
-          }
-        }
-      } catch (err) {
-        console.error(err);
-        setRescheduleSlots([]);
-      } finally {
-        setLoadingSlots(false);
+    const booking = bookings.find((b) => String(b.id) === rescheduleId && !b.isEvent);
+    if (booking && booking.status === 'Upcoming') {
+      if (assertModificationAllowed(booking, 'reschedule')) {
+        setBookingToReschedule(booking);
+        setRescheduleDate(pktToday());
+        setSelectedRescheduleTimeSlot('');
+        setShowRescheduleModal(true);
       }
     }
-    fetchRescheduleSlots();
-  }, [rescheduleDate, showRescheduleModal, bookingToReschedule]);
+    // Clear the query so refresh doesn't reopen
+    params.delete('reschedule');
+    const next = params.toString();
+    router.replace(next ? `/user/bookings?${next}` : '/user/bookings', { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, bookings]);
 
   const openBlockedWindow = (
     booking: Pick<Booking, 'scheduledDate' | 'time' | 'isEvent'>,
@@ -348,20 +340,18 @@ export default function UserBookingsPage() {
   const handleRescheduleClick = (booking: Booking) => {
     if (!assertModificationAllowed(booking, 'reschedule')) return;
     setBookingToReschedule(booking);
-    setRescheduleDate(booking.scheduledDate ? new Date(booking.scheduledDate) : new Date());
+    setRescheduleDate(pktToday());
+    setSelectedRescheduleTimeSlot('');
     setShowRescheduleModal(true);
   };
 
   const handleConfirmReschedule = async () => {
-    if (!bookingToReschedule || !selectedRescheduleTimeSlot) {
+    if (!bookingToReschedule || !selectedRescheduleTimeSlot || !rescheduleDate) {
       toast.error('Please select a new time slot');
       return;
     }
     try {
-      const year = rescheduleDate.getFullYear();
-      const month = String(rescheduleDate.getMonth() + 1).padStart(2, '0');
-      const day = String(rescheduleDate.getDate()).padStart(2, '0');
-      const dateStr = `${year}-${month}-${day}`;
+      const dateStr = dateToISO(rescheduleDate);
 
       const res = await fetch(`/api/user/bookings/${bookingToReschedule.id}`, {
         method: 'PUT',
@@ -527,19 +517,6 @@ export default function UserBookingsPage() {
   };
 
   const [searchQuery, setSearchQuery] = useState('');
-
-  // Generate next 14 days starting from today for rescheduling slider
-  const getRescheduleDays = () => {
-    const list = [];
-    const base = new Date();
-    base.setHours(0, 0, 0, 0);
-    for (let i = 0; i < 14; i++) {
-      const d = new Date(base);
-      d.setDate(base.getDate() + i);
-      list.push(d);
-    }
-    return list;
-  };
 
   const filteredBookings = bookings.filter((b) => {
     const matchesTab =
@@ -944,86 +921,21 @@ export default function UserBookingsPage() {
               </p>
             </div>
 
-            {/* Date Selector Strip Box */}
-            <div className="w-full bg-white rounded-2xl border border-gray-200/80 p-2 sm:p-2.5 mb-6 flex items-center justify-between gap-1 shadow-2xs">
-              <button
-                onClick={() => {
-                  const prev = new Date(rescheduleDate);
-                  prev.setDate(prev.getDate() - 1);
-                  setRescheduleDate(prev);
-                }}
-                className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors shrink-0"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6" /></svg>
-              </button>
-
-              <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar py-0.5 px-1 flex-1">
-                {getRescheduleDays().map((d, idx) => {
-                  const isSelected = rescheduleDate.getDate() === d.getDate() &&
-                    rescheduleDate.getMonth() === d.getMonth() &&
-                    rescheduleDate.getFullYear() === d.getFullYear();
-
-                  const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
-                  const dayNum = String(d.getDate()).padStart(2, '0');
-
-                  return (
-                    <button
-                      key={idx}
-                      onClick={() => setRescheduleDate(d)}
-                      className={`flex flex-col items-center justify-center min-w-[44px] sm:min-w-[48px] py-1.5 px-1 rounded-xl transition-all cursor-pointer shrink-0 ${isSelected
-                        ? 'bg-[#EEF2FF] border border-[#0012FF]/30 text-[#0012FF] font-bold shadow-2xs'
-                        : 'text-gray-500 hover:bg-gray-100 bg-transparent'
-                        }`}
-                    >
-                      <span className={`text-[9px] uppercase font-bold tracking-wider ${isSelected ? 'text-[#0012FF]/80' : 'text-gray-400'}`}>{dayName}</span>
-                      <span className={`text-xs sm:text-sm font-extrabold mt-0.5 ${isSelected ? 'text-[#0012FF]' : 'text-gray-800'}`}>{dayNum}</span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              <button
-                onClick={() => {
-                  const next = new Date(rescheduleDate);
-                  next.setDate(next.getDate() + 1);
-                  setRescheduleDate(next);
-                }}
-                className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors shrink-0"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6" /></svg>
-              </button>
-            </div>
-
-            {/* Time Slots Grid (3 Columns) */}
             <div className="w-full mb-8">
-              {loadingSlots ? (
-                <div className="grid grid-cols-3 gap-3">
-                  {[1, 2, 3, 4, 5, 6].map((i) => (
-                    <div key={i} className="h-11 bg-gray-100 rounded-2xl animate-pulse" />
-                  ))}
-                </div>
-              ) : rescheduleSlots.length === 0 ? (
-                <div className="text-center py-8 px-4 bg-gray-50 border border-gray-200/70 rounded-2xl">
-                  <p className="text-xs sm:text-sm text-gray-500 font-medium">No available time slots for this date.</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-h-56 overflow-y-auto pr-1 no-scrollbar">
-                  {rescheduleSlots.map((slot) => {
-                    const isSelected = selectedRescheduleTimeSlot === slot;
-                    return (
-                      <button
-                        key={slot}
-                        onClick={() => setSelectedRescheduleTimeSlot(slot)}
-                        className={`py-3 px-3 border rounded-2xl text-xs sm:text-sm font-medium text-center transition-all cursor-pointer ${isSelected
-                          ? 'bg-[#EEF2FF] border-2 border-[#0012FF] text-[#0012FF] font-bold shadow-xs'
-                          : 'bg-white border-gray-200 hover:border-gray-300 text-gray-500'
-                          }`}
-                      >
-                        {slot}
-                      </button>
-                    );
-                  })}
-                </div>
+              {bookingToReschedule && (
+                <AvailabilityDateTimePicker
+                  username={bookingToReschedule.username.replace('@', '')}
+                  sessionId={bookingToReschedule.sessionTypeId}
+                  selectedDate={rescheduleDate}
+                  selectedTime={selectedRescheduleTimeSlot || null}
+                  onDateChange={(d) => {
+                    setRescheduleDate(d);
+                    setSelectedRescheduleTimeSlot('');
+                  }}
+                  onTimeChange={setSelectedRescheduleTimeSlot}
+                  dayCount={60}
+                  compact
+                />
               )}
             </div>
 
@@ -1038,7 +950,7 @@ export default function UserBookingsPage() {
 
               <button
                 onClick={handleConfirmReschedule}
-                disabled={!selectedRescheduleTimeSlot}
+                disabled={!selectedRescheduleTimeSlot || !rescheduleDate}
                 className="flex-1 py-3.5 bg-[#0012FF] hover:bg-[#0010d0] text-white rounded-full font-bold text-xs sm:text-sm text-center transition-all shadow-md active:scale-98 disabled:bg-gray-200 disabled:text-gray-400 cursor-pointer"
               >
                 Reschedule Appointment

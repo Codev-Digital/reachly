@@ -17,6 +17,11 @@ export interface ISessionType extends Document {
   price: number;      // PKR
   discountedPrice?: number; // optional discounted price in PKR
   bufferTime?: number; // minutes of rest kept free after a session (0 = none, never more than `duration`)
+  /**
+   * How many calendar days ahead clients must book.
+   * Example: 2 → if today is Sunday, earliest bookable day is Tuesday.
+   */
+  minAdvanceDays?: number;
   questions: ISessionQuestion[]; // pre-session intake questions
   features: string[]; // what's included bullets
   maxBookings?: number; // per day cap (optional)
@@ -95,6 +100,12 @@ const SessionTypeSchema = new Schema<ISessionType>(
       type: Number,
       min: [0, 'Buffer time cannot be negative'],
       default: 0,
+    },
+    minAdvanceDays: {
+      type: Number,
+      min: [0, 'Minimum notice cannot be negative'],
+      max: [90, 'Minimum notice cannot exceed 90 days'],
+      default: 1,
     },
     questions: {
       type: [SessionQuestionSchema],

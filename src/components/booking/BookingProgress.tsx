@@ -8,49 +8,63 @@ export default function BookingProgress({ currentStep }: { currentStep: number }
   const params = useParams();
   const router = useRouter();
   const { setBooking } = useBooking();
-  
+
   const handleStepClick = (step: number) => {
     if (step < currentStep) {
-      setBooking(b => ({ ...b, step }));
+      setBooking((b) => ({ ...b, step }));
       router.push(`/creators/${params.username}/book-session/step-${step}`);
     }
   };
 
   return (
     <div className="flex items-center justify-center py-6 sm:py-10 max-w-2xl mx-auto w-full select-none px-4">
-      {steps.map((step, idx) => (
-        <div key={step} className="flex items-center flex-1 justify-center last:flex-initial">
-          {/* Step Box */}
-          <div
-            onClick={() => handleStepClick(step)}
-            className={`w-9 h-10 rounded-xl flex items-center justify-center text-sm font-bold transition-all border shrink-0 ${
-              step < currentStep ? 'cursor-pointer hover:opacity-80 active:scale-95' : ''
-            } ${
-              step === currentStep
-                ? 'bg-[#EEF2FF] border-[#0012FF] text-[#0012FF]'
-                : step < currentStep
-                ? 'bg-[#0012FF] border-[#0012FF] text-white'
-                : 'bg-white border-gray-200 text-gray-400'
-            }`}
-          >
-            {step < currentStep ? (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-            ) : (
-              step
+      {steps.map((step, idx) => {
+        const isCurrent = step === currentStep;
+        const isComplete = step < currentStep;
+
+        return (
+          <div key={step} className="flex items-center flex-1 justify-center last:flex-initial">
+            <button
+              type="button"
+              onClick={() => handleStepClick(step)}
+              disabled={!isComplete}
+              aria-current={isCurrent ? 'step' : undefined}
+              aria-label={isComplete ? `Go to step ${step}` : `Step ${step}`}
+              className={`w-9 h-10 rounded-xl flex items-center justify-center text-sm font-bold transition-all border shrink-0 ${
+                isComplete ? 'cursor-pointer hover:opacity-90 active:scale-95' : 'cursor-default'
+              } ${
+                isCurrent
+                  ? 'bg-[#EEF2FF] border-[#0012FF] text-[#0012FF]'
+                  : isComplete
+                    ? 'bg-[#0012FF] border-[#0012FF] text-white'
+                    : 'bg-white border-[#e2e2e2] text-gray-400'
+              }`}
+            >
+              {isComplete ? (
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              ) : (
+                step
+              )}
+            </button>
+
+            {idx < steps.length - 1 && (
+              <div className="flex-grow h-px mx-1.5 max-w-[60px] min-w-[12px] bg-[#e2e2e2]" />
             )}
           </div>
-          {/* Line */}
-          {idx < steps.length - 1 && (
-            <div
-              className={`flex-grow h-px mx-1.5 max-w-[60px] min-w-[12px] ${
-                step < currentStep ? 'bg-[#0012FF]/60' : 'bg-gray-200'
-              }`}
-            />
-          )}
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

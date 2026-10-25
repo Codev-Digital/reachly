@@ -13,3 +13,10 @@ export const pktToday = () => {
   const [y, m, d] = pktTodayISO().split('-').map(Number);
   return new Date(y, m - 1, d);
 };
+
+/** Add whole calendar days to a YYYY-MM-DD string (or Pakistan today). */
+export const pktAddDaysISO = (days: number, fromISO: string = pktTodayISO()) => {
+  const [y, m, d] = fromISO.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d + Math.max(0, Math.floor(days || 0))));
+  return dt.toISOString().slice(0, 10);
+};

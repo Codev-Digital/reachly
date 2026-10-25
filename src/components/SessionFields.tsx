@@ -283,6 +283,28 @@ export default function SessionFields({ values, onChange, errors, clearError }: 
         />
       </div>
 
+      <FormInput
+        label="Minimum notice (days)"
+        required
+        labelAddon={
+          <InfoTooltip title="Minimum notice">
+            How many days ahead clients must book. Example: set 2 — if today is Sunday, Tuesday is the
+            first day they can choose.
+          </InfoTooltip>
+        }
+        type="text"
+        inputMode="numeric"
+        maxLength={2}
+        suffix="days"
+        value={values.minAdvanceDays}
+        onChange={(e) => {
+          onChange({ minAdvanceDays: digitsOnly(e.target.value) });
+          clearError('minAdvanceDays');
+        }}
+        error={errors.minAdvanceDays}
+        placeholder="1"
+      />
+
       {/* Intake questions: multiple choice, short answer, or both */}
       <SessionQuestionsSection
         questions={values.questions}

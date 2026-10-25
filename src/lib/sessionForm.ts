@@ -66,6 +66,11 @@ export interface SessionFormValues {
   price: string;
   discountedPrice: string;
   maxBookings: string;
+  /**
+   * Days ahead clients must book (required).
+   * 2 → if today is Sunday, earliest bookable day is Tuesday.
+   */
+  minAdvanceDays: string;
   /** Intake questions (multiple choice and/or short answer). */
   questions: SessionQuestion[];
   /** Package = N sessions sold for one total price. */
@@ -82,9 +87,12 @@ export type SessionErrorKey =
   | 'price'
   | 'discountedPrice'
   | 'maxBookings'
+  | 'minAdvanceDays'
   | 'packageSessions'
   | 'questions';
 export type SessionErrors = Partial<Record<SessionErrorKey, string>>;
+
+export const MAX_MIN_ADVANCE_DAYS = 90;
 
 export const emptySessionValues = (): SessionFormValues => ({
   title: '',
@@ -96,6 +104,7 @@ export const emptySessionValues = (): SessionFormValues => ({
   price: '1200',
   discountedPrice: '',
   maxBookings: '4',
+  minAdvanceDays: '1',
   questions: [],
   isPackage: false,
   packageSessions: '5',
@@ -111,6 +120,7 @@ export const sessionToValues = (
     price?: number | string;
     discountedPrice?: number | string | null;
     maxBookings?: number | string;
+    minAdvanceDays?: number | string;
     questions?: unknown;
     isPackage?: boolean;
     packageSessions?: number | string;
@@ -122,6 +132,10 @@ export const sessionToValues = (
   const durNum = Number(dur);
   const bufNum = Number(s.bufferTime) || 0;
   const isPresetBuf = bufNum === 0 || (durNum > 0 && bufferChoicesFor(durNum).includes(bufNum));
+  const notice =
+    s.minAdvanceDays === undefined || s.minAdvanceDays === null || s.minAdvanceDays === ''
+      ? '1'
+      : String(s.minAdvanceDays);
 
   return {
     title: s.title || '',
@@ -134,6 +148,7 @@ export const sessionToValues = (
     discountedPrice:
       s.discountedPrice !== undefined && s.discountedPrice !== null ? String(s.discountedPrice) : '',
     maxBookings: String(s.maxBookings || 4),
+    minAdvanceDays: notice,
     questions: normalizeStoredQuestions(s.questions).map(withOptionSlots),
     isPackage: !!s.isPackage,
     packageSessions: String(s.packageSessions || 5),
@@ -199,6 +214,16 @@ export const validateSessionValues = (v: SessionFormValues): SessionErrors => {
     next.maxBookings = 'Enter at least 1 booking per day';
   }
 
+  const noticeNum = Number(v.minAdvanceDays);
+  if (
+    v.minAdvanceDays === '' ||
+    !Number.isInteger(noticeNum) ||
+    noticeNum < 0 ||
+    noticeNum > MAX_MIN_ADVANCE_DAYS
+  ) {
+    next.minAdvanceDays = `Enter a whole number from 0 to ${MAX_MIN_ADVANCE_DAYS}`;
+  }
+
   if (v.isPackage) {
     const n = Number(v.packageSessions);
     if (!Number.isInteger(n) || n < 2 || n > 100) next.packageSessions = 'Enter between 2 and 100 sessions';
@@ -220,10 +245,13 @@ export const valuesToPayload = (v: SessionFormValues) => ({
   discountedPrice: v.discountedPrice ? Number(v.discountedPrice) : undefined,
   bufferTime: effectiveBufferFor(v),
   maxBookings: Number(v.maxBookings),
+  minAdvanceDays: Number(v.minAdvanceDays),
   questions: cleanQuestionsForSave(v.questions),
   isPackage: v.isPackage,
   packageSessions: v.isPackage ? Number(v.packageSessions) : undefined,
   packagePeriod: v.isPackage ? v.packagePeriod : undefined,
+  // Saving a complete session from settings / onboarding publishes it
+  isDraft: false,
 });
 
 /** Scroll the first inline error into view after a failed validation. */

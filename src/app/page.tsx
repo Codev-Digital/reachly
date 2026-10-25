@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import CreatorNavbar from '@/components/CreatorNavbar';
 import Footer from '@/components/Footer';
 import SmoothScroll from '@/components/SmoothScroll';
+import ActorExploreCards from '@/components/ActorExploreCards';
 import Image from "next/image";
 import {
   getStoredFavourites,
@@ -75,7 +76,6 @@ export default function Home() {
   const [activeCategory, setActiveCategory] = useState('All Categories');
   const [favorites, setFavorites] = useState<string[]>(() => getStoredFavourites());
   const [featuredPage, setFeaturedPage] = useState(0);
-  const [eventsPage, setEventsPage] = useState(0);
   const [savedEvents, setSavedEvents] = useState<string[]>([]);
   const [categoryIndex, setCategoryIndex] = useState(0);
   const [categoriesList, setCategoriesList] = useState<string[]>([
@@ -124,6 +124,7 @@ export default function Home() {
 
   const featuredScrollRef = useRef<HTMLDivElement>(null);
   const categoryScrollRef = useRef<HTMLDivElement>(null);
+  const eventsScrollRef = useRef<HTMLDivElement>(null);
 
   // Refs for How It Works swipe/scroll
   const touchStartX = useRef<number | null>(null);
@@ -183,6 +184,16 @@ export default function Home() {
     if (categoryScrollRef.current) {
       const scrollAmount = 320;
       categoryScrollRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth',
+      });
+    }
+  };
+
+  const scrollEvents = (direction: 'left' | 'right') => {
+    if (eventsScrollRef.current) {
+      const scrollAmount = 400;
+      eventsScrollRef.current.scrollBy({
         left: direction === 'left' ? -scrollAmount : scrollAmount,
         behavior: 'smooth',
       });
@@ -274,27 +285,23 @@ export default function Home() {
   const toggleSaveEvent = (id: string) =>
     setSavedEvents(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
 
-  /* ── creator data used in multiple sections ── */
+  /* ── creator data used in multiple sections (real /actors images by name) ── */
   const allCreators = [
-    { name: 'Mahira Khan', img: '/Avatars/3.jpg' },
-    { name: 'Danish Taimoor', img: '/Avatars/1.jpg' },
-    { name: 'Hania Amir', img: '/Avatars/5.jpg' },
-    { name: 'Feroz Khan', img: '/Avatars/2.jpg' },
-    { name: 'Dure Fishan', img: '/Avatars/6.jpg' },
-    { name: 'Bilal Abbas', img: '/Avatars/4.jpg' },
-    { name: 'Ahsan Khan', img: '/Avatars/7.jpg' },
-    { name: 'Sajal Ali', img: '/Avatars/8.jpg' },
+    { name: 'Mahira Khan', img: '/actors/maira_khan.png' },
+    { name: 'Danish Taimoor', img: '/actors/danish_taimoor.png' },
+    { name: 'Hania Amir', img: '/actors/hania_amir.png' },
+    { name: 'Feroz Khan', img: '/actors/feroz_khan.jpg' },
+    { name: 'Dure Fishan', img: '/actors/dur_e_fishan.png' },
+    { name: 'Bilal Abbas', img: '/actors/bilal_abbas.png' },
+    { name: 'Ahsan Khan', img: '/actors/ahsan_khan.jpg' },
+    { name: 'Sajal Aly', img: '/actors/sajal_aly.jpg' },
   ];
 
   const topCreatorsPage2 = [
-    { name: 'Fawad Khan', img: '/Avatars/15.jpg' },
-    { name: 'Ayeza Khan', img: '/Avatars/9.jpg' },
-    { name: 'Humayun Saeed', img: '/Avatars/10.jpg' },
-    { name: 'Yumna Zaidi', img: '/Avatars/11.jpg' },
-    { name: 'Hamza Ali Abbasi', img: '/Avatars/12.jpg' },
-    { name: 'Iqra Aziz', img: '/Avatars/13.jpg' },
-    { name: 'Ahad Raza Mir', img: '/Avatars/14.jpg' },
-    { name: 'Saba Qamar', img: '/Avatars/16.jpg' },
+    { name: 'Dananeer Mobeen', img: '/actors/dananeer_mobeen.png' },
+    { name: 'Sara Ali Khan', img: '/actors/sara_ali_khan.jpg' },
+    { name: 'Ali Khan', img: '/actors/ali_khan.jpg' },
+    { name: 'Mira Khan', img: '/actors/mira_khan.jpg' },
   ];
   /* duplicate for seamless loop */
   const marqueeCreators = [...allCreators, ...allCreators];
@@ -394,88 +401,13 @@ export default function Home() {
               </div>
             </motion.div>
 
-            {/* Rotating Creator Cards */}
+            {/* Random actor cards — swap every 60s; hover = stacked duplicate + Explore */}
             <motion.div
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.3 }}
-              className="flex items-center justify-center gap-6 flex-wrap"
             >
-              {[
-                { img: '/Avatars/7.jpg', name: 'Ahsan Khan' },
-                { img: '/Avatars/2.jpg', name: 'Mahira Khan' },
-                { img: '/Avatars/15.jpg', name: 'Fawad Khan' },
-                { img: '/Avatars/8.jpg', name: 'Sajal Ali' },
-              ].map((creator, i) => {
-                const buttonRef = useRef<HTMLDivElement>(null);
-                const [position, setPosition] = useState({ x: 0, y: 0 });
-                const [isHovered, setIsHovered] = useState(false);
-
-                const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-                  if (buttonRef.current) {
-                    const rect = buttonRef.current.getBoundingClientRect();
-                    const buttonCenterX = rect.left + rect.width / 2;
-                    const buttonCenterY = rect.top + rect.height / 2;
-
-                    const x = e.clientX - buttonCenterX;
-                    const y = e.clientY - buttonCenterY;
-
-                    // Stronger magnetic effect
-                    const maxMove = 15;
-                    const moveX = Math.max(-maxMove, Math.min(maxMove, x * 0.5));
-                    const moveY = Math.max(-maxMove, Math.min(maxMove, y * 0.5));
-
-                    setPosition({ x: moveX, y: moveY });
-                  }
-                };
-
-                const handleMouseLeave = () => {
-                  setPosition({ x: 0, y: 0 });
-                };
-
-                return (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, y: 30, rotate: i % 2 === 0 ? -8 : 8 }}
-                    animate={{ opacity: 1, y: 0, rotate: i % 2 === 0 ? -6 : 6 }}
-                    transition={{ duration: 0.6, delay: 0.5 + i * 0.1 }}
-                    whileHover={{ y: -10, rotate: 0, scale: 1.05 }}
-                    className="relative group"
-                    onMouseEnter={() => setIsHovered(true)}
-                    onMouseLeave={() => setIsHovered(false)}
-                  >
-                    <div className="w-40 h-56 sm:w-48 sm:h-64 rounded-3xl overflow-hidden border-4 border-white/20 shadow-2xl">
-                      <img src={creator.img} alt={creator.name} className="w-full h-full object-cover" />
-                    </div>
-                    <motion.div
-                      ref={buttonRef}
-                      onMouseMove={handleMouseMove}
-                      onMouseLeave={handleMouseLeave}
-                      initial={{ opacity: 0, scale: 0.8, y: 20 }}
-                      animate={isHovered ? { opacity: 1, scale: 1.05, y: 0 } : { opacity: 0, scale: 0.8, y: 20 }}
-                      className="absolute -right-6 top-1/2 -translate-y-1/2 z-20
-                w-16 h-16 sm:w-20 sm:h-20 rounded-full
-                flex items-center justify-center
-                text-xs sm:text-sm font-semibold text-center
-                cursor-pointer"
-                      style={{ x: position.x, y: position.y }}
-                      transition={{
-                        x: { type: "spring", stiffness: 300, damping: 20 },
-                        y: { type: "spring", stiffness: 300, damping: 20 },
-                        opacity: { duration: 0.3 },
-                        scale: { duration: 0.3 }
-                      }}
-                    >
-                      {/* Glow effect */}
-                      <div className="absolute inset-0 rounded-full bg-gradient-to-br from-purple-500 via-blue-500 to-cyan-400 opacity-75 blur-xl" />
-                      {/* Button background */}
-                      <div className="relative w-full h-full rounded-full bg-[#0033A0] text-white flex items-center justify-center shadow-[0_0_30px_rgba(0,51,160,0.6)] backdrop-blur-md">
-                        Explore
-                      </div>
-                    </motion.div>
-                  </motion.div>
-                )
-              })}
+              <ActorExploreCards />
             </motion.div>
           </div>
         </div>
@@ -487,36 +419,36 @@ export default function Home() {
             PAKISTAN'S TOP CREATORS
         ════════════════════════════════════════ */}
       <section id="top-creators" className="py-20 bg-white text-[#0C0C0C] border-t border-gray-100 scroll-mt-10">
-        <div className="max-w-[1160px] mx-auto px-4 sm:px-6">
-          <FadeUp className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
-            <div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <FadeUp className="mb-12">
+            <div className="flex flex-wrap items-center justify-between gap-4">
               <h2 className="font-anton font-bold text-5xl sm:text-6xl md:text-7xl text-black leading-tight uppercase tracking-tight">
                 Pakistan&apos;s <span className="text-[#0012FF]">Top Creators</span>
               </h2>
-              <p className="font-sans text-sm sm:text-base text-gray-500 mt-2">
-                Connect, collaborate and create with the most trusted voices across Pakistan
-              </p>
+              <div className="flex items-center gap-3 shrink-0">
+                <button
+                  onClick={() => setCreatorPage(prev => (prev > 0 ? prev - 1 : 1))}
+                  className="w-12 h-12 rounded-full border border-[#0012FF] flex items-center justify-center text-[#0012FF] hover:bg-[#0012FF]/5 transition-all active:scale-95 cursor-pointer"
+                  aria-label="Previous creators"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => setCreatorPage(prev => (prev < 1 ? prev + 1 : 0))}
+                  className="w-12 h-12 rounded-full bg-[#0012FF] flex items-center justify-center text-white shadow-md shadow-[#0012FF]/20 hover:bg-[#0010d0] transition-all active:scale-95 cursor-pointer"
+                  aria-label="Next creators"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
             </div>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setCreatorPage(prev => (prev > 0 ? prev - 1 : 1))}
-                className="w-12 h-12 rounded-full border border-[#0012FF] flex items-center justify-center text-[#0012FF] hover:bg-[#0012FF]/5 transition-all active:scale-95 cursor-pointer"
-                aria-label="Previous creators"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-              <button
-                onClick={() => setCreatorPage(prev => (prev < 1 ? prev + 1 : 0))}
-                className="w-12 h-12 rounded-full bg-[#0012FF] flex items-center justify-center text-white shadow-md shadow-[#0012FF]/20 hover:bg-[#0010d0] transition-all active:scale-95 cursor-pointer"
-                aria-label="Next creators"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-            </div>
+            <p className="font-sans text-sm sm:text-base text-gray-500 mt-2">
+              Connect, collaborate and create with the most trusted voices across Pakistan
+            </p>
           </FadeUp>
 
           <motion.div
@@ -524,11 +456,11 @@ export default function Home() {
             initial={{ opacity: 0, x: creatorPage === 0 ? -20 : 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.35, ease: 'easeOut' }}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 justify-items-center"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5"
           >
             {(creatorPage === 0 ? allCreators : topCreatorsPage2).map((creator, index) => (
               <motion.div
-                key={creator.name}
+                key={`${creator.name}-${creator.img}-${index}`}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: index * 0.04 }}
@@ -537,7 +469,7 @@ export default function Home() {
                   const targetUsername = (creator as any).username || creator.name.toLowerCase().replace(/\s+/g, '');
                   handleCreatorBooking(e, targetUsername);
                 }}
-                className="w-[275px] h-[275px] rounded-[24px] overflow-hidden relative group shadow-md hover:shadow-xl transition-all duration-300 bg-white shrink-0 cursor-pointer"
+                className="w-full aspect-square rounded-[24px] overflow-hidden relative group shadow-md hover:shadow-xl transition-all duration-300 bg-white cursor-pointer"
               >
                 <img
                   src={creator.img}
@@ -562,26 +494,26 @@ export default function Home() {
         ════════════════════════════════════════ */}
       <section id="creators" className="py-20 bg-[#F7F7FA] text-[#0C0C0C] border-t border-gray-100 scroll-mt-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <FadeUp className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
-            <div>
+          <FadeUp className="mb-4">
+            <div className="flex flex-wrap items-center justify-between gap-4">
               <h2 className="font-anton font-bold text-5xl sm:text-6xl md:text-7xl text-black leading-tight uppercase tracking-tight">
                 Featured <span className="text-[#0012FF]">Creators</span>
               </h2>
-              <p className="font-sans text-sm sm:text-base text-gray-500 mt-2">We've got the best of the best! Our curated talent go above and beyond</p>
+              <div className="flex items-center gap-3 shrink-0">
+                <button onClick={() => scrollFeatured('left')} className="w-12 h-12 rounded-full border border-[#0012FF] flex items-center justify-center text-[#0012FF] hover:bg-[#0012FF]/5 transition-all cursor-pointer" aria-label="Previous featured creators">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+                </button>
+                <button onClick={() => scrollFeatured('right')} className="w-12 h-12 rounded-full bg-[#0012FF] flex items-center justify-center text-white shadow-md shadow-[#0012FF]/20 hover:bg-[#0010d0] transition-all cursor-pointer" aria-label="Next featured creators">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+                </button>
+              </div>
             </div>
-            <div className="flex items-center gap-3">
-              <button onClick={() => scrollFeatured('left')} className="w-12 h-12 rounded-full border border-[#0012FF] flex items-center justify-center text-[#0012FF] hover:bg-[#0012FF]/5 transition-all cursor-pointer">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
-              </button>
-              <button onClick={() => scrollFeatured('right')} className="w-12 h-12 rounded-full bg-[#0012FF] flex items-center justify-center text-white shadow-md shadow-[#0012FF]/20 hover:bg-[#0010d0] transition-all cursor-pointer">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
-              </button>
-            </div>
+            <p className="font-sans text-sm sm:text-base text-gray-500 mt-2">We've got the best of the best! Our curated talent go above and beyond</p>
           </FadeUp>
 
           <div
             ref={featuredScrollRef}
-            className="flex flex-nowrap items-stretch gap-6 overflow-x-auto overflow-y-visible no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden scroll-smooth py-4 max-w-full"
+            className="flex flex-nowrap items-stretch gap-6 overflow-x-auto overflow-y-visible no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden scroll-smooth py-1 max-w-full"
           >
             {loadingDbCreators ? (
               [1, 2, 3, 4].map((i) => (
@@ -653,7 +585,7 @@ export default function Home() {
                           )}
                         </h3>
                         <span className="flex items-center gap-1 text-xs sm:text-sm font-bold text-amber-500 shrink-0">
-                          ★ {creator.rating || '4.9'}
+                          ★ {creator.ratingDisplay || '5.0 (0)'}
                         </span>
                       </div>
 
@@ -823,10 +755,28 @@ export default function Home() {
         ════════════════════════════════════════ */}
       <section id="pricing" className="py-20 bg-[#F7F7FA] text-[#0C0C0C] border-t border-gray-100 scroll-mt-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <FadeUp className="text-center mb-12">
-            <h2 className="font-anton font-bold text-5xl sm:text-6xl md:text-7xl text-black leading-tight uppercase tracking-tight">
-              Explore By <span className="text-[#0012FF]">Category</span>
-            </h2>
+          <FadeUp className="mb-12 text-left">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <h2 className="font-anton font-bold text-5xl sm:text-6xl md:text-7xl text-black leading-tight uppercase tracking-tight">
+                Explore By <span className="text-[#0012FF]">Category</span>
+              </h2>
+              <div className="flex items-center gap-3 shrink-0">
+                <button
+                  onClick={() => scrollCategory('left')}
+                  className="w-12 h-12 rounded-full border border-[#0012FF] flex items-center justify-center text-[#0012FF] hover:bg-[#0012FF]/5 transition-all cursor-pointer"
+                  aria-label="Previous category creators"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+                </button>
+                <button
+                  onClick={() => scrollCategory('right')}
+                  className="w-12 h-12 rounded-full bg-[#0012FF] flex items-center justify-center text-white hover:bg-[#0010d0] transition-all cursor-pointer shadow-md shadow-[#0012FF]/20"
+                  aria-label="Next category creators"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+                </button>
+              </div>
+            </div>
             <p className="font-sans text-sm sm:text-base text-gray-500 mt-2">Explore categories and find the right option for your needs.</p>
           </FadeUp>
 
@@ -849,28 +799,10 @@ export default function Home() {
 
             {/* Right: creators horizontal slider */}
             <div className="lg:col-span-9 overflow-hidden">
-              <div className="flex justify-between items-center mb-6">
-                {/* <span className="text-xs font-sans text-gray-400">Use arrows to navigate</span> */}
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => scrollCategory('left')}
-                    className="w-10 h-10 rounded-full border border-[#0012FF] flex items-center justify-center text-[#0012FF] hover:bg-[#0012FF]/5 transition-all cursor-pointer"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
-                  </button>
-                  <button
-                    onClick={() => scrollCategory('right')}
-                    className="w-10 h-10 rounded-full bg-[#0012FF] flex items-center justify-center text-white hover:bg-[#0010d0] transition-all cursor-pointer shadow-md shadow-[#0012FF]/20"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
-                  </button>
-                </div>
-              </div>
-
               {/* Single row horizontal slider */}
               <div
                 ref={categoryScrollRef}
-                className="flex flex-nowrap items-stretch gap-6 overflow-x-auto overflow-y-visible no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden scroll-smooth py-4 max-w-full"
+                className="flex flex-nowrap items-stretch gap-6 overflow-x-auto overflow-y-visible no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden scroll-smooth py-1 max-w-full"
               >
                 {loadingDbCreators ? (
                   [1, 2, 3, 4].map((i) => (
@@ -942,7 +874,7 @@ export default function Home() {
                               )}
                             </h3>
                             <span className="flex items-center gap-1 text-xs sm:text-sm font-bold text-amber-500 shrink-0">
-                              ★ {creator.rating}
+                              ★ {creator.ratingDisplay || '5.0 (0)'}
                             </span>
                           </div>
 
@@ -990,229 +922,261 @@ export default function Home() {
       {/* ════════════════════════════════════════
             UPCOMING EVENTS
         ════════════════════════════════════════ */}
-      {/* <section className="py-20 bg-[#F7F7FA] text-[#0C0C0C] border-t border-gray-100">
+      <section id="upcoming-events" className="py-20 bg-white text-[#0C0C0C] border-t border-gray-100 scroll-mt-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <FadeUp className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
-            <div>
-              <h2 className="font-anton font-bold text-5xl sm:text-6xl md:text-7xl text-black leading-tight uppercase tracking-tight">
-                Upcoming <span className="text-[#0012FF]">Events</span>
-              </h2>
-              <p className="font-sans text-sm sm:text-base text-gray-500 mt-2">Join live sessions, workshops, and community events to learn, connect, and grow.</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <button onClick={() => setEventsPage(prev => (prev > 0 ? prev - 1 : 1))} className="w-12 h-12 rounded-full border border-[#0012FF] flex items-center justify-center text-[#0012FF] hover:bg-[#0012FF]/5 transition-all active:scale-95">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
-              </button>
-              <button onClick={() => setEventsPage(prev => (prev < 1 ? prev + 1 : 0))} className="w-12 h-12 rounded-full bg-[#0012FF] flex items-center justify-center text-white hover:bg-[#0012FF]/95 transition-all active:scale-95 shadow-md shadow-[#0012FF]/20">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
-              </button>
+          <FadeUp className="mb-8">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h2 className="font-anton font-bold text-5xl sm:text-6xl md:text-7xl text-black leading-tight uppercase tracking-tight">
+                  Upcoming <span className="text-[#0012FF]">Events</span>
+                </h2>
+                <p className="font-sans text-sm sm:text-base text-gray-500 mt-2">
+                  Join live sessions, workshops, and community events to learn, connect, and grow.
+                </p>
+              </div>
+              <div className="flex items-center gap-3 shrink-0">
+                <button
+                  onClick={() => scrollEvents('left')}
+                  className="w-12 h-12 rounded-full border border-[#0012FF] flex items-center justify-center text-[#0012FF] hover:bg-[#0012FF]/5 transition-all active:scale-95 cursor-pointer"
+                  aria-label="Previous events"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => scrollEvents('right')}
+                  className="w-12 h-12 rounded-full bg-[#0012FF] flex items-center justify-center text-white shadow-md shadow-[#0012FF]/20 hover:bg-[#0010d0] transition-all active:scale-95 cursor-pointer"
+                  aria-label="Next events"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
             </div>
           </FadeUp>
 
-          <motion.div
-            animate={{ x: eventsPage === 0 ? 0 : -10 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="grid grid-cols-1 md:grid-cols-2 gap-8"
+          <div
+            ref={eventsScrollRef}
+            className="flex flex-nowrap items-stretch gap-5 overflow-x-auto overflow-y-visible no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden scroll-smooth py-1 max-w-full"
           >
             {[
               { id: 'event-1', title: 'Creator Growth', subtitle: 'Grow your audience and brand.', time: '2PM - 6PM', date: '5 July 2026', location: 'Nishat Hotel, Gulberg, Lahore', img: '/assets/event-1.jpg' },
               { id: 'event-2', title: 'Creator Growth', subtitle: 'Grow your audience and brand.', time: '2PM - 6PM', date: '5 July 2026', location: 'Nishat Hotel, Gulberg, Lahore', img: '/assets/event-2.jpg' },
+              { id: 'event-3', title: 'Creator Growth', subtitle: 'Grow your audience and brand.', time: '2PM - 6PM', date: '5 July 2026', location: 'Nishat Hotel, Gulberg, Lahore', img: '/assets/event-1.jpg' },
+              { id: 'event-4', title: 'Creator Growth', subtitle: 'Grow your audience and brand.', time: '2PM - 6PM', date: '5 July 2026', location: 'Nishat Hotel, Gulberg, Lahore', img: '/assets/event-2.jpg' },
             ].map((event, index) => (
               <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 30 }}
+                key={event.id}
+                initial={{ opacity: 0, y: 24 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.15 }}
-                className="relative h-[300px] sm:h-[350px] rounded-[30px] overflow-hidden group shadow-lg"
+                transition={{ duration: 0.45, delay: index * 0.06 }}
+                className="relative h-[270px] w-[min(100%,calc((100%-2.5rem)/3))] min-w-[280px] sm:min-w-[340px] sm:w-[calc((100%-2.5rem)/3)] shrink-0 rounded-[8px] overflow-hidden group"
               >
-                <img src={event.img} alt={event.title} loading="lazy" decoding="async" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent" />
+                <img
+                  src={event.img}
+                  alt={event.title}
+                  loading="lazy"
+                  decoding="async"
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-black/25 to-black/80" />
+
                 <button
+                  type="button"
                   onClick={() => toggleSaveEvent(event.id)}
-                  className="absolute top-6 right-6 w-11 h-11 rounded-full bg-white/10 backdrop-blur-md hover:bg-white/20 flex items-center justify-center transition-all cursor-pointer z-10 active:scale-90 border border-white/25"
+                  className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/15 backdrop-blur-md hover:bg-white/25 flex items-center justify-center transition-all cursor-pointer z-10 active:scale-90 border border-white/25"
+                  aria-label="Save event"
                 >
                   <svg
-                    className={`w-6 h-6 transition-all duration-300 ${savedEvents.includes(event.id)
-                      ? 'fill-white text-white'
-                      : 'text-white'
-                      }`}
+                    className={`w-5 h-5 transition-all duration-300 ${
+                      savedEvents.includes(event.id) ? 'fill-white text-white' : 'text-white'
+                    }`}
                     fill={savedEvents.includes(event.id) ? 'currentColor' : 'none'}
                     stroke="currentColor"
                     strokeWidth="2"
                     viewBox="0 0 24 24"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M17 21l-5-3-5 3V5a2 2 0 012-2h6a2 2 0 012 2v16z"
-                    />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 21l-5-3-5 3V5a2 2 0 012-2h6a2 2 0 012 2v16z" />
                   </svg>
                 </button>
-                <div className="absolute bottom-6 left-6 right-6 flex items-end justify-between gap-4">
-                  <div className="text-white">
-                    <h3 className="font-sans font-black text-2xl sm:text-3xl tracking-tight leading-none mb-1">{event.title}</h3>
-                    <p className="font-sans text-xs sm:text-sm text-white/70 mb-4">{event.subtitle}</p>
-                    <div className="flex flex-col gap-1 sm:gap-2">
-                      <div className="flex items-center gap-2 text-[10px] sm:text-xs text-white/90">
-                        <svg className="w-3.5 h-3.5 text-white/70" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                        {event.time}
-                        <span className="mx-1 text-white/40">|</span>
-                        <svg className="w-3.5 h-3.5 text-white/70" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg>
-                        {event.date}
+
+                <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-5 flex items-end justify-between gap-3">
+                  <div className="text-white min-w-0">
+                    <h3 className="font-sans font-bold text-xl sm:text-2xl tracking-tight leading-tight mb-0.5 truncate">
+                      {event.title}
+                    </h3>
+                    <p className="font-sans text-xs text-white/75 mb-2.5 truncate">{event.subtitle}</p>
+                    <div className="flex flex-col gap-1">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-white/90">
+                        <span className="inline-flex items-center gap-1.5">
+                          <svg className="w-3.5 h-3.5 text-white/70 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          {event.time}
+                        </span>
+                        <span className="text-white/40">|</span>
+                        <span className="inline-flex items-center gap-1.5">
+                          <svg className="w-3.5 h-3.5 text-white/70 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                          </svg>
+                          {event.date}
+                        </span>
                       </div>
-                      <div className="flex items-center gap-2 text-[10px] sm:text-xs text-white/90">
-                        <svg className="w-3.5 h-3.5 text-white/70" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></svg>
-                        {event.location}
+                      <div className="flex items-center gap-1.5 text-[11px] text-white/90 min-w-0">
+                        <svg className="w-3.5 h-3.5 text-white/70 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+                        </svg>
+                        <span className="truncate">{event.location}</span>
                       </div>
                     </div>
                   </div>
-                  <Link href="/" className="shrink-0 bg-white text-blue-600 hover:bg-white/95 px-5 py-2.5 rounded-full font-sans font-bold text-xs sm:text-sm tracking-wide shadow-lg transition-all active:scale-95 whitespace-nowrap">Coming soon</Link>
+                  <Link
+                    href="/events"
+                    className="shrink-0 bg-white text-[#0012FF] hover:bg-white/95 px-4 sm:px-5 py-2.5 rounded-full font-sans font-bold text-xs sm:text-sm tracking-wide shadow-lg transition-all active:scale-95 whitespace-nowrap"
+                  >
+                    Book a Slot
+                  </Link>
                 </div>
               </motion.div>
             ))}
-          </motion.div>
+          </div>
         </div>
-      </section> */}
+      </section>
 
       {/* ════════════════════════════════════════
             WHY REACHLY
         ════════════════════════════════════════ */}
       <section id="why-reachly" className="py-24 bg-white border-t border-gray-100 scroll-mt-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <FadeUp className="text-center mb-14">
+          <FadeUp className="mb-14 text-left">
             <h2 className="font-anton font-bold text-black text-5xl sm:text-6xl md:text-7xl leading-tight uppercase tracking-tight">
               Why <span className="text-[#0012FF]">Reachly</span>
             </h2>
           </FadeUp>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="flex flex-col gap-6">
+            {/* Row 1: Verified 65% + Secure 35% */}
+            <div className="flex flex-col md:flex-row gap-6">
+              {/* Verified Creators card — marquee grid */}
+              <motion.div
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
+                className="bg-white border border-[#e2e2e2] rounded-[20px] p-8 w-full md:flex-[60] md:basis-0 md:min-w-0"
+              >
+                <h3 className="font-sans font-bold text-xl text-black mb-2">Verified Creators Only</h3>
+                <p className="font-sans text-sm text-gray-500 mb-6">Every creator on our platform is identity-verified and vetted for quality. No fake profiles, no empty promises, only real expertise you can trust.</p>
 
-            {/* Verified Creators card — marquee grid */}
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm"
-            >
-              <h3 className="font-sans font-bold text-xl text-black mb-2">Verified Creators Only</h3>
-              <p className="font-sans text-sm text-gray-500 mb-6">Every creator on our platform is identity-verified and vetted for quality. No fake profiles, no empty promises, only real expertise you can trust.</p>
+                {/* Two horizontal marquee rows — constant speed */}
+                <div className="overflow-hidden relative flex flex-col gap-4">
+                  <div className="verified-marquee-track verified-marquee-left flex flex-row flex-nowrap items-center gap-4 w-max">
+                    {[...allCreators, ...topCreatorsPage2, ...allCreators, ...topCreatorsPage2].map((c, i) => (
+                      <div key={`vr1-${i}`} className="w-[130px] h-[100px] rounded-[16px] overflow-hidden shrink-0">
+                        <img src={c.img} alt={c.name} loading="lazy" decoding="async" className="w-full h-full object-cover object-top" />
+                      </div>
+                    ))}
+                  </div>
 
-              {/* Two-row auto-marquee */}
-              <div className="overflow-hidden relative space-y-3">
-                <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-12 z-10 bg-gradient-to-r from-white to-transparent" />
-                <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-12 z-10 bg-gradient-to-l from-white to-transparent" />
+                  <div className="verified-marquee-track verified-marquee-right flex flex-row flex-nowrap items-center gap-4 w-max -ml-[65px]">
+                    {[...allCreators.slice().reverse(), ...topCreatorsPage2.slice().reverse(), ...allCreators.slice().reverse(), ...topCreatorsPage2.slice().reverse()].map((c, i) => (
+                      <div key={`vr2-${i}`} className="w-[130px] h-[100px] rounded-[16px] overflow-hidden shrink-0">
+                        <img src={c.img} alt={c.name} loading="lazy" decoding="async" className="w-full h-full object-cover object-top" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
 
-                {/* Row 1 — left to right */}
-                <motion.div
-                  animate={{ x: ['0%', '-50%'] }}
-                  transition={{ duration: 22, repeat: Infinity, ease: 'linear' }}
-                  className="flex gap-3 w-max"
-                >
-                  {[...allCreators, ...allCreators].map((c, i) => (
-                    <div key={i} className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden shrink-0 border-2 border-gray-100 shadow-sm">
-                      <img src={c.img} alt={c.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
-                    </div>
+              {/* Secure Local Payments */}
+              <motion.div
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.1 }}
+                className="bg-white border border-[#e2e2e2] rounded-[20px] p-8 w-full md:flex-[40] md:basis-0 md:min-w-0"
+              >
+                <h3 className="font-sans font-bold text-xl text-black mb-2">Secure Local Payments</h3>
+                <div className="flex flex-wrap sm:flex-nowrap items-start gap-0 my-6">
+                  {/* JazzCash — matched to EasyPaisa size */}
+                  <div className="w-[228px] h-[68px] rounded-[14px] px-[24px] py-[14px] bg-white border border-red-200/70 shadow-[0_0_24px_rgba(239,68,68,0.32)] flex items-center justify-center shrink-0 transition-transform duration-300 hover:scale-[1.03]">
+                    <img
+                      src="/assets/jazzcash.png"
+                      alt="JazzCash"
+                      loading="lazy"
+                      decoding="async"
+                      className="max-h-[40px] max-w-[180px] w-auto h-auto object-contain"
+                    />
+                  </div>
+
+                  {/* EasyPaisa — diagonal offset down, pulled left so it stays inside */}
+                  <div className="w-[228px] h-[68px] rounded-[14px] px-[24px] py-[14px] bg-white border border-emerald-200/70 shadow-[0_0_24px_rgba(34,197,94,0.32)] flex items-center justify-center shrink-0 -ml-16 sm:-ml-20 sm:mt-[50px] transition-transform duration-300 hover:scale-[1.03]">
+                    <img
+                      src="/assets/easypaisa-horizontal.png"
+                      alt="EasyPaisa"
+                      loading="lazy"
+                      decoding="async"
+                      className="max-h-[40px] max-w-[180px] w-auto h-auto object-contain"
+                    />
+                  </div>
+                </div>
+                <p className="font-sans text-sm text-gray-500 leading-relaxed">Pay with JazzCash, EasyPaisa, or your bank card. Your money is held securely until the session is completed. Full refunds if a creator cancels. Safe, secure, and hassle-free payments every time.</p>
+              </motion.div>
+            </div>
+
+            {/* Row 2: Flexible 45% + Money Back 55% */}
+            <div className="flex flex-col md:flex-row gap-6">
+              {/* Flexible Scheduling */}
+              <motion.div
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.15 }}
+                className="bg-white border border-[#e2e2e2] rounded-[20px] p-8 w-full md:flex-[45] md:basis-0 md:min-w-0"
+              >
+                <h3 className="font-sans font-bold text-xl text-black mb-2">Flexible Scheduling</h3>
+                <div className="flex flex-col gap-3 mt-6">
+                  {['Book sessions that fit your life', 'Most creators offer evening and weekend slots', 'Reschedule up to 24 hours before call with no penalty'].map((item, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, x: -20 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.4, delay: 0.2 + i * 0.1 }}
+                      className={`px-5 py-3 rounded-full text-sm font-sans text-gray-700 border ${i === 0 ? 'border-gray-200' : i === 1 ? 'border-blue-200 bg-blue-50/50' : 'border-amber-200 bg-amber-50/50'}`}
+                    >
+                      {item}
+                    </motion.div>
                   ))}
-                </motion.div>
+                </div>
+              </motion.div>
 
-                {/* Row 2 — right to left */}
-                <motion.div
-                  animate={{ x: ['-50%', '0%'] }}
-                  transition={{ duration: 26, repeat: Infinity, ease: 'linear' }}
-                  className="flex gap-3 w-max"
-                >
-                  {[...allCreators.slice().reverse(), ...allCreators.slice().reverse()].map((c, i) => (
-                    <div key={i} className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden shrink-0 border-2 border-gray-100 shadow-sm">
-                      <img src={c.img} alt={c.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
-                    </div>
-                  ))}
-                </motion.div>
-              </div>
-            </motion.div>
-
-            {/* Secure Local Payments */}
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm"
-            >
-              <h3 className="font-sans font-bold text-xl text-black mb-2">Secure Local Payments</h3>
-              <div className="flex flex-wrap sm:flex-nowrap items-start gap-5 sm:gap-[32px] my-6">
-                {/* JazzCash: 170x88, r14, p14x24 */}
-                <div className="w-[170px] h-[88px] rounded-[14px] px-[24px] py-[14px] bg-white border border-red-200/70 shadow-[0_0_24px_rgba(239,68,68,0.32)] flex items-center justify-center shrink-0 transition-transform duration-300 hover:scale-[1.03]">
-                  <img
-                    src="/assets/jazzcash.png"
-                    alt="JazzCash"
-                    loading="lazy"
-                    decoding="async"
-                    className="max-h-[60px] max-w-[122px] w-auto h-auto object-contain"
+              {/* Money Back Guarantee */}
+              <motion.div
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="bg-white border border-[#e2e2e2] rounded-[20px] p-8 w-full md:flex-[55] md:basis-0 md:min-w-0"
+              >
+                <h3 className="font-sans font-bold text-xl text-black mb-2">Money Back Guarantee</h3>
+                <p className="font-sans text-sm text-gray-500 mb-8">Not satisfied with your session? Report it within 24 hours and we will issue a full refund, no questions asked. Your trust is our priority.</p>
+                <div className="flex justify-center">
+                  <Image
+                    src="/assets/gau.png"
+                    alt="How it works"
+                    width={800}
+                    height={200}
+                    className="w-full max-w-3xl h-auto"
+                    priority
                   />
                 </div>
-
-                {/* Easypaisa: 228x68, r14, p14x24, top offset +50px */}
-                <div className="w-[228px] h-[68px] rounded-[14px] px-[24px] py-[14px] bg-white border border-emerald-200/70 shadow-[0_0_24px_rgba(34,197,94,0.32)] flex items-center justify-center shrink-0 sm:mt-[50px] transition-transform duration-300 hover:scale-[1.03]">
-                  <img
-                    src="/assets/easypaisa-horizontal.png"
-                    alt="EasyPaisa"
-                    loading="lazy"
-                    decoding="async"
-                    className="max-h-[40px] max-w-[180px] w-auto h-auto object-contain"
-                  />
-                </div>
-              </div>
-              <p className="font-sans text-sm text-gray-500 leading-relaxed">Pay with JazzCash, EasyPaisa, or your bank card. Your money is held securely until the session is completed. Full refunds if a creator cancels. Safe, secure, and hassle-free payments every time.</p>
-            </motion.div>
-
-            {/* Flexible Scheduling */}
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.15 }}
-              className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm"
-            >
-              <h3 className="font-sans font-bold text-xl text-black mb-2">Flexible Scheduling</h3>
-              <div className="flex flex-col gap-3 mt-6">
-                {['Book sessions that fit your life', 'Most creators offer evening and weekend slots', 'Reschedule up to 24 hours before call with no penalty'].map((item, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, x: -20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.4, delay: 0.2 + i * 0.1 }}
-                    className={`px-5 py-3 rounded-full text-sm font-sans text-gray-700 border ${i === 0 ? 'border-gray-200' : i === 1 ? 'border-blue-200 bg-blue-50/50' : 'border-amber-200 bg-amber-50/50'}`}
-                  >
-                    {item}
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
-
-            {/* Money Back Guarantee */}
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm"
-            >
-              <h3 className="font-sans font-bold text-xl text-black mb-2">Money Back Guarantee</h3>
-              <p className="font-sans text-sm text-gray-500 mb-8">Not satisfied with your session? Report it within 24 hours and we will issue a full refund, no questions asked. Your trust is our priority.</p>
-              <div className="flex justify-center">
-                <Image
-                  src="/assets/gau.png" // replace with your image name
-                  alt="How it works"
-                  width={800}
-                  height={200}
-                  className="w-full max-w-3xl h-auto"
-                  priority
-                />
-              </div>
-            </motion.div>
+              </motion.div>
+            </div>
           </div>
         </div>
       </section>
@@ -1221,7 +1185,7 @@ export default function Home() {
             TESTIMONIALS MARQUEE
         ════════════════════════════════════════ */}
       <section id="testimonials" className="py-24 bg-[#F7F7FA] border-t border-gray-100 overflow-hidden scroll-mt-10">
-        <FadeUp className="text-center mb-14 px-4">
+        <FadeUp className="mb-14 max-w-7xl mx-auto px-4 sm:px-6 text-left">
           <h2 className="text-black font-anton font-bold text-5xl sm:text-6xl md:text-7xl leading-tight uppercase tracking-tight">
             What Our Community <span className="text-[#0012FF]">Says</span>
           </h2>
@@ -1318,7 +1282,7 @@ export default function Home() {
               transition={{ duration: 0.5 }}
               whileHover={{ scale: 1.04, rotate: '-2deg' }}
             >
-              <img src="/Avatars/5.jpg" alt="Creator" loading="lazy" decoding="async" className="w-full h-full object-cover object-top" />
+              <img src="/actors/bilal_abbas.png" alt="Bilal Abbas" loading="lazy" decoding="async" className="w-full h-full object-cover object-top" />
             </motion.div>
 
             {/* Bottom-left: dure (salmon bg) - smaller, bottom-left overlapping */}
@@ -1330,7 +1294,7 @@ export default function Home() {
               transition={{ duration: 0.5, delay: 0.1 }}
               whileHover={{ scale: 1.04, rotate: '0deg' }}
             >
-              <img src="/Avatars/6.jpg" alt="Creator" loading="lazy" decoding="async" className="w-full h-full object-cover object-top" />
+              <img src="/actors/dur_e_fishan.png" alt="Dure Fishan" loading="lazy" decoding="async" className="w-full h-full object-cover object-top" />
             </motion.div>
 
             {/* Top-right: feroz (peach bg) - smaller, top-right overlapping */}
@@ -1342,7 +1306,7 @@ export default function Home() {
               transition={{ duration: 0.5, delay: 0.15 }}
               whileHover={{ scale: 1.04, rotate: '2deg' }}
             >
-              <img src="/Avatars/3.jpg" alt="Creator" loading="lazy" decoding="async" className="w-full h-full object-cover object-top" />
+              <img src="/actors/feroz_khan.jpg" alt="Feroz Khan" loading="lazy" decoding="async" className="w-full h-full object-cover object-top" />
             </motion.div>
 
             {/* Bottom-right: mahira (blue bg) - large, right side mid-height */}
@@ -1354,7 +1318,7 @@ export default function Home() {
               transition={{ duration: 0.5, delay: 0.2 }}
               whileHover={{ scale: 1.04, rotate: '0deg' }}
             >
-              <img src="/Avatars/2.jpg" alt="Creator" loading="lazy" decoding="async" className="w-full h-full object-cover object-top" />
+              <img src="/actors/maira_khan.png" alt="Mahira Khan" loading="lazy" decoding="async" className="w-full h-full object-cover object-top" />
             </motion.div>
 
             {/* Center text */}

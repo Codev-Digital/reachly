@@ -130,7 +130,7 @@ function WelcomeContent() {
     (userData?.user?.name || "").trim().split(" ")[0] || "there";
 
   return (
-    <div className="min-h-screen bg-[#F4F5F8] flex items-center justify-center p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen w-full bg-white">
       <WelcomeModal
         firstName={firstName}
         onChoose={handleChoose}

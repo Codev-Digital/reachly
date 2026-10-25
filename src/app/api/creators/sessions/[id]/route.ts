@@ -95,6 +95,7 @@ export async function PUT(
       maxBookings,
       order,
       isActive,
+      isDraft,
     } = body;
 
     const updatePayload: any = {};
@@ -184,6 +185,10 @@ export async function PUT(
 
     if (typeof isActive === 'boolean') {
       updatePayload.isActive = isActive;
+    }
+
+    if (typeof isDraft === 'boolean') {
+      updatePayload.isDraft = isDraft;
     }
 
     const updatedSession = await SessionType.findByIdAndUpdate(
