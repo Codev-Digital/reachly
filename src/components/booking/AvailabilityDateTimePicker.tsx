@@ -288,7 +288,7 @@ export default function AvailabilityDateTimePicker({
 
   return (
     <div className="w-full">
-      <div className="bg-white border border-gray-200/80 rounded-2xl p-2.5 sm:p-3 flex items-center justify-between shadow-sm w-full select-none">
+      <div className="bg-white border border-[#e2e2e2] rounded-[20px] p-2.5 sm:p-3 flex items-center justify-between w-full select-none">
         <button
           type="button"
           onClick={() => jumpToAvailableDay('left')}
@@ -366,7 +366,7 @@ export default function AvailabilityDateTimePicker({
             ))}
           </div>
         ) : slots.length === 0 ? (
-          <div className="bg-white border border-gray-200/80 rounded-2xl p-8 text-center shadow-sm">
+          <div className="bg-white border border-[#e2e2e2] rounded-[20px] p-8 text-center">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#EEF2FF] text-[#0012FF]">
               <CalendarX2 className="h-8 w-8" strokeWidth={2.25} />
             </div>
@@ -403,10 +403,10 @@ export default function AvailabilityDateTimePicker({
                   key={time}
                   type="button"
                   onClick={() => onTimeChange(time)}
-                  className={`py-3 px-4 rounded-xl text-[13px] font-bold transition-all text-center border-2 shadow-sm hover:shadow-md active:scale-95 ${
+                  className={`py-3 px-4 rounded-[20px] text-[13px] font-bold transition-all text-center border border-[#e2e2e2] active:scale-95 ${
                     isSelected
                       ? 'bg-[#EEF2FF] border-[#0012FF] text-[#0012FF]'
-                      : 'bg-white border-gray-200 hover:border-gray-300 text-gray-700'
+                      : 'bg-white text-gray-700 hover:border-gray-300'
                   }`}
                 >
                   {time}

@@ -46,8 +46,8 @@ export default function BookSessionStep2() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-20 pt-2">
       <BookingProgress currentStep={2} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-[410px_1fr] gap-8 items-start justify-items-center">
-        <div className="hidden lg:block w-full">
+      <div className="grid grid-cols-1 lg:grid-cols-[410px_1fr] gap-0 items-start justify-items-center">
+        <div className="hidden lg:flex w-full justify-center">
           <CreatorProfileCard creator={creator} />
         </div>
 

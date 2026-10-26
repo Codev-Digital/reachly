@@ -103,8 +103,8 @@ export default function BookSessionStep4() {
       {/* Step Progress Indicator */}
       <BookingProgress currentStep={4} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-[410px_1fr] gap-8 items-start justify-items-center">
-        <div className="hidden lg:block w-full">
+      <div className="grid grid-cols-1 lg:grid-cols-[410px_1fr] gap-0 items-start justify-items-center">
+        <div className="hidden lg:flex w-full justify-center">
           <CreatorProfileCard creator={creator} />
         </div>
 
@@ -113,7 +113,7 @@ export default function BookSessionStep4() {
         <div className="w-full">
           {showQr ? (
             /* ============ VIEW: CONFIRMATION ============ */
-            <div className="bg-white rounded-3xl border border-gray-200/80 p-6 sm:p-8 shadow-sm w-full max-w-[790px] mx-auto">
+            <div className="bg-white rounded-[20px] border border-[#e2e2e2] p-6 sm:p-8 w-full max-w-[790px] mx-auto">
               <div className="flex items-center gap-3.5 border-b border-gray-100 pb-5 mb-6">
                 <div className="w-10 h-10 rounded-xl bg-[#EEF2FF] flex items-center justify-center shrink-0">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2">
@@ -203,7 +203,7 @@ export default function BookSessionStep4() {
             </div>
           ) : (
             /* ============ VIEW: METHOD SELECTION ============ */
-            <div className="bg-white rounded-3xl border border-gray-200/80 p-6 sm:p-8 shadow-sm w-full max-w-[790px] mx-auto">
+            <div className="bg-white rounded-[20px] border border-[#e2e2e2] p-6 sm:p-8 w-full max-w-[790px] mx-auto">
               <div className="flex items-center gap-3.5 border-b border-gray-100 pb-5 mb-6">
                 <div className="w-10 h-10 rounded-xl bg-[#EEF2FF] flex items-center justify-center shrink-0">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2">

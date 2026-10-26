@@ -17,20 +17,20 @@ export default function BookingProgress({ currentStep }: { currentStep: number }
   };
 
   return (
-    <div className="flex items-center justify-center py-6 sm:py-10 max-w-2xl mx-auto w-full select-none px-4">
+    <div className="flex items-center py-6 sm:py-10 max-w-2xl mx-auto w-full select-none px-4">
       {steps.map((step, idx) => {
         const isCurrent = step === currentStep;
         const isComplete = step < currentStep;
 
         return (
-          <div key={step} className="flex items-center flex-1 justify-center last:flex-initial">
+          <div key={step} className="flex items-center flex-1 last:flex-none">
             <button
               type="button"
               onClick={() => handleStepClick(step)}
               disabled={!isComplete}
               aria-current={isCurrent ? 'step' : undefined}
               aria-label={isComplete ? `Go to step ${step}` : `Step ${step}`}
-              className={`w-9 h-10 rounded-xl flex items-center justify-center text-sm font-bold transition-all border shrink-0 ${
+              className={`w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold transition-all border shrink-0 ${
                 isComplete ? 'cursor-pointer hover:opacity-90 active:scale-95' : 'cursor-default'
               } ${
                 isCurrent
@@ -60,7 +60,7 @@ export default function BookingProgress({ currentStep }: { currentStep: number }
             </button>
 
             {idx < steps.length - 1 && (
-              <div className="flex-grow h-px mx-1.5 max-w-[60px] min-w-[12px] bg-[#e2e2e2]" />
+              <div className={`flex-grow h-px ${isComplete ? 'bg-[#0012FF]' : 'bg-[#e2e2e2]'}`} />
             )}
           </div>
         );
