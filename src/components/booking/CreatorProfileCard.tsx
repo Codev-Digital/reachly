@@ -74,7 +74,7 @@ export default function CreatorProfileCard({ creator, mobileMode = 'compact', on
 
   if (!creator) {
     return (
-      <div className="w-full max-w-[450px] rounded-[32px] border border-gray-200/80 bg-white p-3 sm:p-3 shadow-sm sticky top-[96px] isolate animate-pulse">
+      <div className="w-full max-w-[370px] rounded-[20px] border border-gray-200/80 bg-white p-3 sm:p-3 shadow-sm sticky top-[96px] isolate animate-pulse">
         {/* Cover Photo Skeleton */}
         <div className={`relative w-full rounded-[15px] bg-gray-200 ${mobileMode === 'compact' ? 'h-[90px] lg:h-[140px]' : 'h-[140px]'}`}></div>
         

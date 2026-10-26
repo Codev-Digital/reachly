@@ -213,10 +213,12 @@ export default function BookSessionStep1() {
 
   const handleBack = () => {
     setIsLoadingBack(true);
-    if (fallbackUrl) {
+    if (eventReturnUrl) {
+      router.push(eventReturnUrl);
+    } else if (fallbackUrl) {
       window.location.href = fallbackUrl;
     } else {
-      router.push(`/creators/${params.username}`);
+      router.push('/user/dashboard');
     }
   };
 
@@ -279,20 +281,20 @@ export default function BookSessionStep1() {
         {/* ============ RIGHT COLUMN: SESSIONS LIST ============ */}
         <div className={`flex-col w-full ${!isMobileBookingStarted ? 'hidden lg:flex' : 'flex'}`}>
           {loading || !creator ? (
-            <div className="w-full max-w-[790px] space-y-6">
+            <div className="w-full max-w-[870px] space-y-6">
               <div className="h-8 w-48 bg-gray-200 animate-pulse rounded-lg" />
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 justify-items-center">
+              <div className="flex flex-row overflow-hidden w-full h-[460px] lg:h-auto lg:w-[810px] px-[calc(50%-140px)] lg:px-[10px] lg:pt-4 lg:pb-6 gap-4 lg:gap-5 py-4 items-center lg:items-stretch">
                 {[1, 2, 3].map((i) => (
                   <div
                     key={i}
-                    className="w-full max-w-[285px] h-[390px] bg-gray-200 animate-pulse rounded-[14px]"
+                    className="h-[400px] w-[260px] shrink-0 animate-pulse rounded-[10px] bg-gray-200"
                   />
                 ))}
               </div>
               <div className="h-6 w-40 bg-gray-200 animate-pulse rounded-lg mt-4" />
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {[1, 2].map((i) => (
-                  <div key={i} className="h-40 bg-gray-200 animate-pulse rounded-2xl" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-[270px] animate-pulse rounded-[8px] bg-gray-200" />
                 ))}
               </div>
             </div>

@@ -56,14 +56,14 @@ export default function BookSessionStep5() {
       {/* Step Progress Indicator */}
       <BookingProgress currentStep={5} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-[410px_1fr] gap-8 items-start justify-items-center">
-        <div className="hidden lg:block w-full">
+      <div className="grid grid-cols-1 lg:grid-cols-[410px_1fr] gap-0 items-start justify-items-center">
+        <div className="hidden lg:flex w-full justify-center">
           <CreatorProfileCard creator={creator} />
         </div>
 
         {/* ============ RIGHT COLUMN: BOOKING CONFIRMATION ============ */}
         <div className="w-full">
-          <div className="bg-white rounded-3xl border border-gray-200/80 p-8 sm:p-10 shadow-sm flex flex-col items-center text-center w-full max-w-[790px] mx-auto">
+          <div className="bg-white rounded-[20px] border border-[#e2e2e2] p-8 sm:p-10 flex flex-col items-center text-center w-full max-w-[790px] mx-auto">
             {/* Booking Confirm Illustration */}
             <img
               src="/assets/booking-confirm.png"
