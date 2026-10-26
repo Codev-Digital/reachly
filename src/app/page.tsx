@@ -17,6 +17,29 @@ import {
   toggleFavouriteApi,
   subscribeFavourites,
 } from '@/lib/favouritesSync';
+import { formatEventCardDate, formatEventCardTime } from '@/lib/eventDisplay';
+
+interface LandingEvent {
+  id: string;
+  title: string;
+  description: string;
+  bannerUrl: string;
+  category: string;
+  dates: Array<{
+    date: string;
+    startHour?: string;
+    startMinute?: string;
+    startPeriod?: string;
+    endHour?: string;
+    endMinute?: string;
+    endPeriod?: string;
+  }>;
+  creator: {
+    displayName: string;
+    city?: string;
+    country?: string;
+  };
+}
 
 /* ─── Fade-in-up wrapper for scroll-triggered sections ─── */
 function FadeUp({ children, delay = 0, className = '' }: { children: React.ReactNode; delay?: number; className?: string }) {
@@ -77,6 +100,9 @@ export default function Home() {
   const [favorites, setFavorites] = useState<string[]>(() => getStoredFavourites());
   const [featuredPage, setFeaturedPage] = useState(0);
   const [savedEvents, setSavedEvents] = useState<string[]>([]);
+  const [landingEvents, setLandingEvents] = useState<LandingEvent[]>([]);
+  const [loadingLandingEvents, setLoadingLandingEvents] = useState(true);
+  const [landingEventsError, setLandingEventsError] = useState(false);
   const [categoryIndex, setCategoryIndex] = useState(0);
   const [categoriesList, setCategoriesList] = useState<string[]>([
     'All Categories',
@@ -100,6 +126,27 @@ export default function Home() {
         }
       })
       .catch(() => {});
+  }, []);
+  useEffect(() => {
+    let active = true;
+    fetch('/api/events?featured=1')
+      .then(async (response) => {
+        if (!response.ok) throw new Error('Unable to load upcoming events.');
+        return response.json();
+      })
+      .then((data) => {
+        if (active) setLandingEvents(Array.isArray(data.events) ? data.events : []);
+      })
+      .catch((error) => {
+        console.error('Failed to load landing page events:', error);
+        if (active) setLandingEventsError(true);
+      })
+      .finally(() => {
+        if (active) setLoadingLandingEvents(false);
+      });
+    return () => {
+      active = false;
+    };
   }, []);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -923,7 +970,7 @@ export default function Home() {
             UPCOMING EVENTS
         ════════════════════════════════════════ */}
       <section id="upcoming-events" className="py-20 bg-white text-[#0C0C0C] border-t border-gray-100 scroll-mt-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="max-w-[1536px] mx-auto px-4 sm:px-6">
           <FadeUp className="mb-8">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
@@ -961,22 +1008,27 @@ export default function Home() {
             ref={eventsScrollRef}
             className="flex flex-nowrap items-stretch gap-5 overflow-x-auto overflow-y-visible no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden scroll-smooth py-1 max-w-full"
           >
-            {[
-              { id: 'event-1', title: 'Creator Growth', subtitle: 'Grow your audience and brand.', time: '2PM - 6PM', date: '5 July 2026', location: 'Nishat Hotel, Gulberg, Lahore', img: '/assets/event-1.jpg' },
-              { id: 'event-2', title: 'Creator Growth', subtitle: 'Grow your audience and brand.', time: '2PM - 6PM', date: '5 July 2026', location: 'Nishat Hotel, Gulberg, Lahore', img: '/assets/event-2.jpg' },
-              { id: 'event-3', title: 'Creator Growth', subtitle: 'Grow your audience and brand.', time: '2PM - 6PM', date: '5 July 2026', location: 'Nishat Hotel, Gulberg, Lahore', img: '/assets/event-1.jpg' },
-              { id: 'event-4', title: 'Creator Growth', subtitle: 'Grow your audience and brand.', time: '2PM - 6PM', date: '5 July 2026', location: 'Nishat Hotel, Gulberg, Lahore', img: '/assets/event-2.jpg' },
-            ].map((event, index) => (
+            {loadingLandingEvents ? (
+              Array.from({ length: 4 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="h-[320px] w-full min-w-[280px] shrink-0 animate-pulse rounded-[8px] bg-gray-200 md:w-[calc((100%-1.25rem)/2)] md:min-w-0 lg:w-[calc((100%-2.5rem)/3)]"
+                />
+              ))
+            ) : landingEvents.length ? landingEvents.map((event, index) => {
+              const eventDate = event.dates[0];
+              const location = [event.creator.city, event.creator.country].filter(Boolean).join(', ');
+              return (
               <motion.div
                 key={event.id}
                 initial={{ opacity: 0, y: 24 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.45, delay: index * 0.06 }}
-                className="relative h-[270px] w-[min(100%,calc((100%-2.5rem)/3))] min-w-[280px] sm:min-w-[340px] sm:w-[calc((100%-2.5rem)/3)] shrink-0 rounded-[8px] overflow-hidden group"
+                className="relative h-[320px] w-full min-w-[280px] shrink-0 rounded-[8px] overflow-hidden group md:w-[calc((100%-1.25rem)/2)] md:min-w-0 lg:w-[calc((100%-2.5rem)/3)]"
               >
                 <img
-                  src={event.img}
+                  src={event.bannerUrl || '/assets/event-1.jpg'}
                   alt={event.title}
                   loading="lazy"
                   decoding="async"
@@ -1003,46 +1055,57 @@ export default function Home() {
                   </svg>
                 </button>
 
-                <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-5 flex items-end justify-between gap-3">
-                  <div className="text-white min-w-0">
-                    <h3 className="font-sans font-bold text-xl sm:text-2xl tracking-tight leading-tight mb-0.5 truncate">
+                <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-5">
+                  <div className="text-white w-full min-w-0">
+                    <h3 className="w-full truncate font-sans font-bold text-xl sm:text-2xl tracking-tight leading-tight mb-2 whitespace-nowrap">
                       {event.title}
                     </h3>
-                    <p className="font-sans text-xs text-white/75 mb-2.5 truncate">{event.subtitle}</p>
-                    <div className="flex flex-col gap-1">
-                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-white/90">
+                    <div className="flex flex-col gap-1.5 text-[11px] text-white/90">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                         <span className="inline-flex items-center gap-1.5">
                           <svg className="w-3.5 h-3.5 text-white/70 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
-                          {event.time}
+                          {formatEventCardTime(eventDate)}
                         </span>
                         <span className="text-white/40">|</span>
                         <span className="inline-flex items-center gap-1.5">
                           <svg className="w-3.5 h-3.5 text-white/70 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
                           </svg>
-                          {event.date}
+                          {formatEventCardDate(eventDate?.date)}
                         </span>
                       </div>
-                      <div className="flex items-center gap-1.5 text-[11px] text-white/90 min-w-0">
+                      <div className="flex items-center gap-1.5 min-w-0">
                         <svg className="w-3.5 h-3.5 text-white/70 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
                           <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
                         </svg>
-                        <span className="truncate">{event.location}</span>
+                        <span className="truncate">{location || event.creator.displayName}</span>
                       </div>
                     </div>
+                    <div className="mt-3 flex justify-end">
+                      <Link
+                        href={`/events/${event.id}`}
+                        className="shrink-0 bg-white text-[#0012FF] hover:bg-white/95 px-4 sm:px-5 py-2.5 rounded-full font-sans font-bold text-xs sm:text-sm tracking-wide shadow-lg transition-all active:scale-95 whitespace-nowrap"
+                      >
+                        View Event &amp; Book
+                      </Link>
+                    </div>
                   </div>
-                  <Link
-                    href="/events"
-                    className="shrink-0 bg-white text-[#0012FF] hover:bg-white/95 px-4 sm:px-5 py-2.5 rounded-full font-sans font-bold text-xs sm:text-sm tracking-wide shadow-lg transition-all active:scale-95 whitespace-nowrap"
-                  >
-                    Book a Slot
-                  </Link>
                 </div>
               </motion.div>
-            ))}
+              );
+            }) : (
+              <div className="w-full py-12 text-center text-sm text-gray-500">
+                {landingEventsError
+                  ? 'Upcoming events could not be loaded right now.'
+                  : 'There are no upcoming events at the moment.'}
+                <Link href="/events" className="ml-2 font-semibold text-[#0012FF] hover:underline">
+                  Browse events
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </section>

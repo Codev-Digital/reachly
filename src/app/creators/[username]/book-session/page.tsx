@@ -9,7 +9,12 @@ export default function BookSessionRedirect() {
   
   useEffect(() => {
     const fallbackUrl = searchParams.get('fallbackUrl');
-    const queryStr = fallbackUrl ? `?fallbackUrl=${encodeURIComponent(fallbackUrl)}` : '';
+    const returnTo = searchParams.get('returnTo');
+    const query = new URLSearchParams();
+    if (fallbackUrl) query.set('fallbackUrl', fallbackUrl);
+    if (returnTo) query.set('returnTo', returnTo);
+    const queryString = query.toString();
+    const queryStr = queryString ? `?${queryString}` : '';
     router.replace(`/creators/${params.username}/book-session/step-1${queryStr}`);
   }, [router, params.username, searchParams]);
 

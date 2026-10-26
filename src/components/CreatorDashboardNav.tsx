@@ -374,7 +374,10 @@ export default function CreatorDashboardNav({
             {/* Desktop nav links */}
             <div className="hidden lg:flex items-center gap-1 xl:gap-2">
               {NAV_ITEMS.map((item) => {
-                const isActive = pathname === item.href || pathname.startsWith(item.href + '/') || (item.name === 'Dashboard' && pathname.includes('/book-session'));
+                const isActive =
+                  pathname === item.href ||
+                  pathname.startsWith(item.href + '/') ||
+                  (item.name === 'Events' && (pathname === '/events' || pathname.startsWith('/events/')));
                 return (
                   <Link
                     key={item.name}
@@ -578,7 +581,10 @@ export default function CreatorDashboardNav({
                 {profileDropdownOpen && (
                   <div className="hidden lg:block absolute right-0 top-[48px] sm:top-[52px] w-56 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-[100] text-left animate-in fade-in slide-in-from-top-2 duration-150">
                     {ACCOUNT_MENU_ITEMS.map((item) => {
-                      const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+                      const isActive =
+                        pathname === item.href ||
+                        pathname.startsWith(item.href + '/') ||
+                        (item.name === 'Events' && (pathname === '/events' || pathname.startsWith('/events/')));
                       return (
                         <Link
                           key={item.name}

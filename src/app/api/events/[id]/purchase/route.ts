@@ -10,6 +10,7 @@ import { isValidObjectId, isValidISODate } from '@/lib/eventValidation';
 import { verifyToken } from '@/lib/jwt';
 import { addBuyerToEventBroadcast } from '@/lib/eventBroadcastChat';
 import { getStripeClient } from '@/lib/stripe';
+import { pktTodayISO } from '@/lib/pkt';
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -53,6 +54,9 @@ export async function POST(req: NextRequest, context: RouteContext) {
 
     if (!isValidISODate(eventDate)) {
       return NextResponse.json({ error: 'Invalid event date.' }, { status: 422 });
+    }
+    if (eventDate < pktTodayISO()) {
+      return NextResponse.json({ error: 'Tickets cannot be purchased for past event dates.' }, { status: 422 });
     }
     if (!tierTitle) {
       return NextResponse.json({ error: 'Select a ticket tier.' }, { status: 422 });

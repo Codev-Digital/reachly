@@ -9,6 +9,7 @@ import GuestLoginModal from '@/components/GuestLoginModal';
 import { formatEventCardDate, formatEventCardTime } from '@/lib/eventDisplay';
 import { isRichTextEmpty } from '@/lib/richText';
 import { cn } from '@/lib/cn';
+import { pktTodayISO } from '@/lib/pkt';
 
 interface EventTier {
   title: string;
@@ -125,10 +126,12 @@ export default function UserEventDetailPage() {
           const data = await eventRes.json();
           const loaded: EventDetail = data.event;
           setEvent(loaded);
+          const today = pktTodayISO();
+          const firstUpcoming = (loaded.dates || []).findIndex((d: EventDate) => d.date >= today);
           const firstWithTiers = (loaded.dates || []).findIndex(
-            (d: EventDate) => (d.tiers || []).length > 0
+            (d: EventDate) => d.date >= today && (d.tiers || []).length > 0
           );
-          const dateIdx = firstWithTiers >= 0 ? firstWithTiers : 0;
+          const dateIdx = firstWithTiers >= 0 ? firstWithTiers : firstUpcoming >= 0 ? firstUpcoming : 0;
           setSelectedDateIndex(dateIdx);
           setSelectedTierKey(firstAvailableTierKey(loaded.dates, dateIdx));
         } else {
@@ -144,6 +147,7 @@ export default function UserEventDetailPage() {
   }, [id]);
 
   const activeDate = event?.dates?.[selectedDateIndex];
+  const activeDateIsPast = !!activeDate && activeDate.date < pktTodayISO();
   const tiers = activeDate?.tiers ?? [];
 
   const locationLabel = useMemo(() => {
@@ -160,6 +164,8 @@ export default function UserEventDetailPage() {
   }, [event, selectedTierKey]);
 
   const selectDate = (i: number) => {
+    const date = event?.dates?.[i];
+    if (!date || date.date < pktTodayISO()) return;
     setSelectedDateIndex(i);
     setSelectedTierKey(firstAvailableTierKey(event?.dates, i));
   };
@@ -169,12 +175,12 @@ export default function UserEventDetailPage() {
       setShowLoginModal(true);
       return;
     }
-    if (!selectedTier) return;
+    if (!selectedTier || activeDateIsPast) return;
     setConfirmOpen(true);
   };
 
   const confirmBuy = async () => {
-    if (!selectedTier || !event || !activeDate?.date) return;
+    if (!selectedTier || !event || !activeDate?.date || activeDateIsPast) return;
     setBuying(true);
     try {
       const res = await fetch(`/api/events/${event.id}/purchase`, {
@@ -289,22 +295,31 @@ export default function UserEventDetailPage() {
                     </span>
                   </div>
 
-                  {event.dates.length > 1 && (
+                  {event.dates.length > 0 && (
                     <div className="mt-5 flex flex-wrap gap-2">
                       {event.dates.map((d, i) => (
-                        <button
-                          key={`${d.date}-${i}`}
-                          type="button"
-                          onClick={() => selectDate(i)}
-                          className={cn(
-                            'cursor-pointer rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors',
-                            i === selectedDateIndex
-                              ? 'border-[#0012FF] bg-[#0012FF] text-white'
-                              : 'border-[#e2e2e2] bg-white text-gray-600 hover:border-[#0012FF]/40'
-                          )}
-                        >
-                          {formatEventCardDate(d.date)}
-                        </button>
+                        (() => {
+                          const isPast = d.date < pktTodayISO();
+                          return (
+                            <button
+                              key={`${d.date}-${i}`}
+                              type="button"
+                              disabled={isPast}
+                              aria-label={`${formatEventCardDate(d.date)}${isPast ? ' (past date, unavailable)' : ''}`}
+                              onClick={() => selectDate(i)}
+                              className={cn(
+                                'rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors',
+                                isPast
+                                  ? 'cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400 line-through'
+                                  : i === selectedDateIndex
+                                    ? 'cursor-pointer border-[#0012FF] bg-[#0012FF] text-white'
+                                    : 'cursor-pointer border-[#e2e2e2] bg-white text-gray-600 hover:border-[#0012FF]/40'
+                              )}
+                            >
+                              {formatEventCardDate(d.date)}
+                            </button>
+                          );
+                        })()
                       ))}
                     </div>
                   )}
@@ -365,7 +380,7 @@ export default function UserEventDetailPage() {
                       <div className="mt-0.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                         {event.creator.username ? (
                           <Link
-                            href={`/creators/${event.creator.username}`}
+                            href={`/creators/${event.creator.username}?returnTo=${encodeURIComponent(`/user/events/${event.id}`)}`}
                             className="truncate text-base font-bold text-black transition-colors hover:text-[#0012FF] sm:text-lg"
                           >
                             {event.creator.displayName}
@@ -389,7 +404,7 @@ export default function UserEventDetailPage() {
                     </div>
                     {event.creator.username && (
                       <Link
-                        href={`/creators/${event.creator.username}`}
+                        href={`/creators/${event.creator.username}?returnTo=${encodeURIComponent(`/user/events/${event.id}`)}`}
                         className="hidden shrink-0 items-center gap-1 rounded-full border border-[#e2e2e2] bg-white px-3.5 py-2 text-xs font-semibold text-gray-600 transition-colors hover:border-[#0012FF]/40 hover:text-[#0012FF] sm:inline-flex"
                       >
                         View profile
@@ -449,7 +464,7 @@ export default function UserEventDetailPage() {
                 </div>
                 <button
                   type="button"
-                  disabled={!selectedTier || Number(selectedTier.quantity) <= 0}
+                  disabled={!selectedTier || Number(selectedTier.quantity) <= 0 || activeDateIsPast}
                   onClick={openConfirm}
                   className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[#0012FF] px-8 py-3 text-sm font-bold text-white shadow-md transition-all hover:bg-[#0010d0] active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-gray-300 sm:w-auto"
                 >

@@ -143,6 +143,7 @@ const EventSchema = new Schema<IEvent>(
 EventSchema.index({ creatorId: 1, status: 1, createdAt: -1 });
 EventSchema.index({ creatorId: 1, 'dates.date': 1 });
 EventSchema.index({ status: 1, publishedAt: -1 });
+EventSchema.index({ status: 1, 'dates.date': 1, publishedAt: -1 });
 
 // In dev, drop a stale cached schema (e.g. old category enum) so saves don't fail
 // after field changes until you manually restart the server.

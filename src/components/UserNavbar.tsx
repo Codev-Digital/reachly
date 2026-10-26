@@ -86,7 +86,9 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
 
   // Determine active nav item from pathname
   const getActiveNavItem = () => {
+    if (pathname === '/events' || pathname.startsWith('/events/')) return 'Events';
     if (pathname === '/user/events' || pathname.startsWith('/user/events/')) return 'Events';
+    if (pathname.startsWith('/creators/')) return '';
     if (pathname === '/user/bookings') return 'Bookings';
     if (pathname === '/user/packages') return 'Packages';
     if (pathname === '/user/chats') return 'Chats';
@@ -291,7 +293,7 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
           {/* Centered Navigation Items — icons keep original sizes; fixed slot stops header height jump */}
           <div className="hidden lg:flex h-[52px] items-center gap-2">
             {navItems.map((item) => {
-              const isActive = activeNavItem === item.name || (item.name === 'Dashboard' && (pathname === '/user/dashboard' || pathname === '/explore-creators' || pathname.includes('/book-session'))) || (item.name === 'Bookings' && pathname === '/user/bookings') || (item.name === 'Chats' && pathname === '/user/chats');
+              const isActive = activeNavItem === item.name || (item.name === 'Dashboard' && (pathname === '/user/dashboard' || pathname === '/explore-creators')) || (item.name === 'Bookings' && pathname === '/user/bookings') || (item.name === 'Chats' && pathname === '/user/chats');
               return (
                 <Link
                   key={item.name}
@@ -669,7 +671,7 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
               >
                 <div className="px-4 py-3 flex flex-col gap-1">
                   {navItems.map((item) => {
-                    const isActive = activeNavItem === item.name || (item.name === 'Dashboard' && (pathname === '/user/dashboard' || pathname === '/explore-creators' || pathname.includes('/book-session'))) || (item.name === 'Bookings' && pathname === '/user/bookings') || (item.name === 'Chats' && pathname === '/user/chats');
+                    const isActive = activeNavItem === item.name || (item.name === 'Dashboard' && (pathname === '/user/dashboard' || pathname === '/explore-creators')) || (item.name === 'Bookings' && pathname === '/user/bookings') || (item.name === 'Chats' && pathname === '/user/chats');
                     return (
                       <Link
                         key={item.name}

@@ -3,7 +3,7 @@
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import Image from 'next/image';
-import { BriefcaseBusiness } from 'lucide-react';
+import { ArrowLeft, BriefcaseBusiness } from 'lucide-react';
 import { Star } from 'lucide-react';
 import BookingProgress from '@/components/booking/BookingProgress';
 import CreatorProfileCard from '@/components/booking/CreatorProfileCard';
@@ -38,6 +38,10 @@ export default function BookSessionStep1() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const fallbackUrl = searchParams.get('fallbackUrl');
+  const returnTo = searchParams.get('returnTo');
+  const eventReturnUrl = returnTo && /^\/(?:user\/)?events\/[^/?#]+$/.test(returnTo)
+    ? returnTo
+    : null;
   const wantedSessionId = searchParams.get('session');
   const queryStr = fallbackUrl ? `?fallbackUrl=${encodeURIComponent(fallbackUrl)}` : '';
   const { booking, setBooking, nextStep } = useBooking();
@@ -251,6 +255,16 @@ export default function BookSessionStep1() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-20 pt-2">
+      {eventReturnUrl && (
+        <button
+          type="button"
+          onClick={() => router.push(eventReturnUrl)}
+          className="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-gray-600 transition-colors hover:text-[#0012FF]"
+        >
+          <ArrowLeft size={16} />
+          Back to Event
+        </button>
+      )}
       {/* Step Progress Indicator */}
       <BookingProgress currentStep={1} />
 

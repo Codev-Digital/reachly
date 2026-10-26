@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import CreatorNavbar from '@/components/CreatorNavbar';
 import Footer from '@/components/Footer';
 import LoadingAnimation from '@/components/LoadingAnimation';
@@ -12,12 +12,15 @@ export default function CreatorProfilePage() {
   const params = useParams();
   const username = params.username as string;
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnTo = searchParams.get('returnTo');
 
   useEffect(() => {
     if (username) {
-      router.replace(`/creators/${username}/book-session`);
+      const returnQuery = returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : '';
+      router.replace(`/creators/${username}/book-session${returnQuery}`);
     }
-  }, [username, router]);
+  }, [username, returnTo, router]);
 
   const [creator, setCreator] = useState<any>(null);
   const [services, setServices] = useState<any[]>([]);
