@@ -9,6 +9,7 @@ export default function AboutPage() {
     <div className="min-h-screen">
       <CreatorNavbar />
 
+
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         <img
           src="/assets/new-bg-image.png"
