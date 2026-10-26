@@ -30,7 +30,7 @@ export default function HowItWorksPage() {
     {
       number: 4,
       title: 'Pay and Confirm',
-      description: 'Complete payment via JazzCash, EasyPaisa, or bank card. Your payment is held securely until the session is completed successfully.',
+      description: 'Complete your payment on Stripe-hosted Checkout using a supported card. Your booking is confirmed once Stripe verifies the payment.',
       icon: 'credit-card'
     },
     {
@@ -49,8 +49,8 @@ export default function HowItWorksPage() {
     },
     {
       icon: 'lock',
-      title: 'Secure Local Payments',
-      description: 'Pay with JazzCash, EasyPaisa, or your bank card. Your money is held securely until the session is completed. Full refunds if a creator cancels.'
+      title: 'Secure Stripe Checkout',
+      description: 'Pay on Stripe-hosted Checkout with supported card methods. Reachly does not store your card details.'
     },
     {
       icon: 'clock',

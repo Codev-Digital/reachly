@@ -309,7 +309,7 @@ export default function Home() {
   const testimonials = [
     { name: 'Jordan L.', loc: 'Los Angeles, CA', text: '"Ayesha helped me find my style, stay consistent, and grow my engagement. I feel much more confident creating content. One of the best investments I\'ve made for my personal brand!"', avatar: '/Avatars/8.jpg', commaIndex: 0, dot1: '#A0B4E8', dot2: '#B8E0C8' },
     { name: 'Zara A.', loc: 'Karachi, PK', text: '"Reachly helped me connect with Mahira Khan directly. The session was incredible and changed how I view personal branding!"', avatar: '/Avatars/2.jpg', commaIndex: 1, dot1: '#F4C5C5', dot2: '#A0C8E8' },
-    { name: 'Ali R.', loc: 'Lahore, PK', text: '"Booking was seamless. Paid through JazzCash and got a confirmation instantly. Highly recommend the platform!"', avatar: '/Avatars/7.jpg', commaIndex: 2, dot1: '#B8E8B8', dot2: '#E8D9A0' },
+    { name: 'Ali R.', loc: 'Lahore, PK', text: '"Booking was seamless. Paid securely online and got a confirmation instantly. Highly recommend the platform!"', avatar: '/Avatars/7.jpg', commaIndex: 2, dot1: '#B8E8B8', dot2: '#E8D9A0' },
     { name: 'Sana M.', loc: 'Islamabad, PK', text: '"I never thought I could afford a 1-on-1 with my favourite creator. Reachly made it possible and affordable."', avatar: '/Avatars/4.jpg', commaIndex: 0, dot1: '#C8D8F8', dot2: '#F4C5C5' },
     { name: 'Hassan T.', loc: 'Peshawar, PK', text: '"The verification badge gives me confidence. Every creator I booked was professional and punctual."', avatar: '/Avatars/15.jpg', commaIndex: 1, dot1: '#A0B4E8', dot2: '#B8E0C8' },
     { name: 'Nida F.', loc: 'Multan, PK', text: '"Got actionable advice on growing my YouTube channel. Worth every rupee. Reachly is a game changer!"', avatar: '/Avatars/6.jpg', commaIndex: 2, dot1: '#F4C5C5', dot2: '#B8E8B8' },
@@ -321,8 +321,8 @@ export default function Home() {
   const marqueeTestimonials2 = [...testimonials].reverse().concat([...testimonials].reverse());
 
   const faqItems = [
-    { q: 'How does the booking process work?', a: 'Browse creators, select a session type and time slot that fits your schedule, pay securely via JazzCash or EasyPaisa, and join the video call at the booked time.' },
-    { q: 'What payment methods do you accept?', a: 'We accept JazzCash, EasyPaisa, and major bank cards. Your payment is held securely until the session is complete.' },
+    { q: 'How does the booking process work?', a: 'Browse creators, select a session type and time slot that fits your schedule, pay securely through Stripe Checkout, and join the video call at the booked time.' },
+    { q: 'What payment methods do you accept?', a: 'Pay using the card payment methods available through Stripe Checkout. Reachly does not store your card details.' },
     { q: 'Can I cancel or reschedule a session?', a: 'Yes! You can reschedule up to 24 hours before your session with no penalty. Cancellations within 24 hours may be subject to a fee.' },
     { q: 'How are creators verified?', a: 'Every creator goes through identity verification and quality vetting before they can list on Reachly. We check credentials, audience authenticity, and past reviews.' },
     { q: 'What happens if I am not satisfied?', a: 'Report within 24 hours and we will issue a full refund, no questions asked. Your satisfaction is our top priority.' },
@@ -1092,7 +1092,7 @@ export default function Home() {
                 </div>
               </motion.div>
 
-              {/* Secure Local Payments */}
+              {/* Secure Stripe Checkout */}
               <motion.div
                 initial={{ opacity: 0, y: 40 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -1100,31 +1100,15 @@ export default function Home() {
                 transition={{ duration: 0.6, delay: 0.1 }}
                 className="bg-white border border-[#e2e2e2] rounded-[20px] p-8 w-full md:flex-[40] md:basis-0 md:min-w-0"
               >
-                <h3 className="font-sans font-bold text-xl text-black mb-2">Secure Local Payments</h3>
-                <div className="flex flex-wrap sm:flex-nowrap items-start gap-0 my-6">
-                  {/* JazzCash — matched to EasyPaisa size */}
-                  <div className="w-[228px] h-[68px] rounded-[14px] px-[24px] py-[14px] bg-white border border-red-200/70 shadow-[0_0_24px_rgba(239,68,68,0.32)] flex items-center justify-center shrink-0 transition-transform duration-300 hover:scale-[1.03]">
-                    <img
-                      src="/assets/jazzcash.png"
-                      alt="JazzCash"
-                      loading="lazy"
-                      decoding="async"
-                      className="max-h-[40px] max-w-[180px] w-auto h-auto object-contain"
-                    />
-                  </div>
-
-                  {/* EasyPaisa — diagonal offset down, pulled left so it stays inside */}
-                  <div className="w-[228px] h-[68px] rounded-[14px] px-[24px] py-[14px] bg-white border border-emerald-200/70 shadow-[0_0_24px_rgba(34,197,94,0.32)] flex items-center justify-center shrink-0 -ml-16 sm:-ml-20 sm:mt-[50px] transition-transform duration-300 hover:scale-[1.03]">
-                    <img
-                      src="/assets/easypaisa-horizontal.png"
-                      alt="EasyPaisa"
-                      loading="lazy"
-                      decoding="async"
-                      className="max-h-[40px] max-w-[180px] w-auto h-auto object-contain"
-                    />
-                  </div>
+                <h3 className="font-sans font-bold text-xl text-black mb-2">Secure Stripe Checkout</h3>
+                <div className="my-6 flex h-[68px] w-[228px] items-center justify-center gap-3 rounded-[14px] border border-[#e2e2e2] bg-white px-6 shadow-sm">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#635BFF" strokeWidth="1.8">
+                    <rect x="2" y="5" width="20" height="14" rx="2" />
+                    <path d="M2 10h20M6 15h4" />
+                  </svg>
+                  <span className="font-sans font-bold text-lg text-[#635BFF]">stripe</span>
                 </div>
-                <p className="font-sans text-sm text-gray-500 leading-relaxed">Pay with JazzCash, EasyPaisa, or your bank card. Your money is held securely until the session is completed. Full refunds if a creator cancels. Safe, secure, and hassle-free payments every time.</p>
+                <p className="font-sans text-sm text-gray-500 leading-relaxed">Pay securely through Stripe-hosted Checkout with supported card payment methods. Your payment is confirmed before your booking is finalized.</p>
               </motion.div>
             </div>
 

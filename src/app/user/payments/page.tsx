@@ -63,9 +63,16 @@ export default function UserPayments() {
             date: b.shortDate || b.date,
             time: b.time,
             amount: `PKR ${Number(b.paymentAmount ?? 0).toLocaleString()}`,
-            status: b.originalStatus === 'refunded' ? 'Refunded' : b.status === 'Pending Approval' || b.originalStatus === 'pending' ? 'Pending' : 'Completed',
+            status: b.paymentStatus === 'refunded' || b.originalStatus === 'refunded'
+              ? 'Refunded'
+              : b.paymentStatus === 'paid'
+                ? 'Completed'
+                : b.paymentStatus === 'pending'
+                  ? 'Pending'
+                  : 'Failed',
             rawPrice: Number(b.paymentAmount) || 0,
             rawStatus: b.originalStatus,
+            paymentStatus: b.paymentStatus,
             scheduledDate: b.scheduledDate
           }));
           setTransactions(formatted);
@@ -89,15 +96,15 @@ export default function UserPayments() {
   });
 
   const totalSpent = transactions
-    .filter(t => t.rawStatus === 'completed' || t.rawStatus === 'confirmed')
+    .filter(t => t.paymentStatus === 'paid')
     .reduce((sum, t) => sum + t.rawPrice, 0);
 
   const totalRefunded = transactions
-    .filter(t => t.rawStatus === 'refunded' || t.rawStatus === 'cancelled')
+    .filter(t => t.paymentStatus === 'refunded')
     .reduce((sum, t) => sum + t.rawPrice, 0);
 
   const activeBookingsValue = transactions
-    .filter(t => (t.rawStatus === 'confirmed' || t.rawStatus === 'pending') && new Date(t.scheduledDate || Date.now()) >= new Date())
+    .filter(t => (t.paymentStatus === 'paid' || t.paymentStatus === 'pending') && new Date(t.scheduledDate || Date.now()) >= new Date())
     .reduce((sum, t) => sum + t.rawPrice, 0);
 
   const availableBalance = totalRefunded;
@@ -277,7 +284,7 @@ export default function UserPayments() {
                 </button>
                 {statusDropdownOpen && (
                   <div className="absolute right-0 top-[calc(100%+6px)] w-full bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden z-50">
-                    {['All', 'Completed', 'Pending', 'Refunded'].map((status) => (
+                    {['All', 'Completed', 'Pending', 'Failed', 'Refunded'].map((status) => (
                       <button
                         key={status}
                         onClick={() => {

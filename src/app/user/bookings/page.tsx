@@ -58,6 +58,8 @@ interface Booking {
   bio: string;
   status: string;
   originalStatus: string;
+  paymentStatus?: 'pending' | 'paid' | 'failed' | 'refunded';
+  paymentPending?: boolean;
   scheduledDate: string;
   isRescheduled: boolean;
   meetingUrl?: string;
@@ -206,6 +208,8 @@ export default function UserBookingsPage() {
                 ? (b.bio || b.session || b.tierTitle || 'Event ticket')
                 : (b.bio || 'No description provided.'),
               originalStatus: b.originalStatus,
+              paymentStatus: b.paymentStatus,
+              paymentPending: b.paymentPending,
               status: finalStatus,
               scheduledDate: b.scheduledDate,
               isRescheduled: b.isRescheduled || false,
@@ -670,13 +674,27 @@ export default function UserBookingsPage() {
                                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
                               </svg>
                               <span className={`font-bold text-[11px] px-2.5 py-0.5 rounded-full shadow-2xs ${
-                                activeTab === 'Cancelled' || booking.originalStatus === 'cancelled' || booking.status === 'Cancelled'
+                                booking.paymentStatus === 'failed'
+                                  ? 'bg-red-50 text-red-700'
+                                  : booking.paymentStatus === 'refunded'
+                                    ? 'bg-gray-100 text-gray-600'
+                                    : activeTab === 'Cancelled' || booking.originalStatus === 'cancelled' || booking.status === 'Cancelled'
                                   ? 'bg-[#FFF0F0] text-[#FF3B3B]'
+                                  : booking.paymentPending
+                                    ? 'bg-amber-50 text-amber-700'
                                   : 'bg-[#E6F9EE] text-[#12B76A]'
                               }`}>
-                                {activeTab === 'Cancelled' || booking.originalStatus === 'cancelled' || booking.status === 'Cancelled'
+                                {booking.paymentStatus === 'failed'
+                                  ? 'Payment Failed'
+                                  : booking.paymentStatus === 'refunded'
+                                    ? 'Refunded'
+                                    : activeTab === 'Cancelled' || booking.originalStatus === 'cancelled' || booking.status === 'Cancelled'
                                   ? 'Cancelled'
-                                  : 'Accepted'}
+                                  : booking.isPackage && (booking.sessionNumber || 0) > 1
+                                    ? 'Included in Package'
+                                    : booking.paymentPending
+                                      ? 'Payment Pending'
+                                      : 'Accepted'}
                               </span>
                             </div>
                             <p className="text-xs text-gray-400 font-medium font-sans mt-0.5">{booking.username}</p>

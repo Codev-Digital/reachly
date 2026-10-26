@@ -21,6 +21,7 @@ import {
 } from "@/lib/slots";
 import { sanitizeRichText } from "@/lib/sanitizeRichText";
 import { richTextToPlain, WHAT_TO_DISCUSS_MAX_LENGTH, richTextLength } from "@/lib/richText";
+import { getStripeClient } from "@/lib/stripe";
 
 // Helper to generate booking reference
 function generateBookingRef(): string {
@@ -225,7 +226,7 @@ export async function POST(request: NextRequest) {
     }
 
     // check if the user  is refered person
-    if (u?.isReferred && (!isPackage || packageNumber === 1)) {
+    if (u?.isReferred && paymentMethod !== "stripe" && (!isPackage || packageNumber === 1)) {
       //now check who referred this user
       const referrerID = u.whoReferred;
       const [referralDoc, referrerUser] = await Promise.all([
@@ -393,6 +394,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const checkoutTotal = isPackage ? (packageNumber === 1 ? packageTotal : 0) : finalPrice;
+    const requiresStripePayment = paymentMethod === "stripe" && checkoutTotal > 0;
     const booking = new Booking({
       bookingRef,
       creatorId: creatorProfile.userId,
@@ -409,7 +412,7 @@ export async function POST(request: NextRequest) {
       answers: Array.isArray(answers) ? answers : [],
       scheduledDate: scheduledDateUTC,
       scheduledTime: time,
-      status: "confirmed", // Auto-approved
+      status: requiresStripePayment ? "pending" : "confirmed",
       paymentStatus: "pending", // Will auto-settle to paid when session time passes
       paymentMethod: paymentMethod || "jazzcash",
       price: originalPrice,
@@ -426,8 +429,42 @@ export async function POST(request: NextRequest) {
       await PackagePurchase.updateOne({ _id: packagePurchase._id }, { $inc: { sessionsBooked: 1 } });
     }
 
+    let checkoutUrl: string | undefined;
+    if (requiresStripePayment) {
+      try {
+        const checkout = await getStripeClient().checkout.sessions.create({
+          mode: "payment",
+          adaptive_pricing: { enabled: false },
+          allowed_payment_method_types: ["card"],
+          customer_email: userDetails.email.toLowerCase(),
+          client_reference_id: bookingRef,
+          metadata: { kind: "booking", bookingRef },
+          line_items: [{
+            quantity: 1,
+            price_data: {
+              currency: "pkr",
+              unit_amount: Math.round(checkoutTotal * 100),
+              product_data: { name: isPackage ? `${sessionType.title} package` : sessionType.title },
+            },
+          }],
+          success_url: `${request.nextUrl.origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+          cancel_url: `${request.nextUrl.origin}/checkout/cancelled`,
+          expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
+        });
+        if (!checkout.url) throw new Error("Stripe did not return a checkout URL.");
+        checkoutUrl = checkout.url;
+      } catch (error) {
+        await Booking.deleteOne({ _id: booking._id });
+        if (isPackage) {
+          if (packageNumber === 1) await PackagePurchase.deleteOne({ _id: packagePurchase._id });
+          else await PackagePurchase.updateOne({ _id: packagePurchase._id }, { $inc: { sessionsBooked: -1 } });
+        }
+        throw error;
+      }
+    }
+
     // Perform conversation check, notification, and email asynchronously without blocking HTTP response
-    (async () => {
+    if (!requiresStripePayment) (async () => {
       try {
         if (userToAttachId) {
           try {
@@ -498,6 +535,7 @@ export async function POST(request: NextRequest) {
       success: true,
       bookingId: booking._id,
       bookingRef,
+      ...(checkoutUrl ? { checkoutUrl } : {}),
       ...(isPackage ? { packageSession: packageNumber, packageSessions } : {}),
     });
   } catch (error: any) {

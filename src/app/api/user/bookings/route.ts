@@ -141,7 +141,9 @@ export async function GET(request: NextRequest) {
                 const bookingDateTimePKT = new Date(`${bYear}-${bMonth}-${bDay}T${time24}+05:00`);
 
                 if (booking.status === 'pending') {
-                    displayStatus = 'Pending Approval';
+                    displayStatus = booking.paymentMethod === 'stripe' && booking.paymentStatus === 'pending'
+                        ? 'Pending Payment'
+                        : 'Pending Approval';
                 } else if (booking.status === 'confirmed') {
                     if (bookingDateTimePKT > now) {
                         displayStatus = 'Upcoming';
@@ -176,6 +178,10 @@ export async function GET(request: NextRequest) {
                 price: pkgLabels.get(bIdStr) || `PKR ${booking.finalPrice}`,
                 paymentAmount: pkgPaid.has(bIdStr) ? pkgPaid.get(bIdStr) : booking.finalPrice,
                 paymentMethod: booking.paymentMethod || 'Guest',
+                paymentStatus: booking.paymentStatus,
+                paymentPending: booking.paymentMethod === 'stripe' &&
+                    booking.paymentStatus === 'pending' &&
+                    (!booking.packagePurchaseId || booking.sessionNumber === 1),
                 transactionId: `${bIdStr.slice(0, 8).toUpperCase()}`,
                 bookedOn: bookedOn,
                 originalStatus: booking.status,
@@ -281,13 +287,14 @@ export async function GET(request: NextRequest) {
                         tags: [displayStatus, 'Event'],
                         ref: p.ticketRef,
                         duration: '',
-                        price: `PKR ${(Number(p.tierPrice) || 0).toLocaleString('en-US')}`,
-                        paymentAmount: Number(p.tierPrice) || 0,
+                        price: `PKR ${(Number(p.tierPrice) * Number(p.quantity) || 0).toLocaleString('en-US')}`,
+                        paymentAmount: Number(p.tierPrice) * Number(p.quantity) || 0,
                         paymentMethod: 'Event',
+                        paymentStatus: p.paymentStatus,
+                        paymentPending: p.paymentStatus === 'pending',
                         transactionId: p.ticketRef,
                         bookedOn,
-                        // Keep confirmed so Cancelled-tab filter (originalStatus === cancelled) works
-                        originalStatus: p.status === 'cancelled' ? 'cancelled' : 'confirmed',
+                        originalStatus: p.status,
                         // YYYY-MM-DD — avoids UTC day-shift bugs in isMeetingPassed
                         scheduledDate: eventDateStr || undefined,
                         isRescheduled: false,

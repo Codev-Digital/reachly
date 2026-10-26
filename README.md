@@ -20,6 +20,23 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Stripe Checkout
+
+Paid session bookings and event tickets use Stripe-hosted Checkout. Configure these server-side environment variables:
+
+```env
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+```
+
+For local development, use Stripe test keys and forward Checkout events to the app:
+
+```bash
+stripe listen --forward-to localhost:3000/api/stripe/webhook
+```
+
+Add the deployed `/api/stripe/webhook` endpoint in the Stripe Dashboard and subscribe it to `checkout.session.completed`, `checkout.session.async_payment_succeeded`, and `checkout.session.expired`.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

@@ -14,11 +14,10 @@ export default function BookSessionStep4() {
   const queryStr = fallbackUrl ? `?fallbackUrl=${encodeURIComponent(fallbackUrl)}` : '';
   const { booking, nextStep, setBooking, saveDraft, isDraftSaved } = useBooking();
   const creator = booking.creator;
-  const [paymentMethod, setPaymentMethod] = useState<'jazzcash' | 'easypaisa'>('jazzcash');
+  const [paymentMethod] = useState<'stripe'>('stripe');
   const [showQr, setShowQr] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingBack, setIsLoadingBack] = useState(false);
-  const [isLoadingContinue, setIsLoadingContinue] = useState(false);
   const [errorModalOpen, setErrorModalOpen] = useState(false);
   const [errorModalMsg, setErrorModalMsg] = useState('');
 
@@ -37,21 +36,11 @@ export default function BookSessionStep4() {
   }, [pkg?.id]);
   const amountDue = pkg && paidPackage ? 0 : booking.selectedSession ? sessionPrice(booking.selectedSession) : 0;
 
-  // Reset loading states when switching between payment views
-  useEffect(() => {
-    setIsLoadingBack(false);
-    setIsLoadingContinue(false);
-  }, [showQr]);
-
   useEffect(() => {
     if (params.username) {
       router.prefetch(`/creators/${params.username}/book-session/step-5${queryStr}`);
     }
   }, [params.username, queryStr, router]);
-
-  const handleContinue = () => {
-    setShowQr(true);
-  };
 
   const handleConfirmPayment = async () => {
     if (isSubmitting) return;
@@ -85,6 +74,11 @@ export default function BookSessionStep4() {
       });
 
       const data = await res.json();
+      if (data.success && data.checkoutUrl) {
+        try { localStorage.removeItem('reachly_booking_draft'); } catch { }
+        window.location.assign(data.checkoutUrl);
+        return;
+      }
       if (data.success) {
         setBooking(b => ({ ...b, bookingRef: data.bookingRef }));
         // Clear draft — booking is confirmed, no longer needed
@@ -130,7 +124,7 @@ export default function BookSessionStep4() {
                 <div>
                   <h3 className="text-base font-bold text-gray-950">Confirm Payment</h3>
                   <p className="text-xs text-gray-400">
-                    Authorize payment on your phone to complete your booking
+                    You will be redirected to Stripe Checkout to pay securely
                   </p>
                 </div>
               </div>
@@ -138,15 +132,14 @@ export default function BookSessionStep4() {
               {/* Selected Method Details */}
               <div className="bg-gray-50/50 border border-gray-100 rounded-2xl p-5 mb-6 flex items-center gap-4">
                 <div className="w-14 h-14 bg-white rounded-2xl border border-gray-100 flex items-center justify-center p-2 shadow-xs shrink-0">
-                  <img
-                    src={paymentMethod === 'jazzcash' ? '/assets/jazzcash.png' : '/assets/easypaisa (2).png'}
-                    alt={paymentMethod}
-                    className="w-full h-full object-contain"
-                  />
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="1.8">
+                    <rect x="2" y="5" width="20" height="14" rx="2" />
+                    <path d="M2 10h20M6 15h4" />
+                  </svg>
                 </div>
                 <div>
                   <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wide">
-                    {paymentMethod === 'jazzcash' ? 'JazzCash Mobile Wallet' : 'EasyPaisa Mobile Wallet'}
+                    Stripe secure card checkout
                   </h4>
                   <p className="text-[10px] text-gray-400 font-semibold mt-0.5">
                     Fast mobile account authorization
@@ -180,24 +173,17 @@ export default function BookSessionStep4() {
               </div>
 
               <p className="text-[10px] text-gray-500 leading-relaxed mb-8">
-                You will receive an automatic transaction prompt on your mobile number linked to your {paymentMethod === 'jazzcash' ? 'JazzCash' : 'EasyPaisa'} account. Please unlock your phone and input your M-PIN to approve.
+                Your payment details are entered securely on Stripe. Reachly never stores your card details.
               </p>
 
               {/* Navigation Buttons inside QR panel */}
               <div className="flex flex-wrap gap-2 justify-end mt-8 pt-6 border-t border-gray-100">
                 <button
-                  onClick={() => {
-                    setIsLoadingBack(true);
-                    setShowQr(false);
-                  }}
-                  disabled={isLoadingBack || isSubmitting}
+                  onClick={() => setShowQr(false)}
+                  disabled={isSubmitting}
                   className="bg-white border border-gray-200 text-gray-700 font-bold py-2.5 px-4 sm:px-6 rounded-full text-xs hover:bg-gray-50 transition-colors shadow-sm flex items-center justify-center"
                 >
-                  {isLoadingBack ? (
-                    <div className="w-4 h-4 rounded-full border-2 border-gray-300 border-t-gray-700 animate-spin"></div>
-                  ) : (
-                    "Back"
-                  )}
+                  Back
                 </button>
                 <button
                   onClick={handleConfirmPayment}
@@ -235,40 +221,17 @@ export default function BookSessionStep4() {
 
               {/* Options Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
-                {/* JazzCash option */}
-                <div
-                  onClick={() => setPaymentMethod('jazzcash')}
-                  className={`border rounded-2xl p-5 cursor-pointer transition-all flex flex-col justify-between h-44 shadow-xs ${paymentMethod === 'jazzcash'
-                    ? 'border-[#0012FF] bg-[#EEF2FF]/20'
-                    : 'border-gray-200 hover:border-gray-300 bg-white'
-                    }`}
-                >
-                  <div className="w-12 h-12 bg-white rounded-xl border border-gray-100 flex items-center justify-center p-1 shadow-sm">
-                    <img src="/assets/jazzcash.png" alt="JazzCash" className="w-10 h-10 object-contain" />
+                <div className="border border-[#0012FF] bg-[#EEF2FF]/20 rounded-2xl p-5 flex items-center gap-4 shadow-xs">
+                  <div className="w-12 h-12 bg-white rounded-xl border border-gray-100 flex items-center justify-center shadow-sm">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="1.8">
+                      <rect x="2" y="5" width="20" height="14" rx="2" />
+                      <path d="M2 10h20M6 15h4" />
+                    </svg>
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wide">JazzCash</h4>
+                    <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wide">Stripe Checkout</h4>
                     <p className="text-[10px] text-gray-500 leading-relaxed mt-1">
-                      Pay via your JazzCash mobile wallet. Instant confirmation.
-                    </p>
-                  </div>
-                </div>
-
-                {/* EasyPaisa option */}
-                <div
-                  onClick={() => setPaymentMethod('easypaisa')}
-                  className={`border rounded-2xl p-5 cursor-pointer transition-all flex flex-col justify-between h-44 shadow-xs ${paymentMethod === 'easypaisa'
-                    ? 'border-[#0012FF] bg-[#EEF2FF]/20'
-                    : 'border-gray-200 hover:border-gray-300 bg-white'
-                    }`}
-                >
-                  <div className="w-12 h-12 bg-white rounded-xl border border-gray-100 flex items-center justify-center p-1.5 shadow-sm">
-                    <img src="/assets/easypaisa (2).png" alt="EasyPaisa" className="w-10 h-10 object-contain" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wide">EasyPaisa</h4>
-                    <p className="text-[10px] text-gray-500 leading-relaxed mt-1">
-                      Pay via your EasyPaisa account. Fast and secure.
+                      Pay securely with a credit or debit card on Stripe.
                     </p>
                   </div>
                 </div>
@@ -330,18 +293,10 @@ export default function BookSessionStep4() {
                   </button>
 
                   <button
-                    onClick={() => {
-                      setIsLoadingContinue(true);
-                      setTimeout(() => setShowQr(true), 100);
-                    }}
-                    disabled={isLoadingContinue}
+                    onClick={() => setShowQr(true)}
                     className="bg-[#0012FF] text-white hover:bg-[#0010d0] font-bold py-2.5 px-5 sm:px-8 rounded-full text-xs transition-colors shadow-sm flex items-center justify-center"
                   >
-                    {isLoadingContinue ? (
-                      <div className="w-4 h-4 rounded-full border-2 border-[#808BFF] border-t-white animate-spin"></div>
-                    ) : (
-                      'Continue'
-                    )}
+                    Continue
                   </button>
                 </div>
               </div>

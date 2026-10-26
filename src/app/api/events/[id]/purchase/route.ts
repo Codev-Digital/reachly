@@ -9,6 +9,7 @@ import EventPurchase from '@/models/EventPurchase';
 import { isValidObjectId, isValidISODate } from '@/lib/eventValidation';
 import { verifyToken } from '@/lib/jwt';
 import { addBuyerToEventBroadcast } from '@/lib/eventBroadcastChat';
+import { getStripeClient } from '@/lib/stripe';
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -114,15 +115,47 @@ export async function POST(req: NextRequest, context: RouteContext) {
       tierPrice: Number(tier.price) || 0,
       tierPersons: Math.max(1, Number(tier.persons) || 1),
       quantity: qty,
-      status: 'confirmed',
-      paymentStatus: 'pending',
+      status: Number(tier.price) > 0 ? 'pending' : 'confirmed',
+      paymentStatus: Number(tier.price) > 0 ? 'pending' : 'paid',
     });
 
-    // Auto-add buyer to the event broadcast chat channel
-    try {
-      await addBuyerToEventBroadcast(event._id, user.id);
-    } catch (chatErr) {
-      console.error('[POST /api/events/:id/purchase] broadcast channel:', chatErr);
+    let checkoutUrl: string | undefined;
+    if (Number(tier.price) > 0) {
+      try {
+        const checkout = await getStripeClient().checkout.sessions.create({
+          mode: 'payment',
+          adaptive_pricing: { enabled: false },
+          allowed_payment_method_types: ['card'],
+          customer_email: user.email,
+          client_reference_id: String(purchase._id),
+          metadata: { kind: 'event', purchaseId: String(purchase._id) },
+          line_items: [{
+            quantity: qty,
+            price_data: {
+              currency: 'pkr',
+              unit_amount: Math.round(Number(tier.price) * 100),
+              product_data: { name: `${event.title} — ${tier.title}` },
+            },
+          }],
+          success_url: `${req.nextUrl.origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+          cancel_url: `${req.nextUrl.origin}/checkout/cancelled`,
+          expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
+        });
+        if (!checkout.url) throw new Error('Stripe did not return a checkout URL.');
+        checkoutUrl = checkout.url;
+      } catch (error) {
+        tier.quantity = available;
+        event.markModified('dates');
+        await event.save();
+        await EventPurchase.deleteOne({ _id: purchase._id });
+        throw error;
+      }
+    } else {
+      try {
+        await addBuyerToEventBroadcast(event._id, user.id);
+      } catch (chatErr) {
+        console.error('[POST /api/events/:id/purchase] broadcast channel:', chatErr);
+      }
     }
 
     return NextResponse.json(
@@ -136,6 +169,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
           tierPrice: purchase.tierPrice,
           eventDate: purchase.eventDate,
         },
+        ...(checkoutUrl ? { checkoutUrl } : {}),
       },
       { status: 201 }
     );

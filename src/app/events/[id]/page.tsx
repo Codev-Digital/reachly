@@ -199,6 +199,10 @@ export default function PublicEventDetailPage() {
         alert(data.error || 'Failed to buy ticket');
         return;
       }
+      if (data.checkoutUrl) {
+        window.location.assign(data.checkoutUrl);
+        return;
+      }
       setConfirmOpen(false);
       try {
         sessionStorage.removeItem('reachly_user_bookings_page_cache');

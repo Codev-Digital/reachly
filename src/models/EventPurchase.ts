@@ -18,7 +18,7 @@ export interface IEventPurchase extends Document {
   tierPrice: number;
   tierPersons: number;
   quantity: number;
-  status: 'confirmed' | 'cancelled' | 'completed';
+  status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
   paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
   createdAt: Date;
   updatedAt: Date;
@@ -43,8 +43,8 @@ const EventPurchaseSchema = new Schema<IEventPurchase>(
     quantity: { type: Number, required: true, min: 1, default: 1 },
     status: {
       type: String,
-      enum: ['confirmed', 'cancelled', 'completed'],
-      default: 'confirmed',
+      enum: ['pending', 'confirmed', 'cancelled', 'completed'],
+      default: 'pending',
       index: true,
     },
     paymentStatus: {
