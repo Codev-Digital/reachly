@@ -3,6 +3,7 @@
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import Image from 'next/image';
+import { BriefcaseBusiness } from 'lucide-react';
 import { Star } from 'lucide-react';
 import BookingProgress from '@/components/booking/BookingProgress';
 import CreatorProfileCard from '@/components/booking/CreatorProfileCard';
@@ -243,7 +244,7 @@ export default function BookSessionStep1() {
   // Svg cards templates rotated
   const cardColors = ['#B7C0FF', '#FFEDB5', '#FFB3B3'];
   const cardThemes = [
-    { text: 'text-[#0012FF]', stroke: 'stroke-[#0012FF]', bg: 'bg-[#BAC5FF]', title: 'text-white', desc: 'text-white/90', feature: 'text-white/95', divider: 'bg-white/35' }, // Card 1: Blue
+    { text: 'text-[#0012FF]', stroke: 'stroke-[#0012FF]', bg: 'bg-[#B7C0FF]', title: 'text-white', desc: 'text-white/90', feature: 'text-white/95', divider: 'bg-white/35' }, // Card 1: Blue
     { text: 'text-[#B86B00]', stroke: 'stroke-[#B86B00]', bg: 'bg-[#FFEDB5]', title: 'text-[#4A3B18]', desc: 'text-[#5C4D26]', feature: 'text-[#4A3B18]', divider: 'bg-[#4A3B18]/20' }, // Card 2: Yellow (Clear dark grayish text)
     { text: 'text-[#E32A2A]', stroke: 'stroke-[#E32A2A]', bg: 'bg-[#FFB3B3]', title: 'text-white', desc: 'text-white/90', feature: 'text-white/95', divider: 'bg-white/35' }, // Card 3: Pink
   ];
@@ -253,7 +254,7 @@ export default function BookSessionStep1() {
       {/* Step Progress Indicator */}
       <BookingProgress currentStep={1} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-[410px_1fr] gap-8 items-start justify-items-center">
+      <div className="grid grid-cols-1 lg:grid-cols-[410px_1fr] gap-0 items-start justify-items-center">
         <CreatorProfileCard
           key={routeUsername || 'loading'}
           creator={creator}
@@ -286,8 +287,8 @@ export default function BookSessionStep1() {
               <p className="text-gray-500 italic font-medium">No sessions found for this creator.</p>
             </div>
           ) : (
-            <div className="flex flex-col w-full max-w-[790px]">
-              {sessions.length > 3 && (
+            <div className="flex flex-col w-full max-w-[870px]">
+              {/* {sessions.length > 3 && (
                 <div className="hidden lg:flex justify-end gap-3 mb-2 px-2">
                   <button
                     onClick={scrollLeft}
@@ -302,7 +303,7 @@ export default function BookSessionStep1() {
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
                   </button>
                 </div>
-              )}
+              )} */}
 
               <div className="relative w-full">
                 <style jsx>{`
@@ -315,7 +316,7 @@ export default function BookSessionStep1() {
                   }
                 `}</style>
 
-                <div className="w-full flex justify-center lg:block">
+                <div className="w-full flex justify-center lg:block -mt-[13px]">
 
                   {/* SESSIONS CAROUSEL (Mobile & Desktop) */}
                   <div ref={scrollContainerRef} onScroll={handleScroll} className="flex flex-row overflow-x-auto snap-x snap-mandatory hide-scrollbar w-full h-[460px] lg:h-auto lg:w-[810px] lg:-ml-[10px] px-[calc(50%-140px)] lg:px-[10px] lg:pt-4 lg:pb-6 gap-4 lg:gap-[20px] py-4 items-center lg:items-stretch">
@@ -329,26 +330,23 @@ export default function BookSessionStep1() {
                     return (
                       <div
                         key={session.id}
-                        className="w-[280px] lg:w-[250px] shrink-0 snap-center flex items-center justify-center p-0"
+                        className="w-[260px]  shrink-0 snap-center flex items-center justify-center p-0"
                       >
                         <div
                           onClick={() => handleSelectSession(session)}
-                          className={`w-[280px] lg:w-[250px] min-h-[400px] h-[400px] ${theme.bg} rounded-[28px] lg:rounded-[13px] p-6 flex flex-col justify-between select-none cursor-pointer transition-all duration-300 shadow-xl lg:shadow-sm hover:shadow-md lg:hover:-translate-y-1 ${isSelected ? 'border-4 border-[#0012FF] scale-[1.03] shadow-lg' : 'border-4 border-transparent'
+                          className={`w-[260px] lg:w-[260px] min-h-[400px] h-[400px] ${theme.bg} rounded-[10px] lg:rounded-[10px] p-6 flex flex-col justify-between select-none cursor-pointer transition-all duration-300  lg:hover:-translate-y-1 ${isSelected ? 'border-4 border-[#0012FF] scale-[1.03] shadow-lg' : 'border-4 border-transparent'
                             } ${!hasScrolled && index >= 3 ? 'lg:opacity-0 lg:pointer-events-none' : 'opacity-100'}`}
                         >
                         <div>
                           {/* Top row: Briefcase Icon + Duration */}
                           <div className="flex items-center justify-between mb-5">
                             {/* Icon Badge */}
-                            <div className="w-9 h-9 rounded-xl bg-white/90 shadow-2xs flex items-center justify-center shrink-0">
-                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={theme.text}>
-                                <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
-                                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
-                              </svg>
+                            <div className="w-10 h-10 rounded-[8px] bg-white/90 shadow-2xs flex items-center justify-center shrink-0">
+                             <BriefcaseBusiness className={`${theme.text}`}/>
                             </div>
 
                             {/* Duration */}
-                            <span className={`text-xs font-bold font-sans flex items-center gap-1.5 ${theme.text}`}>
+                            <span className={`text-[12px] leading-3 font-medium font-sans flex items-center gap-1.5 ${theme.text}`}>
                               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={theme.stroke}>
                                 <circle cx="12" cy="12" r="10" />
                                 <polyline points="12 6 12 16 14" />
@@ -358,12 +356,12 @@ export default function BookSessionStep1() {
                           </div>
 
                           {/* Title */}
-                          <h4 className={`text-lg font-bold font-sans leading-tight mb-2 line-clamp-1 ${theme.title}`}>
+                          <h4 className={`text-[14px] leading-[14px] font-semibold font-sans  mb-2 line-clamp-1 ${theme.title}`}>
                             {session.title}
                           </h4>
 
                           {/* Description */}
-                          <p className={`text-xs font-medium font-sans leading-relaxed line-clamp-3 ${theme.desc}`}>
+                          <p className={`text-[14px] leading-3 font-normal font-sans leading-relaxed line-clamp-3 ${theme.desc}`}>
                             {richTextToPlain(session.description)}
                           </p>
 

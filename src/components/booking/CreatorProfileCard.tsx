@@ -128,7 +128,7 @@ export default function CreatorProfileCard({ creator, mobileMode = 'compact', on
 
   return (
     <>
-      <div className="w-full max-w-[450px] rounded-[32px] border border-gray-200/80 bg-white p-3 sm:p-3 shadow-sm sticky top-[96px] isolate">
+      <div className="w-full max-w-[370px] rounded-[20px] border border-[#e2e2e2] bg-white p-3 sm:p-3  sticky top-[96px] isolate">
         {/* Cover Photo Container (Clean - No Text Overlay) */}
         <div className={`relative w-full rounded-[15px] overflow-hidden bg-gray-100 ${mobileMode === 'compact' ? 'h-[90px] lg:h-[140px]' : 'h-[140px]'}`}>
           {creator?.coverPhoto ? (

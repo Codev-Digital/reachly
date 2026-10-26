@@ -789,7 +789,7 @@ export default function Home() {
                     key={catName || i}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => { setActiveCategory(catName); setCategoryIndex(0); }}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-sans font-medium whitespace-nowrap shrink-0 cursor-pointer transition-colors ${activeCategory === catName ? 'bg-[#0012FF] text-white shadow-md shadow-[#0012FF]/20' : 'bg-white text-gray-500 border border-gray-100 hover:border-gray-300'}`}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-[8px] text-sm font-sans font-medium whitespace-nowrap shrink-0 cursor-pointer transition-colors ${activeCategory === catName ? 'bg-[#0012FF] text-white' : 'bg-white text-[#8E8E8E] border border-[#e2e2e2] hover:border-gray-300'}`}
                   >
                     {getCategoryIcon(catName)} {catName}
                   </motion.button>
