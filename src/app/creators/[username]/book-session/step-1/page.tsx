@@ -7,6 +7,7 @@ import { ArrowLeft, BriefcaseBusiness } from 'lucide-react';
 import { Star } from 'lucide-react';
 import BookingProgress from '@/components/booking/BookingProgress';
 import CreatorProfileCard from '@/components/booking/CreatorProfileCard';
+import AvailabilityDateTimePicker from '@/components/booking/AvailabilityDateTimePicker';
 import EventCard, { type EventCardData } from '@/components/EventCard';
 import { useBooking, SessionType, sessionPrice } from '../layout';
 import { richTextToPlain, richTextPreview } from '@/lib/richText';
@@ -43,8 +44,12 @@ export default function BookSessionStep1() {
     ? returnTo
     : null;
   const wantedSessionId = searchParams.get('session');
-  const queryStr = fallbackUrl ? `?fallbackUrl=${encodeURIComponent(fallbackUrl)}` : '';
-  const { booking, setBooking, nextStep } = useBooking();
+  const query = new URLSearchParams();
+  if (fallbackUrl) query.set('fallbackUrl', fallbackUrl);
+  if (returnTo) query.set('returnTo', returnTo);
+  const queryString = query.toString();
+  const queryStr = queryString ? `?${queryString}` : '';
+  const { booking, setBooking } = useBooking();
   const [sessions, setSessions] = useState<SessionType[]>([]);
   const [reviews, setReviews] = useState<PublicReview[]>([]);
   const [creatorEvents, setCreatorEvents] = useState<CreatorEventRaw[]>([]);
@@ -81,9 +86,9 @@ export default function BookSessionStep1() {
   };
 
   useEffect(() => {
-    // Prefetch Step 2 and warm up availability endpoint in background
+    // Prefetch the next booking step and warm up availability in the background.
     if (params.username) {
-      router.prefetch(`/creators/${params.username}/book-session/step-2${queryStr}`);
+      router.prefetch(`/creators/${params.username}/book-session/step-3${queryStr}`);
       fetch(`/api/creators/${params.username}/availability`).catch(() => {});
     }
   }, [params.username, queryStr, router]);
@@ -165,22 +170,13 @@ export default function BookSessionStep1() {
               stats: data.creator.stats,
             },
             selectedSession: (() => {
-              const wanted =
-                new URLSearchParams(window.location.search).get('session') || b.selectedSession?.id;
+              const wanted = wantedSessionId || b.selectedSession?.id;
               return wanted
                 ? data.sessions.find((s: SessionType) => s.id === wanted) || null
                 : null;
             })(),
           }));
 
-          if (
-            wantedSessionId &&
-            (data.sessions || []).some((x: SessionType) => x.id === wantedSessionId)
-          ) {
-            nextStep();
-            router.replace(`/creators/${username}/book-session/step-2${queryStr}`);
-            return;
-          }
         }
       } catch (err) {
         console.error('Failed to fetch creator sessions:', err);
@@ -192,22 +188,23 @@ export default function BookSessionStep1() {
     return () => {
       cancelled = true;
     };
-  }, [params.username, setBooking, wantedSessionId, nextStep, router, queryStr]);
+  }, [params.username, setBooking, wantedSessionId, router]);
 
   const handleSelectSession = (session: SessionType) => {
     setBooking((b) => ({
       ...b,
       selectedSession: session,
+      selectedTime: null,
       // Reset answers when switching sessions
       answers: [],
     }));
   };
 
   const handleContinue = () => {
-    if (booking.selectedSession) {
+    if (booking.selectedSession && booking.selectedDate && booking.selectedTime) {
       setIsLoadingContinue(true);
-      nextStep();
-      router.push(`/creators/${params.username}/book-session/step-2${queryStr}`);
+      setBooking((b) => ({ ...b, step: 2 }));
+      router.push(`/creators/${params.username}/book-session/step-3${queryStr}`);
     }
   };
 
@@ -291,7 +288,16 @@ export default function BookSessionStep1() {
                   />
                 ))}
               </div>
-              <div className="h-6 w-40 bg-gray-200 animate-pulse rounded-lg mt-4" />
+              <div className="mt-8 space-y-4">
+                <div className="h-6 w-40 bg-gray-200 animate-pulse rounded-lg" />
+                <div className="h-16 w-full animate-pulse rounded-[20px] bg-gray-200" />
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <div key={i} className="h-11 animate-pulse rounded-[20px] bg-gray-200" />
+                  ))}
+                </div>
+              </div>
+              <div className="h-6 w-40 bg-gray-200 animate-pulse rounded-lg mt-8" />
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
                 {[1, 2, 3].map((i) => (
                   <div key={i} className="h-[270px] animate-pulse rounded-[8px] bg-gray-200" />
@@ -421,6 +427,28 @@ export default function BookSessionStep1() {
                   </div>
                 </div>
 
+                {booking.selectedSession && (
+                  <section className="mt-8 w-full">
+                    <div className="mb-4">
+                      <h3 className="text-xl font-bold text-gray-900">Select Date &amp; Time</h3>
+                      <p className="mt-1 text-sm font-medium text-gray-500">
+                        Choose an available date and time for your session.
+                      </p>
+                    </div>
+                    <AvailabilityDateTimePicker
+                      key={booking.selectedSession.id}
+                      username={routeUsername}
+                      sessionId={booking.selectedSession.id}
+                      selectedDate={booking.selectedDate}
+                      selectedTime={booking.selectedTime}
+                      onDateChange={(date) =>
+                        setBooking((b) => ({ ...b, selectedDate: date, selectedTime: null }))
+                      }
+                      onTimeChange={(time) => setBooking((b) => ({ ...b, selectedTime: time }))}
+                    />
+                  </section>
+                )}
+
                 {/* Navigation Action Buttons */}
                 <div className="flex flex-wrap gap-2 mt-6 mb-12 justify-end w-full max-w-[790px] mx-auto px-4 relative z-[100]">
                   <button
@@ -437,8 +465,8 @@ export default function BookSessionStep1() {
 
                   <button
                     onClick={handleContinue}
-                    disabled={!booking.selectedSession || isLoadingContinue}
-                    className={`py-2.5 px-5 sm:px-8 rounded-full text-xs font-bold transition-all shadow-sm flex items-center justify-center ${booking.selectedSession
+                    disabled={!booking.selectedSession || !booking.selectedDate || !booking.selectedTime || isLoadingContinue}
+                    className={`py-2.5 px-5 sm:px-8 rounded-full text-xs font-bold transition-all shadow-sm flex items-center justify-center ${booking.selectedSession && booking.selectedDate && booking.selectedTime
                       ? 'bg-[#0012FF] text-white hover:bg-[#0010d0]'
                       : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                       }`}

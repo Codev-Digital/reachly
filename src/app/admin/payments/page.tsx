@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { CreditCard, DollarSign, Clock, Calendar, ArrowUpRight } from 'lucide-react';
+import ManualPaymentProofs from '@/components/admin/ManualPaymentProofs';
 
 interface Payment {
   id: string;
@@ -94,6 +95,7 @@ export default function AdminPaymentsPage() {
           <span className="text-gray-400 font-normal text-sm sm:text-base">Overview</span>
         </h1>
       </div>
+      <ManualPaymentProofs />
       {/* Metrics Cards (Wallet Style) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 mb-10 items-stretch">
         {/* Card 1 - Available Balance (Longer Card with 3D Ball/Bubble Effects) */}

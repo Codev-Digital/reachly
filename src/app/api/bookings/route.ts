@@ -90,6 +90,10 @@ export async function POST(request: NextRequest) {
       proceedAs = "login";
     }
 
+    if (!['stripe', 'easypaisa', 'jazzcash'].includes(paymentMethod)) {
+      return NextResponse.json({ error: 'Choose a supported payment method.' }, { status: 422 });
+    }
+
     if (!username || !sessionId || !date || !time) {
       return NextResponse.json(
         { error: "Missing required booking details" },
@@ -226,7 +230,7 @@ export async function POST(request: NextRequest) {
     }
 
     // check if the user  is refered person
-    if (u?.isReferred && paymentMethod !== "stripe" && (!isPackage || packageNumber === 1)) {
+    if (u?.isReferred && !["stripe", "easypaisa", "jazzcash"].includes(paymentMethod) && (!isPackage || packageNumber === 1)) {
       //now check who referred this user
       const referrerID = u.whoReferred;
       const [referralDoc, referrerUser] = await Promise.all([
@@ -396,6 +400,8 @@ export async function POST(request: NextRequest) {
 
     const checkoutTotal = isPackage ? (packageNumber === 1 ? packageTotal : 0) : finalPrice;
     const requiresStripePayment = paymentMethod === "stripe" && checkoutTotal > 0;
+    const requiresManualVerification =
+      ["easypaisa", "jazzcash"].includes(paymentMethod) && checkoutTotal > 0;
     const booking = new Booking({
       bookingRef,
       creatorId: creatorProfile.userId,
@@ -412,7 +418,7 @@ export async function POST(request: NextRequest) {
       answers: Array.isArray(answers) ? answers : [],
       scheduledDate: scheduledDateUTC,
       scheduledTime: time,
-      status: requiresStripePayment ? "pending" : "confirmed",
+      status: requiresStripePayment || requiresManualVerification ? "pending" : "confirmed",
       paymentStatus: "pending", // Will auto-settle to paid when session time passes
       paymentMethod: paymentMethod || "jazzcash",
       price: originalPrice,
@@ -429,11 +435,12 @@ export async function POST(request: NextRequest) {
       await PackagePurchase.updateOne({ _id: packagePurchase._id }, { $inc: { sessionsBooked: 1 } });
     }
 
-    let checkoutUrl: string | undefined;
+    let checkoutClientSecret: string | undefined;
     if (requiresStripePayment) {
       try {
         const checkout = await getStripeClient().checkout.sessions.create({
           mode: "payment",
+          ui_mode: "embedded",
           adaptive_pricing: { enabled: false },
           allowed_payment_method_types: ["card"],
           customer_email: userDetails.email.toLowerCase(),
@@ -447,12 +454,11 @@ export async function POST(request: NextRequest) {
               product_data: { name: isPackage ? `${sessionType.title} package` : sessionType.title },
             },
           }],
-          success_url: `${request.nextUrl.origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-          cancel_url: `${request.nextUrl.origin}/checkout/cancelled`,
+          return_url: `${request.nextUrl.origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
           expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
         });
-        if (!checkout.url) throw new Error("Stripe did not return a checkout URL.");
-        checkoutUrl = checkout.url;
+        if (!checkout.client_secret) throw new Error("Stripe did not return an embedded checkout client secret.");
+        checkoutClientSecret = checkout.client_secret;
       } catch (error) {
         await Booking.deleteOne({ _id: booking._id });
         if (isPackage) {
@@ -464,7 +470,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Perform conversation check, notification, and email asynchronously without blocking HTTP response
-    if (!requiresStripePayment) (async () => {
+    if (!requiresStripePayment && !requiresManualVerification) (async () => {
       try {
         if (userToAttachId) {
           try {
@@ -535,7 +541,8 @@ export async function POST(request: NextRequest) {
       success: true,
       bookingId: booking._id,
       bookingRef,
-      ...(checkoutUrl ? { checkoutUrl } : {}),
+      ...(checkoutClientSecret ? { checkoutClientSecret } : {}),
+      ...(requiresManualVerification ? { requiresPaymentProof: true } : {}),
       ...(isPackage ? { packageSession: packageNumber, packageSessions } : {}),
     });
   } catch (error: any) {
