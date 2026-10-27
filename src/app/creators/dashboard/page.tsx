@@ -14,7 +14,8 @@ import DailyCall from '@/components/DailyCall';
 import SessionReviewModal, {
   type SessionReviewTarget,
 } from '@/components/booking/SessionReviewModal';
-import { isMeetingPassed } from '@/lib/time';
+import ModificationWindowBlockedModal from '@/components/booking/ModificationWindowBlockedModal';
+import { checkSessionModificationWindow, isMeetingPassed, type SessionModificationAction } from '@/lib/time';
 import { fromISODate, toISODate } from '@/lib/eventTicketing';
 import { parse12h } from '@/lib/slots';
 import { useCreatorJoinNudge } from '@/hooks/useCreatorJoinNudge';
@@ -116,6 +117,10 @@ const CreatorDashboard = () => {
   // Success Modal States
   const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false);
   const [successModalType, setSuccessModalType] = useState<'cancelled' | 'rescheduled'>('cancelled');
+  const [blockedWindow, setBlockedWindow] = useState<{
+    action: SessionModificationAction;
+    startMs: number | null;
+  } | null>(null);
 
   // Meeting Modal States
   const [meetingToJoin, setMeetingToJoin] = useState<{
@@ -447,7 +452,40 @@ const CreatorDashboard = () => {
     fetchRescheduleSlots();
   }, [rescheduleDate, showRescheduleModal, username]);
 
+  const openBlockedWindow = (
+    booking: { scheduledDate?: string | Date; scheduledDateIso?: string; scheduledTime?: string; time?: string },
+    action: SessionModificationAction
+  ) => {
+    const check = checkSessionModificationWindow(
+      booking.scheduledDateIso || booking.scheduledDate || '',
+      booking.scheduledTime || booking.time || '',
+      'Asia/Karachi',
+      action
+    );
+    setBlockedWindow({
+      action,
+      startMs: check.sessionStartUTC?.getTime() ?? null,
+    });
+  };
+
+  const assertModificationAllowed = (
+    booking: { scheduledDate?: string | Date; scheduledDateIso?: string; scheduledTime?: string; time?: string },
+    action: SessionModificationAction
+  ) => {
+    if (!booking.scheduledDate && !booking.scheduledDateIso) return true;
+    const check = checkSessionModificationWindow(
+      booking.scheduledDateIso || booking.scheduledDate || '',
+      booking.scheduledTime || booking.time || '',
+      'Asia/Karachi',
+      action
+    );
+    if (check.allowed) return true;
+    openBlockedWindow(booking, action);
+    return false;
+  };
+
   const handleCancelClick = (booking: any) => {
+    if (!assertModificationAllowed(booking, 'cancel')) return;
     setBookingToCancel(booking);
     setShowCancelModal(true);
   };
@@ -468,7 +506,12 @@ const CreatorDashboard = () => {
         // Refresh metrics
         await loadDashboardData();
       } else {
-        alert(data.error || 'Failed to cancel appointment');
+        if (bookingToCancel && data.error?.includes('24 hours')) {
+          setShowCancelModal(false);
+          openBlockedWindow(bookingToCancel, 'cancel');
+        } else {
+          alert(data.error || 'Failed to cancel appointment');
+        }
       }
     } catch (err) {
       alert('Error cancelling appointment');
@@ -479,6 +522,7 @@ const CreatorDashboard = () => {
   };
 
   const handleRescheduleClick = (booking: any) => {
+    if (!assertModificationAllowed(booking, 'reschedule')) return;
     setBookingToReschedule(booking);
     setRescheduleDate(booking.scheduledDate ? new Date(booking.scheduledDate) : new Date());
     setIsRescheduleSuccess(false);
@@ -509,7 +553,12 @@ const CreatorDashboard = () => {
         setIsRescheduleSuccess(true);
         await loadDashboardData();
       } else {
-        alert(data.error || 'Failed to reschedule appointment');
+        if (bookingToReschedule && data.error?.includes('24 hours')) {
+          setShowRescheduleModal(false);
+          openBlockedWindow(bookingToReschedule, 'reschedule');
+        } else {
+          alert(data.error || 'Failed to reschedule appointment');
+        }
       }
     } catch (err) {
       alert('Error rescheduling appointment');
@@ -1299,6 +1348,14 @@ const CreatorDashboard = () => {
           )}
         </div>
       )}
+
+      <ModificationWindowBlockedModal
+        open={!!blockedWindow}
+        onClose={() => setBlockedWindow(null)}
+        startMs={blockedWindow?.startMs ?? null}
+        action={blockedWindow?.action || 'reschedule'}
+        kind="session"
+      />
 
       {/* Success Modal (Cancelled or Rescheduled) */}
       {showSuccessModal && (

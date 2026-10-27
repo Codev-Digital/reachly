@@ -14,8 +14,9 @@ import SessionReviewModal, {
   type SessionReviewTarget,
 } from '@/components/booking/SessionReviewModal';
 import OutsideSessionModal, { type OutsideBlock } from '@/components/creator/OutsideSessions';
+import ModificationWindowBlockedModal from '@/components/booking/ModificationWindowBlockedModal';
 import { format12h, parse12h } from '@/lib/slots';
-import { isMeetingPassed } from '@/lib/time';
+import { checkSessionModificationWindow, isMeetingPassed, type SessionModificationAction } from '@/lib/time';
 import { fromISODate, toISODate } from '@/lib/eventTicketing';
 import { useCreatorJoinNudge } from '@/hooks/useCreatorJoinNudge';
 
@@ -99,6 +100,10 @@ export default function CreatorCalendar() {
   // Success Modal States
   const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false);
   const [successModalType, setSuccessModalType] = useState<'cancelled' | 'rescheduled'>('cancelled');
+  const [blockedWindow, setBlockedWindow] = useState<{
+    action: SessionModificationAction;
+    startMs: number | null;
+  } | null>(null);
 
   // Meeting Modal States
   const [meetingToJoin, setMeetingToJoin] = useState<{
@@ -430,7 +435,40 @@ export default function CreatorCalendar() {
     return Array.from(set);
   }, [bookings, outsideBlocks]);
 
+  const openBlockedWindow = (
+    booking: { selectedDate?: string; time?: string; selectedTime?: string },
+    action: SessionModificationAction
+  ) => {
+    const check = checkSessionModificationWindow(
+      booking.selectedDate || '',
+      booking.selectedTime || booking.time || '',
+      'Asia/Karachi',
+      action
+    );
+    setBlockedWindow({
+      action,
+      startMs: check.sessionStartUTC?.getTime() ?? null,
+    });
+  };
+
+  const assertModificationAllowed = (
+    booking: { selectedDate?: string; time?: string; selectedTime?: string },
+    action: SessionModificationAction
+  ) => {
+    if (!booking.selectedDate) return true;
+    const check = checkSessionModificationWindow(
+      booking.selectedDate,
+      booking.selectedTime || booking.time || '',
+      'Asia/Karachi',
+      action
+    );
+    if (check.allowed) return true;
+    openBlockedWindow(booking, action);
+    return false;
+  };
+
   const handleCancelClick = (booking: BookingType) => {
+    if (!assertModificationAllowed(booking, 'cancel')) return;
     setBookingToCancel(booking);
     setShowCancelModal(true);
   };
@@ -449,7 +487,12 @@ export default function CreatorCalendar() {
         setSuccessModalType('cancelled');
         setShowSuccessModal(true);
       } else {
-        alert(data.error || 'Failed to cancel appointment');
+        if (bookingToCancel && data.error?.includes('24 hours')) {
+          setShowCancelModal(false);
+          openBlockedWindow(bookingToCancel, 'cancel');
+        } else {
+          alert(data.error || 'Failed to cancel appointment');
+        }
       }
     } catch (err) {
       alert('Error cancelling appointment');
@@ -462,6 +505,7 @@ export default function CreatorCalendar() {
   // Package sessions: the creator first asks the admin to unlock the chat so both sides can talk
   const [requestingId, setRequestingId] = useState<string | null>(null);
   const handleRequestReschedule = async (booking: BookingType) => {
+    if (!assertModificationAllowed(booking, 'reschedule')) return;
     setRequestingId(booking.id);
     try {
       const res = await fetch(`/api/creators/bookings/${booking.id}/reschedule-request`, { method: 'POST' });
@@ -478,6 +522,7 @@ export default function CreatorCalendar() {
   };
 
   const handleRescheduleClick = (booking: BookingType) => {
+    if (!assertModificationAllowed(booking, 'reschedule')) return;
     setBookingToReschedule(booking);
     setRescheduleDate(booking.selectedDate ? new Date(booking.selectedDate) : new Date());
     setIsRescheduleSuccess(false);
@@ -519,7 +564,12 @@ export default function CreatorCalendar() {
         }));
         setIsRescheduleSuccess(true);
       } else {
-        alert(data.error || 'Failed to reschedule appointment');
+        if (bookingToReschedule && data.error?.includes('24 hours')) {
+          setShowRescheduleModal(false);
+          openBlockedWindow(bookingToReschedule, 'reschedule');
+        } else {
+          alert(data.error || 'Failed to reschedule appointment');
+        }
       }
     } catch (err) {
       alert('Error rescheduling appointment');
@@ -1136,6 +1186,14 @@ export default function CreatorCalendar() {
           )}
         </div>
       )}
+
+      <ModificationWindowBlockedModal
+        open={!!blockedWindow}
+        onClose={() => setBlockedWindow(null)}
+        startMs={blockedWindow?.startMs ?? null}
+        action={blockedWindow?.action || 'reschedule'}
+        kind="session"
+      />
 
       {/* Success Modal (Cancelled or Rescheduled) */}
       {showSuccessModal && (
