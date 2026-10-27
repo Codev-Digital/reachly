@@ -19,8 +19,8 @@ import {
   isMeetingPassed,
   type SessionModificationAction,
 } from '@/lib/time';
-import { toast } from 'sonner';
-import { Star, CheckCircle, Video, MessageSquare } from 'lucide-react';
+import { Star, CheckCircle, Video, MessageSquare, Clock, AlertTriangle } from 'lucide-react';
+import PaymentRejectedDialog from '@/components/PaymentRejectedDialog';
 import {
   getStoredFavourites,
   setStoredFavourites,
@@ -61,6 +61,8 @@ interface DisplayBooking {
   amount: string;
   note: string;
   scheduledDate?: string;
+  originalStatus?: string;
+  paymentStatus?: string;
   meetingUrl?: string;
   meetingStarted?: boolean;
   meetingEnded?: boolean;
@@ -71,6 +73,7 @@ interface DisplayBooking {
   isEvent?: boolean;
   eventId?: string | null;
   tierTitle?: string | null;
+  adminRemarks?: string;
 }
 
 export default function UserDashboard() {
@@ -79,6 +82,7 @@ export default function UserDashboard() {
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeBookingTab, setActiveBookingTab] = useState<'Upcoming' | 'Past' | 'Cancelled'>('Upcoming');
+  const [rejectionRemarksBooking, setRejectionRemarksBooking] = useState<DisplayBooking | null>(null);
   const [bookingsPage, setBookingsPage] = useState(0);
   const BOOKINGS_PER_PAGE = 3;
   const [favorites, setFavorites] = useState<string[]>(() => getStoredFavourites()); // creator usernames
@@ -115,6 +119,7 @@ export default function UserDashboard() {
   // User details
   const [displayName, setDisplayName] = useState<string>('James Richard');
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
+  const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
   let [userId, setUserId] = useState<string | null>(null);
 
   // Bookings list state
@@ -157,6 +162,10 @@ export default function UserDashboard() {
   } | null>(null);
 
   const handleUserJoinMeeting = async (booking: DisplayBooking) => {
+    if (booking.originalStatus === 'pending' || (typeof booking.status === 'string' && booking.status.includes('Pending'))) {
+      toast.error('This booking is awaiting admin verification.');
+      return;
+    }
     if (booking.meetingEnded || booking.status === 'Completed' || booking.status === 'completed') {
       toast.error('This meeting is already completed.');
       return;
@@ -356,7 +365,7 @@ export default function UserDashboard() {
       // Execute all dashboard requests in parallel to eliminate sequential network latency
       const [meRes, bookingsRes, favRes, creatorsRes] = await Promise.all([
         fetch('/api/user/me'),
-        fetch('/api/user/bookings'),
+        fetch('/api/user/bookings', { cache: 'no-store' }),
         fetch('/api/user/favourite-creators'),
         fetch('/api/creators'),
       ]);
@@ -380,6 +389,7 @@ export default function UserDashboard() {
           setDisplayName(uName);
           setProfilePhoto(uPhoto);
           setUserId(userId);
+          if (data.user.email) setCurrentUserEmail(data.user.email);
         }
       } else {
         setIsAuthenticated(false);
@@ -408,6 +418,13 @@ export default function UserDashboard() {
 
         if (bData.bookings && bData.bookings.length > 0) {
           bData.bookings.forEach((b: any) => {
+            const isBookingPending =
+              b.originalStatus === 'pending' ||
+              b.paymentStatus === 'pending' ||
+              b.status === 'Pending Approval' ||
+              b.status === 'Pending Payment' ||
+              Boolean(b.paymentPending);
+
             const displayObj: DisplayBooking = {
               id: b.id,
               name: b.creator,
@@ -416,7 +433,13 @@ export default function UserDashboard() {
               time: `${b.shortDate} at ${b.time}`,
               scheduledTime: b.time,
               type: b.isEvent ? 'Event' : b.paymentMethod === 'Guest' ? 'Online' : 'In-person',
-              status: b.originalStatus === 'cancelled' ? 'Cancelled' : 'Accepted',
+              status: b.originalStatus === 'cancelled'
+                ? 'Cancelled'
+                : isBookingPending
+                  ? 'Pending Admin Verification'
+                  : 'Accepted',
+              originalStatus: b.originalStatus,
+              paymentStatus: b.paymentStatus,
               amount: b.price || '2500 PKR',
               note: b.isEvent
                 ? (b.bio || b.session || b.tierTitle || 'Event ticket')
@@ -432,6 +455,7 @@ export default function UserDashboard() {
               isEvent: !!b.isEvent,
               eventId: b.eventId || null,
               tierTitle: b.tierTitle || null,
+              adminRemarks: b.adminRemarks || '',
             };
 
             // Events: trust API status (avoid time-parse false "Past")
@@ -441,7 +465,7 @@ export default function UserDashboard() {
                 ? isMeetingPassed(b.scheduledDate, b.time)
                 : false;
 
-            if (b.originalStatus === 'cancelled' || b.status === 'Cancelled') {
+            if (b.originalStatus === 'cancelled' || b.status === 'Cancelled' || b.paymentStatus === 'failed') {
               cancelledArr.push(displayObj);
             } else if (b.status === 'Past' || passed) {
               pastArr.push(displayObj);
@@ -539,6 +563,10 @@ export default function UserDashboard() {
   };
 
   const handleCancelClick = (booking: DisplayBooking) => {
+    if (booking.originalStatus === 'pending' || (typeof booking.status === 'string' && booking.status.includes('Pending'))) {
+      toast.error('This booking is awaiting admin verification and cannot be cancelled yet.');
+      return;
+    }
     if (String(booking.id).startsWith('fallback-')) {
       toast.error('Cannot modify fallback bookings.');
       return;
@@ -549,6 +577,10 @@ export default function UserDashboard() {
   };
 
   const handleRescheduleNav = (booking: DisplayBooking) => {
+    if (booking.originalStatus === 'pending' || (typeof booking.status === 'string' && booking.status.includes('Pending'))) {
+      toast.error('This booking is awaiting admin verification and cannot be rescheduled yet.');
+      return;
+    }
     if (String(booking.id).startsWith('fallback-')) {
       toast.error('Cannot modify fallback bookings.');
       return;
@@ -1028,9 +1060,15 @@ export default function UserDashboard() {
                                   <svg className="w-3.5 h-3.5 text-[#12B76A] fill-current shrink-0" viewBox="0 0 24 24">
                                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
                                   </svg>
-                                  <span className="bg-[#E6F9EE] text-[#12B76A] font-bold text-[10px] px-2 py-0.5 rounded-full">
-                                    {booking.status || 'Accepted'}
-                                  </span>
+                                  {!(booking.originalStatus === 'pending' || (typeof booking.status === 'string' && booking.status.includes('Pending'))) && (
+                                    <span className={`font-bold text-[10px] px-2 py-0.5 rounded-full ${
+                                      booking.originalStatus === 'cancelled' || booking.status === 'Cancelled' || booking.status === 'cancelled'
+                                        ? 'bg-[#FFF0F0] text-[#FF3B3B]'
+                                        : 'bg-[#E6F9EE] text-[#12B76A]'
+                                    }`}>
+                                      {booking.status || 'Accepted'}
+                                    </span>
+                                  )}
                                   {booking.isEvent && (
                                     <span className="bg-[#EEF2FF] text-[#0012FF] font-bold text-[10px] px-2 py-0.5 rounded-full">
                                       Event
@@ -1075,8 +1113,27 @@ export default function UserDashboard() {
                             const passed = booking.scheduledDate
                               ? isMeetingPassed(booking.scheduledDate, booking.scheduledTime || booking.time)
                               : false;
-                            const isCancelled = activeBookingTab === 'Cancelled' || booking.status === 'Cancelled' || booking.status === 'cancelled';
+                            const isRejected = booking.paymentStatus === 'failed' || Boolean(booking.adminRemarks && (booking.originalStatus === 'cancelled' || booking.status === 'Cancelled' || booking.status === 'cancelled'));
+                            const isCancelled = activeBookingTab === 'Cancelled' || booking.status === 'Cancelled' || booking.status === 'cancelled' || booking.originalStatus === 'cancelled' || booking.paymentStatus === 'failed';
                             const isPast = activeBookingTab === 'Past' || passed;
+                            const isPending = !isCancelled && !isPast && !isRejected && (
+                              booking.originalStatus === 'pending' ||
+                              booking.paymentStatus === 'pending' ||
+                              (typeof booking.status === 'string' && booking.status.includes('Pending'))
+                            );
+
+                            if (isRejected) {
+                              return (
+                                <button
+                                  type="button"
+                                  onClick={() => setRejectionRemarksBooking(booking)}
+                                  className="w-full py-2 bg-rose-50 hover:bg-rose-100/80 border border-rose-200 text-rose-700 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs active:scale-[0.99]"
+                                >
+                                  <AlertTriangle className="size-3.5 text-rose-600 shrink-0" />
+                                  <span>Payment Rejected</span>
+                                </button>
+                              );
+                            }
 
                             if (booking.isEvent) {
                               if (isCancelled || isPast) {
@@ -1132,7 +1189,25 @@ export default function UserDashboard() {
                               );
                             }
 
-                            // Otherwise, upcoming active
+                            if (isPending) {
+                              return (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    toast.info(
+                                      'Payment verification is in progress. Once confirmed, you will be able to join the meeting, reschedule, or cancel your appointment.',
+                                      { duration: 4000 }
+                                    );
+                                  }}
+                                  className="w-full py-2 bg-amber-50 hover:bg-amber-100/80 border border-amber-300/80 text-amber-900 rounded-full text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs active:scale-[0.99]"
+                                >
+                                  <Clock className="size-3.5 text-amber-700 shrink-0" />
+                                  <span>Payment Verification In Progress</span>
+                                </button>
+                              );
+                            }
+
+                            // Otherwise, upcoming active and confirmed
                             return (
                               <>
                                 {booking.meetingEnded ? (
@@ -1496,6 +1571,18 @@ export default function UserDashboard() {
         target={reviewTarget}
         role="user"
         onSubmitted={markBookingReviewed}
+      />
+
+      <PaymentRejectedDialog
+        booking={rejectionRemarksBooking ? {
+          ...rejectionRemarksBooking,
+          creator: rejectionRemarksBooking.name,
+          price: rejectionRemarksBooking.amount,
+        } : null}
+        open={!!rejectionRemarksBooking}
+        onOpenChange={(open) => {
+          if (!open) setRejectionRemarksBooking(null);
+        }}
       />
     </div>
   );

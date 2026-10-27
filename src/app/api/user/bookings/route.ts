@@ -10,6 +10,7 @@ import CreatorProfile from '@/models/CreatorProfile';
 import SessionType from '@/models/SessionType';
 import Message from '@/models/Message';
 import Review from '@/models/Review';
+import SessionPaymentProof from '@/models/SessionPaymentProof';
 import { verifyToken } from '@/lib/jwt';
 import { fromISODate } from '@/lib/eventTicketing';
 
@@ -65,12 +66,13 @@ export async function GET(request: NextRequest) {
         const allBookingIds = bookings.map((b: any) => b._id);
         const creatorIds = Array.from(new Set(bookings.map((b: any) => b.creatorId?.toString()).filter(Boolean)));
 
-        // Batch fetch CreatorProfiles, unread counts, last messages, and my reviews
+        // Batch fetch CreatorProfiles, unread counts, last messages, my reviews, and payment proofs
         const [
             creatorProfiles,
             unreadCountsAgg,
             lastMessagesAgg,
             myReviews,
+            paymentProofsAgg,
         ] = await Promise.all([
             creatorIds.length > 0 
                 ? CreatorProfile.find({ userId: { $in: creatorIds } }).lean()
@@ -100,6 +102,14 @@ export async function GET(request: NextRequest) {
                     .select('bookingId')
                     .lean()
                 : Promise.resolve([]),
+            allBookingIds.length > 0
+                ? SessionPaymentProof.find({
+                    $or: [
+                        { bookingId: { $in: allBookingIds } },
+                        { bookingRef: { $in: bookings.map((b: any) => b.bookingRef).filter(Boolean) } },
+                    ]
+                  }).select('bookingId bookingRef adminRemarks status').lean()
+                : Promise.resolve([]),
         ]);
 
         const { labels: pkgLabels, paid: pkgPaid } = await packageInfo(bookings);
@@ -109,6 +119,11 @@ export async function GET(request: NextRequest) {
         const reviewedSet = new Set(
             (myReviews as any[]).map((r) => String(r.bookingId))
         );
+        const proofMap = new Map<string, any>();
+        (paymentProofsAgg as any[]).forEach((p: any) => {
+            if (p.bookingId) proofMap.set(p.bookingId.toString(), p);
+            if (p.bookingRef) proofMap.set(p.bookingRef, p);
+        });
 
         const now = new Date();
 
@@ -155,6 +170,10 @@ export async function GET(request: NextRequest) {
                 }
             }
 
+            const proofDoc = proofMap.get(bIdStr) || (booking.bookingRef ? proofMap.get(booking.bookingRef) : null);
+            const resolvedRemarks = booking.adminRemarks?.trim() || proofDoc?.adminRemarks?.trim() || '';
+            const isProofRejected = proofDoc?.status === 'rejected';
+
             return {
                 id: bIdStr,
                 kind: 'session' as const,
@@ -178,7 +197,7 @@ export async function GET(request: NextRequest) {
                 price: pkgLabels.get(bIdStr) || `PKR ${booking.finalPrice}`,
                 paymentAmount: pkgPaid.has(bIdStr) ? pkgPaid.get(bIdStr) : booking.finalPrice,
                 paymentMethod: booking.paymentMethod || 'Guest',
-                paymentStatus: booking.paymentStatus,
+                paymentStatus: isProofRejected ? 'failed' : booking.paymentStatus,
                 paymentPending: booking.paymentMethod === 'stripe' &&
                     booking.paymentStatus === 'pending' &&
                     (!booking.packagePurchaseId || booking.sessionNumber === 1),
@@ -203,6 +222,7 @@ export async function GET(request: NextRequest) {
                 unreadCount: unreadCount,
                 eventId: null,
                 tierTitle: null,
+                adminRemarks: resolvedRemarks,
             };
         });
 

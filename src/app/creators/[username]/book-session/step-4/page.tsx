@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { loadStripe, type StripeEmbeddedCheckout } from '@stripe/stripe-js';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
-import { ArrowLeft, Check, ShieldCheck, Smartphone, UploadCloud } from 'lucide-react';
+import { ArrowLeft, Check, Eye, RefreshCw, ShieldCheck, Smartphone, UploadCloud, X } from 'lucide-react';
 import BookingProgress from '@/components/booking/BookingProgress';
 import CreatorProfileCard from '@/components/booking/CreatorProfileCard';
 import { useBooking, sessionPrice } from '../layout';
@@ -30,12 +30,56 @@ export default function BookSessionStep4() {
   const { booking, nextStep, setBooking, saveDraft, isDraftSaved } = useBooking();
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('easypaisa');
   const [screenshot, setScreenshot] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [manualBooking, setManualBooking] = useState<{ id: string; ref: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const checkoutContainer = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const creator = booking.creator;
+
+  useEffect(() => {
+    if (!screenshot) {
+      setPreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(screenshot);
+    setPreviewUrl(url);
+    return () => {
+      URL.revokeObjectURL(url);
+    };
+  }, [screenshot]);
+
+  useEffect(() => {
+    if (!isImageModalOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsImageModalOpen(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isImageModalOpen]);
+
+  const handleScreenshotChange = (file: File | null) => {
+    if (!file) return;
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      setError('Please select a JPG, PNG, or WebP screenshot.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Screenshot must be 5 MB or smaller.');
+      return;
+    }
+    setError('');
+    setScreenshot(file);
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
 
   const pkg = booking.selectedSession?.isPackage ? booking.selectedSession : null;
   const [paidPackage, setPaidPackage] = useState<{ number: number; total: number } | null>(null);
@@ -193,7 +237,7 @@ export default function BookSessionStep4() {
 
         <section className="w-full max-w-[790px] rounded-[20px] border border-[#e2e2e2] bg-white p-5 sm:p-8">
           <div className="mb-6 border-b border-gray-100 pb-5">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-[#0012FF]">Payment</p>
+            {/* <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-[#0012FF]">Payment</p> */}
             <h1 className="text-2xl font-bold tracking-tight text-gray-950">Choose how to pay</h1>
             <p className="mt-1.5 text-sm text-gray-500">Select your preferred payment method to continue.</p>
           </div>
@@ -330,27 +374,99 @@ export default function BookSessionStep4() {
                 </div>
 
                 {amountDue > 0 && (
-                  <label className="group block cursor-pointer rounded-xl border border-dashed border-gray-300 bg-gray-50/50 px-4 py-4 transition-colors hover:border-[#0012FF] hover:bg-[#F7F8FF]">
-                    <span className="flex items-center gap-3">
-                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white text-[#0012FF] shadow-sm ring-1 ring-gray-100">
-                        {screenshot ? <Check className="h-5 w-5 text-emerald-600" /> : <UploadCloud className="h-5 w-5" />}
-                      </span>
-                      <span className="min-w-0">
-                        <span className="block truncate text-sm font-semibold text-gray-900">
-                          {screenshot ? screenshot.name : 'Upload payment screenshot'}
-                        </span>
-                        <span className="mt-1 block text-xs text-gray-500">
-                          {screenshot ? 'Screenshot attached · click to change' : 'JPG, PNG, or WebP · Maximum file size 5 MB'}
-                        </span>
-                      </span>
-                    </span>
+                  <div>
                     <input
+                      ref={fileInputRef}
                       type="file"
                       accept="image/jpeg,image/png,image/webp"
-                      className="sr-only"
-                      onChange={(event) => setScreenshot(event.target.files?.[0] || null)}
+                      className="hidden"
+                      onChange={(event) => {
+                        handleScreenshotChange(event.target.files?.[0] || null);
+                        event.target.value = '';
+                      }}
                     />
-                  </label>
+
+                    {!screenshot ? (
+                      <div
+                        onClick={() => fileInputRef.current?.click()}
+                        className="group flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50/50 p-6 text-center transition-all hover:border-[#0012FF] hover:bg-[#F7F8FF]"
+                      >
+                        <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-white text-[#0012FF] shadow-sm ring-1 ring-gray-100 transition-transform group-hover:scale-105">
+                          <UploadCloud className="h-6 w-6" />
+                        </span>
+                        <p className="mt-3 text-sm font-bold text-gray-900 group-hover:text-[#0012FF]">
+                          Upload payment screenshot
+                        </p>
+                        <p className="mt-1 text-xs text-gray-500">
+                          JPG, PNG, or WebP · Maximum file size 5 MB
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+                        <div className="flex flex-col gap-3.5 p-4 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="flex items-center gap-3.5 min-w-0">
+                            {/* Clickable thumbnail to open image modal */}
+                            <button
+                              type="button"
+                              onClick={() => setIsImageModalOpen(true)}
+                              className="group relative h-26 w-26 shrink-0 overflow-hidden rounded-xl border border-gray-200 bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0012FF]"
+                              title="Click to open image"
+                            >
+                              {previewUrl ? (
+                                <img
+                                  src={previewUrl}
+                                  alt={screenshot.name}
+                                  className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-110"
+                                />
+                              ) : (
+                                <div className="flex h-full w-full items-center justify-center text-gray-400">
+                                  <UploadCloud className="h-6 w-6" />
+                                </div>
+                              )}
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+                                <Eye className="h-5 w-5 text-white" />
+                              </div>
+                            </button>
+
+                            {/* Details */}
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <p className="truncate text-sm font-bold text-gray-950" title={screenshot.name}>
+                                  {screenshot.name}
+                                </p>
+                                <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                                  <Check className="h-2.5 w-2.5" /> Attached
+                                </span>
+                              </div>
+                              <p className="mt-0.5 text-xs text-gray-500">
+                                {formatFileSize(screenshot.size)} · Payment screenshot ready
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Action buttons */}
+                          {/* <div className="flex items-center gap-2 border-t border-gray-100 pt-3 sm:border-0 sm:pt-0">
+                            <button
+                              type="button"
+                              onClick={() => setIsImageModalOpen(true)}
+                              className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-xs font-semibold text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition"
+                            >
+                              <Eye className="h-3.5 w-3.5 text-gray-500" />
+                              Open image
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => fileInputRef.current?.click()}
+                              className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-xs font-semibold text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition"
+                            >
+                              <RefreshCw className="h-3.5 w-3.5 text-gray-500" />
+                              Change image
+                            </button>
+                          </div> */}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )}
 
                 <p className="flex items-start gap-2 text-xs leading-relaxed text-gray-500">
@@ -391,21 +507,77 @@ export default function BookSessionStep4() {
                   disabled={isSubmitting || (paymentMethod !== 'stripe' && amountDue > 0 && !screenshot)}
                   className="min-w-36 rounded-full bg-[#0012FF] px-6 py-2.5 text-xs font-bold text-white hover:bg-[#0010d0] disabled:cursor-not-allowed disabled:bg-gray-300"
                 >
-                  {isSubmitting
-                    ? 'Processing…'
-                    : paymentMethod === 'stripe'
-                      ? 'Load Stripe form'
-                      : manualBooking
-                        ? 'Retry proof upload'
-                        : amountDue > 0
-                          ? 'Submit payment proof'
-                          : 'Confirm booking'}
+                  {isSubmitting ? 'Confirming…' : 'Confirm'}
                 </button>
               </div>
             </div>
           )}
         </section>
       </div>
+
+      {/* Image Preview Lightbox Modal */}
+      {isImageModalOpen && previewUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm animate-in fade-in duration-150"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setIsImageModalOpen(false)}
+        >
+          <div
+            className="relative flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+              <div>
+                <h3 className="text-base font-bold text-gray-950">Payment screenshot</h3>
+                <p className="text-xs text-gray-500">
+                  {screenshot?.name} {screenshot ? `· ${formatFileSize(screenshot.size)}` : ''}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsImageModalOpen(false)}
+                className="flex h-8 w-8 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition"
+                aria-label="Close modal"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Image Preview Area */}
+            <div className="flex flex-1 items-center justify-center overflow-auto bg-gray-950 p-4 sm:p-6">
+              <img
+                src={previewUrl}
+                alt={screenshot?.name || 'Payment screenshot'}
+                className="max-h-[60vh] w-auto max-w-full rounded-xl object-contain shadow-lg"
+              />
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-between border-t border-gray-100 bg-white px-5 py-3.5">
+              <button
+                type="button"
+                onClick={() => {
+                  fileInputRef.current?.click();
+                }}
+                className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-xs font-bold text-gray-700 hover:bg-gray-50 transition"
+              >
+                <RefreshCw className="h-3.5 w-3.5 text-gray-500" />
+                Change image
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsImageModalOpen(false)}
+                className="rounded-full bg-gray-900 px-6 py-2 text-xs font-bold text-white hover:bg-gray-800 transition"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
