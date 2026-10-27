@@ -227,6 +227,25 @@ export default function BookSessionLayout({ children }: { children: ReactNode })
       const isAtStep1 = pathname?.includes('/step-1');
       const cachedUser = getCachedUserData();
 
+      const draft = localStorage.getItem(DRAFT_KEY);
+      if (draft) {
+        const restored = deserializeBooking(draft);
+        if (restored && creatorMatchesRoute(restored) && !restored.bookingRef) {
+          setBookingRaw((prev) => ({
+            ...restored,
+            userDetails: {
+              ...restored.userDetails,
+              fullName: restored.userDetails?.fullName || prev.userDetails?.fullName || cachedUser.name || '',
+              email: restored.userDetails?.email || prev.userDetails?.email || cachedUser.email || '',
+              whatsapp: restored.userDetails?.whatsapp || prev.userDetails?.whatsapp || '',
+            },
+          }));
+          lastDraftRef.current = draft;
+          setIsDraftSaved(true);
+          return;
+        }
+      }
+
       if (isAtStep1) {
         try {
           sessionStorage.removeItem(STORAGE_KEY);
@@ -245,25 +264,6 @@ export default function BookSessionLayout({ children }: { children: ReactNode })
         setIsDraftSaved(false);
         lastDraftRef.current = '';
         return;
-      }
-
-      const draft = localStorage.getItem(DRAFT_KEY);
-      if (draft) {
-        const restored = deserializeBooking(draft);
-        if (restored && creatorMatchesRoute(restored) && !restored.bookingRef) {
-          setBookingRaw((prev) => ({
-            ...restored,
-            userDetails: {
-              ...restored.userDetails,
-              fullName: restored.userDetails?.fullName || prev.userDetails?.fullName || cachedUser.name || '',
-              email: restored.userDetails?.email || prev.userDetails?.email || cachedUser.email || '',
-              whatsapp: restored.userDetails?.whatsapp || prev.userDetails?.whatsapp || '',
-            },
-          }));
-          lastDraftRef.current = draft;
-          setIsDraftSaved(true);
-          return;
-        }
       }
       // In-flight recovery only for mid-flow refresh on steps 2-4
       const session = sessionStorage.getItem(STORAGE_KEY);
