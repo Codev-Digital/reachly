@@ -49,6 +49,8 @@ interface BookingType {
   durationMins?: number;
   bookingRef?: string;
   isCreatorBooker?: boolean;
+  hostUsername?: string;
+  createdAt?: string | Date;
   isPackage?: boolean;
   sessionNumber?: number;
   rescheduleStatus?: 'pending' | 'unlocked';
@@ -283,6 +285,8 @@ export default function CreatorCalendar() {
               bookingRef: b.bookingRef,
               durationMins: minsMatch ? Number(minsMatch[1]) : 15,
               isCreatorBooker: b.isCreatorBooker || false,
+              hostUsername: b.hostUsername || '',
+              createdAt: b.createdAt,
               isPackage: b.isPackage || false,
               sessionNumber: b.sessionNumber,
               rescheduleStatus: b.rescheduleStatus,
@@ -330,22 +334,24 @@ export default function CreatorCalendar() {
             }
           } catch (e) {}
         }
-        if (!activeUsername) {
+        let targetUsername = (bookingToReschedule?.hostUsername || activeUsername || '').replace(/^@/, '');
+        if (!targetUsername) {
           const profileRes = await fetch('/api/user/me');
           if (profileRes.ok) {
             const data = await profileRes.json();
             activeUsername = data.creatorProfile?.username || '';
             if (activeUsername) setUsername(activeUsername);
+            targetUsername = (bookingToReschedule?.hostUsername || activeUsername || '').replace(/^@/, '');
           }
         }
 
-        if (activeUsername) {
+        if (targetUsername) {
           const year = rescheduleDate.getFullYear();
           const month = String(rescheduleDate.getMonth() + 1).padStart(2, '0');
           const day = String(rescheduleDate.getDate()).padStart(2, '0');
           const dateStr = `${year}-${month}-${day}`;
 
-          const res = await fetch(`/api/creators/${activeUsername}/availability?date=${dateStr}`);
+          const res = await fetch(`/api/creators/${targetUsername}/availability?date=${dateStr}`);
           if (res.ok) {
             const data = await res.json();
             if (data.success && Array.isArray(data.slots)) {
@@ -365,7 +371,7 @@ export default function CreatorCalendar() {
       }
     }
     fetchRescheduleSlots();
-  }, [rescheduleDate, showRescheduleModal, username]);
+  }, [rescheduleDate, showRescheduleModal, username, bookingToReschedule]);
 
   // Sessions the creator booked outside Reachly: shown in the day's list and hidden from booking slots
   const [outsideBlocks, setOutsideBlocks] = useState<OutsideBlock[]>([]);
@@ -437,12 +443,13 @@ export default function CreatorCalendar() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'cancelled' })
       });
+      const data = await res.json().catch(() => ({}));
       if (res.ok) {
         setBookings((prev) => prev.map((b) => b.id === bookingToCancel.id ? { ...b, status: 'cancelled' } : b));
         setSuccessModalType('cancelled');
         setShowSuccessModal(true);
       } else {
-        alert('Failed to cancel appointment');
+        alert(data.error || 'Failed to cancel appointment');
       }
     } catch (err) {
       alert('Error cancelling appointment');
@@ -496,6 +503,7 @@ export default function CreatorCalendar() {
           selectedTime: selectedRescheduleTime,
         })
       });
+      const data = await res.json().catch(() => ({}));
       if (res.ok) {
         // Update locally
         setBookings((prev) => prev.map((b) => {
@@ -511,7 +519,7 @@ export default function CreatorCalendar() {
         }));
         setIsRescheduleSuccess(true);
       } else {
-        alert('Failed to reschedule appointment');
+        alert(data.error || 'Failed to reschedule appointment');
       }
     } catch (err) {
       alert('Error rescheduling appointment');
@@ -703,9 +711,10 @@ export default function CreatorCalendar() {
                     <div className="flex flex-col gap-3">
                       {(() => {
                         const passed = booking.selectedDate ? isMeetingPassed(booking.selectedDate, booking.time) : false;
+                        const isCompleted = Boolean(booking.meetingEnded || booking.statusRaw === 'completed' || booking.status === 'completed');
                         return (
                           <>
-                            {booking.meetingEnded || booking.statusRaw === 'completed' || booking.status === 'completed' ? (
+                            {isCompleted ? (
                               booking.hasReviewed ? (
                                 <div className="w-full py-2.5 rounded-full text-xs font-bold flex items-center justify-center gap-1.5 bg-gray-100 text-gray-500 border border-gray-200 select-none">
                                   <CheckCircle className="size-3.5 shrink-0" />
@@ -753,7 +762,7 @@ export default function CreatorCalendar() {
                               </button>
                             )}
 
-                            {passed ? (
+                            {passed || isCompleted ? (
                               <button
                                 onClick={() => router.push(`/creators/chats?bookingRef=${booking.bookingRef}`)}
                                 className="w-full py-2.5 bg-[#0012FF] hover:bg-[#0012FF]/90 text-white rounded-full text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md shadow-[#0012FF]/20"

@@ -32,6 +32,8 @@ function CheckoutSuccessContent() {
           try {
             sessionStorage.removeItem('reachly_user_bookings_page_cache');
             sessionStorage.removeItem('reachly_user_dashboard_cache');
+            sessionStorage.removeItem('reachly_booking_state');
+            localStorage.removeItem('reachly_booking_draft');
           } catch (error) {
             console.error('Unable to clear cached booking data after payment:', error);
           }

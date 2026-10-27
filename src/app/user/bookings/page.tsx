@@ -77,6 +77,7 @@ interface Booking {
   eventId?: string | null;
   tierTitle?: string | null;
   adminRemarks?: string;
+  createdAt?: string | Date;
 }
 
 export default function UserBookingsPage() {
@@ -232,6 +233,7 @@ export default function UserBookingsPage() {
               eventId: b.eventId || null,
               tierTitle: b.tierTitle || null,
               adminRemarks: b.adminRemarks || '',
+              createdAt: b.createdAt,
             };
           });
           setBookings(list);
@@ -886,10 +888,17 @@ export default function UserBookingsPage() {
                           );
                         }
 
+                        const isCompleted = Boolean(
+                          booking.meetingEnded ||
+                          booking.status === 'completed' ||
+                          booking.status === 'Completed' ||
+                          booking.originalStatus === 'completed'
+                        );
+
                         // Otherwise, it's upcoming, active and confirmed
                         return (
                           <>
-                            {booking.meetingEnded ? (
+                            {isCompleted ? (
                               booking.hasReviewed ? (
                                 <div className="w-full py-2.5 rounded-full text-xs font-bold flex items-center justify-center gap-1.5 bg-gray-100 text-gray-500 border border-gray-200 select-none">
                                   <CheckCircle className="size-3.5 shrink-0" />
@@ -906,35 +915,37 @@ export default function UserBookingsPage() {
                                 </button>
                               )
                             ) : (
-                              <button
-                                onClick={() => void handleUserJoinMeeting(booking)}
-                                disabled={joiningMeetingId === booking.id}
-                                className="w-full py-2.5 rounded-full text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-md bg-[#0012FF] hover:bg-[#0012FF]/90 text-white shadow-[#0012FF]/20 cursor-pointer disabled:opacity-60"
-                              >
-                                <Video className="size-3.5 shrink-0" />
-                                {joiningMeetingId === booking.id ? 'Checking…' : 'Join Meeting'}
-                              </button>
-                            )}
-                            {booking.isPackage ? (
-                              <p className="text-[11px] text-gray-400 font-medium text-center">
-                                Package sessions can&apos;t be cancelled or rescheduled by you. Your creator can
-                                reschedule if needed.
-                              </p>
-                            ) : (
-                            <div className="flex items-center gap-3">
-                              <button
-                                onClick={() => handleRescheduleClick(booking)}
-                                className="flex-1 py-2 border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-full text-xs font-semibold text-center transition-all cursor-pointer"
-                              >
-                                Reschedule
-                              </button>
-                              <button
-                                onClick={() => handleCancelClick(booking)}
-                                className="flex-1 py-2 bg-[#FFF0F0] border border-red-100 hover:bg-red-100 text-[#FF3B3B] rounded-full text-xs font-semibold text-center transition-all cursor-pointer"
-                              >
-                                Cancel Appointment
-                              </button>
-                            </div>
+                              <>
+                                <button
+                                  onClick={() => void handleUserJoinMeeting(booking)}
+                                  disabled={joiningMeetingId === booking.id}
+                                  className="w-full py-2.5 rounded-full text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-md bg-[#0012FF] hover:bg-[#0012FF]/90 text-white shadow-[#0012FF]/20 cursor-pointer disabled:opacity-60"
+                                >
+                                  <Video className="size-3.5 shrink-0" />
+                                  {joiningMeetingId === booking.id ? 'Checking…' : 'Join Meeting'}
+                                </button>
+                                {booking.isPackage ? (
+                                  <p className="text-[11px] text-gray-400 font-medium text-center">
+                                    Package sessions can&apos;t be cancelled or rescheduled by you. Your creator can
+                                    reschedule if needed.
+                                  </p>
+                                ) : (
+                                  <div className="flex items-center gap-3">
+                                    <button
+                                      onClick={() => handleRescheduleClick(booking)}
+                                      className="flex-1 py-2 border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-full text-xs font-semibold text-center transition-all cursor-pointer"
+                                    >
+                                      Reschedule
+                                    </button>
+                                    <button
+                                      onClick={() => handleCancelClick(booking)}
+                                      className="flex-1 py-2 bg-[#FFF0F0] border border-red-100 hover:bg-red-100 text-[#FF3B3B] rounded-full text-xs font-semibold text-center transition-all cursor-pointer"
+                                    >
+                                      Cancel Appointment
+                                    </button>
+                                  </div>
+                                )}
+                              </>
                             )}
                           </>
                         );

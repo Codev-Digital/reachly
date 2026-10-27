@@ -223,6 +223,7 @@ export async function GET(request: NextRequest) {
                 eventId: null,
                 tierTitle: null,
                 adminRemarks: resolvedRemarks,
+                createdAt: booking.createdAt,
             };
         });
 
@@ -331,6 +332,7 @@ export async function GET(request: NextRequest) {
                         tierTitle: p.tierTitle,
                         bio: `${p.tierTitle || 'Ticket'}${p.category ? ` · ${p.category}` : ''}`,
                         preSessionQuestion: p.eventTitle || 'Event ticket',
+                        createdAt: p.createdAt,
                     };
                 });
             }

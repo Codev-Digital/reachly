@@ -82,6 +82,7 @@ export async function GET(_req: NextRequest, context: RouteContext) {
           totalTicketsSold,
           totalRevenue,
         },
+        volunteers: (event as any).volunteers || [],
       },
     });
   } catch (error) {

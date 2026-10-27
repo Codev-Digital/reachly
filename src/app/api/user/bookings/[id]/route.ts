@@ -56,11 +56,11 @@ export async function PUT(
       return NextResponse.json({ error: "Booking not found" }, { status: 404 });
     }
 
-    // Ensure the booking belongs to this user
-    if (
-      booking.userId?.toString() !== user._id.toString() &&
-      booking.guestDetails?.email?.toLowerCase().trim() !== email
-    ) {
+    // Ensure the booking belongs to this user or creator
+    const isHost = booking.creatorId?.toString() === user._id.toString();
+    const isClient = booking.userId?.toString() === user._id.toString();
+    const isGuest = Boolean(booking.guestDetails?.email && booking.guestDetails.email.toLowerCase().trim() === email);
+    if (!isHost && !isClient && !isGuest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 

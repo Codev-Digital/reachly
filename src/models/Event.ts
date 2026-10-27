@@ -28,6 +28,14 @@ export interface IEventDate {
   slots: IEventSlot[];
 }
 
+export interface IEventVolunteer {
+  _id?: mongoose.Types.ObjectId | string;
+  name: string;
+  email: string;
+  role: string;
+  addedAt: Date;
+}
+
 export interface IEvent extends Document {
   creatorId: mongoose.Types.ObjectId; // ref → User (the creator)
   status: EventStatus;
@@ -36,6 +44,7 @@ export interface IEvent extends Document {
   bannerUrl: string;
   category: string;
   dates: IEventDate[];
+  volunteers?: IEventVolunteer[];
   refundPolicy: string;
   termsAndConditions: string;
   publishedAt?: Date | null;
@@ -79,6 +88,16 @@ const EventDateSchema = new Schema<IEventDate>(
   { _id: false }
 );
 
+const EventVolunteerSchema = new Schema<IEventVolunteer>(
+  {
+    name: { type: String, required: true, trim: true, maxlength: 80 },
+    email: { type: String, required: true, trim: true, lowercase: true, maxlength: 120 },
+    role: { type: String, required: true, trim: true, maxlength: 80 },
+    addedAt: { type: Date, default: Date.now },
+  },
+  { _id: true }
+);
+
 const EventSchema = new Schema<IEvent>(
   {
     creatorId: {
@@ -117,6 +136,10 @@ const EventSchema = new Schema<IEvent>(
       default: '',
       trim: true,
       maxlength: 40,
+    },
+    volunteers: {
+      type: [EventVolunteerSchema],
+      default: [],
     },
     dates: {
       type: [EventDateSchema],

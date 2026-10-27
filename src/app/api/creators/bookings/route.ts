@@ -154,6 +154,7 @@ export async function GET(request: NextRequest) {
             let followerName = 'Guest';
             let email = '';
             let avatar = '/avatar.png';
+            let hostUsername = '';
             const isCreatorBooker = isOutgoing;
 
             if (isOutgoing) {
@@ -163,6 +164,7 @@ export async function GET(request: NextRequest) {
                 followerName = otherProfile?.displayName || otherUser?.name || 'Creator';
                 email = otherUser?.email || '';
                 avatar = otherProfile?.profilePhoto || otherUser?.profilePhoto || '/avatar.png';
+                hostUsername = otherProfile?.username || '';
             } else {
                 const guestEmail = booking.guestDetails?.email?.toLowerCase();
                 const guestUser = guestEmail ? guestUserByEmail.get(guestEmail) : null;
@@ -248,6 +250,8 @@ export async function GET(request: NextRequest) {
                 lastMessageTime: lastMsgDoc ? lastMsgDoc.createdAt : null,
                 unreadCount: unreadCount,
                 isCreatorBooker: isCreatorBooker,
+                hostUsername: hostUsername,
+                createdAt: booking.createdAt,
             };
         };
 

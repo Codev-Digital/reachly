@@ -25,6 +25,7 @@ function serialize(event: any) {
     dates: event.dates || [],
     refundPolicy: event.refundPolicy || '',
     termsAndConditions: event.termsAndConditions || '',
+    volunteers: event.volunteers || [],
     publishedAt: event.publishedAt || null,
     createdAt: event.createdAt,
     updatedAt: event.updatedAt,

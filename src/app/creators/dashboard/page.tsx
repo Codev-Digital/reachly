@@ -460,6 +460,7 @@ const CreatorDashboard = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'cancelled' })
       });
+      const data = await res.json().catch(() => ({}));
       if (res.ok) {
         setBookingsList((prev) => prev.map((b) => b.id === bookingToCancel.id ? { ...b, status: 'cancelled' } : b));
         setSuccessModalType('cancelled');
@@ -467,7 +468,7 @@ const CreatorDashboard = () => {
         // Refresh metrics
         await loadDashboardData();
       } else {
-        alert('Failed to cancel appointment');
+        alert(data.error || 'Failed to cancel appointment');
       }
     } catch (err) {
       alert('Error cancelling appointment');
@@ -503,11 +504,12 @@ const CreatorDashboard = () => {
           selectedTime: selectedRescheduleTime,
         })
       });
+      const data = await res.json().catch(() => ({}));
       if (res.ok) {
         setIsRescheduleSuccess(true);
         await loadDashboardData();
       } else {
-        alert('Failed to reschedule appointment');
+        alert(data.error || 'Failed to reschedule appointment');
       }
     } catch (err) {
       alert('Error rescheduling appointment');
@@ -662,9 +664,10 @@ const CreatorDashboard = () => {
           <div className="flex flex-col gap-3">
             {(() => {
               const passed = booking.scheduledDate ? isMeetingPassed(booking.scheduledDate, booking.time) : false;
+              const isCompleted = Boolean(booking.meetingEnded || booking.status === 'completed' || booking.statusRaw === 'completed');
               return (
                 <>
-                  {booking.meetingEnded || booking.status === 'completed' ? (
+                  {isCompleted ? (
                     booking.hasReviewed ? (
                       <div className="w-full py-2.5 rounded-full text-xs font-bold flex items-center justify-center gap-1.5 bg-gray-100 text-gray-500 border border-gray-200 select-none">
                         <CheckCircle className="size-3.5 shrink-0" />
@@ -715,7 +718,7 @@ const CreatorDashboard = () => {
                     </button>
                   )}
 
-                  {passed ? (
+                  {passed || isCompleted ? (
                     <button
                       onClick={() => router.push(`/creators/chats?bookingRef=${booking.bookingRef}`)}
                       className="w-full py-2.5 bg-[#0012FF] hover:bg-[#0012FF]/90 text-white rounded-full text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md shadow-[#0012FF]/20"

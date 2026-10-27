@@ -107,6 +107,9 @@ export default function BookSessionStep1() {
       const same =
         b.creator?.username &&
         String(b.creator.username).toLowerCase() === username.toLowerCase();
+      if (b.bookingRef) {
+        return { ...b, selectedSession: null, selectedDate: null, selectedTime: null, answers: [], bookingRef: undefined, paymentMethod: undefined };
+      }
       if (same) return b;
       return { ...b, creator: null, selectedSession: null, selectedDate: null, selectedTime: null, answers: [] };
     });

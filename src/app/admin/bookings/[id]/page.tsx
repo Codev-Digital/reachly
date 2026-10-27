@@ -25,6 +25,15 @@ interface EventDate {
   tiers?: EventTier[];
 }
 
+interface Volunteer {
+  _id?: string;
+  id?: string;
+  name: string;
+  email: string;
+  role: string;
+  addedAt?: string;
+}
+
 interface EventDetail {
   id: string;
   title: string;
@@ -33,6 +42,7 @@ interface EventDetail {
   category: string;
   status: string;
   dates: EventDate[];
+  volunteers?: Volunteer[];
   formattedDate: string;
   formattedTime: string;
   venue: string;
@@ -93,6 +103,9 @@ export default function AdminEventDetailPage() {
 
   // Modals state
   const [showVolunteerModal, setShowVolunteerModal] = useState(false);
+  const [submittingVolunteer, setSubmittingVolunteer] = useState(false);
+  const [volunteerError, setVolunteerError] = useState<string | null>(null);
+  const [removingVolunteerId, setRemovingVolunteerId] = useState<string | null>(null);
   const [volunteerForm, setVolunteerForm] = useState({
     name: '',
     email: '',
@@ -163,6 +176,7 @@ export default function AdminEventDetailPage() {
             totalTicketsSold: 2,
             totalRevenue: 0,
           },
+          volunteers: parsed.volunteers || [],
         });
         setLoading(false);
       }
@@ -173,14 +187,90 @@ export default function AdminEventDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  const handleAddVolunteerSubmit = (e: React.FormEvent) => {
+  const handleAddVolunteerSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setVolunteerSuccess(true);
-    setTimeout(() => {
-      setShowVolunteerModal(false);
-      setVolunteerSuccess(false);
-      setVolunteerForm({ name: '', email: '', role: 'Registration Desk' });
-    }, 1200);
+    if (!id || submittingVolunteer) return;
+    setSubmittingVolunteer(true);
+    setVolunteerError(null);
+
+    try {
+      const res = await fetch(`/api/admin/events/${id}/volunteers`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(volunteerForm),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setVolunteerError(data.error || 'Failed to add volunteer');
+        return;
+      }
+
+      setVolunteerSuccess(true);
+      setEvent((prev) => {
+        if (!prev) return prev;
+        const updated: EventDetail = {
+          ...prev,
+          volunteers: data.volunteers || [...(prev.volunteers || []), data.volunteer],
+        };
+        try {
+          sessionStorage.setItem(`reachly_admin_active_event_${id}`, JSON.stringify(updated));
+        } catch {
+          /* ignore */
+        }
+        return updated;
+      });
+
+      setTimeout(() => {
+        setShowVolunteerModal(false);
+        setVolunteerSuccess(false);
+        setVolunteerForm({ name: '', email: '', role: 'Registration Desk' });
+        setVolunteerError(null);
+      }, 350);
+    } catch (err) {
+      console.error('Failed to submit volunteer:', err);
+      setVolunteerError('Network error while assigning volunteer');
+    } finally {
+      setSubmittingVolunteer(false);
+    }
+  };
+
+  const handleRemoveVolunteer = async (volunteerId?: string, email?: string) => {
+    if (!id || (!volunteerId && !email)) return;
+    const key = volunteerId || email || '';
+    setRemovingVolunteerId(key);
+    try {
+      const queryParam = volunteerId
+        ? `volunteerId=${encodeURIComponent(volunteerId)}`
+        : `email=${encodeURIComponent(email || '')}`;
+      const res = await fetch(`/api/admin/events/${id}/volunteers?${queryParam}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setEvent((prev) => {
+          if (!prev) return prev;
+          const updated: EventDetail = {
+            ...prev,
+            volunteers:
+              data.volunteers ||
+              (prev.volunteers || []).filter(
+                (v) => String(v._id || v.id) !== volunteerId && v.email !== email
+              ),
+          };
+          try {
+            sessionStorage.setItem(`reachly_admin_active_event_${id}`, JSON.stringify(updated));
+          } catch {
+            /* ignore */
+          }
+          return updated;
+        });
+      }
+    } catch (err) {
+      console.error('Failed to remove volunteer:', err);
+    } finally {
+      setRemovingVolunteerId(null);
+    }
   };
 
   if (loading && !event) {
@@ -363,6 +453,80 @@ export default function AdminEventDetailPage() {
           </div>
         </div>
 
+        {/* Assigned Volunteers Section */}
+        <div className="mt-10 pt-8 border-t border-gray-100">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2.5">
+              <h3 className="font-bold text-base sm:text-lg text-black">
+                Assigned Volunteers & Team
+              </h3>
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#EEF0FF] text-[#0012FF]">
+                {event.volunteers?.length || 0}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setVolunteerError(null);
+                setShowVolunteerModal(true);
+              }}
+              className="text-xs font-bold text-[#0012FF] hover:underline cursor-pointer"
+            >
+              + Add Volunteer
+            </button>
+          </div>
+
+          {!event.volunteers || event.volunteers.length === 0 ? (
+            <div className="bg-gray-50/80 border border-dashed border-gray-200 rounded-2xl p-6 text-center">
+              <p className="text-xs sm:text-sm text-gray-500 font-medium mb-3">
+                No volunteers have been assigned to this event yet.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setVolunteerError(null);
+                  setShowVolunteerModal(true);
+                }}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-white border border-gray-200 rounded-full text-xs font-bold text-gray-700 hover:bg-gray-100 transition-all cursor-pointer shadow-2xs"
+              >
+                <Plus size={14} />
+                <span>Assign First Volunteer</span>
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {event.volunteers.map((vol, idx) => {
+                const volId = String(vol._id || vol.id || idx);
+                const isRemoving =
+                  removingVolunteerId === volId || removingVolunteerId === vol.email;
+                return (
+                  <div
+                    key={volId}
+                    className="bg-gray-50/80 border border-gray-100 hover:border-gray-200 rounded-2xl p-4 flex items-start justify-between gap-3 transition-colors"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-bold text-gray-900 truncate">{vol.name}</p>
+                      <p className="text-xs text-gray-400 truncate mb-2">{vol.email}</p>
+                      <span className="inline-block px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-white text-[#0012FF] border border-blue-100 shadow-2xs">
+                        {vol.role}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={isRemoving}
+                      onClick={() => handleRemoveVolunteer(vol._id || vol.id, vol.email)}
+                      className="w-7 h-7 rounded-full flex items-center justify-center text-gray-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer shrink-0"
+                      title="Remove volunteer"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
         {/* Bottom Section: Refund Policy & Terms and Conditions */}
         <div className="mt-10 pt-8 border-t border-gray-100">
           <h3 className="font-bold text-sm sm:text-base text-black mb-2">
@@ -422,9 +586,16 @@ export default function AdminEventDetailPage() {
                     ✓
                   </div>
                   <p className="text-sm font-bold text-gray-800">Volunteer Added Successfully!</p>
+                  <p className="text-xs text-gray-400 mt-1">Invitation email has been sent to their inbox.</p>
                 </div>
               ) : (
                 <form onSubmit={handleAddVolunteerSubmit} className="space-y-4">
+                  {volunteerError && (
+                    <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold">
+                      {volunteerError}
+                    </div>
+                  )}
+
                   <div>
                     <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">
                       Full Name
@@ -473,16 +644,20 @@ export default function AdminEventDetailPage() {
                   <div className="flex gap-3 pt-4">
                     <button
                       type="button"
-                      onClick={() => setShowVolunteerModal(false)}
+                      onClick={() => {
+                        setVolunteerError(null);
+                        setShowVolunteerModal(false);
+                      }}
                       className="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-all bg-white cursor-pointer"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
-                      className="flex-1 py-2.5 bg-[#0012FF] hover:bg-[#0012FF]/90 text-white rounded-xl text-sm font-bold shadow-md shadow-[#0012FF]/20 transition-all cursor-pointer"
+                      disabled={submittingVolunteer}
+                      className="flex-1 py-2.5 bg-[#0012FF] hover:bg-[#0012FF]/90 disabled:opacity-60 text-white rounded-xl text-sm font-bold shadow-md shadow-[#0012FF]/20 transition-all cursor-pointer"
                     >
-                      Add Volunteer
+                      {submittingVolunteer ? 'Adding...' : 'Add Volunteer'}
                     </button>
                   </div>
                 </form>

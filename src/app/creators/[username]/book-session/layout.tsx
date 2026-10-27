@@ -144,6 +144,7 @@ const BookingContext = createContext<{
   prevStep: () => void;
   saveToStorage: () => void;
   saveDraft: () => void;
+  clearBooking: () => void;
   isDraftSaved: boolean;
   userData: any;
 } | null>(null);
@@ -183,17 +184,19 @@ export default function BookSessionLayout({ children }: { children: ReactNode })
       const draft = localStorage.getItem(DRAFT_KEY);
       if (draft) {
         const restored = deserializeBooking(draft);
-        if (restored && creatorMatchesRoute(restored)) {
+        if (restored && creatorMatchesRoute(restored) && !restored.bookingRef) {
           setBookingRaw(restored);
           lastDraftRef.current = draft;
           setIsDraftSaved(true);
           return;
         }
       }
-      const session = sessionStorage.getItem(STORAGE_KEY);
+      // In-flight recovery only for mid-flow refresh on steps 2-4
+      const isAtStep1 = pathname?.includes('/step-1');
+      const session = !isAtStep1 ? sessionStorage.getItem(STORAGE_KEY) : null;
       if (session) {
         const restored = deserializeBooking(session);
-        if (restored && creatorMatchesRoute(restored)) {
+        if (restored && creatorMatchesRoute(restored) && !restored.bookingRef) {
           setBookingRaw(restored);
           return;
         }
@@ -211,6 +214,13 @@ export default function BookSessionLayout({ children }: { children: ReactNode })
   // Keep sessionStorage in sync + mark draft dirty when booking changes
   useEffect(() => {
     try {
+      if (pathname?.includes('/step-5') || booking.bookingRef) {
+        try {
+          sessionStorage.removeItem(STORAGE_KEY);
+          localStorage.removeItem(DRAFT_KEY);
+        } catch { }
+        return;
+      }
       const serialized = serializeBooking(booking);
       sessionStorage.setItem(STORAGE_KEY, serialized);
       if (isDraftSaved && lastDraftRef.current && serialized !== lastDraftRef.current) {
@@ -285,12 +295,29 @@ export default function BookSessionLayout({ children }: { children: ReactNode })
 
   const saveDraft = () => {
     try {
+      if (pathname?.includes('/step-5') || booking.bookingRef) {
+        try {
+          sessionStorage.removeItem(STORAGE_KEY);
+          localStorage.removeItem(DRAFT_KEY);
+        } catch { }
+        return;
+      }
       const serialized = serializeBooking(booking);
       localStorage.setItem(DRAFT_KEY, serialized);
       lastDraftRef.current = serialized;
       setIsDraftSaved(true);
     } catch { }
   };
+
+  const clearBooking = useCallback(() => {
+    try {
+      localStorage.removeItem(DRAFT_KEY);
+      sessionStorage.removeItem(STORAGE_KEY);
+    } catch { }
+    setBookingRaw(emptyBooking);
+    setIsDraftSaved(false);
+    lastDraftRef.current = '';
+  }, []);
 
   // Must be stable — step-1's fetch effect lists nextStep in its deps
   const nextStep = useCallback(() => {
@@ -301,7 +328,7 @@ export default function BookSessionLayout({ children }: { children: ReactNode })
   }, [setBooking]);
 
   return (
-    <BookingContext.Provider value={{ booking, setBooking, nextStep, prevStep, saveToStorage, saveDraft, isDraftSaved, userData }}>
+    <BookingContext.Provider value={{ booking, setBooking, nextStep, prevStep, saveToStorage, saveDraft, clearBooking, isDraftSaved, userData }}>
       <div className="min-h-screen bg-[#F8F8FA] text-gray-900 flex flex-col overflow-x-hidden">
         {isLoggedIn ? (
           userRole === 'creator' ? (

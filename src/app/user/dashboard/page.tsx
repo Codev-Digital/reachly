@@ -75,6 +75,7 @@ interface DisplayBooking {
   eventId?: string | null;
   tierTitle?: string | null;
   adminRemarks?: string;
+  createdAt?: string | Date;
 }
 
 export default function UserDashboard() {
@@ -457,6 +458,7 @@ export default function UserDashboard() {
               eventId: b.eventId || null,
               tierTitle: b.tierTitle || null,
               adminRemarks: b.adminRemarks || '',
+              createdAt: b.createdAt,
             };
 
             // Events: trust API status (avoid time-parse false "Past")
@@ -1208,10 +1210,17 @@ export default function UserDashboard() {
                               );
                             }
 
+                            const isCompleted = Boolean(
+                              booking.meetingEnded ||
+                              booking.status === 'Completed' ||
+                              booking.status === 'completed' ||
+                              booking.originalStatus === 'completed'
+                            );
+
                             // Otherwise, upcoming active and confirmed
                             return (
                               <>
-                                {booking.meetingEnded ? (
+                                {isCompleted ? (
                                   booking.hasReviewed ? (
                                     <div className="w-full py-2 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1.5 bg-gray-100 text-gray-500 border border-gray-200 select-none">
                                       <CheckCircle className="size-3.5 shrink-0" />
@@ -1228,29 +1237,31 @@ export default function UserDashboard() {
                                     </button>
                                   )
                                 ) : (
-                                  <button
-                                    onClick={() => void handleUserJoinMeeting(booking)}
-                                    disabled={joiningMeetingId === String(booking.id)}
-                                    className="w-full py-2 bg-[#0012FF] hover:bg-[#0012FF]/90 text-white rounded-lg text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm disabled:opacity-60"
-                                  >
-                                    <Video className="size-3.5 shrink-0" />
-                                    {joiningMeetingId === String(booking.id) ? 'Checking…' : 'Join Meeting'}
-                                  </button>
+                                  <>
+                                    <button
+                                      onClick={() => void handleUserJoinMeeting(booking)}
+                                      disabled={joiningMeetingId === String(booking.id)}
+                                      className="w-full py-2 bg-[#0012FF] hover:bg-[#0012FF]/90 text-white rounded-lg text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm disabled:opacity-60"
+                                    >
+                                      <Video className="size-3.5 shrink-0" />
+                                      {joiningMeetingId === String(booking.id) ? 'Checking…' : 'Join Meeting'}
+                                    </button>
+                                    <div className="flex items-center gap-2">
+                                      <button
+                                        onClick={() => handleRescheduleNav(booking)}
+                                        className="flex-1 py-1.5 border border-gray-200 hover:bg-gray-50 text-gray-600 rounded-lg text-[11px] font-semibold text-center transition-all cursor-pointer"
+                                      >
+                                        Reschedule
+                                      </button>
+                                      <button
+                                        onClick={() => handleCancelClick(booking)}
+                                        className="flex-1 py-1.5 bg-[#FFF0F0] border border-red-100 hover:bg-red-100 text-[#FF3B3B] rounded-lg text-[11px] font-semibold text-center transition-all cursor-pointer"
+                                      >
+                                        Cancel
+                                      </button>
+                                    </div>
+                                  </>
                                 )}
-                                <div className="flex items-center gap-2">
-                                  <button
-                                    onClick={() => handleRescheduleNav(booking)}
-                                    className="flex-1 py-1.5 border border-gray-200 hover:bg-gray-50 text-gray-600 rounded-lg text-[11px] font-semibold text-center transition-all cursor-pointer"
-                                  >
-                                    Reschedule
-                                  </button>
-                                  <button
-                                    onClick={() => handleCancelClick(booking)}
-                                    className="flex-1 py-1.5 bg-[#FFF0F0] border border-red-100 hover:bg-red-100 text-[#FF3B3B] rounded-lg text-[11px] font-semibold text-center transition-all cursor-pointer"
-                                  >
-                                    Cancel
-                                  </button>
-                                </div>
                               </>
                             );
                           })()}
