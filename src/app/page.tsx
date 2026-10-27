@@ -970,7 +970,7 @@ export default function Home() {
             UPCOMING EVENTS
         ════════════════════════════════════════ */}
       <section id="upcoming-events" className="py-20 bg-white text-[#0C0C0C] border-t border-gray-100 scroll-mt-10">
-        <div className="max-w-[1536px] mx-auto px-4 sm:px-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <FadeUp className="mb-8">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
