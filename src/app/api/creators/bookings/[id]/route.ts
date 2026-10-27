@@ -122,8 +122,8 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
         const updatePayload: any = {};
         if (status) {
             updatePayload.status = status;
-            if (status === 'cancelled' && booking.paymentStatus === 'paid') {
-                updatePayload.paymentStatus = 'refunded';
+            if (status === 'cancelled') {
+                updatePayload.paymentStatus = booking.paymentStatus === 'paid' ? 'refunded' : 'failed';
             }
         }
         if (selectedDate) {

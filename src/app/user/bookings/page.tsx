@@ -506,6 +506,10 @@ export default function UserBookingsPage() {
   };
 
   const handleRefundClick = (booking: Booking) => {
+    if (booking.originalStatus === 'pending' || booking.status === 'Pending Approval' || booking.paymentStatus === 'pending') {
+      toast.error('This ticket is awaiting admin verification and cannot be refunded yet.');
+      return;
+    }
     if (!assertModificationAllowed(booking, 'refund')) return;
     setEventToRefund(booking);
     setShowRefundConfirmModal(true);
@@ -816,8 +820,8 @@ export default function UserBookingsPage() {
                           );
                         }
 
-                        if (booking.isEvent) {
-                          if (isCancelled || isPast) {
+                        if (isCancelled || isPast) {
+                          if (booking.isEvent) {
                             return (
                               <button
                                 onClick={() =>
@@ -833,7 +837,38 @@ export default function UserBookingsPage() {
                               </button>
                             );
                           }
+                          return (
+                            <button
+                              onClick={() => router.push(`/user/chats?bookingRef=${booking.bookingRef}`)}
+                              className="w-full py-2.5 bg-[#0012FF] hover:bg-[#0012FF]/90 text-white rounded-full text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md shadow-[#0012FF]/20"
+                            >
+                              <MessageSquare className="size-3.5 shrink-0" />
+                              Chat now
+                            </button>
+                          );
+                        }
 
+                        if (isPending) {
+                          return (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                toast.info(
+                                  booking.isEvent
+                                    ? 'Payment verification is in progress. Once confirmed, you will be able to access the event chat and view your ticket.'
+                                    : 'Payment verification is in progress. Once confirmed, you will be able to join the meeting, reschedule, or cancel your appointment.',
+                                  { duration: 4000 }
+                                );
+                              }}
+                              className="w-full py-2.5 bg-amber-50 hover:bg-amber-100/80 border border-amber-300/80 text-amber-900 rounded-full text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs active:scale-[0.99]"
+                            >
+                              <Clock className="size-4 text-amber-700 shrink-0" />
+                              <span>Payment Verification In Progress</span>
+                            </button>
+                          );
+                        }
+
+                        if (booking.isEvent) {
                           return (
                             <div className="flex items-center gap-3">
                               <button
@@ -855,36 +890,6 @@ export default function UserBookingsPage() {
                                 Refund
                               </button>
                             </div>
-                          );
-                        }
-
-                        if (isCancelled || isPast) {
-                          return (
-                            <button
-                              onClick={() => router.push(`/user/chats?bookingRef=${booking.bookingRef}`)}
-                              className="w-full py-2.5 bg-[#0012FF] hover:bg-[#0012FF]/90 text-white rounded-full text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md shadow-[#0012FF]/20"
-                            >
-                              <MessageSquare className="size-3.5 shrink-0" />
-                              Chat now
-                            </button>
-                          );
-                        }
-
-                        if (isPending) {
-                          return (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                toast.info(
-                                  'Payment verification is in progress. Once confirmed, you will be able to join the meeting, reschedule, or cancel your appointment.',
-                                  { duration: 4000 }
-                                );
-                              }}
-                              className="w-full py-2.5 bg-amber-50 hover:bg-amber-100/80 border border-amber-300/80 text-amber-900 rounded-full text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs active:scale-[0.99]"
-                            >
-                              <Clock className="size-4 text-amber-700 shrink-0" />
-                              <span>Payment Verification In Progress</span>
-                            </button>
                           );
                         }
 
