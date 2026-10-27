@@ -102,16 +102,35 @@ export default function BookSessionStep1() {
     setReviews([]);
     setCreatorEvents([]);
 
+    try {
+      sessionStorage.removeItem('reachly_booking_state');
+    } catch {}
+
     // Drop previous creator immediately so cover/avatar never flash the wrong person
+    // and reset session-specific fields so new bookings start completely clean
     setBooking((b) => {
       const same =
         b.creator?.username &&
         String(b.creator.username).toLowerCase() === username.toLowerCase();
-      if (b.bookingRef) {
-        return { ...b, selectedSession: null, selectedDate: null, selectedTime: null, answers: [], bookingRef: undefined, paymentMethod: undefined };
-      }
-      if (same) return b;
-      return { ...b, creator: null, selectedSession: null, selectedDate: null, selectedTime: null, answers: [] };
+      return {
+        creator: same ? b.creator : null,
+        selectedSession: null,
+        selectedDate: null,
+        selectedTime: null,
+        answers: [],
+        step: 1,
+        bookingRef: undefined,
+        paymentMethod: undefined,
+        userDetails: {
+          fullName: b.userDetails?.fullName || '',
+          email: b.userDetails?.email || '',
+          whatsapp: b.userDetails?.whatsapp || '',
+          proceedAs: b.userDetails?.proceedAs || 'guest',
+          whatToDiscuss: '',
+          notes: '',
+          heardFrom: '',
+        },
+      };
     });
 
     // Hydrate from this username's cache only (never another creator's)
@@ -172,12 +191,9 @@ export default function BookSessionStep1() {
               ratingDisplay: data.creator.ratingDisplay,
               stats: data.creator.stats,
             },
-            selectedSession: (() => {
-              const wanted = wantedSessionId || b.selectedSession?.id;
-              return wanted
-                ? data.sessions.find((s: SessionType) => s.id === wanted) || null
-                : null;
-            })(),
+            selectedSession: wantedSessionId
+              ? data.sessions.find((s: SessionType) => s.id === wantedSessionId) || null
+              : null,
           }));
 
         }

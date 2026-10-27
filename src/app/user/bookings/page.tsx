@@ -18,7 +18,7 @@ import {
   isMeetingPassed,
   type SessionModificationAction,
 } from '@/lib/time';
-import { Star, CheckCircle, Video, MessageSquare, Clock, AlertTriangle, X as XIcon } from 'lucide-react';
+import { Star, CheckCircle, Video, MessageSquare, Clock, AlertTriangle, X as XIcon, Loader2 } from 'lucide-react';
 import PaymentRejectedDialog from '@/components/PaymentRejectedDialog';
 import { toast } from 'sonner';
 import {
@@ -113,6 +113,7 @@ export default function UserBookingsPage() {
   const [bookingToReschedule, setBookingToReschedule] = useState<Booking | null>(null);
   const [rescheduleDate, setRescheduleDate] = useState<Date | null>(null);
   const [selectedRescheduleTimeSlot, setSelectedRescheduleTimeSlot] = useState<string>('');
+  const [isRescheduling, setIsRescheduling] = useState<boolean>(false);
 
   // Custom Cancel / Reschedule Alerts to Modals
   const [showCancelConfirmModal, setShowCancelConfirmModal] = useState<boolean>(false);
@@ -366,10 +367,13 @@ export default function UserBookingsPage() {
   };
 
   const handleConfirmReschedule = async () => {
-    if (!bookingToReschedule || !selectedRescheduleTimeSlot || !rescheduleDate) {
-      toast.error('Please select a new time slot');
+    if (!bookingToReschedule || !selectedRescheduleTimeSlot || !rescheduleDate || isRescheduling) {
+      if (!selectedRescheduleTimeSlot || !rescheduleDate) {
+        toast.error('Please select a new time slot');
+      }
       return;
     }
+    setIsRescheduling(true);
     try {
       const dateStr = dateToISO(rescheduleDate);
 
@@ -397,6 +401,8 @@ export default function UserBookingsPage() {
       }
     } catch (err) {
       toast.error('Error rescheduling appointment');
+    } finally {
+      setIsRescheduling(false);
     }
   };
 
@@ -1032,17 +1038,25 @@ export default function UserBookingsPage() {
             <div className="flex items-center gap-4 w-full">
               <button
                 onClick={() => setShowRescheduleModal(false)}
-                className="flex-1 py-3.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-full font-bold text-xs sm:text-sm text-center transition-all cursor-pointer"
+                disabled={isRescheduling}
+                className="flex-1 py-3.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-full font-bold text-xs sm:text-sm text-center transition-all cursor-pointer disabled:opacity-50"
               >
                 Cancel
               </button>
 
               <button
                 onClick={handleConfirmReschedule}
-                disabled={!selectedRescheduleTimeSlot || !rescheduleDate}
-                className="flex-1 py-3.5 bg-[#0012FF] hover:bg-[#0010d0] text-white rounded-full font-bold text-xs sm:text-sm text-center transition-all shadow-md active:scale-98 disabled:bg-gray-200 disabled:text-gray-400 cursor-pointer"
+                disabled={!selectedRescheduleTimeSlot || !rescheduleDate || isRescheduling}
+                className="flex-1 py-3.5 bg-[#0012FF] hover:bg-[#0010d0] text-white rounded-full font-bold text-xs sm:text-sm text-center transition-all shadow-md active:scale-98 disabled:bg-gray-200 disabled:text-gray-400 cursor-pointer flex items-center justify-center gap-2"
               >
-                Reschedule Appointment
+                {isRescheduling ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin shrink-0" />
+                    <span>Rescheduling…</span>
+                  </>
+                ) : (
+                  <span>Reschedule Appointment</span>
+                )}
               </button>
             </div>
           </div>

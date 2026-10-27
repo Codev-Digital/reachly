@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation';
 import CreatorDashboardNav from '@/components/CreatorDashboardNav';
 import LoadingAnimation from '@/components/LoadingAnimation';
 import DaysOfMonth from '@/components/DaysOfMonth';
-import { Calendar, Clock, Video, MapPin, MessageSquare, AlertTriangle, CheckCircle, ArrowUpRight, X, Star, VideoOff } from 'lucide-react';
+import { Calendar, Clock, Video, MapPin, MessageSquare, AlertTriangle, CheckCircle, ArrowUpRight, X, Star, VideoOff, Loader2 } from 'lucide-react';
 import DailyCall from '@/components/DailyCall';
 import SessionReviewModal, {
   type SessionReviewTarget,
@@ -91,6 +91,7 @@ export default function CreatorCalendar() {
   const [showRescheduleModal, setShowRescheduleModal] = useState<boolean>(false);
   const [bookingToReschedule, setBookingToReschedule] = useState<BookingType | null>(null);
   const [isRescheduleSuccess, setIsRescheduleSuccess] = useState<boolean>(false);
+  const [isRescheduling, setIsRescheduling] = useState<boolean>(false);
 
   const [rescheduleDate, setRescheduleDate] = useState<Date>(new Date());
   const [rescheduleSlots, setRescheduleSlots] = useState<string[]>([]);
@@ -530,10 +531,13 @@ export default function CreatorCalendar() {
   };
 
   const handleConfirmReschedule = async () => {
-    if (!bookingToReschedule || !selectedRescheduleTime) {
-      alert('Please select a new time slot');
+    if (!bookingToReschedule || !selectedRescheduleTime || isRescheduling) {
+      if (!selectedRescheduleTime) {
+        alert('Please select a new time slot');
+      }
       return;
     }
+    setIsRescheduling(true);
     try {
       const year = rescheduleDate.getFullYear();
       const month = String(rescheduleDate.getMonth() + 1).padStart(2, '0');
@@ -573,6 +577,8 @@ export default function CreatorCalendar() {
       }
     } catch (err) {
       alert('Error rescheduling appointment');
+    } finally {
+      setIsRescheduling(false);
     }
   };
 
@@ -1168,17 +1174,25 @@ export default function CreatorCalendar() {
               <div className="flex items-center gap-4 w-full">
                 <button
                   onClick={() => setShowRescheduleModal(false)}
-                  className="flex-1 py-3.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-full font-bold text-xs sm:text-sm text-center transition-all cursor-pointer"
+                  disabled={isRescheduling}
+                  className="flex-1 py-3.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-full font-bold text-xs sm:text-sm text-center transition-all cursor-pointer disabled:opacity-50"
                 >
                   Cancel
                 </button>
 
                 <button
                   onClick={handleConfirmReschedule}
-                  disabled={!selectedRescheduleTime}
-                  className="flex-1 py-3.5 bg-[#0012FF] hover:bg-[#0010d0] text-white rounded-full font-bold text-xs sm:text-sm text-center transition-all shadow-md active:scale-98 disabled:bg-gray-200 disabled:text-gray-400 cursor-pointer"
+                  disabled={!selectedRescheduleTime || isRescheduling}
+                  className="flex-1 py-3.5 bg-[#0012FF] hover:bg-[#0010d0] text-white rounded-full font-bold text-xs sm:text-sm text-center transition-all shadow-md active:scale-98 disabled:bg-gray-200 disabled:text-gray-400 cursor-pointer flex items-center justify-center gap-2"
                 >
-                  Reschedule Appointment
+                  {isRescheduling ? (
+                    <>
+                      <Loader2 className="size-4 animate-spin shrink-0" />
+                      <span>Rescheduling…</span>
+                    </>
+                  ) : (
+                    <span>Reschedule Appointment</span>
+                  )}
                 </button>
               </div>
 

@@ -181,6 +181,27 @@ export default function BookSessionLayout({ children }: { children: ReactNode })
   useEffect(() => {
     if (!routeUsername) return;
     try {
+      const isAtStep1 = pathname?.includes('/step-1');
+      if (isAtStep1) {
+        try {
+          sessionStorage.removeItem(STORAGE_KEY);
+        } catch { }
+        setBookingRaw((prev) => ({
+          ...emptyBooking,
+          creator: prev.creator && creatorMatchesRoute(prev) ? prev.creator : null,
+          userDetails: {
+            ...emptyBooking.userDetails,
+            fullName: prev.userDetails?.fullName || '',
+            email: prev.userDetails?.email || '',
+            whatsapp: prev.userDetails?.whatsapp || '',
+            proceedAs: prev.userDetails?.proceedAs || 'guest',
+          },
+        }));
+        setIsDraftSaved(false);
+        lastDraftRef.current = '';
+        return;
+      }
+
       const draft = localStorage.getItem(DRAFT_KEY);
       if (draft) {
         const restored = deserializeBooking(draft);
@@ -192,8 +213,7 @@ export default function BookSessionLayout({ children }: { children: ReactNode })
         }
       }
       // In-flight recovery only for mid-flow refresh on steps 2-4
-      const isAtStep1 = pathname?.includes('/step-1');
-      const session = !isAtStep1 ? sessionStorage.getItem(STORAGE_KEY) : null;
+      const session = sessionStorage.getItem(STORAGE_KEY);
       if (session) {
         const restored = deserializeBooking(session);
         if (restored && creatorMatchesRoute(restored) && !restored.bookingRef) {
@@ -209,7 +229,7 @@ export default function BookSessionLayout({ children }: { children: ReactNode })
       setBookingRaw(emptyBooking);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [routeUsername]);
+  }, [routeUsername, pathname]);
 
   // Keep sessionStorage in sync + mark draft dirty when booking changes
   useEffect(() => {

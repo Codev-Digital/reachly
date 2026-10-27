@@ -35,6 +35,8 @@ export default function BookSessionStep5() {
   const handleGoToBookings = () => {
     const isLoggedIn = !!userData?.user?.id;
     const isCreator = !!(userData?.creatorProfile);
+    const guestEmail = booking.userDetails.email;
+    clearBooking();
     if (isLoggedIn) {
       if (isCreator) {
         // Creator booking another creator → go to their calendar
@@ -46,7 +48,6 @@ export default function BookSessionStep5() {
       }
     } else {
       // Guest — pass their email so the bookings page can fetch without login
-      const guestEmail = booking.userDetails.email;
       if (fallbackUrl) {
         window.location.href = fallbackUrl;
       } else {
