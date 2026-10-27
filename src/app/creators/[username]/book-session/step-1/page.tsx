@@ -204,31 +204,35 @@ export default function BookSessionStep1() {
           } catch {}
           setReviews(Array.isArray(data.reviews) ? data.reviews : []);
           setCreatorEvents(Array.isArray(data.events) ? data.events : []);
-          setBooking((b) => ({
-            ...b,
-            creator: {
-              id: data.creator.id,
-              name: data.creator.name,
-              username: data.creator.username,
-              displayName: data.creator.displayName,
-              profilePhoto: data.creator.profilePhoto,
-              coverPhoto: data.creator.coverPhoto,
-              shortBio: data.creator.shortBio,
-              niches: data.creator.niches || [],
-              city: data.creator.city,
-              country: data.creator.country,
-              languages: data.creator.languages || [],
-              socialLinks: data.creator.socialLinks || {},
-              rating: data.creator.rating,
-              ratingLabel: data.creator.ratingLabel,
-              reviewCount: data.creator.reviewCount,
-              ratingDisplay: data.creator.ratingDisplay,
-              stats: data.creator.stats,
-            },
-            selectedSession: wantedSessionId
-              ? data.sessions.find((s: SessionType) => s.id === wantedSessionId) || null
-              : null,
-          }));
+          setBooking((b) => {
+            const sid = b.selectedSession?.id || wantedSessionId;
+            const sessionMatch = sid
+              ? (data.sessions || []).find((s: SessionType) => s.id === sid) || b.selectedSession
+              : null;
+            return {
+              ...b,
+              creator: {
+                id: data.creator.id,
+                name: data.creator.name,
+                username: data.creator.username,
+                displayName: data.creator.displayName,
+                profilePhoto: data.creator.profilePhoto,
+                coverPhoto: data.creator.coverPhoto,
+                shortBio: data.creator.shortBio,
+                niches: data.creator.niches || [],
+                city: data.creator.city,
+                country: data.creator.country,
+                languages: data.creator.languages || [],
+                socialLinks: data.creator.socialLinks || {},
+                rating: data.creator.rating,
+                ratingLabel: data.creator.ratingLabel,
+                reviewCount: data.creator.reviewCount,
+                ratingDisplay: data.creator.ratingDisplay,
+                stats: data.creator.stats,
+              },
+              selectedSession: sessionMatch,
+            };
+          });
 
         }
       } catch (err) {
@@ -524,11 +528,9 @@ export default function BookSessionStep1() {
                   <button
                     type="button"
                     onClick={() => saveDraft()}
-                    disabled={isDraftSaved || !booking.selectedSession}
+                    disabled={isDraftSaved}
                     className={`font-bold py-2.5 px-4 sm:px-5 rounded-full text-xs transition-colors shadow-sm flex items-center justify-center gap-1.5 border ${isDraftSaved
                       ? 'bg-green-50 border-green-200 text-green-600 cursor-default'
-                      : !booking.selectedSession
-                      ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'
                       : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
                       }`}
                   >

@@ -441,7 +441,14 @@ export default function BookSessionLayout({ children }: { children: ReactNode })
         } catch { }
         return;
       }
-      const serialized = serializeBooking(booking);
+      const draftState: BookingState = {
+        ...booking,
+        creator: booking.creator && booking.creator.username ? booking.creator : {
+          ...(booking.creator || {} as any),
+          username: routeUsername,
+        },
+      };
+      const serialized = serializeBooking(draftState);
       localStorage.setItem(DRAFT_KEY, serialized);
       lastDraftRef.current = serialized;
       setIsDraftSaved(true);
