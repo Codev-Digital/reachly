@@ -13,7 +13,7 @@ import { supabaseAdmin } from '@/lib/supabase';
 
 const MAX_SCREENSHOT_BYTES = 5 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
-const BUCKET = process.env.SUPABASE_PAYMENT_PROOFS_BUCKET || 'payment-proofs';
+const BUCKET = process.env.SUPABASE_PAYMENT_PROOFS_BUCKET || process.env.SUPABASE_STORAGE_BUCKET || 'reachly';
 
 export async function POST(request: NextRequest) {
   let uploadedPath: string | null = null;
@@ -77,15 +77,28 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const extension = file.type === 'image/jpeg' ? 'jpg' : file.type.split('/')[1];
-    uploadedPath = `${booking.bookingRef}/${new mongoose.Types.ObjectId().toString()}.${extension}`;
-    const { error: uploadError } = await supabaseAdmin.storage
-      .from(BUCKET)
-      .upload(uploadedPath, Buffer.from(await file.arrayBuffer()), {
-        contentType: file.type,
-        upsert: false,
-      });
-    if (uploadError) throw new Error(`Payment screenshot upload failed: ${uploadError.message}`);
+    const extension = file.type === 'image/jpeg' ? 'jpg' : file.type.split('/')[1] || 'png';
+    const storagePath = `payment-proofs/${booking.bookingRef}/${new mongoose.Types.ObjectId().toString()}.${extension}`;
+    const fileBuffer = Buffer.from(await file.arrayBuffer());
+
+    try {
+      const { error: uploadError } = await supabaseAdmin.storage
+        .from(BUCKET)
+        .upload(storagePath, fileBuffer, {
+          contentType: file.type,
+          upsert: true,
+        });
+
+      if (!uploadError) {
+        uploadedPath = storagePath;
+      } else {
+        console.warn(`[Payment proof] Supabase upload failed (${uploadError.message}), storing fallback data URI.`);
+        uploadedPath = `data:${file.type};base64,${fileBuffer.toString('base64')}`;
+      }
+    } catch (storageErr: any) {
+      console.warn(`[Payment proof] Supabase error (${storageErr?.message}), storing fallback data URI.`);
+      uploadedPath = `data:${file.type};base64,${fileBuffer.toString('base64')}`;
+    }
 
     const previousProof = await SessionPaymentProof.findOne({ bookingId: booking._id }).select('screenshotPath');
     await SessionPaymentProof.findOneAndUpdate(
@@ -114,15 +127,21 @@ export async function POST(request: NextRequest) {
       },
       { upsert: true, new: true, runValidators: true, setDefaultsOnInsert: true }
     );
-    if (previousProof?.screenshotPath) {
-      await supabaseAdmin.storage.from(BUCKET).remove([previousProof.screenshotPath]);
+    if (previousProof?.screenshotPath && !previousProof.screenshotPath.startsWith('data:')) {
+      try {
+        await supabaseAdmin.storage.from(BUCKET).remove([previousProof.screenshotPath]);
+      } catch (rmError) {
+        console.warn('[Payment proof] failed to remove previous screenshot:', rmError);
+      }
     }
 
     return NextResponse.json({ success: true, status: 'pending' });
   } catch (error) {
-    if (uploadedPath) {
-      const { error: cleanupError } = await supabaseAdmin.storage.from(BUCKET).remove([uploadedPath]);
-      if (cleanupError) console.error('[Payment proof] failed to remove orphaned screenshot:', cleanupError);
+    if (uploadedPath && !uploadedPath.startsWith('data:')) {
+      try {
+        const { error: cleanupError } = await supabaseAdmin.storage.from(BUCKET).remove([uploadedPath]);
+        if (cleanupError) console.error('[Payment proof] failed to remove orphaned screenshot:', cleanupError);
+      } catch {}
     }
     console.error('[Payment proof] submission failed:', error);
     return NextResponse.json({ error: 'Unable to save payment proof. Please try again.' }, { status: 500 });

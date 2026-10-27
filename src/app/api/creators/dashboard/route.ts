@@ -25,7 +25,11 @@ export async function GET(req: NextRequest) {
     // Fetch profile and bookings in parallel with .lean()
     const [profile, incomingBookings, outgoingBookings] = (await Promise.all([
       CreatorProfile.findOne({ userId: user._id }).select('views').lean(),
-      Booking.find({ creatorId: user._id })
+      Booking.find({
+        creatorId: user._id,
+        status: { $ne: 'pending' },
+        paymentStatus: { $nin: ['pending', 'failed'] },
+      })
         .populate({ path: 'sessionTypeId', model: SessionType, select: 'duration' })
         .sort({ createdAt: -1 })
         .lean(),
@@ -53,7 +57,7 @@ export async function GET(req: NextRequest) {
       const scheduled = new Date(b.scheduledDate);
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      return scheduled >= today && (b.status === 'confirmed' || b.status === 'pending');
+      return scheduled >= today && b.status === 'confirmed';
     }).length;
 
     // Unique customers count (incoming only)

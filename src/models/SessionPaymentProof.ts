@@ -23,6 +23,7 @@ export interface ISessionPaymentProof extends Document {
   status: SessionPaymentProofStatus;
   reviewedAt?: Date;
   reviewedBy?: string;
+  adminRemarks?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -48,6 +49,7 @@ const SessionPaymentProofSchema = new Schema<ISessionPaymentProof>(
     status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending', index: true },
     reviewedAt: { type: Date },
     reviewedBy: { type: String },
+    adminRemarks: { type: String, default: '' },
   },
   { timestamps: true }
 );

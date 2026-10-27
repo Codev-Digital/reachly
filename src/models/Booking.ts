@@ -28,6 +28,7 @@ export interface IBooking extends Document {
     status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
     paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
     paymentMethod?: 'jazzcash' | 'easypaisa' | 'stripe';
+    adminRemarks?: string;
 
     price: number;
     promoApplied?: string;
@@ -116,6 +117,10 @@ const BookingSchema = new Schema<IBooking>(
         paymentMethod: {
             type: String,
             enum: ['jazzcash', 'easypaisa', 'stripe'],
+        },
+        adminRemarks: {
+            type: String,
+            default: '',
         },
         price: {
             type: Number,

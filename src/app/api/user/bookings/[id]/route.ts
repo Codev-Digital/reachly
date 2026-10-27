@@ -81,6 +81,9 @@ export async function PUT(
 
     // 1. Cancellation checks (must be at least 24 hours before session start time)
     if (isCancelling) {
+      if (booking.status === "pending" || booking.paymentStatus === "pending") {
+        return NextResponse.json({ error: "Booking is awaiting admin verification and cannot be cancelled yet." }, { status: 400 });
+      }
       if (booking.status === "cancelled") {
         return NextResponse.json({ error: "Booking is already cancelled." }, { status: 400 });
       }
@@ -101,6 +104,9 @@ export async function PUT(
 
     // 2. Rescheduling checks (must be at least 24 hours before session start time)
     if (isRescheduling) {
+      if (booking.status === "pending" || booking.paymentStatus === "pending") {
+        return NextResponse.json({ error: "Booking is awaiting admin verification and cannot be rescheduled yet." }, { status: 400 });
+      }
       if (booking.status === "cancelled") {
         return NextResponse.json({ error: "Cancelled bookings cannot be rescheduled." }, { status: 400 });
       }

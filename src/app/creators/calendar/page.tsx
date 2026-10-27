@@ -694,6 +694,11 @@ export default function CreatorCalendar() {
                     <div className="w-full py-2.5 bg-[#FFF0F0] border border-red-100 text-[#FF3B3B] rounded-full text-xs font-bold text-center select-none">
                       Cancelled
                     </div>
+                  ) : booking.statusRaw === 'pending' || booking.status === 'Pending Action' || booking.status === 'pending' ? (
+                    <div className="w-full py-2.5 bg-amber-50 border border-amber-200 text-amber-800 rounded-full text-xs font-semibold text-center select-none flex items-center justify-center gap-1.5">
+                      <Clock className="size-3.5 text-amber-600 shrink-0" />
+                      Awaiting Admin Verification
+                    </div>
                   ) : (
                     <div className="flex flex-col gap-3">
                       {(() => {

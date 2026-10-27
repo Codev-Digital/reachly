@@ -59,7 +59,13 @@ export async function GET(request: NextRequest) {
         }
 
         // ── 1. Query Incoming and Outgoing Bookings in parallel ────────────
-        const incomingQuery: any = { creatorId: user._id, ...dateFilter };
+        // Only show incoming bookings after payment has been verified by admin (confirmed/completed and not pending/failed)
+        const incomingQuery: any = {
+            creatorId: user._id,
+            status: { $ne: 'pending' },
+            paymentStatus: { $nin: ['pending', 'failed'] },
+            ...dateFilter
+        };
         const outgoingQuery: any = { userId: user._id, creatorId: { $ne: user._id }, ...dateFilter };
 
         const [incomingBookings, outgoingBookings] = await Promise.all([

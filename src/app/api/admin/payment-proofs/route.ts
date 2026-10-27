@@ -10,7 +10,7 @@ import User from '@/models/User';
 import SessionPaymentProof from '@/models/SessionPaymentProof';
 import { supabaseAdmin } from '@/lib/supabase';
 
-const BUCKET = process.env.SUPABASE_PAYMENT_PROOFS_BUCKET || 'payment-proofs';
+const BUCKET = process.env.SUPABASE_PAYMENT_PROOFS_BUCKET || process.env.SUPABASE_STORAGE_BUCKET || 'reachly';
 
 function isAdmin(email?: string | null) {
   return !!email && ['abdullahgotaccess@gmail.com', 'admin@reachly.com'].includes(email.toLowerCase());
@@ -25,11 +25,30 @@ export async function GET() {
     await connectDB();
     const proofs = await SessionPaymentProof.find({ status: 'pending' }).sort({ createdAt: -1 }).limit(100).lean();
     const results = await Promise.all(proofs.map(async (proof) => {
-      const { data, error } = await supabaseAdmin.storage
-        .from(BUCKET)
-        .createSignedUrl(proof.screenshotPath, 600);
-      if (error) throw new Error(`Unable to access payment proof ${proof.bookingRef}: ${error.message}`);
-      return { ...proof, _id: String(proof._id), screenshotUrl: data.signedUrl };
+      let screenshotUrl = '';
+      if (proof.screenshotPath?.startsWith('data:') || proof.screenshotPath?.startsWith('http')) {
+        screenshotUrl = proof.screenshotPath;
+      } else {
+        try {
+          const { data, error } = await supabaseAdmin.storage
+            .from(BUCKET)
+            .createSignedUrl(proof.screenshotPath, 3600);
+          if (!error && data?.signedUrl) {
+            screenshotUrl = data.signedUrl;
+          } else {
+            const { data: pubData } = supabaseAdmin.storage
+              .from(BUCKET)
+              .getPublicUrl(proof.screenshotPath);
+            screenshotUrl = pubData.publicUrl;
+          }
+        } catch {
+          const { data: pubData } = supabaseAdmin.storage
+            .from(BUCKET)
+            .getPublicUrl(proof.screenshotPath);
+          screenshotUrl = pubData.publicUrl;
+        }
+      }
+      return { ...proof, _id: String(proof._id), screenshotUrl };
     }));
     return NextResponse.json({ success: true, proofs: results });
   } catch (error) {
@@ -44,35 +63,92 @@ export async function PATCH(request: NextRequest) {
     if (!session?.user?.email || !isAdmin(session.user.email)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    const { proofId, decision } = await request.json();
-    if (!mongoose.isValidObjectId(proofId) || !['approved', 'rejected'].includes(decision)) {
+    const { proofId, bookingId, bookingRef, decision, remarks } = await request.json();
+    if (!['approved', 'rejected'].includes(decision)) {
       return NextResponse.json({ error: 'Invalid review request.' }, { status: 422 });
     }
     await connectDB();
-    const proof = await SessionPaymentProof.findOne({ _id: proofId, status: 'pending' });
-    if (!proof) return NextResponse.json({ error: 'Pending payment proof not found.' }, { status: 404 });
+
+    let proof: any = null;
+    if (proofId && mongoose.isValidObjectId(proofId)) {
+      proof = await SessionPaymentProof.findById(proofId);
+    }
+    if (!proof && bookingId && mongoose.isValidObjectId(bookingId)) {
+      proof = await SessionPaymentProof.findOne({
+        $or: [
+          { bookingId },
+          { bookingId: new mongoose.Types.ObjectId(bookingId) }
+        ]
+      });
+    }
+    if (!proof && bookingRef) {
+      proof = await SessionPaymentProof.findOne({ bookingRef });
+    }
 
     const bookingStatus = decision === 'approved' ? 'confirmed' : 'cancelled';
     const paymentStatus = decision === 'approved' ? 'paid' : 'failed';
+    const cleanedRemarks = typeof remarks === 'string' ? remarks.trim() : (remarks ? String(remarks).trim() : '');
+
+    const bookingUpdate: Record<string, any> = { status: bookingStatus, paymentStatus };
+    if (decision === 'rejected') {
+      bookingUpdate.adminRemarks = cleanedRemarks;
+    }
+
+    const bookingQuery: any[] = [];
+    if (proof?.bookingId) bookingQuery.push({ _id: proof.bookingId });
+    if (proof?.bookingRef) bookingQuery.push({ bookingRef: proof.bookingRef });
+    if (bookingRef) bookingQuery.push({ bookingRef });
+    if (bookingId) {
+      if (mongoose.isValidObjectId(bookingId)) {
+        bookingQuery.push({ _id: bookingId });
+      } else {
+        bookingQuery.push({ bookingRef: bookingId });
+      }
+    }
+    if (proofId) {
+      if (mongoose.isValidObjectId(proofId)) {
+        bookingQuery.push({ _id: proofId });
+      } else {
+        bookingQuery.push({ bookingRef: proofId });
+      }
+    }
+
+    if (bookingQuery.length === 0) {
+      return NextResponse.json({ error: 'No booking or payment proof identifier provided.' }, { status: 422 });
+    }
+
     const booking = await Booking.findOneAndUpdate(
-      { _id: proof.bookingId, status: 'pending', paymentStatus: 'pending' },
-      { $set: { status: bookingStatus, paymentStatus } },
+      { $or: bookingQuery },
+      { $set: bookingUpdate },
       { new: true }
     );
     if (!booking) {
-      return NextResponse.json({ error: 'Booking is no longer awaiting verification.' }, { status: 409 });
+      return NextResponse.json({ error: 'Booking associated with payment proof not found.' }, { status: 404 });
     }
-    const updatedProof = await SessionPaymentProof.findOneAndUpdate(
-      { _id: proof._id, status: 'pending' },
-      { $set: { status: decision, reviewedAt: new Date(), reviewedBy: session.user.email } },
-      { new: true }
-    );
-    if (!updatedProof) {
-      await Booking.updateOne(
-        { _id: booking._id, status: bookingStatus, paymentStatus },
-        { $set: { status: 'pending', paymentStatus: 'pending' } }
+
+    const proofUpdate: Record<string, any> = {
+      status: decision,
+      reviewedAt: new Date(),
+      reviewedBy: session.user.email,
+    };
+    if (decision === 'rejected') {
+      proofUpdate.adminRemarks = cleanedRemarks;
+    }
+
+    if (!proof) {
+      proof = await SessionPaymentProof.findOne({
+        $or: [
+          { bookingId: booking._id },
+          { bookingRef: booking.bookingRef },
+        ]
+      });
+    }
+
+    if (proof) {
+      await SessionPaymentProof.updateOne(
+        { _id: proof._id },
+        { $set: proofUpdate }
       );
-      return NextResponse.json({ error: 'Payment proof was reviewed by another administrator.' }, { status: 409 });
     }
 
     if (decision === 'rejected' && booking.packagePurchaseId) {
