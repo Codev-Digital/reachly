@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dialog';
 
 export interface RejectedBookingInfo {
-  id?: string;
+  id?: string | number;
   bookingRef?: string;
   ref?: string;
   creator?: string;
