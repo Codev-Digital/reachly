@@ -1,330 +1,411 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
+import { loadStripe, type StripeEmbeddedCheckout } from '@stripe/stripe-js';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import Image from 'next/image';
+import { ArrowLeft, Check, ShieldCheck, Smartphone, UploadCloud } from 'lucide-react';
 import BookingProgress from '@/components/booking/BookingProgress';
 import CreatorProfileCard from '@/components/booking/CreatorProfileCard';
 import { useBooking, sessionPrice } from '../layout';
+
+type PaymentMethod = 'stripe' | 'easypaisa' | 'jazzcash';
+
+const PAYMENT_METHODS: Array<{ id: PaymentMethod; label: string; description: string }> = [
+  { id: 'easypaisa', label: 'EasyPaisa', description: 'Mobile wallet transfer' },
+  { id: 'jazzcash', label: 'JazzCash', description: 'Mobile wallet transfer' },
+];
 
 export default function BookSessionStep4() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
   const fallbackUrl = searchParams.get('fallbackUrl');
-  const queryStr = fallbackUrl ? `?fallbackUrl=${encodeURIComponent(fallbackUrl)}` : '';
+  const returnTo = searchParams.get('returnTo');
+  const query = new URLSearchParams();
+  if (fallbackUrl) query.set('fallbackUrl', fallbackUrl);
+  if (returnTo) query.set('returnTo', returnTo);
+  const queryString = query.toString();
+  const queryStr = queryString ? `?${queryString}` : '';
   const { booking, nextStep, setBooking, saveDraft, isDraftSaved } = useBooking();
-  const creator = booking.creator;
-  const [paymentMethod] = useState<'stripe'>('stripe');
-  const [showQr, setShowQr] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('easypaisa');
+  const [screenshot, setScreenshot] = useState<File | null>(null);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [manualBooking, setManualBooking] = useState<{ id: string; ref: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoadingBack, setIsLoadingBack] = useState(false);
-  const [errorModalOpen, setErrorModalOpen] = useState(false);
-  const [errorModalMsg, setErrorModalMsg] = useState('');
+  const [error, setError] = useState('');
+  const checkoutContainer = useRef<HTMLDivElement>(null);
+  const creator = booking.creator;
 
-  // Packages are paid once: later sessions of an existing package cost nothing more
   const pkg = booking.selectedSession?.isPackage ? booking.selectedSession : null;
   const [paidPackage, setPaidPackage] = useState<{ number: number; total: number } | null>(null);
   useEffect(() => {
     if (!pkg) return;
     fetch('/api/user/packages')
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        const mine = (d?.packages || []).find((p: any) => p.sessionTypeId === pkg.id && p.status === 'active');
-        if (mine) setPaidPackage({ number: mine.sessionsBooked + 1, total: mine.sessionsTotal });
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => {
+        const purchase = (data?.packages || []).find(
+          (item: { sessionTypeId: string; status: string; sessionsBooked: number; sessionsTotal: number }) =>
+            item.sessionTypeId === pkg.id && item.status === 'active'
+        );
+        if (purchase) setPaidPackage({ number: purchase.sessionsBooked + 1, total: purchase.sessionsTotal });
       })
-      .catch(() => {});
-  }, [pkg?.id]);
+      .catch((fetchError) => console.error('Unable to check existing session package:', fetchError));
+  }, [pkg]);
   const amountDue = pkg && paidPackage ? 0 : booking.selectedSession ? sessionPrice(booking.selectedSession) : 0;
+  const visibleError =
+    error ||
+    (clientSecret && !process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+      ? 'Stripe is not configured. Please choose EasyPaisa or JazzCash.'
+      : '');
 
   useEffect(() => {
-    if (params.username) {
-      router.prefetch(`/creators/${params.username}/book-session/step-5${queryStr}`);
-    }
+    if (params.username) router.prefetch(`/creators/${params.username}/book-session/step-5${queryStr}`);
   }, [params.username, queryStr, router]);
 
-  const handleConfirmPayment = async () => {
-    if (isSubmitting) return;
-    setIsSubmitting(true);
-    try {
-      const toISO = (d: Date) => {
-        const year = d.getFullYear();
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-      };
+  useEffect(() => {
+    if (!clientSecret) return;
+    const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+    if (!publishableKey) return;
+    let cancelled = false;
+    let embeddedCheckout: StripeEmbeddedCheckout | null = null;
 
-      const payload = {
-        username: params.username,
-        sessionId: booking.selectedSession?.id,
-        date: booking.selectedDate ? toISO(booking.selectedDate) : null,
-        time: booking.selectedTime,
-        userDetails: booking.userDetails,
-        answers: booking.answers || [],
-        proceedAs: booking.userDetails.proceedAs || 'guest',
-        paymentMethod,
-        promoApplied: null,
-        finalPrice: booking.selectedSession ? sessionPrice(booking.selectedSession) : 0,
-        originalPrice: booking.selectedSession?.price || 0
-      };
-
-      const res = await fetch('/api/bookings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      const data = await res.json();
-      if (data.success && data.checkoutUrl) {
-        try { localStorage.removeItem('reachly_booking_draft'); } catch { }
-        window.location.assign(data.checkoutUrl);
+    void (async () => {
+      const stripe = await loadStripe(publishableKey);
+      if (!stripe) throw new Error('Stripe could not be initialized.');
+      embeddedCheckout = await stripe.createEmbeddedCheckoutPage({ clientSecret });
+      if (cancelled || !checkoutContainer.current) {
+        embeddedCheckout.destroy();
         return;
       }
-      if (data.success) {
-        setBooking(b => ({ ...b, bookingRef: data.bookingRef }));
-        // Clear draft — booking is confirmed, no longer needed
-        try { localStorage.removeItem('reachly_booking_draft'); } catch { }
-        nextStep();
-        router.push(`/creators/${params.username}/book-session/step-5${queryStr}`);
-      } else {
-        setErrorModalMsg(data.error || 'Failed to place booking');
-        setErrorModalOpen(true);
+      embeddedCheckout.mount(checkoutContainer.current);
+    })().catch((checkoutError: unknown) => {
+      console.error('Unable to initialize embedded Stripe checkout:', checkoutError);
+      if (!cancelled) setError('Unable to load Stripe checkout. Please try again or choose another payment method.');
+    });
+
+    return () => {
+      cancelled = true;
+      embeddedCheckout?.destroy();
+    };
+  }, [clientSecret]);
+
+  const bookingPayload = () => {
+    if (!booking.selectedSession || !booking.selectedDate || !booking.selectedTime) {
+      throw new Error('Select a session, date, and time before continuing.');
+    }
+    const date = booking.selectedDate;
+    const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    return {
+      username: params.username,
+      sessionId: booking.selectedSession.id,
+      date: dateString,
+      time: booking.selectedTime,
+      userDetails: booking.userDetails,
+      answers: booking.answers || [],
+      proceedAs: booking.userDetails.proceedAs || 'guest',
+      paymentMethod,
+      promoApplied: null,
+      finalPrice: sessionPrice(booking.selectedSession),
+      originalPrice: booking.selectedSession.price,
+    };
+  };
+
+  const goToConfirmation = (bookingRef: string) => {
+    setBooking((current) => ({
+      ...current,
+      bookingRef,
+      paymentMethod,
+      step: 4,
+    }));
+    try {
+      localStorage.removeItem('reachly_booking_draft');
+    } catch (storageError) {
+      console.error('Unable to clear booking draft:', storageError);
+    }
+    nextStep();
+    router.push(`/creators/${params.username}/book-session/step-5${queryStr}`);
+  };
+
+  const submitPayment = async () => {
+    if (isSubmitting) return;
+    setError('');
+    setIsSubmitting(true);
+    try {
+      if (paymentMethod !== 'stripe' && amountDue > 0 && !screenshot) {
+        throw new Error('Upload your payment screenshot to continue.');
       }
-    } catch (err) {
-      console.error(err);
-      setErrorModalMsg('An error occurred during booking creation.');
-      setErrorModalOpen(true);
+
+      let createdBooking = manualBooking;
+      if (!createdBooking) {
+        const response = await fetch('/api/bookings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(bookingPayload()),
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.error || 'Unable to create booking.');
+        if (data.checkoutClientSecret) {
+          setClientSecret(data.checkoutClientSecret);
+          return;
+        }
+        if (data.requiresPaymentProof) {
+          if (!data.bookingId || !data.bookingRef) throw new Error('Booking response is missing its reference.');
+          createdBooking = { id: String(data.bookingId), ref: data.bookingRef };
+          setManualBooking(createdBooking);
+        } else if (data.bookingRef) {
+          goToConfirmation(data.bookingRef);
+          return;
+        } else {
+          throw new Error('Booking response is incomplete.');
+        }
+      }
+
+      if (paymentMethod === 'stripe') {
+        throw new Error('Stripe did not return a checkout session. Please try again.');
+      }
+      if (!screenshot || !createdBooking) throw new Error('Upload your payment screenshot to continue.');
+      const formData = new FormData();
+      formData.set('bookingId', createdBooking.id);
+      formData.set('bookingRef', createdBooking.ref);
+      formData.set('email', booking.userDetails.email);
+      formData.set('screenshot', screenshot);
+      const proofResponse = await fetch('/api/payment-proofs', { method: 'POST', body: formData });
+      const proofData = await proofResponse.json();
+      if (!proofResponse.ok || !proofData.success) {
+        throw new Error(proofData.error || 'Unable to submit payment proof.');
+      }
+      goToConfirmation(createdBooking.ref);
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : 'Unable to complete payment.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-20 pt-2">
-      {/* Step Progress Indicator */}
-      <BookingProgress currentStep={4} />
-
-      <div className="grid grid-cols-1 lg:grid-cols-[410px_1fr] gap-0 items-start justify-items-center">
-        <div className="hidden lg:flex w-full justify-center">
+    <div className="mx-auto max-w-7xl px-4 pb-20 pt-2 sm:px-6">
+      <BookingProgress currentStep={3} />
+      <div className="grid grid-cols-1 items-start justify-items-center gap-0 lg:grid-cols-[410px_1fr]">
+        <div className="hidden w-full justify-center lg:flex">
           <CreatorProfileCard creator={creator} />
         </div>
 
+        <section className="w-full max-w-[790px] rounded-[20px] border border-[#e2e2e2] bg-white p-5 sm:p-8">
+          <div className="mb-6 border-b border-gray-100 pb-5">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-[#0012FF]">Payment</p>
+            <h1 className="text-2xl font-bold tracking-tight text-gray-950">Choose how to pay</h1>
+            <p className="mt-1.5 text-sm text-gray-500">Select your preferred payment method to continue.</p>
+          </div>
 
-        {/* ============ RIGHT COLUMN: PAYMENT SELECTION / CONFIRMATION ============ */}
-        <div className="w-full">
-          {showQr ? (
-            /* ============ VIEW: CONFIRMATION ============ */
-            <div className="bg-white rounded-[20px] border border-[#e2e2e2] p-6 sm:p-8 w-full max-w-[790px] mx-auto">
-              <div className="flex items-center gap-3.5 border-b border-gray-100 pb-5 mb-6">
-                <div className="w-10 h-10 rounded-xl bg-[#EEF2FF] flex items-center justify-center shrink-0">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-gray-950">Confirm Payment</h3>
-                  <p className="text-xs text-gray-400">
-                    You will be redirected to Stripe Checkout to pay securely
-                  </p>
-                </div>
-              </div>
-
-              {/* Selected Method Details */}
-              <div className="bg-gray-50/50 border border-gray-100 rounded-2xl p-5 mb-6 flex items-center gap-4">
-                <div className="w-14 h-14 bg-white rounded-2xl border border-gray-100 flex items-center justify-center p-2 shadow-xs shrink-0">
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="1.8">
-                    <rect x="2" y="5" width="20" height="14" rx="2" />
-                    <path d="M2 10h20M6 15h4" />
-                  </svg>
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wide">
-                    Stripe secure card checkout
-                  </h4>
-                  <p className="text-[10px] text-gray-400 font-semibold mt-0.5">
-                    Fast mobile account authorization
-                  </p>
-                </div>
-              </div>
-
-              {/* Order breakdown */}
-              <div className="bg-white border border-gray-100 rounded-2xl p-4 mb-6 space-y-3">
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-gray-500 font-medium">
-                    {pkg ? `Package (${pkg.packageSessions} sessions)` : 'Session price'}
-                  </span>
-                  <span className="text-gray-900 font-bold">
-                    PKR {booking.selectedSession ? sessionPrice(booking.selectedSession).toLocaleString() : ''}
-                  </span>
-                </div>
-                {pkg && (
-                  <p className="text-[11px] text-gray-500">
-                    {paidPackage
-                      ? `This is session ${paidPackage.number} of ${paidPackage.total}. Your package is already paid.`
-                      : 'You pay for the whole package once. Book the remaining sessions one by one from My packages.'}
-                  </p>
-                )}
-                <div className="border-t border-gray-100 pt-3 flex justify-between items-center text-sm font-bold">
-                  <span className="text-gray-800">Total Amount</span>
-                  <span className="text-[#0012FF] text-lg font-black leading-none">
-                    PKR {amountDue.toLocaleString()}
-                  </span>
-                </div>
-              </div>
-
-              <p className="text-[10px] text-gray-500 leading-relaxed mb-8">
-                Your payment details are entered securely on Stripe. Reachly never stores your card details.
-              </p>
-
-              {/* Navigation Buttons inside QR panel */}
-              <div className="flex flex-wrap gap-2 justify-end mt-8 pt-6 border-t border-gray-100">
+          <div className="grid gap-3 sm:grid-cols-2">
+            {PAYMENT_METHODS.map((method) => {
+              const selected = paymentMethod === method.id;
+              return (
                 <button
-                  onClick={() => setShowQr(false)}
-                  disabled={isSubmitting}
-                  className="bg-white border border-gray-200 text-gray-700 font-bold py-2.5 px-4 sm:px-6 rounded-full text-xs hover:bg-gray-50 transition-colors shadow-sm flex items-center justify-center"
+                  key={method.id}
+                  type="button"
+                  onClick={() => {
+                    if (clientSecret || manualBooking) return;
+                    setPaymentMethod(method.id);
+                    setError('');
+                  }}
+                  aria-pressed={selected}
+                  className={`group relative flex min-h-[150px] flex-col items-start rounded-2xl border p-4 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0012FF] focus-visible:ring-offset-2 ${
+                    selected
+                      ? 'border-[#0012FF] bg-[#F7F8FF] shadow-[0_4px_16px_rgba(0,18,255,0.08)]'
+                      : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50/70'
+                  } ${clientSecret || manualBooking ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
                 >
-                  Back
-                </button>
-                <button
-                  onClick={handleConfirmPayment}
-                  disabled={isSubmitting}
-                  className={`py-2.5 px-5 sm:px-8 rounded-full text-xs font-bold transition-all shadow-sm flex items-center justify-center ${isSubmitting
-                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                    : 'bg-[#0012FF] text-white hover:bg-[#0010d0]'
+                  <span
+                    className={`absolute right-4 top-4 flex h-5 w-5 items-center justify-center rounded-full border transition-colors ${
+                      selected ? 'border-[#0012FF] bg-[#0012FF] text-white' : 'border-gray-300 bg-white text-transparent'
                     }`}
-                >
-                  {isSubmitting ? (
-                    <div className="w-4 h-4 rounded-full border-2 border-[#808BFF] border-t-white animate-spin"></div>
-                  ) : (
-                    "Confirm Payment"
-                  )}
-                </button>
-              </div>
-            </div>
-          ) : (
-            /* ============ VIEW: METHOD SELECTION ============ */
-            <div className="bg-white rounded-[20px] border border-[#e2e2e2] p-6 sm:p-8 w-full max-w-[790px] mx-auto">
-              <div className="flex items-center gap-3.5 border-b border-gray-100 pb-5 mb-6">
-                <div className="w-10 h-10 rounded-xl bg-[#EEF2FF] flex items-center justify-center shrink-0">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2">
-                    <rect x="2" y="4" width="20" height="16" rx="2" ry="2" />
-                    <line x1="12" y1="4" x2="12" y2="20" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-gray-950">Select Payment Method</h3>
-                  <p className="text-xs text-gray-400">
-                    Choose your preferred payment method to complete the booking
-                  </p>
-                </div>
-              </div>
-
-              {/* Options Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
-                <div className="border border-[#0012FF] bg-[#EEF2FF]/20 rounded-2xl p-5 flex items-center gap-4 shadow-xs">
-                  <div className="w-12 h-12 bg-white rounded-xl border border-gray-100 flex items-center justify-center shadow-sm">
-                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="1.8">
-                      <rect x="2" y="5" width="20" height="14" rx="2" />
-                      <path d="M2 10h20M6 15h4" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wide">Stripe Checkout</h4>
-                    <p className="text-[10px] text-gray-500 leading-relaxed mt-1">
-                      Pay securely with a credit or debit card on Stripe.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Order breakdown */}
-              <div className="bg-gray-50/50 border border-gray-100 rounded-2xl p-4 mt-6 space-y-2.5">
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-gray-500 font-medium">Session price</span>
-                  <span className="text-gray-800 font-bold">
-                    PKR {booking.selectedSession ? sessionPrice(booking.selectedSession).toLocaleString() : ''}
-                  </span>
-                </div>
-                <div className="border-t border-gray-200/50 pt-2.5 flex justify-between items-center text-xs font-bold">
-                  <span className="text-gray-800">Total Amount</span>
-                  <span className="text-[#0012FF] text-sm font-black">
-                    PKR {booking.selectedSession ? sessionPrice(booking.selectedSession).toLocaleString() : ''}
-                  </span>
-                </div>
-              </div>
-
-              {/* Navigation buttons inside selection panel */}
-              <div className="flex flex-wrap justify-between items-center mt-8 pt-6 border-t border-gray-100 gap-2">
-                {/* Save as Draft */}
-                <button
-                  onClick={() => saveDraft()}
-                  disabled={isDraftSaved}
-                  className={`font-bold py-2.5 px-5 rounded-full text-xs transition-colors shadow-sm flex items-center justify-center gap-1.5 border ${isDraftSaved
-                      ? 'bg-green-50 border-green-200 text-green-600 cursor-default'
-                      : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
-                    }`}
-                >
-                  {isDraftSaved ? (
-                    <>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                      Saved
-                    </>
-                  ) : (
-                    'Save as Draft'
-                  )}
-                </button>
-
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => {
-                      setIsLoadingBack(true);
-                      router.push(`/creators/${params.username}/book-session/step-3${queryStr}`);
-                    }}
-                    disabled={isLoadingBack}
-                    className="bg-white border border-gray-200 text-gray-700 font-bold py-2.5 px-4 sm:px-6 rounded-full text-xs hover:bg-gray-50 transition-colors shadow-sm flex items-center justify-center"
+                    aria-hidden="true"
                   >
-                    {isLoadingBack ? (
-                      <div className="w-4 h-4 rounded-full border-2 border-gray-300 border-t-gray-700 animate-spin"></div>
+                    {selected && <Check className="h-3 w-3" strokeWidth={3} />}
+                  </span>
+                  <span className="flex h-12 w-full items-center pr-8">
+                    {method.id === 'easypaisa' ? (
+                      <span className="flex h-11 w-[112px] items-center justify-center rounded-lg bg-white px-2.5">
+                        <Image
+                          src="/assets/easypaisa-horizontal.png"
+                          alt="EasyPaisa"
+                          width={160}
+                          height={44}
+                          className="h-auto max-h-8 w-full object-contain"
+                        />
+                      </span>
+                    ) : method.id === 'jazzcash' ? (
+                      <span className="flex h-11 w-[112px] items-center justify-center rounded-lg bg-white px-2.5">
+                        <Image
+                          src="/assets/jazzcash.png"
+                          alt="JazzCash"
+                          width={160}
+                          height={44}
+                          className="h-auto max-h-8 w-full object-contain"
+                        />
+                      </span>
                     ) : (
-                      'Back'
+                      <span className="flex h-11 items-center gap-2 rounded-lg bg-white px-3">
+                        <span className="text-xl font-black tracking-tight text-[#635BFF]" aria-label="Stripe">stripe</span>
+                        <span className="h-5 w-px bg-gray-200" />
+                        <span className="text-xs font-medium text-gray-500">Card</span>
+                      </span>
                     )}
-                  </button>
+                  </span>
+                  <span className="mt-3 min-w-0">
+                    <span className="block text-sm font-bold text-gray-950">{method.label}</span>
+                    <span className="mt-1 block text-xs leading-snug text-gray-500">{method.description}</span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
 
-                  <button
-                    onClick={() => setShowQr(true)}
-                    className="bg-[#0012FF] text-white hover:bg-[#0010d0] font-bold py-2.5 px-5 sm:px-8 rounded-full text-xs transition-colors shadow-sm flex items-center justify-center"
-                  >
-                    Continue
-                  </button>
+          <div className="mt-6 rounded-2xl border border-gray-200 bg-gray-50/70 p-5">
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-sm font-medium text-gray-600">{pkg ? `Package · ${pkg.packageSessions} sessions` : 'Session price'}</span>
+              <span className="shrink-0 text-sm font-semibold tabular-nums text-gray-900">
+                PKR {booking.selectedSession ? sessionPrice(booking.selectedSession).toLocaleString() : '0'}
+              </span>
+            </div>
+            {pkg && paidPackage && (
+              <p className="mt-2 text-xs leading-relaxed text-gray-500">
+                This is session {paidPackage.number} of {paidPackage.total}; your package is already paid.
+              </p>
+            )}
+            <div className="mt-4 flex items-center justify-between gap-4 border-t border-gray-200 pt-4">
+              <span className="text-sm font-semibold text-gray-700">Total due</span>
+              <span className="shrink-0 text-xl font-bold tabular-nums tracking-tight text-gray-950">
+                PKR {amountDue.toLocaleString()}
+              </span>
+            </div>
+          </div>
+
+          {paymentMethod === 'stripe' && (
+            <div className="mt-5 rounded-2xl border border-gray-100 p-4">
+              <div className="flex items-center gap-2 text-sm font-semibold text-gray-800">
+                <ShieldCheck className="h-4 w-4 text-[#635BFF]" />
+                Secure card checkout by Stripe
+              </div>
+              {clientSecret ? (
+                <div ref={checkoutContainer} className="mt-4 min-h-80" />
+              ) : (
+                <p className="mt-2 text-xs leading-relaxed text-gray-500">
+                  Stripe’s secure card form will load here after you continue.
+                </p>
+              )}
+            </div>
+          )}
+
+          {(paymentMethod === 'easypaisa' || paymentMethod === 'jazzcash') && (
+            <div className="mt-5 overflow-hidden rounded-2xl border border-gray-200 bg-white">
+              <div className="flex items-center gap-3 border-b border-gray-100 bg-gray-50/70 px-5 py-4">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-[#0012FF] shadow-sm ring-1 ring-gray-100">
+                  <Smartphone className="h-5 w-5" />
+                </span>
+                <div>
+                  <h2 className="text-sm font-bold text-gray-950">Transfer details</h2>
+                  <p className="mt-0.5 text-xs text-gray-500">Send your payment using {paymentMethod === 'easypaisa' ? 'EasyPaisa' : 'JazzCash'}.</p>
                 </div>
+              </div>
+
+              <div className="space-y-5 p-5">
+                <div>
+                  <div className="mb-3 flex items-center justify-between gap-4">
+                    <p className="text-sm font-semibold text-gray-900">Send this amount</p>
+                    <p className="text-lg font-bold tabular-nums tracking-tight text-gray-950">PKR {amountDue.toLocaleString()}</p>
+                  </div>
+                  <div className="divide-y divide-gray-100 rounded-xl border border-gray-100">
+                    <div className="flex items-center justify-between gap-4 px-4 py-3">
+                      <span className="text-sm text-gray-500">Account name</span>
+                      <span className="text-sm font-semibold text-gray-900">John Doe</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-4 px-4 py-3">
+                      <span className="text-sm text-gray-500">Mobile account</span>
+                      <span className="text-sm font-semibold tabular-nums text-gray-900">92123456789</span>
+                    </div>
+                  </div>
+                </div>
+
+                {amountDue > 0 && (
+                  <label className="group block cursor-pointer rounded-xl border border-dashed border-gray-300 bg-gray-50/50 px-4 py-4 transition-colors hover:border-[#0012FF] hover:bg-[#F7F8FF]">
+                    <span className="flex items-center gap-3">
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white text-[#0012FF] shadow-sm ring-1 ring-gray-100">
+                        {screenshot ? <Check className="h-5 w-5 text-emerald-600" /> : <UploadCloud className="h-5 w-5" />}
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-semibold text-gray-900">
+                          {screenshot ? screenshot.name : 'Upload payment screenshot'}
+                        </span>
+                        <span className="mt-1 block text-xs text-gray-500">
+                          {screenshot ? 'Screenshot attached · click to change' : 'JPG, PNG, or WebP · Maximum file size 5 MB'}
+                        </span>
+                      </span>
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="sr-only"
+                      onChange={(event) => setScreenshot(event.target.files?.[0] || null)}
+                    />
+                  </label>
+                )}
+
+                <p className="flex items-start gap-2 text-xs leading-relaxed text-gray-500">
+                  <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-gray-400" />
+                  Your booking will be confirmed after an administrator verifies your payment.
+                </p>
               </div>
             </div>
           )}
-        </div>
-      </div>
 
-      {/* Warning/Error Modal styled exactly like CancelBookingModal */}
-      {errorModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-[#1a1a1a] border border-[rgba(200,169,126,0.3)] rounded-2xl p-6 w-full max-w-md shadow-2xl">
-            <h2 className="font-serif text-xl font-semibold text-[#F9F6F2] mb-2">Booking Warning</h2>
-            <p className="font-sans text-sm text-[#F9F6F2] opacity-70 mb-6">
-              {errorModalMsg}
-            </p>
+          {visibleError && <p role="alert" className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{visibleError}</p>}
 
-            <div className="flex items-center gap-3">
+          {!clientSecret && (
+            <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 pt-5">
               <button
-                onClick={() => setErrorModalOpen(false)}
-                className="flex-1 bg-[#C8A97E] text-[#0C0C0C] px-4 py-2.5 rounded-full text-sm font-sans font-semibold hover:opacity-90 transition-all"
+                type="button"
+                onClick={() => saveDraft()}
+                disabled={isDraftSaved}
+                className="rounded-full border border-gray-200 px-5 py-2.5 text-xs font-bold text-gray-700 hover:bg-gray-50 disabled:text-green-600"
               >
-                Okay
+                {isDraftSaved ? 'Saved' : 'Save as Draft'}
               </button>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBooking((current) => ({ ...current, step: 2 }));
+                    router.push(`/creators/${params.username}/book-session/step-3${queryStr}`);
+                  }}
+                  disabled={isSubmitting || !!manualBooking}
+                  className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-5 py-2.5 text-xs font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                >
+                  <ArrowLeft className="h-3.5 w-3.5" /> Back
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void submitPayment()}
+                  disabled={isSubmitting || (paymentMethod !== 'stripe' && amountDue > 0 && !screenshot)}
+                  className="min-w-36 rounded-full bg-[#0012FF] px-6 py-2.5 text-xs font-bold text-white hover:bg-[#0010d0] disabled:cursor-not-allowed disabled:bg-gray-300"
+                >
+                  {isSubmitting
+                    ? 'Processing…'
+                    : paymentMethod === 'stripe'
+                      ? 'Load Stripe form'
+                      : manualBooking
+                        ? 'Retry proof upload'
+                        : amountDue > 0
+                          ? 'Submit payment proof'
+                          : 'Confirm booking'}
+                </button>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          )}
+        </section>
+      </div>
     </div>
   );
 }

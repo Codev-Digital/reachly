@@ -20,14 +20,21 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-## Stripe Checkout
+## Session payments
 
-Paid session bookings and event tickets use Stripe-hosted Checkout. Configure these server-side environment variables:
+Paid session bookings support embedded Stripe Checkout and manual EasyPaisa/JazzCash transfer proof. Configure:
 
 ```env
 STRIPE_SECRET_KEY=sk_test_...
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
 ```
+
+Create a **private** Supabase Storage bucket named `payment-proofs` (or set `SUPABASE_PAYMENT_PROOFS_BUCKET`). Manual payment screenshots are stored privately; administrators see short-lived signed links on the Payments Management page. EasyPaisa/JazzCash bookings remain pending until an administrator reviews the proof.
+
+The EasyPaisa/JazzCash account details currently shown in checkout are demo placeholders and must be replaced with verified merchant details before accepting real transfers.
+
+Event ticket purchases continue to use Stripe-hosted Checkout.
 
 For local development, use Stripe test keys and forward Checkout events to the app:
 

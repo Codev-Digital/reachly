@@ -93,6 +93,7 @@ interface BookingState {
   answers: BookingAnswer[];
   step: number;
   bookingRef?: string;
+  paymentMethod?: 'stripe' | 'easypaisa' | 'jazzcash';
 }
 
 const STORAGE_KEY = 'reachly_booking_state';

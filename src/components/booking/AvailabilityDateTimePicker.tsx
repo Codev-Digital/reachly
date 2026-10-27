@@ -35,7 +35,7 @@ type Props = {
 };
 
 /**
- * Date strip + time-slot grid used on book-session step 2 and reschedule modals.
+ * Date strip + time-slot grid used during booking and in reschedule modals.
  * Days with slots render dark; empty days light. Chevrons jump to the next available day.
  */
 export default function AvailabilityDateTimePicker({
@@ -56,6 +56,9 @@ export default function AvailabilityDateTimePicker({
 
   const dayBtnRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const slotsCache = useRef<Record<string, string[]>>({});
+  const inFlightSlots = useRef<
+    Record<string, Promise<{ slots: string[]; schedule?: Record<string, { enabled: boolean }> }>>
+  >({});
   const previewGen = useRef(0);
 
   const today = useMemo(() => pktToday(), []);
@@ -100,33 +103,45 @@ export default function AvailabilityDateTimePicker({
       iso: string
     ): Promise<{ slots: string[]; schedule?: Record<string, { enabled: boolean }> }> => {
       const cacheKey = cacheKeyFor(iso);
-      if (slotsCache.current[cacheKey]) {
+      if (slotsCache.current[cacheKey] !== undefined) {
         return { slots: slotsCache.current[cacheKey] };
       }
+      const existingRequest = inFlightSlots.current[cacheKey];
+      if (existingRequest) return existingRequest;
 
-      const sessionQuery = sessionId ? `&sessionId=${encodeURIComponent(sessionId)}` : '';
-      const res = await fetch(
-        `/api/creators/${encodeURIComponent(username)}/availability?date=${iso}${sessionQuery}`
-      );
-      const data = await res.json();
-      if (data.schedule) setSchedule(data.schedule);
-      const availableSlots: string[] = data.success ? data.slots || [] : [];
-      markDaySlots(iso, availableSlots);
+      const request = (async () => {
+        const sessionQuery = sessionId ? `&sessionId=${encodeURIComponent(sessionId)}` : '';
+        const res = await fetch(
+          `/api/creators/${encodeURIComponent(username)}/availability?date=${iso}${sessionQuery}`
+        );
+        const data = await res.json();
+        if (data.schedule) setSchedule(data.schedule);
+        const availableSlots: string[] = data.success ? data.slots || [] : [];
+        markDaySlots(iso, availableSlots);
 
-      if (data.earliestBookableDate) {
-        setDayHasSlots((prev) => {
-          const next = { ...prev };
-          for (const d of datesList) {
-            const dayIso = toISO(d);
-            if (dayIso < data.earliestBookableDate && next[dayIso] === undefined) {
-              next[dayIso] = false;
-              slotsCache.current[cacheKeyFor(dayIso)] = [];
+        if (data.earliestBookableDate) {
+          setDayHasSlots((prev) => {
+            const next = { ...prev };
+            for (const d of datesList) {
+              const dayIso = toISO(d);
+              if (dayIso < data.earliestBookableDate && next[dayIso] === undefined) {
+                next[dayIso] = false;
+                slotsCache.current[cacheKeyFor(dayIso)] = [];
+              }
             }
-          }
-          return next;
-        });
+            return next;
+          });
+        }
+        return { slots: availableSlots, schedule: data.schedule };
+      })();
+      inFlightSlots.current[cacheKey] = request;
+      try {
+        return await request;
+      } finally {
+        if (inFlightSlots.current[cacheKey] === request) {
+          delete inFlightSlots.current[cacheKey];
+        }
       }
-      return { slots: availableSlots, schedule: data.schedule };
     },
     [cacheKeyFor, datesList, markDaySlots, sessionId, username]
   );
@@ -137,6 +152,7 @@ export default function AvailabilityDateTimePicker({
 
     const gen = ++previewGen.current;
     slotsCache.current = {};
+    inFlightSlots.current = {};
     setDayHasSlots({});
     setFetchedDate(null);
     setSlots([]);

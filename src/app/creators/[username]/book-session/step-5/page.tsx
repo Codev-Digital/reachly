@@ -16,6 +16,8 @@ export default function BookSessionStep5() {
   const fallbackUrl = searchParams.get('fallbackUrl');
   const { booking, userData } = useBooking();
   const creator = booking.creator;
+  const isAwaitingPaymentReview =
+    booking.paymentMethod === 'easypaisa' || booking.paymentMethod === 'jazzcash';
 
   // Booking confirmed — clear any saved draft so next visit starts fresh
   useEffect(() => {
@@ -54,7 +56,7 @@ export default function BookSessionStep5() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-20 pt-2">
       {/* Step Progress Indicator */}
-      <BookingProgress currentStep={5} />
+      <BookingProgress currentStep={4} />
 
       <div className="grid grid-cols-1 lg:grid-cols-[410px_1fr] gap-0 items-start justify-items-center">
         <div className="hidden lg:flex w-full justify-center">
@@ -73,10 +75,12 @@ export default function BookSessionStep5() {
 
             {/* Success Heading */}
             <h3 className="text-[20px] font-black text-gray-950 mb-1 leading-tight">
-              Your Booking Is Confirmed
+              {isAwaitingPaymentReview ? 'Payment Proof Submitted' : 'Your Booking Is Confirmed'}
             </h3>
             <p className="text-[12px] text-gray-400 font-semibold leading-relaxed">
-              We&apos;ve sent the details to your email and WhatsApp
+              {isAwaitingPaymentReview
+                ? 'Your booking will be confirmed after an administrator verifies your transfer.'
+                : 'We’ve sent the details to your email and WhatsApp'}
             </p>
 
             {/* Quick Details strip */}

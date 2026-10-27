@@ -1,18 +1,21 @@
 'use client';
 
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useBooking } from '@/app/creators/[username]/book-session/layout';
 
 export default function BookingProgress({ currentStep }: { currentStep: number }) {
-  const steps = [1, 2, 3, 4, 5];
+  const steps = [1, 2, 3, 4];
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { setBooking } = useBooking();
 
   const handleStepClick = (step: number) => {
     if (step < currentStep) {
       setBooking((b) => ({ ...b, step }));
-      router.push(`/creators/${params.username}/book-session/step-${step}`);
+      const routeStep = step === 1 ? 1 : step + 1;
+      const query = searchParams.toString();
+      router.push(`/creators/${params.username}/book-session/step-${routeStep}${query ? `?${query}` : ''}`);
     }
   };
 
