@@ -119,6 +119,38 @@ function deserializeBooking(raw: string): BookingState | null {
   }
 }
 
+export function getCachedUserData(): { name: string; email: string } {
+  if (typeof window === 'undefined') return { name: '', email: '' };
+  try {
+    let name = '';
+    let email = '';
+
+    const meCache = sessionStorage.getItem('reachly_user_me_cache');
+    if (meCache) {
+      const parsed = JSON.parse(meCache);
+      name = parsed.user?.name || parsed.creatorProfile?.displayName || '';
+      email = parsed.user?.email || '';
+    }
+
+    if (!name) {
+      name = localStorage.getItem('user_display_name') || '';
+    }
+
+    if (!email || !name) {
+      const settingsCache = sessionStorage.getItem('reachly_user_settings_cache');
+      if (settingsCache) {
+        const parsed = JSON.parse(settingsCache);
+        if (!name && parsed.name) name = parsed.name;
+        if (!email && parsed.email) email = parsed.email;
+      }
+    }
+
+    return { name, email };
+  } catch {
+    return { name: '', email: '' };
+  }
+}
+
 const emptyBooking: BookingState = {
   creator: null,
   selectedSession: null,
@@ -160,7 +192,18 @@ export default function BookSessionLayout({ children }: { children: ReactNode })
   const router = useRouter();
   const params = useParams();
   const routeUsername = String(params.username || '').toLowerCase();
-  const [booking, setBookingRaw] = useState<BookingState>(emptyBooking);
+  const [booking, setBookingRaw] = useState<BookingState>(() => {
+    const cached = getCachedUserData();
+    return {
+      ...emptyBooking,
+      userDetails: {
+        ...emptyBooking.userDetails,
+        fullName: cached.name,
+        email: cached.email,
+        whatsapp: '',
+      },
+    };
+  });
   const [userData, setUserData] = useState<any>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState<'user' | 'creator' | null>(null);
@@ -182,6 +225,8 @@ export default function BookSessionLayout({ children }: { children: ReactNode })
     if (!routeUsername) return;
     try {
       const isAtStep1 = pathname?.includes('/step-1');
+      const cachedUser = getCachedUserData();
+
       if (isAtStep1) {
         try {
           sessionStorage.removeItem(STORAGE_KEY);
@@ -191,8 +236,8 @@ export default function BookSessionLayout({ children }: { children: ReactNode })
           creator: prev.creator && creatorMatchesRoute(prev) ? prev.creator : null,
           userDetails: {
             ...emptyBooking.userDetails,
-            fullName: prev.userDetails?.fullName || '',
-            email: prev.userDetails?.email || '',
+            fullName: prev.userDetails?.fullName || cachedUser.name || '',
+            email: prev.userDetails?.email || cachedUser.email || '',
             whatsapp: prev.userDetails?.whatsapp || '',
             proceedAs: prev.userDetails?.proceedAs || 'guest',
           },
@@ -206,7 +251,15 @@ export default function BookSessionLayout({ children }: { children: ReactNode })
       if (draft) {
         const restored = deserializeBooking(draft);
         if (restored && creatorMatchesRoute(restored) && !restored.bookingRef) {
-          setBookingRaw(restored);
+          setBookingRaw((prev) => ({
+            ...restored,
+            userDetails: {
+              ...restored.userDetails,
+              fullName: restored.userDetails?.fullName || prev.userDetails?.fullName || cachedUser.name || '',
+              email: restored.userDetails?.email || prev.userDetails?.email || cachedUser.email || '',
+              whatsapp: restored.userDetails?.whatsapp || prev.userDetails?.whatsapp || '',
+            },
+          }));
           lastDraftRef.current = draft;
           setIsDraftSaved(true);
           return;
@@ -217,16 +270,55 @@ export default function BookSessionLayout({ children }: { children: ReactNode })
       if (session) {
         const restored = deserializeBooking(session);
         if (restored && creatorMatchesRoute(restored) && !restored.bookingRef) {
-          setBookingRaw(restored);
+          setBookingRaw((prev) => ({
+            ...restored,
+            userDetails: {
+              ...restored.userDetails,
+              fullName: restored.userDetails?.fullName || prev.userDetails?.fullName || cachedUser.name || '',
+              email: restored.userDetails?.email || prev.userDetails?.email || cachedUser.email || '',
+              whatsapp: restored.userDetails?.whatsapp || prev.userDetails?.whatsapp || '',
+            },
+          }));
           return;
         }
       }
-      // Different creator (or no saved state) — start clean so skeletons show, not stale images
-      setBookingRaw(emptyBooking);
+
+      // Do NOT wipe active in-memory booking if it matches the current creator and has selectedSession
+      setBookingRaw((prev) => {
+        if (prev.creator && creatorMatchesRoute(prev) && prev.selectedSession) {
+          return {
+            ...prev,
+            userDetails: {
+              ...prev.userDetails,
+              fullName: prev.userDetails?.fullName || cachedUser.name || '',
+              email: prev.userDetails?.email || cachedUser.email || '',
+              whatsapp: prev.userDetails?.whatsapp || '',
+            },
+          };
+        }
+        return {
+          ...emptyBooking,
+          userDetails: {
+            ...emptyBooking.userDetails,
+            fullName: cachedUser.name || '',
+            email: cachedUser.email || '',
+            whatsapp: '',
+          },
+        };
+      });
       setIsDraftSaved(false);
       lastDraftRef.current = '';
     } catch {
-      setBookingRaw(emptyBooking);
+      const cachedUser = getCachedUserData();
+      setBookingRaw({
+        ...emptyBooking,
+        userDetails: {
+          ...emptyBooking.userDetails,
+          fullName: cachedUser.name || '',
+          email: cachedUser.email || '',
+          whatsapp: '',
+        },
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [routeUsername, pathname]);
@@ -263,6 +355,19 @@ export default function BookSessionLayout({ children }: { children: ReactNode })
             Boolean(data.creatorProfile) && 
             (data.user?.approvalStatus === 'approved' || data.user?.approvalStatus === 'active' || data.creatorProfile?.isProfileComplete === true);
           setUserRole(isCreator ? 'creator' : 'user');
+
+          const uName = data.user?.name || data.creatorProfile?.displayName || '';
+          const uEmail = data.user?.email || '';
+          if (uName || uEmail) {
+            setBookingRaw((prev) => ({
+              ...prev,
+              userDetails: {
+                ...prev.userDetails,
+                fullName: prev.userDetails.fullName || uName,
+                email: prev.userDetails.email || uEmail,
+              },
+            }));
+          }
         }
       } catch (e) {}
     }
@@ -282,6 +387,20 @@ export default function BookSessionLayout({ children }: { children: ReactNode })
             Boolean(data.creatorProfile) && 
             (data.user?.approvalStatus === 'approved' || data.user?.approvalStatus === 'active' || data.creatorProfile?.isProfileComplete === true);
           setUserRole(isCreator ? 'creator' : 'user');
+
+          const uName = data.user?.name || data.creatorProfile?.displayName || '';
+          const uEmail = data.user?.email || '';
+
+          if (uName || uEmail) {
+            setBookingRaw((prev) => ({
+              ...prev,
+              userDetails: {
+                ...prev.userDetails,
+                fullName: prev.userDetails.fullName || uName,
+                email: prev.userDetails.email || uEmail,
+              },
+            }));
+          }
         } else {
           setShowLoginModal(true);
         }

@@ -9,7 +9,7 @@ import BookingProgress from '@/components/booking/BookingProgress';
 import CreatorProfileCard from '@/components/booking/CreatorProfileCard';
 import AvailabilityDateTimePicker from '@/components/booking/AvailabilityDateTimePicker';
 import EventCard, { type EventCardData } from '@/components/EventCard';
-import { useBooking, SessionType, sessionPrice } from '../layout';
+import { useBooking, SessionType, sessionPrice, getCachedUserData } from '../layout';
 import { richTextToPlain, richTextPreview } from '@/lib/richText';
 import { formatEventCardDate, formatEventCardTime } from '@/lib/eventDisplay';
 
@@ -106,6 +106,7 @@ export default function BookSessionStep1() {
       sessionStorage.removeItem('reachly_booking_state');
     } catch {}
 
+    const cachedUser = getCachedUserData();
     // Drop previous creator immediately so cover/avatar never flash the wrong person
     // and reset session-specific fields so new bookings start completely clean
     setBooking((b) => {
@@ -122,8 +123,8 @@ export default function BookSessionStep1() {
         bookingRef: undefined,
         paymentMethod: undefined,
         userDetails: {
-          fullName: b.userDetails?.fullName || '',
-          email: b.userDetails?.email || '',
+          fullName: b.userDetails?.fullName || cachedUser.name || '',
+          email: b.userDetails?.email || cachedUser.email || '',
           whatsapp: b.userDetails?.whatsapp || '',
           proceedAs: b.userDetails?.proceedAs || 'guest',
           whatToDiscuss: '',
@@ -222,7 +223,24 @@ export default function BookSessionStep1() {
   const handleContinue = () => {
     if (booking.selectedSession && booking.selectedDate && booking.selectedTime) {
       setIsLoadingContinue(true);
-      setBooking((b) => ({ ...b, step: 2 }));
+      const cachedUser = getCachedUserData();
+      const updatedBooking = {
+        ...booking,
+        step: 2,
+        userDetails: {
+          ...booking.userDetails,
+          fullName: booking.userDetails?.fullName || cachedUser.name || '',
+          email: booking.userDetails?.email || cachedUser.email || '',
+          whatsapp: booking.userDetails?.whatsapp || '',
+        },
+      };
+      setBooking(updatedBooking);
+      try {
+        sessionStorage.setItem('reachly_booking_state', JSON.stringify({
+          ...updatedBooking,
+          selectedDate: updatedBooking.selectedDate ? updatedBooking.selectedDate.toISOString() : null,
+        }));
+      } catch {}
       router.push(`/creators/${params.username}/book-session/step-3${queryStr}`);
     }
   };
