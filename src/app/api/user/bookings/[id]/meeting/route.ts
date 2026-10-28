@@ -135,7 +135,7 @@ export async function GET(_req: NextRequest, context: RouteContext) {
       if (endsAt.getTime() <= Date.now()) {
         if (!booking.meetingEndsAt) booking.meetingEndsAt = endsAt;
         booking.meetingEndedAt = new Date();
-        if (booking.status === 'confirmed') {
+        if ((booking.status as string) === 'confirmed' || (booking.status as string) === 'pending') {
           booking.status = 'completed';
         }
         await booking.save();

@@ -119,6 +119,38 @@ function deserializeBooking(raw: string): BookingState | null {
   }
 }
 
+export function getCachedUserData(): { name: string; email: string } {
+  if (typeof window === 'undefined') return { name: '', email: '' };
+  try {
+    let name = '';
+    let email = '';
+
+    const meCache = sessionStorage.getItem('reachly_user_me_cache');
+    if (meCache) {
+      const parsed = JSON.parse(meCache);
+      name = parsed.user?.name || parsed.creatorProfile?.displayName || '';
+      email = parsed.user?.email || '';
+    }
+
+    if (!name) {
+      name = localStorage.getItem('user_display_name') || '';
+    }
+
+    if (!email || !name) {
+      const settingsCache = sessionStorage.getItem('reachly_user_settings_cache');
+      if (settingsCache) {
+        const parsed = JSON.parse(settingsCache);
+        if (!name && parsed.name) name = parsed.name;
+        if (!email && parsed.email) email = parsed.email;
+      }
+    }
+
+    return { name, email };
+  } catch {
+    return { name: '', email: '' };
+  }
+}
+
 const emptyBooking: BookingState = {
   creator: null,
   selectedSession: null,
@@ -144,6 +176,7 @@ const BookingContext = createContext<{
   prevStep: () => void;
   saveToStorage: () => void;
   saveDraft: () => void;
+  clearBooking: () => void;
   isDraftSaved: boolean;
   userData: any;
 } | null>(null);
@@ -159,7 +192,18 @@ export default function BookSessionLayout({ children }: { children: ReactNode })
   const router = useRouter();
   const params = useParams();
   const routeUsername = String(params.username || '').toLowerCase();
-  const [booking, setBookingRaw] = useState<BookingState>(emptyBooking);
+  const [booking, setBookingRaw] = useState<BookingState>(() => {
+    const cached = getCachedUserData();
+    return {
+      ...emptyBooking,
+      userDetails: {
+        ...emptyBooking.userDetails,
+        fullName: cached.name,
+        email: cached.email,
+        whatsapp: '',
+      },
+    };
+  });
   const [userData, setUserData] = useState<any>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState<'user' | 'creator' | null>(null);
@@ -180,37 +224,115 @@ export default function BookSessionLayout({ children }: { children: ReactNode })
   useEffect(() => {
     if (!routeUsername) return;
     try {
+      const isAtStep1 = pathname?.includes('/step-1');
+      const cachedUser = getCachedUserData();
+
       const draft = localStorage.getItem(DRAFT_KEY);
       if (draft) {
         const restored = deserializeBooking(draft);
-        if (restored && creatorMatchesRoute(restored)) {
-          setBookingRaw(restored);
+        if (restored && creatorMatchesRoute(restored) && !restored.bookingRef) {
+          setBookingRaw((prev) => ({
+            ...restored,
+            userDetails: {
+              ...restored.userDetails,
+              fullName: restored.userDetails?.fullName || prev.userDetails?.fullName || cachedUser.name || '',
+              email: restored.userDetails?.email || prev.userDetails?.email || cachedUser.email || '',
+              whatsapp: restored.userDetails?.whatsapp || prev.userDetails?.whatsapp || '',
+            },
+          }));
           lastDraftRef.current = draft;
           setIsDraftSaved(true);
           return;
         }
       }
+
+      if (isAtStep1) {
+        try {
+          sessionStorage.removeItem(STORAGE_KEY);
+        } catch { }
+        setBookingRaw((prev) => ({
+          ...emptyBooking,
+          creator: prev.creator && creatorMatchesRoute(prev) ? prev.creator : null,
+          userDetails: {
+            ...emptyBooking.userDetails,
+            fullName: prev.userDetails?.fullName || cachedUser.name || '',
+            email: prev.userDetails?.email || cachedUser.email || '',
+            whatsapp: prev.userDetails?.whatsapp || '',
+            proceedAs: prev.userDetails?.proceedAs || 'guest',
+          },
+        }));
+        setIsDraftSaved(false);
+        lastDraftRef.current = '';
+        return;
+      }
+      // In-flight recovery only for mid-flow refresh on steps 2-4
       const session = sessionStorage.getItem(STORAGE_KEY);
       if (session) {
         const restored = deserializeBooking(session);
-        if (restored && creatorMatchesRoute(restored)) {
-          setBookingRaw(restored);
+        if (restored && creatorMatchesRoute(restored) && !restored.bookingRef) {
+          setBookingRaw((prev) => ({
+            ...restored,
+            userDetails: {
+              ...restored.userDetails,
+              fullName: restored.userDetails?.fullName || prev.userDetails?.fullName || cachedUser.name || '',
+              email: restored.userDetails?.email || prev.userDetails?.email || cachedUser.email || '',
+              whatsapp: restored.userDetails?.whatsapp || prev.userDetails?.whatsapp || '',
+            },
+          }));
           return;
         }
       }
-      // Different creator (or no saved state) — start clean so skeletons show, not stale images
-      setBookingRaw(emptyBooking);
+
+      // Do NOT wipe active in-memory booking if it matches the current creator and has selectedSession
+      setBookingRaw((prev) => {
+        if (prev.creator && creatorMatchesRoute(prev) && prev.selectedSession) {
+          return {
+            ...prev,
+            userDetails: {
+              ...prev.userDetails,
+              fullName: prev.userDetails?.fullName || cachedUser.name || '',
+              email: prev.userDetails?.email || cachedUser.email || '',
+              whatsapp: prev.userDetails?.whatsapp || '',
+            },
+          };
+        }
+        return {
+          ...emptyBooking,
+          userDetails: {
+            ...emptyBooking.userDetails,
+            fullName: cachedUser.name || '',
+            email: cachedUser.email || '',
+            whatsapp: '',
+          },
+        };
+      });
       setIsDraftSaved(false);
       lastDraftRef.current = '';
     } catch {
-      setBookingRaw(emptyBooking);
+      const cachedUser = getCachedUserData();
+      setBookingRaw({
+        ...emptyBooking,
+        userDetails: {
+          ...emptyBooking.userDetails,
+          fullName: cachedUser.name || '',
+          email: cachedUser.email || '',
+          whatsapp: '',
+        },
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [routeUsername]);
+  }, [routeUsername, pathname]);
 
   // Keep sessionStorage in sync + mark draft dirty when booking changes
   useEffect(() => {
     try {
+      if (pathname?.includes('/step-5') || booking.bookingRef) {
+        try {
+          sessionStorage.removeItem(STORAGE_KEY);
+          localStorage.removeItem(DRAFT_KEY);
+        } catch { }
+        return;
+      }
       const serialized = serializeBooking(booking);
       sessionStorage.setItem(STORAGE_KEY, serialized);
       if (isDraftSaved && lastDraftRef.current && serialized !== lastDraftRef.current) {
@@ -233,6 +355,19 @@ export default function BookSessionLayout({ children }: { children: ReactNode })
             Boolean(data.creatorProfile) && 
             (data.user?.approvalStatus === 'approved' || data.user?.approvalStatus === 'active' || data.creatorProfile?.isProfileComplete === true);
           setUserRole(isCreator ? 'creator' : 'user');
+
+          const uName = data.user?.name || data.creatorProfile?.displayName || '';
+          const uEmail = data.user?.email || '';
+          if (uName || uEmail) {
+            setBookingRaw((prev) => ({
+              ...prev,
+              userDetails: {
+                ...prev.userDetails,
+                fullName: prev.userDetails.fullName || uName,
+                email: prev.userDetails.email || uEmail,
+              },
+            }));
+          }
         }
       } catch (e) {}
     }
@@ -252,6 +387,20 @@ export default function BookSessionLayout({ children }: { children: ReactNode })
             Boolean(data.creatorProfile) && 
             (data.user?.approvalStatus === 'approved' || data.user?.approvalStatus === 'active' || data.creatorProfile?.isProfileComplete === true);
           setUserRole(isCreator ? 'creator' : 'user');
+
+          const uName = data.user?.name || data.creatorProfile?.displayName || '';
+          const uEmail = data.user?.email || '';
+
+          if (uName || uEmail) {
+            setBookingRaw((prev) => ({
+              ...prev,
+              userDetails: {
+                ...prev.userDetails,
+                fullName: prev.userDetails.fullName || uName,
+                email: prev.userDetails.email || uEmail,
+              },
+            }));
+          }
         } else {
           setShowLoginModal(true);
         }
@@ -285,12 +434,36 @@ export default function BookSessionLayout({ children }: { children: ReactNode })
 
   const saveDraft = () => {
     try {
-      const serialized = serializeBooking(booking);
+      if (pathname?.includes('/step-5') || booking.bookingRef) {
+        try {
+          sessionStorage.removeItem(STORAGE_KEY);
+          localStorage.removeItem(DRAFT_KEY);
+        } catch { }
+        return;
+      }
+      const draftState: BookingState = {
+        ...booking,
+        creator: booking.creator && booking.creator.username ? booking.creator : {
+          ...(booking.creator || {} as any),
+          username: routeUsername,
+        },
+      };
+      const serialized = serializeBooking(draftState);
       localStorage.setItem(DRAFT_KEY, serialized);
       lastDraftRef.current = serialized;
       setIsDraftSaved(true);
     } catch { }
   };
+
+  const clearBooking = useCallback(() => {
+    try {
+      localStorage.removeItem(DRAFT_KEY);
+      sessionStorage.removeItem(STORAGE_KEY);
+    } catch { }
+    setBookingRaw(emptyBooking);
+    setIsDraftSaved(false);
+    lastDraftRef.current = '';
+  }, []);
 
   // Must be stable — step-1's fetch effect lists nextStep in its deps
   const nextStep = useCallback(() => {
@@ -301,7 +474,7 @@ export default function BookSessionLayout({ children }: { children: ReactNode })
   }, [setBooking]);
 
   return (
-    <BookingContext.Provider value={{ booking, setBooking, nextStep, prevStep, saveToStorage, saveDraft, isDraftSaved, userData }}>
+    <BookingContext.Provider value={{ booking, setBooking, nextStep, prevStep, saveToStorage, saveDraft, clearBooking, isDraftSaved, userData }}>
       <div className="min-h-screen bg-[#F8F8FA] text-gray-900 flex flex-col overflow-x-hidden">
         {isLoggedIn ? (
           userRole === 'creator' ? (

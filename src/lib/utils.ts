@@ -534,3 +534,109 @@ export const checkPasswordStrength = (
     return { strength: 'strong', message: 'Strong password!' };
   }
 };
+
+export interface VolunteerEmailParams {
+  volunteerName: string;
+  eventTitle: string;
+  role: string;
+  date?: string;
+  time?: string;
+  venue?: string;
+  creatorName?: string;
+}
+
+export const generateVolunteerAssignmentEmail = ({
+  volunteerName,
+  eventTitle,
+  role,
+  date = 'TBA',
+  time = 'TBA',
+  venue = 'Venue to be announced',
+  creatorName = 'The Event Organizer',
+}: VolunteerEmailParams): string => {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Volunteer Assignment - Reachly</title>
+</head>
+<body style="margin: 0; padding: 0; width: 100%; background-color: #f2f4f4; font-family: Arial, Helvetica, sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; background-color: #f2f4f4; margin: 0; padding: 0;">
+    <tr>
+      <td align="center" style="padding: 30px 15px;">
+        <table width="600" cellpadding="0" cellspacing="0" border="0" style="width: 100%; max-width: 600px; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+          <!-- Header Banner -->
+          <tr>
+            <td style="padding: 32px 32px 24px 32px; background: linear-gradient(135deg, #0012FF 0%, #000B99 100%); color: #ffffff;">
+              <h1 style="margin: 0 0 8px 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px;">Reachly Event Team</h1>
+              <p style="margin: 0; font-size: 14px; opacity: 0.9; line-height: 20px;">Volunteer Assignment Notification</p>
+            </td>
+          </tr>
+          <!-- Body Content -->
+          <tr>
+            <td style="padding: 32px;">
+              <p style="margin: 0 0 16px 0; font-size: 16px; color: #1e293b; line-height: 24px;">
+                Hello <strong>${volunteerName}</strong>,
+              </p>
+              <p style="margin: 0 0 24px 0; font-size: 14px; color: #475569; line-height: 22px;">
+                You have been officially assigned as a volunteer team member for the upcoming event on Reachly. Here are your assignment details:
+              </p>
+
+              <!-- Event Details Card -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; margin-bottom: 24px;">
+                <tr>
+                  <td style="padding: 20px;">
+                    <table width="100%" cellpadding="6" cellspacing="0" border="0" style="font-size: 13px; color: #334155;">
+                      <tr>
+                        <td width="30%" style="font-weight: bold; color: #64748B;">Event:</td>
+                        <td width="70%" style="font-weight: 700; color: #0F172A; font-size: 15px;">${eventTitle}</td>
+                      </tr>
+                      <tr>
+                        <td style="font-weight: bold; color: #64748B;">Assigned Role:</td>
+                        <td style="color: #0012FF; font-weight: 700;">
+                          <span style="display: inline-block; background-color: #EEF2FF; padding: 4px 10px; border-radius: 6px; font-size: 12px; border: 1px solid #DDE5FF;">
+                            ${role}
+                          </span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="font-weight: bold; color: #64748B;">Date & Time:</td>
+                        <td style="font-weight: 600; color: #0F172A;">${date} at ${time}</td>
+                      </tr>
+                      <tr>
+                        <td style="font-weight: bold; color: #64748B;">Venue:</td>
+                        <td style="font-weight: 600; color: #0F172A;">${venue}</td>
+                      </tr>
+                      <tr>
+                        <td style="font-weight: bold; color: #64748B;">Host / Creator:</td>
+                        <td style="font-weight: 600; color: #0F172A;">${creatorName}</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin: 0 0 16px 0; font-size: 13px; color: #64748B; line-height: 20px;">
+                As a volunteer, your assistance is essential to making this event a success. Please arrive at the venue ahead of time or coordinate with the event management team.
+              </p>
+              <p style="margin: 0; font-size: 13px; color: #64748B; line-height: 20px;">
+                If you have any questions, please contact the Reachly event support team.
+              </p>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 20px 32px; background-color: #F8FAFC; border-top: 1px solid #E2E8F0; text-align: center;">
+              <p style="margin: 0; font-size: 12px; color: #94A3B8;">
+                &copy; ${new Date().getFullYear()} Reachly. All rights reserved.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+};

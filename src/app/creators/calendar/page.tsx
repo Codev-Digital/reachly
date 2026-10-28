@@ -8,14 +8,15 @@ import { useRouter } from 'next/navigation';
 import CreatorDashboardNav from '@/components/CreatorDashboardNav';
 import LoadingAnimation from '@/components/LoadingAnimation';
 import DaysOfMonth from '@/components/DaysOfMonth';
-import { Calendar, Clock, Video, MapPin, MessageSquare, AlertTriangle, CheckCircle, ArrowUpRight, X, Star, VideoOff } from 'lucide-react';
+import { Calendar, Clock, Video, MapPin, MessageSquare, AlertTriangle, CheckCircle, ArrowUpRight, X, Star, VideoOff, Loader2 } from 'lucide-react';
 import DailyCall from '@/components/DailyCall';
 import SessionReviewModal, {
   type SessionReviewTarget,
 } from '@/components/booking/SessionReviewModal';
 import OutsideSessionModal, { type OutsideBlock } from '@/components/creator/OutsideSessions';
+import ModificationWindowBlockedModal from '@/components/booking/ModificationWindowBlockedModal';
 import { format12h, parse12h } from '@/lib/slots';
-import { isMeetingPassed } from '@/lib/time';
+import { checkSessionModificationWindow, isMeetingPassed, type SessionModificationAction } from '@/lib/time';
 import { fromISODate, toISODate } from '@/lib/eventTicketing';
 import { useCreatorJoinNudge } from '@/hooks/useCreatorJoinNudge';
 
@@ -49,6 +50,8 @@ interface BookingType {
   durationMins?: number;
   bookingRef?: string;
   isCreatorBooker?: boolean;
+  hostUsername?: string;
+  createdAt?: string | Date;
   isPackage?: boolean;
   sessionNumber?: number;
   rescheduleStatus?: 'pending' | 'unlocked';
@@ -88,6 +91,7 @@ export default function CreatorCalendar() {
   const [showRescheduleModal, setShowRescheduleModal] = useState<boolean>(false);
   const [bookingToReschedule, setBookingToReschedule] = useState<BookingType | null>(null);
   const [isRescheduleSuccess, setIsRescheduleSuccess] = useState<boolean>(false);
+  const [isRescheduling, setIsRescheduling] = useState<boolean>(false);
 
   const [rescheduleDate, setRescheduleDate] = useState<Date>(new Date());
   const [rescheduleSlots, setRescheduleSlots] = useState<string[]>([]);
@@ -97,6 +101,10 @@ export default function CreatorCalendar() {
   // Success Modal States
   const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false);
   const [successModalType, setSuccessModalType] = useState<'cancelled' | 'rescheduled'>('cancelled');
+  const [blockedWindow, setBlockedWindow] = useState<{
+    action: SessionModificationAction;
+    startMs: number | null;
+  } | null>(null);
 
   // Meeting Modal States
   const [meetingToJoin, setMeetingToJoin] = useState<{
@@ -283,6 +291,8 @@ export default function CreatorCalendar() {
               bookingRef: b.bookingRef,
               durationMins: minsMatch ? Number(minsMatch[1]) : 15,
               isCreatorBooker: b.isCreatorBooker || false,
+              hostUsername: b.hostUsername || '',
+              createdAt: b.createdAt,
               isPackage: b.isPackage || false,
               sessionNumber: b.sessionNumber,
               rescheduleStatus: b.rescheduleStatus,
@@ -330,22 +340,24 @@ export default function CreatorCalendar() {
             }
           } catch (e) {}
         }
-        if (!activeUsername) {
+        let targetUsername = (bookingToReschedule?.hostUsername || activeUsername || '').replace(/^@/, '');
+        if (!targetUsername) {
           const profileRes = await fetch('/api/user/me');
           if (profileRes.ok) {
             const data = await profileRes.json();
             activeUsername = data.creatorProfile?.username || '';
             if (activeUsername) setUsername(activeUsername);
+            targetUsername = (bookingToReschedule?.hostUsername || activeUsername || '').replace(/^@/, '');
           }
         }
 
-        if (activeUsername) {
+        if (targetUsername) {
           const year = rescheduleDate.getFullYear();
           const month = String(rescheduleDate.getMonth() + 1).padStart(2, '0');
           const day = String(rescheduleDate.getDate()).padStart(2, '0');
           const dateStr = `${year}-${month}-${day}`;
 
-          const res = await fetch(`/api/creators/${activeUsername}/availability?date=${dateStr}`);
+          const res = await fetch(`/api/creators/${targetUsername}/availability?date=${dateStr}`);
           if (res.ok) {
             const data = await res.json();
             if (data.success && Array.isArray(data.slots)) {
@@ -365,7 +377,7 @@ export default function CreatorCalendar() {
       }
     }
     fetchRescheduleSlots();
-  }, [rescheduleDate, showRescheduleModal, username]);
+  }, [rescheduleDate, showRescheduleModal, username, bookingToReschedule]);
 
   // Sessions the creator booked outside Reachly: shown in the day's list and hidden from booking slots
   const [outsideBlocks, setOutsideBlocks] = useState<OutsideBlock[]>([]);
@@ -424,7 +436,40 @@ export default function CreatorCalendar() {
     return Array.from(set);
   }, [bookings, outsideBlocks]);
 
+  const openBlockedWindow = (
+    booking: { selectedDate?: string; time?: string; selectedTime?: string },
+    action: SessionModificationAction
+  ) => {
+    const check = checkSessionModificationWindow(
+      booking.selectedDate || '',
+      booking.selectedTime || booking.time || '',
+      'Asia/Karachi',
+      action
+    );
+    setBlockedWindow({
+      action,
+      startMs: check.sessionStartUTC?.getTime() ?? null,
+    });
+  };
+
+  const assertModificationAllowed = (
+    booking: { selectedDate?: string; time?: string; selectedTime?: string },
+    action: SessionModificationAction
+  ) => {
+    if (!booking.selectedDate) return true;
+    const check = checkSessionModificationWindow(
+      booking.selectedDate,
+      booking.selectedTime || booking.time || '',
+      'Asia/Karachi',
+      action
+    );
+    if (check.allowed) return true;
+    openBlockedWindow(booking, action);
+    return false;
+  };
+
   const handleCancelClick = (booking: BookingType) => {
+    if (!assertModificationAllowed(booking, 'cancel')) return;
     setBookingToCancel(booking);
     setShowCancelModal(true);
   };
@@ -437,12 +482,18 @@ export default function CreatorCalendar() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'cancelled' })
       });
+      const data = await res.json().catch(() => ({}));
       if (res.ok) {
         setBookings((prev) => prev.map((b) => b.id === bookingToCancel.id ? { ...b, status: 'cancelled' } : b));
         setSuccessModalType('cancelled');
         setShowSuccessModal(true);
       } else {
-        alert('Failed to cancel appointment');
+        if (bookingToCancel && data.error?.includes('24 hours')) {
+          setShowCancelModal(false);
+          openBlockedWindow(bookingToCancel, 'cancel');
+        } else {
+          alert(data.error || 'Failed to cancel appointment');
+        }
       }
     } catch (err) {
       alert('Error cancelling appointment');
@@ -455,6 +506,7 @@ export default function CreatorCalendar() {
   // Package sessions: the creator first asks the admin to unlock the chat so both sides can talk
   const [requestingId, setRequestingId] = useState<string | null>(null);
   const handleRequestReschedule = async (booking: BookingType) => {
+    if (!assertModificationAllowed(booking, 'reschedule')) return;
     setRequestingId(booking.id);
     try {
       const res = await fetch(`/api/creators/bookings/${booking.id}/reschedule-request`, { method: 'POST' });
@@ -471,6 +523,7 @@ export default function CreatorCalendar() {
   };
 
   const handleRescheduleClick = (booking: BookingType) => {
+    if (!assertModificationAllowed(booking, 'reschedule')) return;
     setBookingToReschedule(booking);
     setRescheduleDate(booking.selectedDate ? new Date(booking.selectedDate) : new Date());
     setIsRescheduleSuccess(false);
@@ -478,10 +531,13 @@ export default function CreatorCalendar() {
   };
 
   const handleConfirmReschedule = async () => {
-    if (!bookingToReschedule || !selectedRescheduleTime) {
-      alert('Please select a new time slot');
+    if (!bookingToReschedule || !selectedRescheduleTime || isRescheduling) {
+      if (!selectedRescheduleTime) {
+        alert('Please select a new time slot');
+      }
       return;
     }
+    setIsRescheduling(true);
     try {
       const year = rescheduleDate.getFullYear();
       const month = String(rescheduleDate.getMonth() + 1).padStart(2, '0');
@@ -496,6 +552,7 @@ export default function CreatorCalendar() {
           selectedTime: selectedRescheduleTime,
         })
       });
+      const data = await res.json().catch(() => ({}));
       if (res.ok) {
         // Update locally
         setBookings((prev) => prev.map((b) => {
@@ -511,10 +568,17 @@ export default function CreatorCalendar() {
         }));
         setIsRescheduleSuccess(true);
       } else {
-        alert('Failed to reschedule appointment');
+        if (bookingToReschedule && data.error?.includes('24 hours')) {
+          setShowRescheduleModal(false);
+          openBlockedWindow(bookingToReschedule, 'reschedule');
+        } else {
+          alert(data.error || 'Failed to reschedule appointment');
+        }
       }
     } catch (err) {
       alert('Error rescheduling appointment');
+    } finally {
+      setIsRescheduling(false);
     }
   };
 
@@ -703,9 +767,10 @@ export default function CreatorCalendar() {
                     <div className="flex flex-col gap-3">
                       {(() => {
                         const passed = booking.selectedDate ? isMeetingPassed(booking.selectedDate, booking.time) : false;
+                        const isCompleted = Boolean(booking.meetingEnded || booking.statusRaw === 'completed' || booking.status === 'completed');
                         return (
                           <>
-                            {booking.meetingEnded || booking.statusRaw === 'completed' || booking.status === 'completed' ? (
+                            {isCompleted ? (
                               booking.hasReviewed ? (
                                 <div className="w-full py-2.5 rounded-full text-xs font-bold flex items-center justify-center gap-1.5 bg-gray-100 text-gray-500 border border-gray-200 select-none">
                                   <CheckCircle className="size-3.5 shrink-0" />
@@ -753,7 +818,7 @@ export default function CreatorCalendar() {
                               </button>
                             )}
 
-                            {passed ? (
+                            {passed || isCompleted ? (
                               <button
                                 onClick={() => router.push(`/creators/chats?bookingRef=${booking.bookingRef}`)}
                                 className="w-full py-2.5 bg-[#0012FF] hover:bg-[#0012FF]/90 text-white rounded-full text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md shadow-[#0012FF]/20"
@@ -1109,17 +1174,25 @@ export default function CreatorCalendar() {
               <div className="flex items-center gap-4 w-full">
                 <button
                   onClick={() => setShowRescheduleModal(false)}
-                  className="flex-1 py-3.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-full font-bold text-xs sm:text-sm text-center transition-all cursor-pointer"
+                  disabled={isRescheduling}
+                  className="flex-1 py-3.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-full font-bold text-xs sm:text-sm text-center transition-all cursor-pointer disabled:opacity-50"
                 >
                   Cancel
                 </button>
 
                 <button
                   onClick={handleConfirmReschedule}
-                  disabled={!selectedRescheduleTime}
-                  className="flex-1 py-3.5 bg-[#0012FF] hover:bg-[#0010d0] text-white rounded-full font-bold text-xs sm:text-sm text-center transition-all shadow-md active:scale-98 disabled:bg-gray-200 disabled:text-gray-400 cursor-pointer"
+                  disabled={!selectedRescheduleTime || isRescheduling}
+                  className="flex-1 py-3.5 bg-[#0012FF] hover:bg-[#0010d0] text-white rounded-full font-bold text-xs sm:text-sm text-center transition-all shadow-md active:scale-98 disabled:bg-gray-200 disabled:text-gray-400 cursor-pointer flex items-center justify-center gap-2"
                 >
-                  Reschedule Appointment
+                  {isRescheduling ? (
+                    <>
+                      <Loader2 className="size-4 animate-spin shrink-0" />
+                      <span>Rescheduling…</span>
+                    </>
+                  ) : (
+                    <span>Reschedule Appointment</span>
+                  )}
                 </button>
               </div>
 
@@ -1127,6 +1200,14 @@ export default function CreatorCalendar() {
           )}
         </div>
       )}
+
+      <ModificationWindowBlockedModal
+        open={!!blockedWindow}
+        onClose={() => setBlockedWindow(null)}
+        startMs={blockedWindow?.startMs ?? null}
+        action={blockedWindow?.action || 'reschedule'}
+        kind="session"
+      />
 
       {/* Success Modal (Cancelled or Rescheduled) */}
       {showSuccessModal && (

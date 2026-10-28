@@ -18,8 +18,9 @@ import {
   isMeetingPassed,
   type SessionModificationAction,
 } from '@/lib/time';
-import { Star, CheckCircle, Video, MessageSquare, Clock, AlertTriangle, X as XIcon } from 'lucide-react';
+import { Star, CheckCircle, Video, MessageSquare, Clock, AlertTriangle, X as XIcon, Loader2 } from 'lucide-react';
 import PaymentRejectedDialog from '@/components/PaymentRejectedDialog';
+import { toast } from 'sonner';
 import {
   clearPendingSessionReview,
   readAnyPendingSessionReview,
@@ -29,7 +30,6 @@ import AvailabilityDateTimePicker, {
   dateToISO,
 } from '@/components/booking/AvailabilityDateTimePicker';
 import { pktToday } from '@/lib/pkt';
-import { toast } from 'sonner';
 
 function FadeUp({ children, delay = 0, className = '' }: { children: React.ReactNode; delay?: number; className?: string }) {
   const ref = useRef(null);
@@ -77,6 +77,7 @@ interface Booking {
   eventId?: string | null;
   tierTitle?: string | null;
   adminRemarks?: string;
+  createdAt?: string | Date;
 }
 
 export default function UserBookingsPage() {
@@ -112,6 +113,7 @@ export default function UserBookingsPage() {
   const [bookingToReschedule, setBookingToReschedule] = useState<Booking | null>(null);
   const [rescheduleDate, setRescheduleDate] = useState<Date | null>(null);
   const [selectedRescheduleTimeSlot, setSelectedRescheduleTimeSlot] = useState<string>('');
+  const [isRescheduling, setIsRescheduling] = useState<boolean>(false);
 
   // Custom Cancel / Reschedule Alerts to Modals
   const [showCancelConfirmModal, setShowCancelConfirmModal] = useState<boolean>(false);
@@ -232,6 +234,7 @@ export default function UserBookingsPage() {
               eventId: b.eventId || null,
               tierTitle: b.tierTitle || null,
               adminRemarks: b.adminRemarks || '',
+              createdAt: b.createdAt,
             };
           });
           setBookings(list);
@@ -364,10 +367,13 @@ export default function UserBookingsPage() {
   };
 
   const handleConfirmReschedule = async () => {
-    if (!bookingToReschedule || !selectedRescheduleTimeSlot || !rescheduleDate) {
-      toast.error('Please select a new time slot');
+    if (!bookingToReschedule || !selectedRescheduleTimeSlot || !rescheduleDate || isRescheduling) {
+      if (!selectedRescheduleTimeSlot || !rescheduleDate) {
+        toast.error('Please select a new time slot');
+      }
       return;
     }
+    setIsRescheduling(true);
     try {
       const dateStr = dateToISO(rescheduleDate);
 
@@ -395,6 +401,8 @@ export default function UserBookingsPage() {
       }
     } catch (err) {
       toast.error('Error rescheduling appointment');
+    } finally {
+      setIsRescheduling(false);
     }
   };
 
@@ -504,6 +512,10 @@ export default function UserBookingsPage() {
   };
 
   const handleRefundClick = (booking: Booking) => {
+    if (booking.originalStatus === 'pending' || booking.status === 'Pending Approval' || booking.paymentStatus === 'pending') {
+      toast.error('This ticket is awaiting admin verification and cannot be refunded yet.');
+      return;
+    }
     if (!assertModificationAllowed(booking, 'refund')) return;
     setEventToRefund(booking);
     setShowRefundConfirmModal(true);
@@ -814,8 +826,8 @@ export default function UserBookingsPage() {
                           );
                         }
 
-                        if (booking.isEvent) {
-                          if (isCancelled || isPast) {
+                        if (isCancelled || isPast) {
+                          if (booking.isEvent) {
                             return (
                               <button
                                 onClick={() =>
@@ -831,7 +843,38 @@ export default function UserBookingsPage() {
                               </button>
                             );
                           }
+                          return (
+                            <button
+                              onClick={() => router.push(`/user/chats?bookingRef=${booking.bookingRef}`)}
+                              className="w-full py-2.5 bg-[#0012FF] hover:bg-[#0012FF]/90 text-white rounded-full text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md shadow-[#0012FF]/20"
+                            >
+                              <MessageSquare className="size-3.5 shrink-0" />
+                              Chat now
+                            </button>
+                          );
+                        }
 
+                        if (isPending) {
+                          return (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                toast.info(
+                                  booking.isEvent
+                                    ? 'Payment verification is in progress. Once confirmed, you will be able to access the event chat and view your ticket.'
+                                    : 'Payment verification is in progress. Once confirmed, you will be able to join the meeting, reschedule, or cancel your appointment.',
+                                  { duration: 4000 }
+                                );
+                              }}
+                              className="w-full py-2.5 bg-amber-50 hover:bg-amber-100/80 border border-amber-300/80 text-amber-900 rounded-full text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs active:scale-[0.99]"
+                            >
+                              <Clock className="size-4 text-amber-700 shrink-0" />
+                              <span>Payment Verification In Progress</span>
+                            </button>
+                          );
+                        }
+
+                        if (booking.isEvent) {
                           return (
                             <div className="flex items-center gap-3">
                               <button
@@ -856,40 +899,17 @@ export default function UserBookingsPage() {
                           );
                         }
 
-                        if (isCancelled || isPast) {
-                          return (
-                            <button
-                              onClick={() => router.push(`/user/chats?bookingRef=${booking.bookingRef}`)}
-                              className="w-full py-2.5 bg-[#0012FF] hover:bg-[#0012FF]/90 text-white rounded-full text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md shadow-[#0012FF]/20"
-                            >
-                              <MessageSquare className="size-3.5 shrink-0" />
-                              Chat now
-                            </button>
-                          );
-                        }
-
-                        if (isPending) {
-                          return (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                toast.info(
-                                  'Payment verification is in progress. Once confirmed, you will be able to join the meeting, reschedule, or cancel your appointment.',
-                                  { duration: 4000 }
-                                );
-                              }}
-                              className="w-full py-2.5 bg-amber-50 hover:bg-amber-100/80 border border-amber-300/80 text-amber-900 rounded-full text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs active:scale-[0.99]"
-                            >
-                              <Clock className="size-4 text-amber-700 shrink-0" />
-                              <span>Payment Verification In Progress</span>
-                            </button>
-                          );
-                        }
+                        const isCompleted = Boolean(
+                          booking.meetingEnded ||
+                          booking.status === 'completed' ||
+                          booking.status === 'Completed' ||
+                          booking.originalStatus === 'completed'
+                        );
 
                         // Otherwise, it's upcoming, active and confirmed
                         return (
                           <>
-                            {booking.meetingEnded ? (
+                            {isCompleted ? (
                               booking.hasReviewed ? (
                                 <div className="w-full py-2.5 rounded-full text-xs font-bold flex items-center justify-center gap-1.5 bg-gray-100 text-gray-500 border border-gray-200 select-none">
                                   <CheckCircle className="size-3.5 shrink-0" />
@@ -906,35 +926,37 @@ export default function UserBookingsPage() {
                                 </button>
                               )
                             ) : (
-                              <button
-                                onClick={() => void handleUserJoinMeeting(booking)}
-                                disabled={joiningMeetingId === booking.id}
-                                className="w-full py-2.5 rounded-full text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-md bg-[#0012FF] hover:bg-[#0012FF]/90 text-white shadow-[#0012FF]/20 cursor-pointer disabled:opacity-60"
-                              >
-                                <Video className="size-3.5 shrink-0" />
-                                {joiningMeetingId === booking.id ? 'Checking…' : 'Join Meeting'}
-                              </button>
-                            )}
-                            {booking.isPackage ? (
-                              <p className="text-[11px] text-gray-400 font-medium text-center">
-                                Package sessions can&apos;t be cancelled or rescheduled by you. Your creator can
-                                reschedule if needed.
-                              </p>
-                            ) : (
-                            <div className="flex items-center gap-3">
-                              <button
-                                onClick={() => handleRescheduleClick(booking)}
-                                className="flex-1 py-2 border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-full text-xs font-semibold text-center transition-all cursor-pointer"
-                              >
-                                Reschedule
-                              </button>
-                              <button
-                                onClick={() => handleCancelClick(booking)}
-                                className="flex-1 py-2 bg-[#FFF0F0] border border-red-100 hover:bg-red-100 text-[#FF3B3B] rounded-full text-xs font-semibold text-center transition-all cursor-pointer"
-                              >
-                                Cancel Appointment
-                              </button>
-                            </div>
+                              <>
+                                <button
+                                  onClick={() => void handleUserJoinMeeting(booking)}
+                                  disabled={joiningMeetingId === booking.id}
+                                  className="w-full py-2.5 rounded-full text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-md bg-[#0012FF] hover:bg-[#0012FF]/90 text-white shadow-[#0012FF]/20 cursor-pointer disabled:opacity-60"
+                                >
+                                  <Video className="size-3.5 shrink-0" />
+                                  {joiningMeetingId === booking.id ? 'Checking…' : 'Join Meeting'}
+                                </button>
+                                {booking.isPackage ? (
+                                  <p className="text-[11px] text-gray-400 font-medium text-center">
+                                    Package sessions can&apos;t be cancelled or rescheduled by you. Your creator can
+                                    reschedule if needed.
+                                  </p>
+                                ) : (
+                                  <div className="flex items-center gap-3">
+                                    <button
+                                      onClick={() => handleRescheduleClick(booking)}
+                                      className="flex-1 py-2 border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-full text-xs font-semibold text-center transition-all cursor-pointer"
+                                    >
+                                      Reschedule
+                                    </button>
+                                    <button
+                                      onClick={() => handleCancelClick(booking)}
+                                      className="flex-1 py-2 bg-[#FFF0F0] border border-red-100 hover:bg-red-100 text-[#FF3B3B] rounded-full text-xs font-semibold text-center transition-all cursor-pointer"
+                                    >
+                                      Cancel Appointment
+                                    </button>
+                                  </div>
+                                )}
+                              </>
                             )}
                           </>
                         );
@@ -1016,17 +1038,25 @@ export default function UserBookingsPage() {
             <div className="flex items-center gap-4 w-full">
               <button
                 onClick={() => setShowRescheduleModal(false)}
-                className="flex-1 py-3.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-full font-bold text-xs sm:text-sm text-center transition-all cursor-pointer"
+                disabled={isRescheduling}
+                className="flex-1 py-3.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-full font-bold text-xs sm:text-sm text-center transition-all cursor-pointer disabled:opacity-50"
               >
                 Cancel
               </button>
 
               <button
                 onClick={handleConfirmReschedule}
-                disabled={!selectedRescheduleTimeSlot || !rescheduleDate}
-                className="flex-1 py-3.5 bg-[#0012FF] hover:bg-[#0010d0] text-white rounded-full font-bold text-xs sm:text-sm text-center transition-all shadow-md active:scale-98 disabled:bg-gray-200 disabled:text-gray-400 cursor-pointer"
+                disabled={!selectedRescheduleTimeSlot || !rescheduleDate || isRescheduling}
+                className="flex-1 py-3.5 bg-[#0012FF] hover:bg-[#0010d0] text-white rounded-full font-bold text-xs sm:text-sm text-center transition-all shadow-md active:scale-98 disabled:bg-gray-200 disabled:text-gray-400 cursor-pointer flex items-center justify-center gap-2"
               >
-                Reschedule Appointment
+                {isRescheduling ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin shrink-0" />
+                    <span>Rescheduling…</span>
+                  </>
+                ) : (
+                  <span>Reschedule Appointment</span>
+                )}
               </button>
             </div>
           </div>

@@ -62,6 +62,12 @@ export async function PUT(req: NextRequest, context: RouteContext) {
     if (purchase.status === 'completed') {
       return NextResponse.json({ error: 'Completed event tickets cannot be refunded.' }, { status: 400 });
     }
+    if (purchase.status === 'pending' || purchase.paymentStatus === 'pending') {
+      return NextResponse.json(
+        { error: 'This ticket is awaiting payment verification and cannot be refunded yet.' },
+        { status: 400 }
+      );
+    }
 
     const windowCheck = checkSessionModificationWindow(
       purchase.eventDate,
@@ -81,7 +87,7 @@ export async function PUT(req: NextRequest, context: RouteContext) {
     }
 
     purchase.status = 'cancelled';
-    purchase.paymentStatus = 'refunded';
+    purchase.paymentStatus = purchase.paymentStatus === 'paid' ? 'refunded' : 'failed';
     await purchase.save();
 
     try {

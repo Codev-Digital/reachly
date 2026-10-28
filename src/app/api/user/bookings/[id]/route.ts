@@ -56,11 +56,11 @@ export async function PUT(
       return NextResponse.json({ error: "Booking not found" }, { status: 404 });
     }
 
-    // Ensure the booking belongs to this user
-    if (
-      booking.userId?.toString() !== user._id.toString() &&
-      booking.guestDetails?.email?.toLowerCase().trim() !== email
-    ) {
+    // Ensure the booking belongs to this user or creator
+    const isHost = booking.creatorId?.toString() === user._id.toString();
+    const isClient = booking.userId?.toString() === user._id.toString();
+    const isGuest = Boolean(booking.guestDetails?.email && booking.guestDetails.email.toLowerCase().trim() === email);
+    if (!isHost && !isClient && !isGuest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
@@ -140,52 +140,39 @@ export async function PUT(
       console.log("Status:",status)
       console.log("booking.paymentStatus:",booking.paymentStatus)
       updatePayload.status = status;
-      //pending
-      //&& booking.paymentStatus === "paid"
       if (status === "cancelled") {
-        console.log("PUT : Start second if ");
-        //first of all check if user has referral so deduct commison of that user
-        //fetch from referral model
-        console.log("PUT : before referral doc find ");
-        const referralDoc = await Referral.findOne({
-          joinnee: user._id,
-        //   buyActivities: { $elemMatch: { sessionId: booking.sessionTypeId } },
-        }).exec();
-        console.log("We get the referralDoc:", referralDoc);
-        if (referralDoc) {
-          console.log("PUT : Inside referral doc ");
-          const referrerId = referralDoc.referrer;
-          const referrerUser = await User.findById(referrerId).exec();
-          console.log("We get the referrerUser:", referrerUser);
-          //first all go to buy activities and extract totalAmount
-          referralDoc.buyActivities.map(async (activity: any) => {
-            //first find buy_activity
-            if (activity.type === "buy_session") {
-              const ammount = activity.totalAmount;
-              //we got ammout so just now deduct that ammount from referrer User
-              if (referrerUser) {
-                referrerUser!.totalAmountEarnedFromReferrals =
-                  (referrerUser!.totalAmountEarnedFromReferrals || 0) - ammount;
-                await referrerUser.save();
+        if (booking.paymentStatus === "paid") {
+          //first of all check if user has referral so deduct commison of that user
+          //fetch from referral model
+          const referralDoc = await Referral.findOne({
+            joinnee: user._id,
+          }).exec();
+          if (referralDoc) {
+            const referrerId = referralDoc.referrer;
+            const referrerUser = await User.findById(referrerId).exec();
+            referralDoc.buyActivities.map(async (activity: any) => {
+              if (activity.type === "buy_session") {
+                const ammount = activity.totalAmount;
+                if (referrerUser) {
+                  referrerUser.totalAmountEarnedFromReferrals =
+                    (referrerUser.totalAmountEarnedFromReferrals || 0) - ammount;
+                  await referrerUser.save();
+                }
+                referralDoc.totalBuyActivities += 1;
+                referralDoc.buyActivities.push({
+                  type: "cancel_session",
+                  activityTime: new Date(),
+                  totalAmount: ammount,
+                  status: "rejected",
+                });
+                await referralDoc.save();
               }
-              //after deducting from referrer account update 1 more thing in BuyActivity
-              referralDoc.totalBuyActivities += 1;
-              referralDoc.buyActivities.push({
-                type: "cancel_session",
-                activityTime: new Date(),
-                totalAmount: ammount,
-                status: "rejected",
-              });
-              await referralDoc.save();
-            }
-            //TODO : send notification to referrer about the deduction
-          });
+            });
+          }
+          updatePayload.paymentStatus = "refunded";
         } else {
-          console.log("Else block running");
+          updatePayload.paymentStatus = "failed";
         }
-        console.log("Before update payment status");
-
-        updatePayload.paymentStatus = "refunded";
       }
     }
     if (selectedDate) {

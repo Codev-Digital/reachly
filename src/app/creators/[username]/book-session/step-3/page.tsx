@@ -2,11 +2,12 @@
 
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import BookingProgress from '@/components/booking/BookingProgress';
 import CreatorProfileCard from '@/components/booking/CreatorProfileCard';
 import FormInput from '@/components/FormInput';
 import RichTextEditor from '@/components/RichTextEditor';
-import { useBooking, type SessionQuestion } from '../layout';
+import { useBooking, type SessionQuestion, getCachedUserData } from '../layout';
 import { WHAT_TO_DISCUSS_MAX_LENGTH } from '@/lib/richText';
 
 function questionId(q: SessionQuestion, index: number) {
@@ -30,34 +31,46 @@ export default function BookSessionStep3() {
   const [isLoadingBack, setIsLoadingBack] = useState(false);
   const [showWarningModal, setShowWarningModal] = useState(false);
 
-  // Determine if user is logged in from userData
-  const isLoggedIn = !!(userData?.user?.id);
+  const { data: session } = useSession();
+
+  // Determine if user is logged in from userData or session
+  const isLoggedIn = !!(userData?.user?.id || session?.user?.email);
 
   const sessionQuestions: SessionQuestion[] = Array.isArray(booking.selectedSession?.questions)
     ? booking.selectedSession!.questions!
     : [];
 
-  // Auto-fill user details if logged in and fields are empty
+  // Auto-fill user details (name, email) from userData / session / cache
   useEffect(() => {
-    if (isLoggedIn && userData?.user) {
+    const cached = getCachedUserData();
+    const name =
+      userData?.user?.name ||
+      userData?.creatorProfile?.displayName ||
+      session?.user?.name ||
+      cached.name ||
+      '';
+    const email =
+      userData?.user?.email ||
+      session?.user?.email ||
+      cached.email ||
+      '';
+
+    if (name || email) {
       setBooking((prev) => {
         let updated = { ...prev.userDetails };
         let changed = false;
-        if (!updated.fullName && userData.user.name) {
-          updated.fullName = userData.user.name;
+        if (!updated.fullName && name) {
+          updated.fullName = name;
           changed = true;
         }
-        if (!updated.email && userData.user.email) {
-          updated.email = userData.user.email;
+        if (!updated.email && email) {
+          updated.email = email;
           changed = true;
         }
-        if (changed) {
-          return { ...prev, userDetails: updated };
-        }
-        return prev;
+        return changed ? { ...prev, userDetails: updated } : prev;
       });
     }
-  }, [isLoggedIn, userData, setBooking]);
+  }, [isLoggedIn, userData, session, setBooking]);
 
   const updateUserDetails = (field: string, value: string) => {
     setBooking(b => ({

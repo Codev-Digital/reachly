@@ -14,21 +14,29 @@ export default function BookSessionStep5() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const fallbackUrl = searchParams.get('fallbackUrl');
-  const { booking, userData } = useBooking();
+  const { booking, userData, clearBooking } = useBooking();
   const creator = booking.creator;
   const isAwaitingPaymentReview =
     booking.paymentMethod === 'easypaisa' || booking.paymentMethod === 'jazzcash';
 
   // Booking confirmed — clear any saved draft so next visit starts fresh
   useEffect(() => {
-    try { localStorage.removeItem('reachly_booking_draft'); } catch { }
+    try {
+      localStorage.removeItem('reachly_booking_draft');
+      sessionStorage.removeItem('reachly_booking_state');
+    } catch { }
     router.prefetch('/user/bookings');
     router.prefetch('/creators/calendar');
-  }, [router]);
+    return () => {
+      clearBooking();
+    };
+  }, [router, clearBooking]);
 
   const handleGoToBookings = () => {
     const isLoggedIn = !!userData?.user?.id;
     const isCreator = !!(userData?.creatorProfile);
+    const guestEmail = booking.userDetails.email;
+    clearBooking();
     if (isLoggedIn) {
       if (isCreator) {
         // Creator booking another creator → go to their calendar
@@ -40,7 +48,6 @@ export default function BookSessionStep5() {
       }
     } else {
       // Guest — pass their email so the bookings page can fetch without login
-      const guestEmail = booking.userDetails.email;
       if (fallbackUrl) {
         window.location.href = fallbackUrl;
       } else {
