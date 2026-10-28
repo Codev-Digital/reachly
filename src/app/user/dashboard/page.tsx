@@ -20,7 +20,7 @@ import {
   type SessionModificationAction,
 } from '@/lib/time';
 import { Star, CheckCircle, Video, MessageSquare, Clock, AlertTriangle } from 'lucide-react';
-import PaymentRejectedDialog from '@/components/PaymentRejectedDialog';
+// import PaymentRejectedDialog from '@/components/PaymentRejectedDialog';
 import { toast } from 'sonner';
 import {
   getStoredFavourites,
