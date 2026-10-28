@@ -16,6 +16,7 @@ export interface ISessionType extends Document {
   duration: number;   // minutes (supports 15, 30, 45, 60 or custom positive minutes)
   price: number;      // PKR
   discountedPrice?: number; // optional discounted price in PKR
+  isFreeConsultation?: boolean;
   bufferTime?: number; // minutes kept free after a session before another booking can start
   /**
    * How many calendar days ahead clients must book.
@@ -90,8 +91,9 @@ const SessionTypeSchema = new Schema<ISessionType>(
     price: {
       type: Number,
       required: [true, 'Price is required'],
-      min: [1, 'Price must be at least PKR 1'],
+      min: [0, 'Price cannot be negative'],
     },
+    isFreeConsultation: { type: Boolean, default: false },
     discountedPrice: {
       type: Number,
       min: [0, 'Discounted price cannot be negative'],
@@ -142,8 +144,19 @@ const SessionTypeSchema = new Schema<ISessionType>(
 SessionTypeSchema.index({ userId: 1, order: 1 });
 SessionTypeSchema.index({ userId: 1, isActive: 1 });
 
+const cachedSessionType = mongoose.models.SessionType as Model<ISessionType> | undefined;
+const cachedPriceMinimum = cachedSessionType?.schema.path('price')?.options.min;
+const cachedModelAllowsFreePrice = Array.isArray(cachedPriceMinimum)
+  ? cachedPriceMinimum[0] === 0
+  : cachedPriceMinimum === 0;
+
+if (cachedSessionType && !cachedModelAllowsFreePrice) {
+  mongoose.deleteModel('SessionType');
+}
+
 const SessionType: Model<ISessionType> =
-  mongoose.models.SessionType ||
-  mongoose.model<ISessionType>('SessionType', SessionTypeSchema);
+  cachedModelAllowsFreePrice && cachedSessionType
+    ? cachedSessionType
+    : mongoose.model<ISessionType>('SessionType', SessionTypeSchema);
 
 export default SessionType;

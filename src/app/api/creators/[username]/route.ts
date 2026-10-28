@@ -211,6 +211,7 @@ export async function GET(
                     questions: s.questions || [],
                     features: s.features,
                     isPackage: !!s.isPackage,
+                    isFreeConsultation: !!s.isFreeConsultation,
                     packageSessions: s.packageSessions,
                     packagePeriod: s.packagePeriod,
                 })),

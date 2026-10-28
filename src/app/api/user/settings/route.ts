@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
     }
 
     const creatorProfile = await CreatorProfile.findOne({ userId: user._id })
-      .select('displayName shortBio longBio city country languages niches socialLinks coverPhoto profilePhoto')
+      .select('username displayName shortBio longBio city country languages niches socialLinks coverPhoto profilePhoto')
       .lean() as any;
 
     return NextResponse.json({
@@ -36,6 +36,7 @@ export async function GET(req: NextRequest) {
         profilePhoto: user.profilePhoto || null,
       },
       profile: creatorProfile ? {
+        username: creatorProfile.username,
         displayName: creatorProfile.displayName || user.name,
         shortBio: creatorProfile.shortBio,
         longBio: creatorProfile.longBio,

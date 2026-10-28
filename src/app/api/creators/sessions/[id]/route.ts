@@ -97,6 +97,7 @@ export async function PUT(
       order,
       isActive,
       isDraft,
+      isFreeConsultation,
     } = body;
 
     const updatePayload: any = {};
@@ -135,15 +136,26 @@ export async function PUT(
       updatePayload.bufferTime = buffer;
     }
 
-    const currentPrice = price !== undefined ? Number(price) : existingSession.price;
-    if (price !== undefined) {
-      if (isNaN(currentPrice) || currentPrice < 1) {
+    const freeConsultation = isFreeConsultation === undefined
+      ? !!existingSession.isFreeConsultation
+      : isFreeConsultation === true;
+    const currentPrice = freeConsultation ? 0 : price !== undefined ? Number(price) : existingSession.price;
+    if (freeConsultation) {
+      updatePayload.price = 0;
+      updatePayload.discountedPrice = undefined;
+      updatePayload.isPackage = false;
+      updatePayload.isFreeConsultation = true;
+    } else if (isFreeConsultation !== undefined) {
+      updatePayload.isFreeConsultation = false;
+    }
+    if (!freeConsultation && (price !== undefined || isFreeConsultation === false)) {
+      if (!Number.isFinite(currentPrice) || currentPrice < 1) {
         return NextResponse.json({ error: 'Price must be at least PKR 1.' }, { status: 400 });
       }
       updatePayload.price = currentPrice;
     }
 
-    if (discountedPrice !== undefined) {
+    if (!freeConsultation && discountedPrice !== undefined) {
       if (discountedPrice === null || discountedPrice === '') {
         updatePayload.discountedPrice = undefined;
       } else {

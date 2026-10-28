@@ -71,6 +71,7 @@ export async function POST(req: NextRequest) {
       questions,
       features,
       maxBookings,
+      isFreeConsultation,
     } = body;
 
     // ── Field Validations ──
@@ -98,13 +99,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const priceNum = Number(price);
-    if (isNaN(priceNum) || priceNum < 1) {
+    const freeConsultation = isFreeConsultation === true;
+    const priceNum = freeConsultation ? 0 : Number(price);
+    if (!freeConsultation && (!Number.isFinite(priceNum) || priceNum < 1)) {
       return NextResponse.json({ error: 'Price must be at least PKR 1.' }, { status: 400 });
     }
 
     let parsedDiscountedPrice: number | undefined = undefined;
-    if (discountedPrice !== undefined && discountedPrice !== null && discountedPrice !== '') {
+    if (!freeConsultation && discountedPrice !== undefined && discountedPrice !== null && discountedPrice !== '') {
       parsedDiscountedPrice = Number(discountedPrice);
       if (isNaN(parsedDiscountedPrice) || parsedDiscountedPrice < 0) {
         return NextResponse.json({ error: 'Discounted price cannot be negative.' }, { status: 400 });
@@ -152,7 +154,8 @@ export async function POST(req: NextRequest) {
       duration: durationNum,
       bufferTime: bufferTimeNum,
       price: priceNum,
-      discountedPrice: parsedDiscountedPrice,
+      discountedPrice: freeConsultation ? undefined : parsedDiscountedPrice,
+      isFreeConsultation: freeConsultation,
       questions: sanitizedQuestions,
       features: Array.isArray(features) ? features.filter((f) => typeof f === 'string' && f.trim()) : [],
       maxBookings: maxBookings ? Number(maxBookings) : undefined,

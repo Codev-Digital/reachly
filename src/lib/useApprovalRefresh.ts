@@ -3,6 +3,7 @@
 import { useCallback, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { postAuthRoute } from '@/lib/postAuthRoute';
+import { safeBookingReturnTo } from '@/lib/postAuthRoute';
 
 /**
  * Re-syncs the session token from the DB (the middleware only reads the cookie,
@@ -13,7 +14,7 @@ export function useApprovalRefresh() {
   const { update } = useSession();
   const [checking, setChecking] = useState(false);
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (preferredReturnTo?: string | null) => {
     setChecking(true);
     try {
       await update(); // jwt callback re-reads the DB and rewrites the cookie
@@ -21,7 +22,11 @@ export function useApprovalRefresh() {
       if (!res.ok) return false;
       const { user } = await res.json();
       if (user.approvalStatus === 'approved' || user.approvalStatus === 'rejected') {
-        window.location.href = postAuthRoute(user);
+        const returnTo = user.approvalStatus === 'approved'
+          ? safeBookingReturnTo(preferredReturnTo) || safeBookingReturnTo(localStorage.getItem('reachly_booking_return_to'))
+          : null;
+        if (returnTo) localStorage.removeItem('reachly_booking_return_to');
+        window.location.href = returnTo || postAuthRoute(user);
         return true;
       }
       return false;

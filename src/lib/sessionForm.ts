@@ -73,6 +73,7 @@ export interface SessionFormValues {
   questions: SessionQuestion[];
   /** Package = N sessions sold for one total price. */
   isPackage: boolean;
+  isFreeConsultation: boolean;
   packageSessions: string;
   packagePeriod: 'week' | 'month';
 }
@@ -105,6 +106,7 @@ export const emptySessionValues = (): SessionFormValues => ({
   minAdvanceDays: '1',
   questions: [],
   isPackage: false,
+  isFreeConsultation: false,
   packageSessions: '5',
   packagePeriod: 'week',
 });
@@ -121,6 +123,7 @@ export const sessionToValues = (
     minAdvanceDays?: number | string;
     questions?: unknown;
     isPackage?: boolean;
+    isFreeConsultation?: boolean;
     packageSessions?: number | string;
     packagePeriod?: 'week' | 'month';
   },
@@ -149,6 +152,7 @@ export const sessionToValues = (
     minAdvanceDays: notice,
     questions: normalizeStoredQuestions(s.questions).map(withOptionSlots),
     isPackage: !!s.isPackage,
+    isFreeConsultation: !!s.isFreeConsultation,
     packageSessions: String(s.packageSessions || 5),
     packagePeriod: s.packagePeriod === 'month' ? 'month' : 'week',
   };
@@ -156,9 +160,6 @@ export const sessionToValues = (
 
 /** The buffer actually saved. */
 export const effectiveBufferFor = (values: SessionFormValues): number => {
-  const dur = Number(values.duration) || 0;
-  if (dur < 1) return 0;
-
   if (values.customBufferTime) {
     const buf = Number(values.bufferTime);
     if (!Number.isFinite(buf) || buf <= 0) return 0;
@@ -166,9 +167,7 @@ export const effectiveBufferFor = (values: SessionFormValues): number => {
   }
 
   return (
-    bufferChoicesFor(dur)
-      .filter((m) => m <= Number(values.bufferTime))
-      .pop() ?? 0
+    Number(values.bufferTime) || 0
   );
 };
 
@@ -193,9 +192,11 @@ export const validateSessionValues = (v: SessionFormValues): SessionErrors => {
   }
 
   const priceNum = Number(v.price);
-  if (!v.price || !(priceNum >= 1)) next.price = 'Enter a price of at least 1 PKR';
+  if (!v.isFreeConsultation && (!v.price || !(priceNum >= 1))) {
+    next.price = 'Enter a price of at least 1 PKR';
+  }
 
-  if (v.discountedPrice) {
+  if (!v.isFreeConsultation && v.discountedPrice) {
     const discountNum = Number(v.discountedPrice);
     if (!(discountNum >= 1)) next.discountedPrice = 'Enter a discounted price of at least 1 PKR';
     else if (!next.price && discountNum >= priceNum) {
@@ -218,7 +219,7 @@ export const validateSessionValues = (v: SessionFormValues): SessionErrors => {
     next.minAdvanceDays = `Enter a whole number from 0 to ${MAX_MIN_ADVANCE_DAYS}`;
   }
 
-  if (v.isPackage) {
+  if (v.isPackage && !v.isFreeConsultation) {
     const n = Number(v.packageSessions);
     if (!Number.isInteger(n) || n < 2 || n > 100) next.packageSessions = 'Enter between 2 and 100 sessions';
   }
@@ -235,15 +236,16 @@ export const valuesToPayload = (v: SessionFormValues) => ({
   title: v.title.trim(),
   description: v.description,
   duration: Number(v.duration),
-  price: Number(v.price),
-  discountedPrice: v.discountedPrice ? Number(v.discountedPrice) : undefined,
+  price: v.isFreeConsultation ? 0 : Number(v.price),
+  discountedPrice: v.isFreeConsultation || !v.discountedPrice ? undefined : Number(v.discountedPrice),
   bufferTime: effectiveBufferFor(v),
   maxBookings: Number(v.maxBookings),
   minAdvanceDays: Number(v.minAdvanceDays),
   questions: cleanQuestionsForSave(v.questions),
-  isPackage: v.isPackage,
-  packageSessions: v.isPackage ? Number(v.packageSessions) : undefined,
-  packagePeriod: v.isPackage ? v.packagePeriod : undefined,
+  isPackage: v.isFreeConsultation ? false : v.isPackage,
+  isFreeConsultation: v.isFreeConsultation,
+  packageSessions: v.isPackage && !v.isFreeConsultation ? Number(v.packageSessions) : undefined,
+  packagePeriod: v.isPackage && !v.isFreeConsultation ? v.packagePeriod : undefined,
   // Saving a complete session from settings / onboarding publishes it
   isDraft: false,
 });

@@ -1,15 +1,18 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import LoadingAnimation from '@/components/LoadingAnimation';
 
 import OnboardingNavbar from '@/components/OnboardingNavbar';
 import { useApprovalRefresh } from '@/lib/useApprovalRefresh';
+import { safeBookingReturnTo } from '@/lib/postAuthRoute';
 
 export default function CreatorPendingApproval() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnTo = safeBookingReturnTo(searchParams.get('returnTo'));
   const [loading, setLoading] = useState(true);
   const { refresh, checking } = useApprovalRefresh();
   const [stillPending, setStillPending] = useState(false);
@@ -26,7 +29,7 @@ export default function CreatorPendingApproval() {
         
         // Approved/rejected → refresh the session first, then do a full navigation
         if (data.user.approvalStatus !== 'pending') {
-          if (await refresh()) return;
+          if (await refresh(returnTo)) return;
           router.push('/');
         }
       } catch (err) {
@@ -37,7 +40,7 @@ export default function CreatorPendingApproval() {
     };
 
     checkUserStatus();
-  }, [router, refresh]);
+  }, [router, refresh, returnTo]);
 
   if (loading) return <LoadingAnimation />;
 
@@ -97,7 +100,7 @@ export default function CreatorPendingApproval() {
 
           {/* Button to Refresh Status */}
           <button
-            onClick={async () => setStillPending(!(await refresh()))}
+            onClick={async () => setStillPending(!(await refresh(returnTo)))}
             disabled={checking}
             className="w-full bg-[#0012FF] text-white hover:bg-[#0010d0] font-bold py-2.5 px-8 rounded-full text-xs transition-colors shadow-sm disabled:opacity-50"
           >

@@ -20,11 +20,16 @@ export default function BookSessionStep3() {
   const searchParams = useSearchParams();
   const fallbackUrl = searchParams.get('fallbackUrl');
   const returnTo = searchParams.get('returnTo');
+  const sessionId = searchParams.get('sessionId');
   const query = new URLSearchParams();
   if (fallbackUrl) query.set('fallbackUrl', fallbackUrl);
   if (returnTo) query.set('returnTo', returnTo);
+  if (sessionId) query.set('sessionId', sessionId);
   const queryString = query.toString();
   const queryStr = queryString ? `?${queryString}` : '';
+  const authReturnUrl = sessionId
+    ? `/creators/${params.username}/book-session/step-2?sessionId=${encodeURIComponent(sessionId)}`
+    : `/creators/${params.username}/book-session/step-3`;
   const { booking, setBooking, nextStep, saveToStorage, userData, saveDraft, isDraftSaved } = useBooking();
   const [authError, setAuthError] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
@@ -179,13 +184,13 @@ export default function BookSessionStep3() {
 
               <div className="flex flex-col gap-3 w-full max-w-[300px]">
                 <button
-                  onClick={() => router.push('/login')}
+                  onClick={() => router.push(`/login?callbackUrl=${encodeURIComponent(authReturnUrl)}`)}
                   className="w-full py-3.5 bg-[#0012FF] hover:bg-[#0010d0] text-white rounded-full font-bold text-sm transition-all shadow-md active:scale-[0.98] cursor-pointer"
                 >
                   Log In
                 </button>
                 <button
-                  onClick={() => router.push('/signup')}
+                  onClick={() => router.push(`/signup?callbackUrl=${encodeURIComponent(authReturnUrl)}`)}
                   className="w-full py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full font-bold text-xs sm:text-sm transition-all cursor-pointer"
                 >
                   Create Account

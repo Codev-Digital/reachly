@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { Suspense, useEffect, useState, useRef } from "react";
 import LoadingAnimation from "@/components/LoadingAnimation";
 import WelcomeModal from "@/components/WelcomeModal";
+import { safeBookingReturnTo } from "@/lib/postAuthRoute";
 
 function WelcomeContent() {
   const router = useRouter();
@@ -15,6 +16,7 @@ function WelcomeContent() {
   const [userData, setUserData] = useState<any>(null);
   const searchParams = useSearchParams();
   const ref = searchParams.get("ref");
+  const returnTo = safeBookingReturnTo(searchParams.get("returnTo"));
   const hasSelected = useRef(false);
 
   useEffect(() => {
@@ -27,6 +29,9 @@ function WelcomeContent() {
             setUserData(data);
 
             const user = data.user;
+            const bookingReturnTo = returnTo || safeBookingReturnTo(
+              typeof window !== "undefined" ? localStorage.getItem("reachly_booking_return_to") : null,
+            );
             const isAdmin = [
               "admin@reachly.com",
               "abdullahgotaccess@gmail.com",
@@ -42,14 +47,23 @@ function WelcomeContent() {
             if (user?.approvalStatus === "approved" || user?.approvalStatus === "active") {
               setRedirected(true);
               hasSelected.current = true;
-              router.replace(user.hasCreatorProfile ? "/creators/dashboard" : "/user/dashboard");
+              if (bookingReturnTo) localStorage.removeItem("reachly_booking_return_to");
+              router.replace(bookingReturnTo || (user.hasCreatorProfile ? "/creators/dashboard" : "/user/dashboard"));
               return;
             }
 
             if (user?.approvalStatus === "pending") {
               setRedirected(true);
               hasSelected.current = true;
-              router.replace(user.hasCreatorProfile ? "/creators/pending-approval" : "/user/pending-approval");
+              router.replace(
+                user.hasCreatorProfile
+                  ? bookingReturnTo
+                    ? `/creators/pending-approval?returnTo=${encodeURIComponent(bookingReturnTo)}`
+                    : "/creators/pending-approval"
+                  : bookingReturnTo
+                    ? `/user/pending-approval?returnTo=${encodeURIComponent(bookingReturnTo)}`
+                    : "/user/pending-approval",
+              );
               return;
             }
 
@@ -87,7 +101,7 @@ function WelcomeContent() {
     } else if (status === "unauthenticated") {
       router.replace("/login");
     }
-  }, [status, redirected, router]);
+  }, [status, redirected, router, returnTo]);
 
   const handleChoose = async (selected: "user" | "creator") => {
     if (hasSelected.current) return;

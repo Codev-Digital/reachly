@@ -28,6 +28,7 @@ export interface SessionType {
   /** Days ahead clients must book (0 = same day allowed). */
   minAdvanceDays?: number;
   isPackage?: boolean;
+  isFreeConsultation?: boolean;
   packageSessions?: number;
   packagePeriod?: 'week' | 'month';
 }

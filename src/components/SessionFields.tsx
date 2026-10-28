@@ -79,15 +79,25 @@ export default function SessionFields({ values, onChange, errors, clearError }: 
       {/* Single session or a package of several sessions sold together */}
       <div>
         <p className="block mb-2 font-medium text-[12px] text-black">Session type</p>
-        <div className="grid grid-cols-2 gap-3" role="group" aria-label="Session type">
-          {([['Single session', false], ['Package', true]] as const).map(([label, pkg]) => (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3" role="group" aria-label="Session type">
+          {([
+            ['Single session', false, false],
+            ['Package', true, false],
+            ['Free consultancy', false, true],
+          ] as const).map(([label, pkg, free]) => (
             <button
               key={label}
               type="button"
-              aria-pressed={values.isPackage === pkg}
-              onClick={() => onChange({ isPackage: pkg })}
+              aria-pressed={values.isPackage === pkg && values.isFreeConsultation === free}
+              onClick={() =>
+                onChange({
+                  isPackage: free ? false : pkg,
+                  isFreeConsultation: free,
+                  ...(free ? { price: '', discountedPrice: '' } : {}),
+                })
+              }
               className={`rounded-xl border px-4 py-3 text-sm font-semibold transition-colors ${
-                values.isPackage === pkg
+                values.isPackage === pkg && values.isFreeConsultation === free
                   ? 'border-[#0012FF] bg-[#0012FF] text-white'
                   : 'border-gray-200 bg-white text-gray-600 hover:border-[#0012FF]/50'
               }`}
@@ -98,7 +108,7 @@ export default function SessionFields({ values, onChange, errors, clearError }: 
         </div>
       </div>
 
-      {values.isPackage && (
+      {values.isPackage && !values.isFreeConsultation && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           <FormInput
             label="Number of sessions"
@@ -196,7 +206,8 @@ export default function SessionFields({ values, onChange, errors, clearError }: 
           labelAddon={
             <InfoTooltip title="Buffer time">
               This time is kept free after each session before the next booking can start. For example,
-              a 30-minute buffer creates at least a 30-minute gap between meetings.
+              a 30-minute buffer creates at least a 30-minute gap between meetings, and can be longer
+              than the session duration.
             </InfoTooltip>
           }
           options={bufferOptions}
@@ -234,8 +245,10 @@ export default function SessionFields({ values, onChange, errors, clearError }: 
         />
       </div>
 
-      {/* Session price, discounted price and max bookings on one line */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+      {/* Paid session pricing is omitted for free consultations. */}
+      <div className={`grid grid-cols-1 gap-5 ${values.isFreeConsultation ? 'sm:grid-cols-1' : 'sm:grid-cols-3'}`}>
+        {!values.isFreeConsultation && (
+          <>
         <FormInput
           label={values.isPackage ? 'Package Price (total)' : 'Session Price'}
           required
@@ -266,6 +279,8 @@ export default function SessionFields({ values, onChange, errors, clearError }: 
           error={errors.discountedPrice}
           placeholder="Optional"
         />
+          </>
+        )}
         <FormInput
           label="Max Booking"
           required

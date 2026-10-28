@@ -37,6 +37,7 @@ interface DBTypeSession {
   features?: string[];
   maxBookings?: number;
   isPackage?: boolean;
+  isFreeConsultation?: boolean;
   packageSessions?: number;
   packagePeriod?: 'week' | 'month';
   isDraft?: boolean;

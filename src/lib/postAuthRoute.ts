@@ -8,6 +8,13 @@ export interface RouteState {
   hasCreatorProfile?: boolean;
 }
 
+export function safeBookingReturnTo(value: string | null | undefined): string | null {
+  if (!value) return null;
+  return /^\/creators\/[A-Za-z0-9._~-]+\/book-session\/step-[1-5](?:\?sessionId=[A-Za-z0-9_-]+)?$/.test(value)
+    ? value
+    : null;
+}
+
 export function postAuthRoute(s: RouteState): string {
   const status = s.approvalStatus || 'none';
   if (s.isAdmin) return '/admin/dashboard';

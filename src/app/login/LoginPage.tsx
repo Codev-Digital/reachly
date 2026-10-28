@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { Mail, Lock } from 'lucide-react';
 import FormInput, { FormError } from '@/components/FormInput';
 import { isValidEmail } from '@/lib/validators';
-import { postAuthRoute } from '@/lib/postAuthRoute';
+import { postAuthRoute, safeBookingReturnTo } from '@/lib/postAuthRoute';
 import AuthLayout from '@/components/auth/AuthLayout';
 
 export default function LoginPage({ callbackUrl }: { callbackUrl: string }) {
@@ -116,10 +116,27 @@ export default function LoginPage({ callbackUrl }: { callbackUrl: string }) {
         if (redirectRes.ok) {
           const redirectInfo = await redirectRes.json();
           const isAdmin = ['admin@reachly.com', 'abdullahgotaccess@gmail.com'].includes(email.toLowerCase().trim());
-          const isBookingPath = callbackUrl.startsWith('/creators/') && callbackUrl.includes('/book-session');
+          const bookingReturnTo = safeBookingReturnTo(callbackUrl);
           const target = postAuthRoute({ ...redirectInfo, isAdmin });
 
-          router.replace(isBookingPath && (target === '/user/dashboard' || target === '/creators/dashboard') ? callbackUrl : target);
+          if (bookingReturnTo) {
+            try {
+              if (target === '/user/dashboard' || target === '/creators/dashboard') {
+                localStorage.removeItem('reachly_booking_return_to');
+              } else {
+                localStorage.setItem('reachly_booking_return_to', bookingReturnTo);
+              }
+            } catch {}
+            router.replace(
+              (target === '/user/pending-approval' || target === '/creators/pending-approval')
+                ? `${target}?returnTo=${encodeURIComponent(bookingReturnTo)}`
+                : target === '/user/dashboard' || target === '/creators/dashboard'
+                  ? bookingReturnTo
+                  : target,
+            );
+          } else {
+            router.replace(target);
+          }
         } else {
           router.replace('/welcome');
         }
@@ -134,6 +151,12 @@ export default function LoginPage({ callbackUrl }: { callbackUrl: string }) {
 
   const handleGoogleSignIn = () => {
     setIsGoogleLoading(true);
+    const bookingReturnTo = safeBookingReturnTo(callbackUrl);
+    if (bookingReturnTo) {
+      try {
+        localStorage.setItem('reachly_booking_return_to', bookingReturnTo);
+      } catch {}
+    }
     // /welcome looks up the account and sends the user (or creator) to the right place
     signIn('google', { callbackUrl });
   };

@@ -44,7 +44,7 @@ export default function BookSessionStep1() {
   const eventReturnUrl = returnTo && /^\/(?:user\/)?events\/[^/?#]+$/.test(returnTo)
     ? returnTo
     : null;
-  const wantedSessionId = searchParams.get('session');
+  const wantedSessionId = searchParams.get('sessionId') || searchParams.get('session');
   const query = new URLSearchParams();
   if (fallbackUrl) query.set('fallbackUrl', fallbackUrl);
   if (returnTo) query.set('returnTo', returnTo);
@@ -60,6 +60,13 @@ export default function BookSessionStep1() {
   const [hasScrolled, setHasScrolled] = useState(false);
   const [isMobileBookingStarted, setIsMobileBookingStarted] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const linkedSessionId = searchParams.get('sessionId');
+    if (!linkedSessionId) return;
+    const query = searchParams.toString();
+    router.replace(`/creators/${params.username}/book-session/step-2${query ? `?${query}` : ''}`);
+  }, [params.username, router, searchParams]);
 
 
 
@@ -206,7 +213,7 @@ export default function BookSessionStep1() {
           setReviews(Array.isArray(data.reviews) ? data.reviews : []);
           setCreatorEvents(Array.isArray(data.events) ? data.events : []);
           setBooking((b) => {
-            const sid = b.selectedSession?.id || wantedSessionId;
+            const sid = wantedSessionId || b.selectedSession?.id;
             const sessionMatch = sid
               ? (data.sessions || []).find((s: SessionType) => s.id === sid) || b.selectedSession
               : null;
@@ -430,7 +437,9 @@ export default function BookSessionStep1() {
 
                   {/* SESSIONS CAROUSEL (Mobile & Desktop) */}
                   <div ref={scrollContainerRef} onScroll={handleScroll} className="flex flex-row overflow-x-auto snap-x snap-mandatory hide-scrollbar w-full h-[460px] lg:h-auto lg:w-[810px] lg:-ml-[10px] px-[calc(50%-140px)] lg:px-[10px] lg:pt-4 lg:pb-6 gap-4 lg:gap-[20px] py-4 items-center lg:items-stretch">
-                  {sessions.map((session, index) => {
+                  {[...sessions]
+                    .sort((a, b) => Number(!!b.isFreeConsultation) - Number(!!a.isFreeConsultation))
+                    .map((session, index) => {
                     const themeIdx = index % 3;
                     const theme = cardThemes[themeIdx];
                     const isSelected = booking.selectedSession?.id === session.id;
@@ -494,8 +503,8 @@ export default function BookSessionStep1() {
 
                         {/* Price — discounted amount first; cut original below when set */}
                         <div className="mt-6">
-                          <div className={`text-2xl sm:text-3xl font-black font-sans uppercase tracking-tight leading-none ${theme.text}`}>
-                            {payPrice.toLocaleString()} PKR
+                          <div className={`${session.isFreeConsultation ? 'whitespace-nowrap text-lg sm:text-xl' : 'text-2xl sm:text-3xl'} font-black font-sans uppercase tracking-tight leading-none ${theme.text}`}>
+                            {session.isFreeConsultation ? 'Free Consultancy' : `${payPrice.toLocaleString()} PKR`}
                           </div>
                           {hasDiscount && (
                             <div className={`mt-1.5 text-sm font-semibold line-through opacity-50 ${theme.text}`}>

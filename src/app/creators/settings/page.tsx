@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import CreatorDashboardNav from '@/components/CreatorDashboardNav';
 import LoadingAnimation from '@/components/LoadingAnimation';
 import { logout } from '@/lib/logout';
-import { User, Briefcase, Clock, Shield, Star, Camera, Plus, Trash2, MapPin, ChevronRight, X, AlertTriangle } from 'lucide-react';
+import { User, Briefcase, Clock, Shield, Star, Camera, Plus, Trash2, MapPin, ChevronRight, X, AlertTriangle, Copy } from 'lucide-react';
 import FormInput, { FormLabel } from '@/components/FormInput';
 import FormTextarea from '@/components/FormTextarea';
 import CitySelect from '@/components/CitySelect';
@@ -98,6 +98,7 @@ interface DBTypeSession {
   minAdvanceDays?: number;
   isDraft?: boolean;
   isActive?: boolean;
+  isFreeConsultation?: boolean;
 }
 
 export default function CreatorSettings() {
@@ -106,6 +107,8 @@ export default function CreatorSettings() {
   const coverFileInputRef = useRef<HTMLInputElement>(null);
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string>('');
+  const [creatorUsername, setCreatorUsername] = useState('');
+  const [copiedSessionId, setCopiedSessionId] = useState<string | null>(null);
   const [email, setEmail] = useState<string>('');
   const [shortBio, setShortBio] = useState<string>('');
   const [longBio, setLongBio] = useState<string>('');
@@ -347,6 +350,7 @@ export default function CreatorSettings() {
             setEmail(cacheEmail);
             if (data.profile) {
               cacheDisplayName = data.profile.displayName || data.user?.name || '';
+              setCreatorUsername(data.profile.username || '');
               cacheProfilePhoto = data.profile.profilePhoto || data.user?.profilePhoto || null;
               cacheCoverPhoto = data.profile.coverPhoto || null;
               cacheShortBio = data.profile.shortBio || '';
@@ -1150,7 +1154,9 @@ export default function CreatorSettings() {
                   <p className="text-gray-400 font-medium text-sm">No sessions created yet.</p>
                 </div>
               ) : (
-                sessions.map((session) => {
+                [...sessions]
+                  .sort((a, b) => Number(!!b.isFreeConsultation) - Number(!!a.isFreeConsultation))
+                  .map((session) => {
                   const isOffline = session.isActive === false;
                   const isDraft = session.isDraft === true;
                   const isLive = !isOffline && !isDraft;
@@ -1181,7 +1187,11 @@ export default function CreatorSettings() {
                         <span className="bg-[#FEF3E2] text-[#E8940C] px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap">
                           {session.duration} minutes{(session as any).isPackage ? ` · Package: ${(session as any).packageSessions} sessions per ${(session as any).packagePeriod}` : ''}
                         </span>
-                        <PriceTag price={session.price} discountedPrice={session.discountedPrice} />
+                        {session.isFreeConsultation ? (
+                          <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">Free Consultancy</span>
+                        ) : (
+                          <PriceTag price={session.price} discountedPrice={session.discountedPrice} />
+                        )}
                       </div>
                       <p className="text-gray-500 text-sm leading-relaxed break-words">
                         {richTextPreview(session.description, 300)}
@@ -1199,6 +1209,31 @@ export default function CreatorSettings() {
                     </div>
 
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 self-start sm:self-auto shrink-0">
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const sessionId = session.id || session._id || '';
+                          if (!creatorUsername || !sessionId) {
+                            toast.error('Unable to create a booking link for this session.');
+                            return;
+                          }
+                          const link = `${window.location.origin}/creators/${encodeURIComponent(creatorUsername)}/book-session/step-1?sessionId=${encodeURIComponent(sessionId)}`;
+                          try {
+                            await navigator.clipboard.writeText(link);
+                            setCopiedSessionId(sessionId);
+                            toast.success('Session booking link copied.');
+                            window.setTimeout(() => setCopiedSessionId((current) => current === sessionId ? null : current), 2000);
+                          } catch (error) {
+                            console.error('Unable to copy session booking link:', error);
+                            toast.error('Could not copy the session booking link.');
+                          }
+                        }}
+                        className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-600 transition-all hover:border-[#0012FF]/40 hover:text-[#0012FF]"
+                        title="Copy Session Link"
+                      >
+                        <Copy className="h-4 w-4" />
+                        {copiedSessionId === (session.id || session._id) ? 'Copied' : 'Copy link'}
+                      </button>
                       <button
                         onClick={() => handleOpenEditModal(session)}
                         className="text-gray-400 hover:text-[#0012FF] transition-all p-2 rounded-xl hover:bg-gray-50 cursor-pointer border border-transparent hover:border-gray-200"

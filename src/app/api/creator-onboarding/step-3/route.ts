@@ -98,10 +98,17 @@ export async function PUT(req: NextRequest) {
           { status: 422 }
         );
       }
-      const price = Number(s.price);
-      if (!price || price < 1) {
+      const isFreeConsultation = s.isFreeConsultation === true;
+      const price = isFreeConsultation ? 0 : Number(s.price);
+      if (!isFreeConsultation && (!Number.isFinite(price) || price < 1)) {
         return NextResponse.json(
           { error: `Session ${idx}: price must be at least PKR 1.` },
+          { status: 422 }
+        );
+      }
+      if (isFreeConsultation && s.isPackage) {
+        return NextResponse.json(
+          { error: `Session ${idx}: free consultancy cannot be a package.` },
           { status: 422 }
         );
       }
@@ -126,7 +133,7 @@ export async function PUT(req: NextRequest) {
         );
       }
       s.minAdvanceDays = noticeRaw;
-      if (s.isPackage) {
+      if (s.isPackage && !isFreeConsultation) {
         const n = Number(s.packageSessions);
         if (!Number.isInteger(n) || n < 2 || n > 100) {
           return NextResponse.json(
@@ -135,7 +142,7 @@ export async function PUT(req: NextRequest) {
           );
         }
       }
-      if (s.discountedPrice !== undefined && s.discountedPrice !== null && s.discountedPrice !== '') {
+      if (!isFreeConsultation && s.discountedPrice !== undefined && s.discountedPrice !== null && s.discountedPrice !== '') {
         const discounted = Number(s.discountedPrice);
         if (isNaN(discounted) || discounted < 1 || discounted >= price) {
           return NextResponse.json(
@@ -152,8 +159,8 @@ export async function PUT(req: NextRequest) {
       title: s.title.trim(),
       description: s.description.trim(),
       duration: Number(s.duration),
-      price: Number(s.price),
-      discountedPrice: s.discountedPrice !== undefined && s.discountedPrice !== null && s.discountedPrice !== ''
+      price: s.isFreeConsultation ? 0 : Number(s.price),
+      discountedPrice: !s.isFreeConsultation && s.discountedPrice !== undefined && s.discountedPrice !== null && s.discountedPrice !== ''
         ? Number(s.discountedPrice)
         : undefined,
       bufferTime: s.bufferTime ? Number(s.bufferTime) : 0,
@@ -164,9 +171,10 @@ export async function PUT(req: NextRequest) {
       questions: Array.isArray(s.questions) ? s.questions : [],
       features: (s.features || []).filter((f: string) => f?.trim()),
       maxBookings: s.maxBookings ? Number(s.maxBookings) : undefined,
-      isPackage: !!s.isPackage,
-      packageSessions: s.isPackage ? Number(s.packageSessions) : undefined,
-      packagePeriod: (s.isPackage ? (s.packagePeriod === 'month' ? 'month' : 'week') : undefined) as 'week' | 'month' | undefined,
+      isPackage: !s.isFreeConsultation && !!s.isPackage,
+      isFreeConsultation: s.isFreeConsultation === true,
+      packageSessions: s.isPackage && !s.isFreeConsultation ? Number(s.packageSessions) : undefined,
+      packagePeriod: (s.isPackage && !s.isFreeConsultation ? (s.packagePeriod === 'month' ? 'month' : 'week') : undefined) as 'week' | 'month' | undefined,
       order: index,
       // Keep offline sessions offline; otherwise publish as live
       isActive: s.isActive === false ? false : true,

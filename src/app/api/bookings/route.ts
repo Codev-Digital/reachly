@@ -178,7 +178,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Price comes from the session itself (never from the client): the discounted price when set
-    const listPrice = Number((sessionType as any).price);
+    const listPrice = (sessionType as any).isFreeConsultation
+      ? 0
+      : Number((sessionType as any).price);
     const discounted = Number((sessionType as any).discountedPrice);
     const unitPrice = discounted > 0 && discounted < listPrice ? discounted : listPrice;
     originalPrice = listPrice;

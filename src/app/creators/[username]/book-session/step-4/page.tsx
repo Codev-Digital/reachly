@@ -83,6 +83,7 @@ export default function BookSessionStep4() {
   };
 
   const pkg = booking.selectedSession?.isPackage ? booking.selectedSession : null;
+  const isFreeConsultation = booking.selectedSession?.isFreeConsultation === true;
   const [paidPackage, setPaidPackage] = useState<{ number: number; total: number } | null>(null);
   useEffect(() => {
     if (!pkg) return;
@@ -256,11 +257,15 @@ export default function BookSessionStep4() {
         <section className="w-full max-w-[790px] rounded-[20px] border border-[#e2e2e2] bg-white p-5 sm:p-8">
           <div className="mb-6 border-b border-gray-100 pb-5">
             {/* <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-[#0012FF]">Payment</p> */}
-            <h1 className="text-2xl font-bold tracking-tight text-gray-950">Choose how to pay</h1>
-            <p className="mt-1.5 text-sm text-gray-500">Select your preferred payment method to continue.</p>
+            <h1 className="text-2xl font-bold tracking-tight text-gray-950">
+              {isFreeConsultation ? 'Confirm your free consultation' : 'Choose how to pay'}
+            </h1>
+            <p className="mt-1.5 text-sm text-gray-500">
+              {isFreeConsultation ? 'No payment is required for this booking.' : 'Select your preferred payment method to continue.'}
+            </p>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2">
+          {!isFreeConsultation && <div className="grid gap-3 sm:grid-cols-2">
             {PAYMENT_METHODS.map((method) => {
               const selected = paymentMethod === method.id;
               return (
@@ -323,13 +328,13 @@ export default function BookSessionStep4() {
                 </button>
               );
             })}
-          </div>
+          </div>}
 
           <div className="mt-6 rounded-2xl border border-gray-200 bg-gray-50/70 p-5">
             <div className="flex items-center justify-between gap-4">
               <span className="text-sm font-medium text-gray-600">{pkg ? `Package · ${pkg.packageSessions} sessions` : 'Session price'}</span>
               <span className="shrink-0 text-sm font-semibold tabular-nums text-gray-900">
-                PKR {booking.selectedSession ? sessionPrice(booking.selectedSession).toLocaleString() : '0'}
+                {isFreeConsultation ? 'Free' : `PKR ${booking.selectedSession ? sessionPrice(booking.selectedSession).toLocaleString() : '0'}`}
               </span>
             </div>
             {pkg && paidPackage && (
@@ -345,7 +350,7 @@ export default function BookSessionStep4() {
             </div>
           </div>
 
-          {paymentMethod === 'stripe' && (
+          {!isFreeConsultation && paymentMethod === 'stripe' && (
             <div className="mt-5 rounded-2xl border border-gray-100 p-4">
               <div className="flex items-center gap-2 text-sm font-semibold text-gray-800">
                 <ShieldCheck className="h-4 w-4 text-[#635BFF]" />
@@ -361,7 +366,7 @@ export default function BookSessionStep4() {
             </div>
           )}
 
-          {(paymentMethod === 'easypaisa' || paymentMethod === 'jazzcash') && (
+          {!isFreeConsultation && (paymentMethod === 'easypaisa' || paymentMethod === 'jazzcash') && (
             <div className="mt-5 overflow-hidden rounded-2xl border border-gray-200 bg-white">
               <div className="flex items-center gap-3 border-b border-gray-100 bg-gray-50/70 px-5 py-4">
                 <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-[#0012FF] shadow-sm ring-1 ring-gray-100">
@@ -496,6 +501,13 @@ export default function BookSessionStep4() {
             </div>
           )}
 
+          {isFreeConsultation && (
+            <div className="mt-5 flex items-start gap-2 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-sm text-emerald-800">
+              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
+              Your consultation will be booked immediately when you confirm.
+            </div>
+          )}
+
           {visibleError && <p role="alert" className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{visibleError}</p>}
 
           {!clientSecret && (
@@ -526,7 +538,7 @@ export default function BookSessionStep4() {
                   disabled={isSubmitting || (paymentMethod !== 'stripe' && amountDue > 0 && !screenshot)}
                   className="min-w-36 rounded-full bg-[#0012FF] px-6 py-2.5 text-xs font-bold text-white hover:bg-[#0010d0] disabled:cursor-not-allowed disabled:bg-gray-300"
                 >
-                  {isSubmitting ? 'Confirming…' : 'Confirm'}
+                  {isSubmitting ? 'Confirming…' : isFreeConsultation ? 'Confirm free booking' : 'Confirm'}
                 </button>
               </div>
             </div>

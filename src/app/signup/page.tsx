@@ -9,11 +9,13 @@ import { User, Mail } from "lucide-react";
 import FormInput, { FormError } from "@/components/FormInput";
 import { isValidEmail } from "@/lib/validators";
 import AuthLayout from "@/components/auth/AuthLayout";
+import { safeBookingReturnTo } from "@/lib/postAuthRoute";
 
 function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const ref = searchParams.get("ref");
+  const bookingReturnTo = safeBookingReturnTo(searchParams.get("callbackUrl"));
   console.log("Referral Code:", ref); // Log the referral code to the console
   const [loading, setLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
@@ -54,6 +56,7 @@ function SignupForm() {
       const res = await signUp(formData.name, formData.email, formData.ref);
       if (res.success) {
         localStorage.setItem("signupEmail", formData.email);
+        if (bookingReturnTo) localStorage.setItem("reachly_booking_return_to", bookingReturnTo);
         router.push(
           `/verify-email?callbackUrl=${encodeURIComponent(signupCallbackWithRef)}`,
         );
@@ -73,13 +76,15 @@ function SignupForm() {
 
   const handleGoogleSignIn = () => {
     setIsGoogleLoading(true);
+    if (bookingReturnTo) localStorage.setItem("reachly_booking_return_to", bookingReturnTo);
     signIn("google", { callbackUrl: signupCallbackWithRef });
   };
 
-  const signupCallbackUrl = "/welcome";
-  const signupCallbackWithRef = ref
-    ? `${signupCallbackUrl}?ref=${encodeURIComponent(ref)}`
-    : signupCallbackUrl;
+  const callbackParams = new URLSearchParams();
+  if (ref) callbackParams.set("ref", ref);
+  if (bookingReturnTo) callbackParams.set("returnTo", bookingReturnTo);
+  const callbackQuery = callbackParams.toString();
+  const signupCallbackWithRef = `/welcome${callbackQuery ? `?${callbackQuery}` : ""}`;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
