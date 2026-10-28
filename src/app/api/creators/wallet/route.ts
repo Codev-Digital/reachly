@@ -27,7 +27,11 @@ export async function GET(req: NextRequest) {
 
     // Fetch incoming and outgoing bookings in parallel with .lean()
     const [incomingBookings, outgoingBookings] = (await Promise.all([
-      Booking.find({ creatorId: user._id })
+      Booking.find({
+        creatorId: user._id,
+        status: { $ne: 'pending' },
+        paymentStatus: { $nin: ['pending', 'failed'] },
+      })
         .populate({ path: 'sessionTypeId', model: SessionType, select: 'title' })
         .sort({ createdAt: -1 })
         .lean(),

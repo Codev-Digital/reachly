@@ -26,7 +26,7 @@ interface Payment {
   amount: string;
   platformFee: string;
   creatorEarnings: string;
-  status: 'Completed' | 'Pending' | 'Refunded';
+  status: 'Completed' | 'Pending' | 'Refunded' | 'Rejected';
 }
 
 export default function AdminPaymentsPage() {
@@ -34,7 +34,7 @@ export default function AdminPaymentsPage() {
   const openDetail = (p: any) => router.push(`/admin/payments/${p.dbId || p.id}`);
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedStatusFilter, setSelectedStatusFilter] = useState<'All Statuses' | 'Completed' | 'Pending' | 'Refunded'>('All Statuses');
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState<'All Statuses' | 'Completed' | 'Pending' | 'Refunded' | 'Rejected'>('All Statuses');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -237,7 +237,7 @@ export default function AdminPaymentsPage() {
                       exit={{ opacity: 0, y: 10 }}
                       className="absolute right-0 mt-2 bg-white border border-gray-100 rounded-2xl shadow-xl z-20 py-1.5 min-w-[170px] overflow-hidden"
                     >
-                      {(['All Statuses', 'Completed', 'Pending', 'Refunded'] as const).map((filter) => {
+                      {(['All Statuses', 'Completed', 'Pending', 'Rejected', 'Refunded'] as const).map((filter) => {
                         const isSelected = selectedStatusFilter === filter;
                         return (
                           <button
@@ -335,7 +335,9 @@ export default function AdminPaymentsPage() {
                           ? 'bg-emerald-50 text-[#10B981] border border-emerald-200'
                           : payment.status === 'Pending'
                             ? 'bg-amber-50 text-[#F59E0B] border border-amber-200'
-                            : 'bg-blue-50 text-blue-500 border border-blue-200'
+                            : payment.status === 'Rejected'
+                              ? 'bg-rose-50 text-rose-600 border border-rose-200'
+                              : 'bg-blue-50 text-blue-500 border border-blue-200'
                           }`}
                       >
                         {payment.status}

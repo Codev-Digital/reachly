@@ -46,6 +46,8 @@ export async function GET(request: NextRequest) {
                 creatorId: user._id,
                 scheduledDate: { $gte: startOfDay, $lte: endOfDay },
                 userId: { $exists: true, $ne: null },
+                status: { $ne: 'pending' },
+                paymentStatus: { $nin: ['pending', 'failed'] },
             }).lean() as any[];
 
             for (const b of bookingsOnDate) {
@@ -140,7 +142,17 @@ export async function GET(request: NextRequest) {
                 } }
             ]),
             !dateParam && pairConditions.length > 0
-                ? Booking.find({ $or: pairConditions })
+                ? Booking.find({
+                    $and: [
+                        { $or: pairConditions },
+                        {
+                            $or: [
+                                { userId: user._id },
+                                { creatorId: user._id, status: { $ne: 'pending' }, paymentStatus: { $nin: ['pending', 'failed'] } }
+                            ]
+                        }
+                    ]
+                  })
                     .sort({ scheduledDate: -1 })
                     .populate({ path: 'sessionTypeId', model: SessionType, select: 'title duration' })
                     .lean()

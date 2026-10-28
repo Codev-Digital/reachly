@@ -100,12 +100,15 @@ export default function DaysOfMonth({
     });
   };
 
-  // Keep the strip position sensible: centre the active day, otherwise start from the first selectable day
+  // Keep the strip position sensible: centre the active day, otherwise centre today
   useEffect(() => {
     const el = stripRef.current;
     if (!el) return;
-    // Centre the active day; with nothing active start from the 1st so past days stay visible
-    const target = activeDate ? el.querySelector<HTMLElement>(`[data-date="${activeDate}"]`) : null;
+    // Centre the active day if one exists, otherwise centre today's date in the visible month
+    const activeEl = activeDate ? el.querySelector<HTMLElement>(`[data-date="${activeDate}"]`) : null;
+    const todayIso = toISODate(new Date());
+    const todayEl = !activeEl ? el.querySelector<HTMLElement>(`[data-date="${todayIso}"]`) : null;
+    const target = activeEl ?? todayEl;
     if (target) {
       el.scrollTo({ left: target.offsetLeft - el.clientWidth / 2 + target.clientWidth / 2, behavior: 'smooth' });
     } else {
@@ -159,6 +162,7 @@ export default function DaysOfMonth({
             const selected = selectedDates.includes(iso);
             const active = iso === activeDate;
             const hasMark = marked.has(iso);
+            const isToday = iso === toISODate(new Date());
             return (
               <button
                 key={iso}
@@ -180,6 +184,10 @@ export default function DaysOfMonth({
               >
                 <span className={cn('text-[10px]', active ? 'text-white/80' : disabled ? 'text-gray-300' : 'text-gray-400')}>{weekday}</span>
                 <span className="text-[13px] font-semibold">{String(day).padStart(2, '0')}</span>
+                {/* Today dot — shown only when not active/selected */}
+                {isToday && !active && !selected && (
+                  <span className="absolute bottom-1 h-1.5 w-1.5 rounded-full bg-[#0012FF]" aria-hidden="true" />
+                )}
                 {hasMark && !active && (
                   <span className="absolute bottom-1 h-1.5 w-1.5 rounded-full bg-[#0012FF]" aria-hidden="true" />
                 )}

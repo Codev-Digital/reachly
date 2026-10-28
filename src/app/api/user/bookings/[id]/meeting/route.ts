@@ -115,6 +115,9 @@ export async function GET(_req: NextRequest, context: RouteContext) {
     const { booking, forbidden } = await findOwnedBooking(id, auth.user, auth.email);
     if (forbidden) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     if (!booking) return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
+    if (booking.status === 'pending' || booking.paymentStatus === 'pending') {
+      return NextResponse.json({ error: 'Meeting is unavailable while booking is pending admin verification.' }, { status: 400 });
+    }
 
     // Auto-complete if timer already expired (persist endsAt if missing)
     if (!booking.meetingEndedAt && booking.meetingStartedAt) {
@@ -132,7 +135,7 @@ export async function GET(_req: NextRequest, context: RouteContext) {
       if (endsAt.getTime() <= Date.now()) {
         if (!booking.meetingEndsAt) booking.meetingEndsAt = endsAt;
         booking.meetingEndedAt = new Date();
-        if (booking.status === 'confirmed' || booking.status === 'pending') {
+        if (booking.status === 'confirmed') {
           booking.status = 'completed';
         }
         await booking.save();

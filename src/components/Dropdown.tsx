@@ -36,6 +36,8 @@ export interface DropdownProps {
   inputMode?: 'text' | 'numeric' | 'decimal' | 'tel' | 'email' | 'url' | 'search';
   /** Text at the end of the field in its own bordered segment (e.g. "min"), like the PKR box on FormInput. */
   suffix?: ReactNode;
+  /** Direction the menu opens: 'up', 'down', or 'auto' (default). */
+  direction?: 'up' | 'down' | 'auto';
   /** Extra classes for the field — merged over the same defaults FormInput uses. */
   className?: string;
   menuClassName?: string;
@@ -81,6 +83,7 @@ export default function Dropdown({
   inputMaxLength,
   inputMode,
   suffix,
+  direction = 'auto',
   className,
   menuClassName,
   emptyText,
@@ -101,6 +104,13 @@ export default function Dropdown({
   const wasEditable = useRef(editable);
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
+  const [menuDir, setMenuDir] = useState<'down' | 'up'>(direction === 'up' ? 'up' : 'down');
+
+  /** Estimated menu height: each option ~40px + padding + optional footer. */
+  const estimateMenuHeight = () => {
+    const optionCount = Math.min(options.length || 1, 6);
+    return optionCount * 40 + 16 + (menuFooter ? 48 : 0);
+  };
 
   const close = () => {
     if (!open) return;
@@ -111,6 +121,17 @@ export default function Dropdown({
   const openMenu = () => {
     if (disabled) return;
     setActiveIndex(Math.max(0, options.indexOf(selected)));
+    // Decide whether the menu should open upwards or downwards
+    if (direction === 'up') {
+      setMenuDir('up');
+    } else if (direction === 'down') {
+      setMenuDir('down');
+    } else if (rootRef.current) {
+      const rect = rootRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const needed = estimateMenuHeight();
+      setMenuDir(spaceBelow < needed && rect.top > spaceBelow ? 'up' : 'down');
+    }
     setOpen(true);
   };
 
@@ -188,6 +209,7 @@ export default function Dropdown({
     'px-4 pr-11',
     joined && 'flex-1 min-w-0 border-0 rounded-none rounded-l-[8px] focus:border-0 pr-4',
     !joined && open && 'border-[#0012FF]',
+    !joined && error && 'border-red-500 focus:border-red-500',
     className
   );
 
@@ -211,11 +233,13 @@ export default function Dropdown({
         ref={rootRef}
         className={twMerge(
           'relative',
+          open && 'z-30',
           disabled && 'cursor-not-allowed',
           joined && disabled && 'opacity-60',
           joined &&
             'flex items-stretch bg-white border border-[#e2e2e2] rounded-[8px] focus-within:border-[#0012FF] transition-all',
-          joined && open && 'border-[#0012FF]'
+          joined && open && 'border-[#0012FF]',
+          joined && error && 'border-red-500 focus-within:border-red-500'
         )}
       >
         {editable ? (
@@ -302,7 +326,8 @@ export default function Dropdown({
         {open && (
           <div
             className={twMerge(
-              'absolute z-50 left-0 right-0 mt-1.5 overflow-hidden rounded-[8px] border text-sm font-sans',
+              'absolute z-50 left-0 right-0 overflow-hidden rounded-[8px] border text-sm font-sans',
+              menuDir === 'up' ? 'bottom-full mb-1.5' : 'top-full mt-1.5',
               theme.menu,
               menuClassName
             )}

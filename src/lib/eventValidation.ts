@@ -228,10 +228,13 @@ function cleanDates(raw: unknown, strict: boolean): { value: IEventDate[] } | { 
       if (!isHour(endHour) || !isMinute(endMinute || '00')) {
         return { error: `Set a valid ending time for ${date}.` };
       }
-      if (
-        toMinutes(startHour, startMinute || '00', startPeriod) >=
-        toMinutes(endHour, endMinute || '00', endPeriod)
-      ) {
+      const startMin = toMinutes(startHour, startMinute || '00', startPeriod);
+      let endMin = toMinutes(endHour, endMinute || '00', endPeriod);
+      // Support overnight events (e.g. 10 PM to 2 AM) where end time rolls over to the next morning
+      if (startPeriod === 'PM' && endPeriod === 'AM') {
+        endMin += 24 * 60;
+      }
+      if (startMin >= endMin) {
         return { error: `Ending time must be after starting time on ${date}.` };
       }
     } else {
