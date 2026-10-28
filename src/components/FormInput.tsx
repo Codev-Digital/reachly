@@ -124,7 +124,8 @@ export default function FormInput({
           'relative',
           // With a suffix the border moves to the wrapper so input + suffix read as one field
           suffix &&
-            'flex items-stretch bg-white border border-[#e2e2e2] rounded-[8px] overflow-hidden focus-within:border-[#0012FF] transition-all'
+            'flex items-stretch bg-white border border-[#e2e2e2] rounded-[8px] overflow-hidden focus-within:border-[#0012FF] transition-all',
+          suffix && error && 'border-red-500 focus-within:border-red-500'
         )}
       >
         {icon && (
@@ -145,6 +146,7 @@ export default function FormInput({
             icon ? 'pl-11' : 'pl-4',
             isPassword ? 'pr-12' : 'pr-4',
             suffix && 'flex-1 min-w-0 border-0 rounded-none focus:border-0',
+            error && 'border-red-500 focus:border-red-500',
             className
           )}
         />

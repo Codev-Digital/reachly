@@ -32,6 +32,7 @@ import {
   readAnyPendingSessionReview,
   storePendingSessionReview,
 } from '@/lib/pendingSessionReview';
+import { toast } from 'sonner';
 function LoginToExplore() {
   const router = useRouter();
   return (
@@ -873,7 +874,7 @@ export default function UserDashboard() {
                             className="flex flex-col w-full group cursor-pointer"
                           >
                             {/* Top Image Container */}
-                            <div className="relative w-full aspect-[4/4.2] rounded-[20px] overflow-hidden bg-gray-100 mb-3.5 shadow-xs transition-transform duration-300 group-hover:scale-[1.01]">
+                            <div className="relative w-full aspect-[4/4.2] rounded-t-[8px] overflow-hidden bg-gray-100 mb-3.5 shadow-xs transition-transform duration-300 group-hover:scale-[1.01]">
                               <img
                                 src={creator.profilePhoto || '/avatar.png'}
                                 alt={creator.displayName}
@@ -913,7 +914,7 @@ export default function UserDashboard() {
                             <div className="px-0.5 space-y-1">
                               {/* Title & Star Rating */}
                               <div className="flex items-center justify-between gap-2">
-                                <h3 className="font-bold text-base text-black font-sans flex items-center gap-1.5 leading-tight truncate">
+                                <h3 className="font-bold text-[20px] leading-5 text-black font-sans flex items-center gap-1.5">
                                   <span>{creator.displayName}</span>
                                   {creator.isVerified && (
                                     <svg className="w-4.5 h-4.5 text-[#12B76A] fill-current shrink-0" viewBox="0 0 24 24">
@@ -927,17 +928,17 @@ export default function UserDashboard() {
                               </div>
 
                               {/* Handle */}
-                              <p className="text-xs text-gray-400 font-medium font-sans">@{creator.username}</p>
+                              <p className="text-[12px] text-[#8E8E8E] font-normal leading-3.5 font-sans">@{creator.username}</p>
 
                               {/* Short Bio */}
-                              <p className="text-xs text-gray-400 font-sans leading-relaxed line-clamp-2 pt-1">
+                              <p className="text-[12px] leading-5 text-[#8E8E8E] font-sans line-clamp-2 pt-1">
                                 {creator.shortBio || 'Ayesha Khan is one of Pakistan’s leading fashion and lifestyle content creators...'}
                               </p>
 
                               {/* Price Row */}
-                              <div className="pt-2 flex items-center gap-1 text-xs text-gray-400 font-sans">
+                              <div className="pt-2 flex items-center gap-1 text-[12px] leading-3 text-[#8E8E8E] font-sans">
                                 <span>Starting from</span>
-                                <strong className="text-black font-black text-sm ml-1">
+                                <strong className="text-black font-black  ml-1 text-[16px] leading-4">
                                   {creator.startingPrice ? `${creator.startingPrice.toLocaleString()} PKR` : '1200 PKR'}
                                 </strong>
                               </div>
@@ -998,9 +999,9 @@ export default function UserDashboard() {
           </div>
 
           {/* Right Column (takes 4 cols) - Bookings Tabs & List */}
-          <div className="lg:col-span-4 bg-white rounded-[24px] p-5 border border-gray-100 shadow-2xs">
+          <div className="lg:col-span-4  ">
             {/* Bookings Tabs */}
-            <div className="flex bg-gray-100/80 p-1 rounded-2xl justify-between border border-gray-200/50 mb-5">
+            <div className="flex bg-gray-100/80 p-1 rounded-[8px] justify-between border border-gray-200/50 mb-5">
               {(['Upcoming', 'Past', 'Cancelled'] as const).map((tab) => {
                 const count = currentBookings[tab].length;
                 const isActive = activeBookingTab === tab;
@@ -1011,7 +1012,7 @@ export default function UserDashboard() {
                       setActiveBookingTab(tab);
                       setBookingsPage(0);
                     }}
-                    className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${isActive
+                    className={`flex-1 py-2 text-xs font-bold rounded-[8px] transition-all ${isActive
                       ? 'bg-[#0012FF] text-white shadow-sm'
                       : 'text-gray-500 hover:text-gray-900'
                       }`}
@@ -1025,7 +1026,7 @@ export default function UserDashboard() {
             {/* List of bookings */}
             <div>
               {currentBookings[activeBookingTab].length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-10 w-full h-full min-h-[200px]">
+                <div className="flex flex-col items-center justify-center py-2 w-full h-full min-h-[200px]">
                   <Image
                     src="/assets/no-appointment.webp"
                     alt="No bookings yet"
@@ -1041,7 +1042,7 @@ export default function UserDashboard() {
                     {currentBookings[activeBookingTab].slice(bookingsPage * BOOKINGS_PER_PAGE, (bookingsPage + 1) * BOOKINGS_PER_PAGE).map((booking) => (
                       <div
                         key={booking.id}
-                        className="w-full bg-white border border-gray-200/70 rounded-2xl p-4 flex flex-col justify-between shadow-2xs hover:shadow-xs transition-all group"
+                        className="w-full bg-white border border-[#e2e2e2] rounded-[12px] p-4 flex flex-col justify-between  transition-all group"
                       >
                         <div>
                           {/* Header */}
@@ -1199,7 +1200,7 @@ export default function UserDashboard() {
                                       { duration: 4000 }
                                     );
                                   }}
-                                  className="w-full py-2 bg-amber-50 hover:bg-amber-100/80 border border-amber-300/80 text-amber-900 rounded-full text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs active:scale-[0.99]"
+                                  className="w-full py-2 bg-amber-50 hover:bg-amber-100/80 border border-amber-300/80 text-amber-900 rounded-[8px] text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs active:scale-[0.99]"
                                 >
                                   <Clock className="size-3.5 text-amber-700 shrink-0" />
                                   <span>Payment Verification In Progress</span>
@@ -1258,9 +1259,9 @@ export default function UserDashboard() {
                     ))}
                   </div>
 
-                  <div className="mt-4 pt-4 border-t border-gray-100">
+                  <div className="mt-1 pt-1">
                     {/* Pagination arrows */}
-                    {currentBookings[activeBookingTab].length > BOOKINGS_PER_PAGE && (
+                    {/* {currentBookings[activeBookingTab].length > BOOKINGS_PER_PAGE && (
                       <div className="flex items-center justify-center gap-3 mb-4">
                         <button
                           onClick={() => setBookingsPage(p => Math.max(0, p - 1))}
@@ -1292,12 +1293,12 @@ export default function UserDashboard() {
                           </svg>
                         </button>
                       </div>
-                    )}
+                    )} */}
 
                     {/* Show All Bookings Button */}
                     <button
                       onClick={() => router.push('/user/bookings')}
-                      className="w-full py-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 rounded-xl text-xs font-bold text-center transition-all cursor-pointer flex items-center justify-center gap-2"
+                      className="w-full py-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 rounded-[8px] text-xs font-bold text-center transition-all cursor-pointer flex items-center justify-center gap-2"
                     >
                       Show All {activeBookingTab} Bookings
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -1576,6 +1577,7 @@ export default function UserDashboard() {
       <PaymentRejectedDialog
         booking={rejectionRemarksBooking ? {
           ...rejectionRemarksBooking,
+          id: String(rejectionRemarksBooking.id),
           creator: rejectionRemarksBooking.name,
           price: rejectionRemarksBooking.amount,
         } : null}

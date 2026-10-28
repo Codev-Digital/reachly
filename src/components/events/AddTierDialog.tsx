@@ -89,7 +89,7 @@ export default function AddTierDialog({ open, onOpenChange, onSave, editing, tak
           value={values.title}
           onChange={(e) => patch({ title: e.target.value })}
           error={errors.title}
-          placeholder="e.g. Early Bird"
+          placeholder="e.g. VIP"
           autoFocus
         />
         <div className="grid grid-cols-2 gap-3">
@@ -106,7 +106,7 @@ export default function AddTierDialog({ open, onOpenChange, onSave, editing, tak
             placeholder="Enter price"
           />
           <FormInput
-            label="Total Person"
+            label="No of Seats"
             required
             type="text"
             inputMode="numeric"
@@ -114,7 +114,7 @@ export default function AddTierDialog({ open, onOpenChange, onSave, editing, tak
             value={values.persons}
             onChange={(e) => patch({ persons: digitsOnly(e.target.value) })}
             error={errors.persons}
-            placeholder="1"
+            placeholder="Enter Number of Seats"
           />
         </div>
         {/* lets Enter submit the form */}
