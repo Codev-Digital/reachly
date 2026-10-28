@@ -195,8 +195,8 @@ export default function SessionFields({ values, onChange, errors, clearError }: 
           label="Buffer Time"
           labelAddon={
             <InfoTooltip title="Buffer time">
-              A short break kept free after each session, before the next booking can start. It can&apos;t
-              be longer than the session duration, so enter a duration first.
+              This time is kept free after each session before the next booking can start. For example,
+              a 30-minute buffer creates at least a 30-minute gap between meetings.
             </InfoTooltip>
           }
           options={bufferOptions}

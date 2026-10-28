@@ -204,6 +204,7 @@ export async function GET(
                     description: s.description,
                     duration: `${s.duration} mins`,
                     durationMinutes: s.duration,
+                    bufferTime: Math.max(0, Number(s.bufferTime) || 0),
                     price: s.price,
                     discountedPrice: s.discountedPrice,
                     minAdvanceDays: Math.max(0, Number(s.minAdvanceDays) || 0),

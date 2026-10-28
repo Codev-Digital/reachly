@@ -119,17 +119,18 @@ export default function TicketingFields({ values, onChange, error, clearError }:
           )}
         >
           {/* Column headers — desktop */}
-          <div className="hidden items-center gap-4 border-b border-[#e2e2e2] bg-[#F8F8FA] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-gray-400 sm:grid sm:grid-cols-[minmax(0,1.4fr)_100px_120px_72px]">
+          <div className="hidden items-center gap-4 border-b border-[#e2e2e2] bg-[#F8F8FA] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-gray-400 sm:grid sm:grid-cols-[minmax(0,1.4fr)_100px_90px_120px_72px]">
             <span>Tier</span>
             <span className="text-right">Price</span>
-            <span>Quantity</span>
+            <span>No of seats</span>
+            <span>Tickets available</span>
             <span className="text-right">Actions</span>
           </div>
 
           <ul className="divide-y divide-[#e2e2e2]">
             {tiers.map((tier, index) => (
               <li key={tier.id} className="px-4 py-3.5 transition-colors hover:bg-[#FAFAFC]">
-                <div className="grid grid-cols-1 items-center gap-3 sm:grid-cols-[minmax(0,1.4fr)_100px_120px_72px] sm:gap-4">
+                <div className="grid grid-cols-1 items-center gap-3 sm:grid-cols-[minmax(0,1.4fr)_100px_90px_120px_72px] sm:gap-4">
                   {/* Tier identity */}
                   <div className="flex min-w-0 items-start gap-3">
                     <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#E8E9FB] text-[11px] font-bold text-[#0012FF]">
@@ -152,10 +153,20 @@ export default function TicketingFields({ values, onChange, error, clearError }:
                     </span>
                   </div>
 
-                  {/* Quantity */}
+                  {/* Seats allowed per ticket, as configured in the tier popup */}
                   <div>
                     <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-gray-400 sm:hidden">
-                      Quantity
+                      No of seats
+                    </label>
+                    <span className="inline-flex min-h-9 items-center rounded-[8px] border border-[#e2e2e2] bg-[#F8F8FA] px-3 text-sm font-semibold text-gray-700">
+                      {Number(tier.persons || 0).toLocaleString('en-US')}
+                    </span>
+                  </div>
+
+                  {/* Ticket inventory */}
+                  <div>
+                    <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-gray-400 sm:hidden">
+                      Tickets available
                     </label>
                     <input
                       type="text"
@@ -164,7 +175,7 @@ export default function TicketingFields({ values, onChange, error, clearError }:
                       value={tier.quantity}
                       onChange={(e) => setTierQuantity(tier.id, e.target.value)}
                       placeholder="0"
-                      aria-label={`Quantity for ${tier.title}`}
+                      aria-label={`Tickets available for ${tier.title}`}
                       className="w-full rounded-[8px] border border-[#e2e2e2] bg-white px-3 py-2 font-sans text-sm text-black placeholder:text-gray-300 transition-colors focus:border-[#0012FF] focus:outline-none"
                     />
                   </div>

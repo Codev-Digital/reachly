@@ -12,7 +12,9 @@ import Referral from "@/models/referral.model";
 import mongoose from "mongoose";
 import PackagePurchase from "@/models/PackagePurchase";
 import CalendarBlock from "@/models/CalendarBlock";
+import SlotReservation from "@/models/SlotReservation";
 import { autoSettleEarnings } from "@/lib/autoSettleEarnings";
+import { acquireCreatorDayLock } from "@/lib/slotReservations";
 import {
   DEFAULT_SLOT_MINUTES,
   blockedInterval,
@@ -39,6 +41,10 @@ function formatDate(date: Date): string {
 }
 
 export async function POST(request: NextRequest) {
+  let releaseDayLock: (() => Promise<void>) | null = null;
+  let claimedReservation: { creatorId: string; dateKey: string; token: string } | null = null;
+  let bookingSaved = false;
+  let bookingRolledBack = false;
   try {
     await connectDB();
 
@@ -59,6 +65,7 @@ export async function POST(request: NextRequest) {
       finalPrice: clientFinalPrice,
       originalPrice: clientOriginalPrice,
       answers,
+      reservationToken,
     } = payload;
     let finalPrice = clientFinalPrice;
     let originalPrice = clientOriginalPrice;
@@ -99,6 +106,17 @@ export async function POST(request: NextRequest) {
         { error: "Missing required booking details" },
         { status: 400 },
       );
+    }
+    if (
+      typeof date !== "string" ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(date) ||
+      parse12h(String(time)) === null
+    ) {
+      return NextResponse.json({ error: "Choose a valid date and time." }, { status: 400 });
+    }
+    const [requestedYear, requestedMonth, requestedDay] = date.split("-").map(Number);
+    if (new Date(Date.UTC(requestedYear, requestedMonth - 1, requestedDay, 12)).toISOString().slice(0, 10) !== date) {
+      return NextResponse.json({ error: "Choose a valid date and time." }, { status: 400 });
     }
 
     if (
@@ -308,6 +326,40 @@ export async function POST(request: NextRequest) {
       Date.UTC(dateYear, dateMonth - 1, dateDay, 12, 0, 0),
     );
 
+    releaseDayLock = await acquireCreatorDayLock(String(creatorProfile.userId), date);
+    if (!releaseDayLock) {
+      return NextResponse.json({ error: "This slot is being reserved. Please try again." }, { status: 409 });
+    }
+
+    let activeReservation: { _id: mongoose.Types.ObjectId } | null = null;
+    if (!payload.packagePurchaseId || reservationToken) {
+      if (typeof reservationToken !== "string" && !payload.packagePurchaseId) {
+        return NextResponse.json(
+          { error: "Your slot reservation has expired. Please select the time again." },
+          { status: 409 },
+        );
+      }
+      if (typeof reservationToken === "string") {
+        activeReservation = await SlotReservation.findOne({
+          creatorId: creatorProfile.userId,
+          sessionTypeId: sessionType._id,
+          dateKey: date,
+          time,
+          duration: Number((sessionType as any).duration) || DEFAULT_SLOT_MINUTES,
+          bufferTime: Number((sessionType as any).bufferTime) || 0,
+          token: reservationToken,
+          status: "reserved",
+          expiresAt: { $gt: new Date() },
+        }).select("_id").lean() as { _id: mongoose.Types.ObjectId } | null;
+        if (!activeReservation) {
+          return NextResponse.json(
+            { error: "Your 15-minute slot reservation has expired. Please select the time again." },
+            { status: 409 },
+          );
+        }
+      }
+    }
+
     // Make sure the chosen time doesn't run into another booking (each blocks duration + buffer)
     const requestedStart = parse12h(time);
     if (requestedStart !== null) {
@@ -353,12 +405,54 @@ export async function POST(request: NextRequest) {
         const start = parse12h(ob.startTime);
         return start !== null && intervalsOverlap(myBlock, { start, end: start + ob.durationMinutes });
       });
-      if (clashes || clashesOutside) {
+      const activeReservations = await SlotReservation.find({
+        creatorId: creatorProfile.userId,
+        dateKey: date,
+        expiresAt: { $gt: new Date() },
+        ...(reservationToken ? { token: { $ne: reservationToken } } : {}),
+      }).select("time duration bufferTime").lean() as Array<{
+        time: string;
+        duration: number;
+        bufferTime: number;
+      }>;
+      const clashesReservation = activeReservations.some((reservation) => {
+        const start = parse12h(reservation.time);
+        return start !== null && intervalsOverlap(
+          myBlock,
+          blockedInterval(start, Number(reservation.duration), Number(reservation.bufferTime) || 0),
+        );
+      });
+      if (clashes || clashesOutside || clashesReservation) {
         return NextResponse.json(
           { error: "This time slot is no longer available. Please choose another time." },
           { status: 409 },
         );
       }
+    }
+
+    if (activeReservation) {
+      const processingExpiresAt = new Date(Date.now() + 2 * 60 * 1000);
+      const claimed = await SlotReservation.findOneAndUpdate(
+        {
+          _id: activeReservation._id,
+          token: reservationToken,
+          status: "reserved",
+          expiresAt: { $gt: new Date() },
+        },
+        { $set: { status: "processing", expiresAt: processingExpiresAt } },
+        { new: true },
+      );
+      if (!claimed) {
+        return NextResponse.json(
+          { error: "Your slot reservation has expired. Please select the time again." },
+          { status: 409 },
+        );
+      }
+      claimedReservation = {
+        creatorId: String(creatorProfile.userId),
+        dateKey: date,
+        token: reservationToken,
+      };
     }
 
     // Generate Daily.co meeting room
@@ -431,6 +525,7 @@ export async function POST(request: NextRequest) {
     });
 
     await booking.save();
+    bookingSaved = true;
     if (isPackage) {
       await PackagePurchase.updateOne({ _id: packagePurchase._id }, { $inc: { sessionsBooked: 1 } });
     }
@@ -461,6 +556,7 @@ export async function POST(request: NextRequest) {
         checkoutClientSecret = checkout.client_secret;
       } catch (error) {
         await Booking.deleteOne({ _id: booking._id });
+        bookingRolledBack = true;
         if (isPackage) {
           if (packageNumber === 1) await PackagePurchase.deleteOne({ _id: packagePurchase._id });
           else await PackagePurchase.updateOne({ _id: packagePurchase._id }, { $inc: { sessionsBooked: -1 } });
@@ -537,6 +633,15 @@ export async function POST(request: NextRequest) {
       }
     })();
 
+    if (claimedReservation) {
+      await SlotReservation.deleteOne({
+        creatorId: claimedReservation.creatorId,
+        dateKey: claimedReservation.dateKey,
+        token: claimedReservation.token,
+      });
+      claimedReservation = null;
+    }
+
     return NextResponse.json({
       success: true,
       bookingId: booking._id,
@@ -551,5 +656,26 @@ export async function POST(request: NextRequest) {
       { error: "Something went wrong while processing your booking" },
       { status: 500 },
     );
+  } finally {
+    if (claimedReservation) {
+      if (bookingSaved && !bookingRolledBack) {
+        await SlotReservation.deleteOne({
+          creatorId: claimedReservation.creatorId,
+          dateKey: claimedReservation.dateKey,
+          token: claimedReservation.token,
+        });
+      } else {
+        await SlotReservation.updateOne(
+          {
+            creatorId: claimedReservation.creatorId,
+            dateKey: claimedReservation.dateKey,
+            token: claimedReservation.token,
+            expiresAt: { $gt: new Date() },
+          },
+          { $set: { status: "reserved" } },
+        );
+      }
+    }
+    await releaseDayLock?.();
   }
 }

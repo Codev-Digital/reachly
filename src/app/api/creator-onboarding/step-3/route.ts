@@ -107,9 +107,9 @@ export async function PUT(req: NextRequest) {
       }
       if (s.bufferTime !== undefined && s.bufferTime !== null && s.bufferTime !== '') {
         const buffer = Number(s.bufferTime);
-        if (!Number.isInteger(buffer) || buffer < 0 || buffer > duration) {
+        if (!Number.isInteger(buffer) || buffer < 0) {
           return NextResponse.json(
-            { error: `Session ${idx}: buffer time must be a whole number of minutes and no longer than the session duration.` },
+            { error: `Session ${idx}: buffer time must be a whole number of 0 or more minutes.` },
             { status: 422 }
           );
         }

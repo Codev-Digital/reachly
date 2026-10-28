@@ -16,7 +16,7 @@ export interface ISessionType extends Document {
   duration: number;   // minutes (supports 15, 30, 45, 60 or custom positive minutes)
   price: number;      // PKR
   discountedPrice?: number; // optional discounted price in PKR
-  bufferTime?: number; // minutes of rest kept free after a session (0 = none, never more than `duration`)
+  bufferTime?: number; // minutes kept free after a session before another booking can start
   /**
    * How many calendar days ahead clients must book.
    * Example: 2 → if today is Sunday, earliest bookable day is Tuesday.

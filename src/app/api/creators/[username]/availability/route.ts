@@ -5,6 +5,7 @@ import CreatorAvailability from '@/models/CreatorAvailability';
 import Booking from '@/models/Booking';
 import SessionType from '@/models/SessionType';
 import CalendarBlock from '@/models/CalendarBlock';
+import SlotReservation from '@/models/SlotReservation';
 import mongoose from 'mongoose';
 import {
     DEFAULT_SLOT_MINUTES,
@@ -241,17 +242,41 @@ export async function GET(
                 if (start !== null) blocked.push({ start, end: start + ob.durationMinutes });
             }
 
-            // A new slot is free when its meeting + buffer doesn't run into any booked time
-            const availableSlots = candidateStarts
-                .filter(start => {
+            const ownReservationToken = searchParams.get('reservationToken');
+            const reservations = await SlotReservation.find({
+                creatorId: profile.userId,
+                dateKey: dateStr,
+                expiresAt: { $gt: new Date() },
+                ...(ownReservationToken ? { token: { $ne: ownReservationToken } } : {}),
+            }).select('time duration bufferTime').lean();
+            const reservedIntervals = reservations.flatMap((reservation: any) => {
+                const start = parse12h(reservation.time);
+                return start === null
+                    ? []
+                    : [blockedInterval(start, Number(reservation.duration), Number(reservation.bufferTime) || 0)];
+            });
+
+            const nonOccupiedStarts = candidateStarts.filter((start) => {
+                const mine = blockedInterval(start, sessionDuration, sessionBuffer);
+                return !blocked.some((other) => intervalsOverlap(mine, other));
+            });
+            const availableSlots = nonOccupiedStarts
+                .filter((start) => {
                     const mine = blockedInterval(start, sessionDuration, sessionBuffer);
-                    return !blocked.some(other => intervalsOverlap(mine, other));
+                    return !reservedIntervals.some((other) => intervalsOverlap(mine, other));
+                })
+                .map(format12h);
+            const lockedSlots = nonOccupiedStarts
+                .filter((start) => {
+                    const mine = blockedInterval(start, sessionDuration, sessionBuffer);
+                    return reservedIntervals.some((other) => intervalsOverlap(mine, other));
                 })
                 .map(format12h);
 
             return NextResponse.json({
                 success: true,
                 slots: availableSlots,
+                lockedSlots,
                 date: dateStr,
                 earliestBookableDate,
                 minAdvanceDays,

@@ -1,18 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Image from 'next/image';
-import HeroImage from '../components/HeroImage';
+import Link from 'next/link';
 import { useLoading } from '@/contexts/LoadingContext';
 import { Mail, Lock } from 'lucide-react';
 import FormInput, { FormError } from '@/components/FormInput';
 import { isValidEmail } from '@/lib/validators';
+import AuthLayout from '@/components/auth/AuthLayout';
 
 type Step = 'request' | 'verify' | 'setpassword' | 'done';
 
 export default function ForgotPasswordPage() {
-  const router = useRouter();
   const { navigateWithLoading } = useLoading();
   const [step, setStep] = useState<Step>('request');
   const [email, setEmail] = useState('');
@@ -173,43 +171,18 @@ export default function ForgotPasswordPage() {
 
   /* ── Shared layout ── */
   const layout = (content: React.ReactNode) => (
-    <div className="min-h-screen bg-[#F4F5F8] flex items-center justify-center p-4 sm:p-6 lg:p-8">
-      <div className="w-full max-w-7xl bg-white rounded-[32px] p-4 lg:p-6 shadow-xl border border-gray-100">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
-
-          {/* Left Form Side */}
-          <div className="lg:col-span-6 p-4 sm:p-6 md:p-8 flex flex-col justify-between">
-            {/* Logo */}
-            <div className="mb-8">
-              <Image
-                src="/assets/logo1.png"
-                alt="Reachly Logo"
-                width={120}
-                height={40}
-                style={{ width: 'auto', height: '40px' }}
-                className="cursor-pointer"
-                onClick={() => router.push('/')}
-                priority
-              />
-            </div>
-
-            <div className="my-auto max-w-md mx-auto w-full">
-              {content}
-            </div>
-
-            <div className="mt-8 pt-4" />
-          </div>
-
-          {/* Right Hero Side */}
-          <div className="hidden lg:block lg:col-span-6 relative">
-            <div className="h-full min-h-[600px] lg:min-h-[700px]">
-              <HeroImage />
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </div>
+    <AuthLayout
+      footer={(
+        <p className="font-sans text-xs font-medium text-gray-500">
+          Remember your password?{' '}
+          <Link href="/login" className="font-bold text-[#0012FF] hover:underline">
+            Log in
+          </Link>
+        </p>
+      )}
+    >
+      {content}
+    </AuthLayout>
   );
 
   /* ── DONE ── */
@@ -221,7 +194,7 @@ export default function ForgotPasswordPage() {
             <polyline points="20 6 9 17 4 12" />
           </svg>
         </div>
-        <h1 className="font-anton font-bold text-black text-3xl sm:text-4xl uppercase mb-3">
+        <h1 className="mb-2 font-sans text-3xl font-extrabold leading-tight tracking-tight text-black sm:text-4xl">
           Password Reset!
         </h1>
         <p className="font-sans text-gray-500 text-sm mb-8 leading-relaxed">
@@ -229,7 +202,7 @@ export default function ForgotPasswordPage() {
         </p>
         <button
           onClick={() => navigateWithLoading('/login')}
-          className="w-full bg-[#0012FF] hover:bg-[#000EB4] text-white font-sans font-bold py-3.5 px-6 rounded-full text-sm tracking-wide shadow-lg shadow-blue-500/20 transition-all cursor-pointer"
+          className="w-full cursor-pointer rounded-2xl bg-[#0012FF] px-6 py-3.5 font-sans text-sm font-bold tracking-wide text-white shadow-lg shadow-[#0012FF]/25 transition-all hover:bg-[#000EB4]"
         >
           Back to Login
         </button>
@@ -242,11 +215,11 @@ export default function ForgotPasswordPage() {
     return layout(
       <div>
         <div className="text-center mb-8">
-          <h1 className="font-anton text-black font-bold text-3xl sm:text-4xl md:text-5xl leading-tight uppercase mb-3">
+          <h1 className="mb-2 font-sans text-3xl font-extrabold leading-tight tracking-tight text-black sm:text-4xl">
             Set Your Password
           </h1>
           <p className="font-sans text-gray-400 text-sm">
-            Enter a new password for your account, make sure it's strong
+            Enter a new password for your account, make sure it&apos;s strong
           </p>
         </div>
 
@@ -290,7 +263,7 @@ export default function ForgotPasswordPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-[#0012FF] hover:bg-[#000EB4] active:scale-[0.98] text-white font-sans font-bold py-3.5 px-6 rounded-full text-sm tracking-wide shadow-lg shadow-blue-500/20 transition-all disabled:opacity-50 mt-2 cursor-pointer"
+            className="mt-2 w-full cursor-pointer rounded-2xl bg-[#0012FF] px-6 py-3.5 font-sans text-sm font-bold tracking-wide text-white shadow-lg shadow-[#0012FF]/25 transition-all hover:bg-[#000EB4] active:scale-[0.98] disabled:opacity-50"
           >
             {loading ? 'Resetting...' : 'Set Password'}
           </button>
@@ -304,7 +277,7 @@ export default function ForgotPasswordPage() {
           <button
             type="button"
             onClick={() => { setStep('request'); setError(''); setOtp(['', '', '', '', '', '']); }}
-            className="w-full bg-white border border-[#0012FF] text-[#0012FF] font-sans font-bold py-3 px-6 rounded-full text-xs hover:bg-[#0012FF]/5 transition-all cursor-pointer"
+            className="w-full cursor-pointer rounded-2xl border border-[#0012FF] bg-white px-6 py-3 font-sans text-xs font-bold text-[#0012FF] transition-all hover:bg-[#0012FF]/5"
           >
             Change Email Address
           </button>
@@ -318,11 +291,11 @@ export default function ForgotPasswordPage() {
     return layout(
       <div>
         <div className="text-center mb-8">
-          <h1 className="font-anton font-bold text-black text-3xl sm:text-4xl md:text-5xl leading-tight uppercase mb-3">
+          <h1 className="mb-2 font-sans text-3xl font-extrabold leading-tight tracking-tight text-black sm:text-4xl">
             Password Reset
           </h1>
           <p className="font-sans text-gray-400 text-sm">
-            We've sent a recovery code on email{' '}
+            We&apos;ve sent a recovery code to{' '}
             <span className="text-[#0012FF] font-semibold">{email}</span>
           </p>
         </div>
@@ -350,7 +323,7 @@ export default function ForgotPasswordPage() {
 
           <div className="text-center">
             <p className="font-sans text-xs text-gray-400">
-              Didn't get a code?{' '}
+              Didn&apos;t get a code?{' '}
               <button
                 type="button"
                 onClick={handleResend}
@@ -365,7 +338,7 @@ export default function ForgotPasswordPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-[#0012FF] hover:bg-[#000EB4] active:scale-[0.98] text-white font-sans font-bold py-3.5 px-6 rounded-full text-sm tracking-wide shadow-lg shadow-blue-500/20 transition-all disabled:opacity-50 cursor-pointer"
+            className="w-full cursor-pointer rounded-2xl bg-[#0012FF] px-6 py-3.5 font-sans text-sm font-bold tracking-wide text-white shadow-lg shadow-[#0012FF]/25 transition-all hover:bg-[#000EB4] active:scale-[0.98] disabled:opacity-50"
           >
             {loading ? 'Verifying...' : 'Verify Email'}
           </button>
@@ -379,7 +352,7 @@ export default function ForgotPasswordPage() {
           <button
             type="button"
             onClick={() => { setStep('request'); setError(''); setOtp(['', '', '', '', '', '']); }}
-            className="w-full bg-white border border-[#0012FF] text-[#0012FF] font-sans font-bold py-3 px-6 rounded-full text-xs hover:bg-[#0012FF]/5 transition-all cursor-pointer"
+            className="w-full cursor-pointer rounded-2xl border border-[#0012FF] bg-white px-6 py-3 font-sans text-xs font-bold text-[#0012FF] transition-all hover:bg-[#0012FF]/5"
           >
             Change Email Address
           </button>
@@ -392,11 +365,11 @@ export default function ForgotPasswordPage() {
   return layout(
     <div>
       <div className="text-center mb-8">
-        <h1 className="font-anton font-bold text-black text-3xl sm:text-4xl md:text-5xl leading-tight uppercase mb-3">
+        <h1 className="mb-2 font-sans text-3xl font-extrabold leading-tight tracking-tight text-black sm:text-4xl">
           Forgot Password?
         </h1>
         <p className="font-sans text-gray-400 text-sm">
-          Enter your email and we'll send you a otp
+          Enter your email and we&apos;ll send you a recovery code
         </p>
       </div>
 
@@ -422,23 +395,12 @@ export default function ForgotPasswordPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-[#0012FF] hover:bg-[#000EB4] active:scale-[0.98] text-white font-sans font-bold py-3.5 px-6 rounded-full text-sm tracking-wide shadow-lg shadow-blue-500/20 transition-all disabled:opacity-50 mt-4 cursor-pointer"
+          className="mt-4 w-full cursor-pointer rounded-2xl bg-[#0012FF] px-6 py-3.5 font-sans text-sm font-bold tracking-wide text-white shadow-lg shadow-[#0012FF]/25 transition-all hover:bg-[#000EB4] active:scale-[0.98] disabled:opacity-50"
         >
           {loading ? 'Sending...' : 'Verify Email'}
         </button>
       </form>
 
-      <div className="mt-8 pt-4 border-t border-gray-100 text-center">
-        <p className="font-sans text-xs text-gray-500 font-medium">
-          Remember your password?{' '}
-          <span
-            className="text-[#0012FF] font-bold cursor-pointer hover:underline"
-            onClick={() => navigateWithLoading('/login')}
-          >
-            Log in
-          </span>
-        </p>
-      </div>
     </div>
   );
 }

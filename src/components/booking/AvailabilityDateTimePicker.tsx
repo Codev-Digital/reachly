@@ -1,8 +1,9 @@
 'use client';
 
 import { pktToday } from '@/lib/pkt';
-import { CalendarX2 } from 'lucide-react';
+import { CalendarX2, LockKeyhole } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { toast } from 'sonner';
 
 const toISO = (date: Date) => {
   const year = date.getFullYear();
@@ -24,6 +25,7 @@ type Props = {
   username: string;
   /** Session type id — required for real slot times (duration + buffer + min notice). */
   sessionId?: string | null;
+  reservationToken?: string;
   selectedDate: Date | null;
   selectedTime: string | null;
   onDateChange: (date: Date) => void;
@@ -41,6 +43,7 @@ type Props = {
 export default function AvailabilityDateTimePicker({
   username,
   sessionId,
+  reservationToken,
   selectedDate,
   selectedTime,
   onDateChange,
@@ -49,15 +52,16 @@ export default function AvailabilityDateTimePicker({
   compact = false,
 }: Props) {
   const [slots, setSlots] = useState<string[]>([]);
+  const [lockedSlots, setLockedSlots] = useState<string[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [fetchedDate, setFetchedDate] = useState<string | null>(null);
   const [schedule, setSchedule] = useState<Record<string, { enabled: boolean }> | null>(null);
   const [dayHasSlots, setDayHasSlots] = useState<Record<string, boolean>>({});
 
   const dayBtnRefs = useRef<Record<string, HTMLButtonElement | null>>({});
-  const slotsCache = useRef<Record<string, string[]>>({});
+  const slotsCache = useRef<Record<string, { slots: string[]; lockedSlots: string[] }>>({});
   const inFlightSlots = useRef<
-    Record<string, Promise<{ slots: string[]; schedule?: Record<string, { enabled: boolean }> }>>
+    Record<string, Promise<{ slots: string[]; lockedSlots: string[]; schedule?: Record<string, { enabled: boolean }> }>>
   >({});
   const previewGen = useRef(0);
 
@@ -84,15 +88,16 @@ export default function AvailabilityDateTimePicker({
   );
 
   const cacheKeyFor = useCallback(
-    (iso: string) => `${sessionId || 'default'}_${iso}`,
-    [sessionId]
+    (iso: string) => `${sessionId || 'default'}_${reservationToken || 'anonymous'}_${iso}`,
+    [reservationToken, sessionId]
   );
 
   const markDaySlots = useCallback(
-    (iso: string, available: string[]) => {
-      slotsCache.current[cacheKeyFor(iso)] = available;
+    (iso: string, available: string[], locked: string[] = []) => {
+      slotsCache.current[cacheKeyFor(iso)] = { slots: available, lockedSlots: locked };
+      const hasSlots = available.length + locked.length > 0;
       setDayHasSlots((prev) =>
-        prev[iso] === available.length > 0 ? prev : { ...prev, [iso]: available.length > 0 }
+        prev[iso] === hasSlots ? prev : { ...prev, [iso]: hasSlots }
       );
     },
     [cacheKeyFor]
@@ -100,39 +105,46 @@ export default function AvailabilityDateTimePicker({
 
   const fetchDaySlots = useCallback(
     async (
-      iso: string
-    ): Promise<{ slots: string[]; schedule?: Record<string, { enabled: boolean }> }> => {
+      iso: string,
+      force = false
+    ): Promise<{ slots: string[]; lockedSlots: string[]; schedule?: Record<string, { enabled: boolean }> }> => {
       const cacheKey = cacheKeyFor(iso);
-      if (slotsCache.current[cacheKey] !== undefined) {
-        return { slots: slotsCache.current[cacheKey] };
+      if (!force && slotsCache.current[cacheKey] !== undefined) {
+        return slotsCache.current[cacheKey];
       }
       const existingRequest = inFlightSlots.current[cacheKey];
       if (existingRequest) return existingRequest;
 
       const request = (async () => {
         const sessionQuery = sessionId ? `&sessionId=${encodeURIComponent(sessionId)}` : '';
+        const tokenQuery = reservationToken ? `&reservationToken=${encodeURIComponent(reservationToken)}` : '';
         const res = await fetch(
-          `/api/creators/${encodeURIComponent(username)}/availability?date=${iso}${sessionQuery}`
+          `/api/creators/${encodeURIComponent(username)}/availability?date=${iso}${sessionQuery}${tokenQuery}`,
+          { cache: 'no-store' }
         );
         const data = await res.json();
         if (data.schedule) setSchedule(data.schedule);
         const availableSlots: string[] = data.success ? data.slots || [] : [];
-        markDaySlots(iso, availableSlots);
+        const currentLockedSlots: string[] = data.success ? data.lockedSlots || [] : [];
+        markDaySlots(iso, availableSlots, currentLockedSlots);
 
         if (data.earliestBookableDate) {
+          const earliestDate = data.earliestBookableDate as string;
+          const earlierDays = datesList
+            .map(toISO)
+            .filter((dayIso) => dayIso < earliestDate && slotsCache.current[cacheKeyFor(dayIso)] === undefined);
+          for (const dayIso of earlierDays) {
+            slotsCache.current[cacheKeyFor(dayIso)] = { slots: [], lockedSlots: [] };
+          }
           setDayHasSlots((prev) => {
             const next = { ...prev };
-            for (const d of datesList) {
-              const dayIso = toISO(d);
-              if (dayIso < data.earliestBookableDate && next[dayIso] === undefined) {
-                next[dayIso] = false;
-                slotsCache.current[cacheKeyFor(dayIso)] = [];
-              }
+            for (const dayIso of earlierDays) {
+              if (next[dayIso] === undefined) next[dayIso] = false;
             }
             return next;
           });
         }
-        return { slots: availableSlots, schedule: data.schedule };
+        return { slots: availableSlots, lockedSlots: currentLockedSlots, schedule: data.schedule };
       })();
       inFlightSlots.current[cacheKey] = request;
       try {
@@ -143,7 +155,7 @@ export default function AvailabilityDateTimePicker({
         }
       }
     },
-    [cacheKeyFor, datesList, markDaySlots, sessionId, username]
+    [cacheKeyFor, datesList, markDaySlots, reservationToken, sessionId, username]
   );
 
   // Prefetch availability for the strip
@@ -156,6 +168,7 @@ export default function AvailabilityDateTimePicker({
     setDayHasSlots({});
     setFetchedDate(null);
     setSlots([]);
+    setLockedSlots([]);
 
     (async () => {
       let knownSchedule: Record<string, { enabled: boolean }> | null = null;
@@ -196,7 +209,7 @@ export default function AvailabilityDateTimePicker({
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [username, sessionId, dayCount]);
+  }, [username, sessionId, reservationToken, dayCount]);
 
   // Default selection to today
   useEffect(() => {
@@ -212,7 +225,8 @@ export default function AvailabilityDateTimePicker({
     if (cacheKey === fetchedDate) return;
 
     if (slotsCache.current[cacheKey]) {
-      setSlots(slotsCache.current[cacheKey]);
+      setSlots(slotsCache.current[cacheKey].slots);
+      setLockedSlots(slotsCache.current[cacheKey].lockedSlots);
       setFetchedDate(cacheKey);
       setLoadingSlots(false);
       return;
@@ -224,10 +238,14 @@ export default function AvailabilityDateTimePicker({
       .then((result) => {
         if (cancelled) return;
         setSlots(result.slots);
+        setLockedSlots(result.lockedSlots);
         setFetchedDate(cacheKey);
       })
       .catch(() => {
-        if (!cancelled) setSlots([]);
+        if (!cancelled) {
+          setSlots([]);
+          setLockedSlots([]);
+        }
       })
       .finally(() => {
         if (!cancelled) setLoadingSlots(false);
@@ -238,9 +256,36 @@ export default function AvailabilityDateTimePicker({
     };
   }, [selectedDate, cacheKeyFor, fetchDaySlots, fetchedDate]);
 
+  useEffect(() => {
+    if (!selectedDate) return;
+    const iso = toISO(selectedDate);
+    const cacheKey = cacheKeyFor(iso);
+    let active = true;
+    const refresh = async () => {
+      try {
+        const result = await fetchDaySlots(iso, true);
+        if (!active) return;
+        setSlots(result.slots);
+        setLockedSlots(result.lockedSlots);
+        setFetchedDate(cacheKey);
+      } catch (error) {
+        console.error('Unable to refresh reserved session slots:', error);
+      }
+    };
+    const interval = window.setInterval(refresh, 10_000);
+    window.addEventListener('focus', refresh);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+      window.removeEventListener('focus', refresh);
+    };
+  }, [selectedDate, cacheKeyFor, fetchDaySlots]);
+
   const handleDateSelect = (date: Date) => {
     onDateChange(date);
     onTimeChange('');
+    setLockedSlots([]);
+    delete slotsCache.current[cacheKeyFor(toISO(date))];
     setFetchedDate(null);
   };
 
@@ -381,7 +426,7 @@ export default function AvailabilityDateTimePicker({
               <div key={i} className="h-11 bg-gray-100 rounded-xl animate-pulse" />
             ))}
           </div>
-        ) : slots.length === 0 ? (
+        ) : slots.length === 0 && lockedSlots.length === 0 ? (
           <div className="bg-white border border-[#e2e2e2] rounded-[20px] p-8 text-center">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#EEF2FF] text-[#0012FF]">
               <CalendarX2 className="h-8 w-8" strokeWidth={2.25} />
@@ -407,29 +452,61 @@ export default function AvailabilityDateTimePicker({
             )}
           </div>
         ) : (
-          <div
-            className={`grid grid-cols-2 sm:grid-cols-3 gap-3 ${
-              compact ? 'max-h-56 overflow-y-auto pr-1 no-scrollbar' : ''
-            }`}
-          >
-            {slots.map((time) => {
+          <>
+            <div
+              className={`grid grid-cols-2 sm:grid-cols-3 gap-3 ${
+                compact ? 'max-h-56 overflow-y-auto pr-1 no-scrollbar' : ''
+              }`}
+            >
+            {[...slots, ...lockedSlots].sort((a, b) => {
+              const toMinutes = (value: string) => {
+                const match = /^(\d{1,2}):(\d{2})\s*(AM|PM)$/i.exec(value);
+                if (!match) return 0;
+                let hour = Number(match[1]) % 12;
+                if (match[3].toUpperCase() === 'PM') hour += 12;
+                return hour * 60 + Number(match[2]);
+              };
+              return toMinutes(a) - toMinutes(b);
+            }).map((time) => {
               const isSelected = selectedTime === time;
+              const isLocked = lockedSlots.includes(time);
               return (
                 <button
                   key={time}
                   type="button"
-                  onClick={() => onTimeChange(time)}
-                  className={`py-3 px-4 rounded-[20px] text-[13px] font-bold transition-all text-center border border-[#e2e2e2] active:scale-95 ${
-                    isSelected
+                  onClick={() => {
+                    if (isLocked) {
+                      toast.info('This slot is reserved by another user. Please choose another slot.');
+                      return;
+                    }
+                    onTimeChange(time);
+                  }}
+                  aria-label={isLocked ? `${time}, reserved by another user` : time}
+                  className={`relative py-3 px-4 rounded-[20px] text-[13px] font-bold transition-all text-center border border-[#e2e2e2] active:scale-95 ${
+                    isLocked
+                      ? 'bg-gray-50 text-gray-400 border-gray-200'
+                      : isSelected
                       ? 'bg-[#EEF2FF] border-[#0012FF] text-[#0012FF]'
                       : 'bg-white text-gray-700 hover:border-gray-300'
                   }`}
                 >
                   {time}
+                  {isLocked && (
+                    <LockKeyhole
+                      className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+                      aria-hidden="true"
+                    />
+                  )}
                 </button>
               );
             })}
-          </div>
+            </div>
+            {lockedSlots.length > 0 && (
+              <p className="mt-3 flex items-center gap-1.5 text-xs font-medium text-gray-500">
+
+              </p>
+            )}
+          </>
         )}
       </div>
     </div>

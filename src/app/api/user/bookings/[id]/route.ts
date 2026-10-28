@@ -7,11 +7,22 @@ import Booking from "@/models/Booking";
 import User from "@/models/User";
 import Referral from "@/models/referral.model";
 import { checkSessionModificationWindow, checkNewSessionTime, parseDateToNoonUTC } from "@/lib/time";
+import CalendarBlock from "@/models/CalendarBlock";
+import SessionType from "@/models/SessionType";
+import SlotReservation from "@/models/SlotReservation";
+import { acquireCreatorDayLock } from "@/lib/slotReservations";
+import {
+  DEFAULT_SLOT_MINUTES,
+  blockedInterval,
+  intervalsOverlap,
+  parse12h,
+} from "@/lib/slots";
 
 export async function PUT(
   request: NextRequest,
   context: { params: Promise<{ id: string }> },
 ) {
+  let releaseDayLock: (() => Promise<void>) | null = null;
   try {
     const { id } = await context.params;
     const session = await getServerSession(authOptions);
@@ -130,6 +141,76 @@ export async function PUT(
       const newSlotCheck = checkNewSessionTime(targetDate, targetTime, timeZone);
       if (!newSlotCheck.allowed) {
         return NextResponse.json({ error: newSlotCheck.errorMessage }, { status: 400 });
+      }
+
+      const targetDateUTC = parseDateToNoonUTC(targetDate, timeZone);
+      const dateKey = targetDateUTC.toISOString().slice(0, 10);
+      releaseDayLock = await acquireCreatorDayLock(String(booking.creatorId), dateKey);
+      if (!releaseDayLock) {
+        return NextResponse.json({ error: "This slot is being reserved. Please try again." }, { status: 409 });
+      }
+
+      const start = parse12h(targetTime);
+      const [sessionType, dayBookings, calendarBlocks, reservations] = await Promise.all([
+        SessionType.findById(booking.sessionTypeId).select("duration bufferTime").lean(),
+        Booking.find({
+          creatorId: booking.creatorId,
+          scheduledDate: targetDateUTC,
+          status: { $in: ["pending", "confirmed"] },
+          _id: { $ne: booking._id },
+        }).select("scheduledTime sessionTypeId").lean(),
+        CalendarBlock.find({ creatorId: booking.creatorId, scheduledDate: targetDateUTC })
+          .select("startTime durationMinutes").lean(),
+        SlotReservation.find({
+          creatorId: booking.creatorId,
+          dateKey,
+          expiresAt: { $gt: new Date() },
+        }).select("time duration bufferTime").lean(),
+      ]);
+
+      if (start === null) {
+        return NextResponse.json({ error: "Choose a valid time slot." }, { status: 400 });
+      }
+
+      const myInterval = blockedInterval(
+        start,
+        Number((sessionType as any)?.duration) || DEFAULT_SLOT_MINUTES,
+        Number((sessionType as any)?.bufferTime) || 0,
+      );
+      const otherSessionIds = [...new Set(dayBookings.map((item: any) => String(item.sessionTypeId)))];
+      const otherSessions = otherSessionIds.length
+        ? await SessionType.find({ _id: { $in: otherSessionIds } }).select("duration bufferTime").lean()
+        : [];
+      const sessionById = new Map<string, any>(otherSessions.map((item: any) => [String(item._id), item]));
+      const overlapsBooking = dayBookings.some((item: any) => {
+        const otherStart = parse12h(item.scheduledTime);
+        const otherSession = sessionById.get(String(item.sessionTypeId));
+        return otherStart !== null && intervalsOverlap(
+          myInterval,
+          blockedInterval(
+            otherStart,
+            Number(otherSession?.duration) || DEFAULT_SLOT_MINUTES,
+            Number(otherSession?.bufferTime) || 0,
+          ),
+        );
+      });
+      const overlapsCalendar = calendarBlocks.some((item: any) => {
+        const otherStart = parse12h(item.startTime);
+        return otherStart !== null &&
+          intervalsOverlap(myInterval, { start: otherStart, end: otherStart + Number(item.durationMinutes) });
+      });
+      const overlapsReservation = reservations.some((item: any) => {
+        const otherStart = parse12h(item.time);
+        return otherStart !== null && intervalsOverlap(
+          myInterval,
+          blockedInterval(otherStart, Number(item.duration), Number(item.bufferTime) || 0),
+        );
+      });
+      if (overlapsBooking || overlapsCalendar || overlapsReservation) {
+        return NextResponse.json(
+          { error: "This slot is reserved or occupied. Please choose another time." },
+          { status: 409 },
+        );
       }
     }
 
@@ -256,5 +337,7 @@ export async function PUT(
   } catch (error: any) {
     console.error("PUT /api/user/bookings/[id] error:", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
+  } finally {
+    await releaseDayLock?.();
   }
 }

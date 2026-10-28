@@ -4,11 +4,11 @@ import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import Image from "next/image";
-import HeroImage from "../components/HeroImage";
 import { signUp } from "@/lib/auth-client";
 import { User, Mail } from "lucide-react";
 import FormInput, { FormError } from "@/components/FormInput";
 import { isValidEmail } from "@/lib/validators";
+import AuthLayout from "@/components/auth/AuthLayout";
 
 function SignupForm() {
   const router = useRouter();
@@ -64,7 +64,7 @@ function SignupForm() {
         else if (res.field === "email") setEmailError(message);
         else setError(message);
       }
-    } catch (err) {
+    } catch {
       setError("Network error. Please try again.");
     } finally {
       setLoading(false);
@@ -88,23 +88,21 @@ function SignupForm() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col justify-between bg-white px-6 py-8 sm:px-10 sm:py-10 lg:px-14 lg:py-12">
-      {/* Top Logo */}
-      <div className="mb-6 sm:mb-8">
-        <Image
-          src="/assets/logo1.png"
-          alt="Reachly Logo"
-          width={120}
-          height={40}
-          style={{ width: "auto", height: "40px" }}
-          className="cursor-pointer"
-          onClick={() => router.push("/")}
-          priority
-        />
-      </div>
-
-      {/* Central Form Container */}
-      <div className="my-auto max-w-[400px] mx-auto w-full">
+    <AuthLayout
+      footer={(
+        <p className="font-sans text-xs font-medium text-gray-500">
+          Already have an account?{" "}
+          <button
+            type="button"
+            className="cursor-pointer font-bold text-[#0012FF] hover:underline"
+            onClick={() => router.push("/login")}
+          >
+            Sign in
+          </button>
+        </p>
+      )}
+    >
+      <div>
         <div className="text-center mb-8">
           <h1 className="font-sans font-extrabold text-black text-3xl sm:text-4xl leading-tight tracking-tight mb-2">
             Create Account
@@ -177,36 +175,20 @@ function SignupForm() {
           {isGoogleLoading ? "Redirecting..." : "Sign up with Google"}
         </button>
       </div>
-
-      {/* Bottom Redirect Link */}
-      <div className="mt-8 pt-4 border-t border-gray-100 text-center">
-        <p className="font-sans text-xs text-gray-500 font-medium">
-          Already have an account?{" "}
-          <span
-            className="text-[#0012FF] font-bold cursor-pointer hover:underline"
-            onClick={() => router.push("/login")}
-          >
-            Sign in
-          </span>
-        </p>
-      </div>
-    </div>
+    </AuthLayout>
   );
 }
 
 export default function SignupPage() {
   return (
-    <div className="min-h-screen w-full bg-white">
-      <div className="grid min-h-screen w-full grid-cols-1 lg:grid-cols-2">
-          <Suspense fallback={null}>
-            <SignupForm />
-          </Suspense>
-
-          {/* Right hero — full viewport half, no outer padding / rounded shell */}
-          <div className="relative hidden min-h-screen lg:block">
-            <HeroImage className="absolute inset-0 h-full w-full" />
-          </div>
-      </div>
-    </div>
+    <Suspense
+      fallback={(
+        <AuthLayout>
+          <div className="animate-pulse text-center text-sm text-[#0012FF]">Loading...</div>
+        </AuthLayout>
+      )}
+    >
+      <SignupForm />
+    </Suspense>
   );
 }

@@ -20,18 +20,16 @@ export const CUSTOM_DURATION_OPTION = 'Custom Duration';
 export const DURATION_OPTIONS = [...PRESET_DURATIONS.map((d) => d.label), CUSTOM_DURATION_OPTION];
 export const MAX_DURATION_MINUTES = 1440;
 
-// Buffer time (rest after a session) can never be longer than the session itself.
-// Short sessions: 5-minute steps (5, 10, 15 ...). From 1 hour up: 15-minute steps (15, 30, 45, 60 ...).
+// Short sessions use 5-minute steps; sessions of 1 hour or more use 15-minute steps.
 export const NO_BUFFER_OPTION = 'No buffer';
 export const CUSTOM_BUFFER_OPTION = 'Custom Buffer';
-export const MAX_BUFFER_MINUTES = 120;
+const MAX_PRESET_BUFFER_MINUTES = 120;
 
 export const bufferChoicesFor = (durationMinutes: number): number[] => {
   if (!Number.isInteger(durationMinutes) || durationMinutes < 1) return [];
   const step = durationMinutes >= 60 ? 15 : 5;
-  const max = Math.min(durationMinutes, MAX_BUFFER_MINUTES);
   const choices: number[] = [];
-  for (let m = step; m <= max; m += step) choices.push(m);
+  for (let m = step; m <= MAX_PRESET_BUFFER_MINUTES; m += step) choices.push(m);
   return choices;
 };
 
@@ -156,7 +154,7 @@ export const sessionToValues = (
   };
 };
 
-/** The buffer actually saved: custom value clamped or largest valid choice not above the picked one. */
+/** The buffer actually saved. */
 export const effectiveBufferFor = (values: SessionFormValues): number => {
   const dur = Number(values.duration) || 0;
   if (dur < 1) return 0;
@@ -164,7 +162,7 @@ export const effectiveBufferFor = (values: SessionFormValues): number => {
   if (values.customBufferTime) {
     const buf = Number(values.bufferTime);
     if (!Number.isFinite(buf) || buf <= 0) return 0;
-    return Math.min(Math.floor(buf), dur, MAX_BUFFER_MINUTES);
+    return Math.floor(buf);
   }
 
   return (
@@ -191,10 +189,6 @@ export const validateSessionValues = (v: SessionFormValues): SessionErrors => {
     const bufferNum = Number(v.bufferTime);
     if (v.bufferTime === '' || isNaN(bufferNum) || !Number.isInteger(bufferNum) || bufferNum < 0) {
       next.bufferTime = 'Enter a buffer time of 0 or more minutes';
-    } else if (durationNum > 0 && bufferNum > durationNum) {
-      next.bufferTime = `Buffer time cannot exceed session duration (${durationNum} mins)`;
-    } else if (bufferNum > MAX_BUFFER_MINUTES) {
-      next.bufferTime = `Buffer time cannot exceed ${MAX_BUFFER_MINUTES} mins`;
     }
   }
 

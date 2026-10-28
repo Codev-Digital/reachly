@@ -3,12 +3,11 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
-import Image from 'next/image';
-import HeroImage from '../components/HeroImage';
 import { setPassword, checkPasswordStrength, requestChangeEmail, verifyChangeEmail } from '@/lib/auth-client';
 import { Lock } from 'lucide-react';
 import FormInput, { FormError } from '@/components/FormInput';
 import { isValidEmail } from '@/lib/validators';
+import AuthLayout from '@/components/auth/AuthLayout';
 
 function SetPasswordForm() {
   const router = useRouter();
@@ -32,12 +31,12 @@ function SetPasswordForm() {
   const [changeEmailError, setChangeEmailError] = useState('');
 
   useEffect(() => {
-    const savedEmail = localStorage.getItem('signupEmail');
-    if (savedEmail) {
-      setEmail(savedEmail);
-    } else {
-      router.push('/signup');
-    }
+    const timer = window.setTimeout(() => {
+      const savedEmail = localStorage.getItem('signupEmail');
+      if (savedEmail) setEmail(savedEmail);
+      else router.push('/signup');
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [router]);
 
   const getStrengthLabel = () => {
@@ -106,7 +105,7 @@ function SetPasswordForm() {
         else if (res.field === 'confirmPassword') setConfirmError(message);
         else setError(message);
       }
-    } catch (err) {
+    } catch {
       setError('Network error. Please try again.');
     } finally {
       setLoading(false);
@@ -131,7 +130,7 @@ function SetPasswordForm() {
       } else {
         setChangeEmailError(res.error || 'Failed to send OTP');
       }
-    } catch (err) {
+    } catch {
       setChangeEmailError('Network error. Please try again.');
     } finally {
       setChangeEmailLoading(false);
@@ -153,7 +152,7 @@ function SetPasswordForm() {
       } else {
         setChangeEmailError(res.error || 'Invalid OTP');
       }
-    } catch (err) {
+    } catch {
       setChangeEmailError('Network error. Please try again.');
     } finally {
       setChangeEmailLoading(false);
@@ -161,45 +160,7 @@ function SetPasswordForm() {
   };
 
   const layout = (content: React.ReactNode) => (
-    <div className="min-h-screen bg-[#F4F5F8] flex items-center justify-center p-4 sm:p-6 lg:p-8">
-      <div className="w-full max-w-7xl bg-white rounded-[32px] p-4 lg:p-6 shadow-xl border border-gray-100">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
-          
-          {/* Left Form Side */}
-          <div className="lg:col-span-6 p-4 sm:p-6 md:p-8 flex flex-col justify-between">
-            {/* Top Logo */}
-            <div className="mb-8">
-              <Image
-                src="/assets/logo1.png"
-                alt="Reachly Logo"
-                width={120}
-                height={40}
-                style={{ width: 'auto', height: '40px' }}
-                className="cursor-pointer"
-                onClick={() => router.push('/')}
-                priority
-              />
-            </div>
-
-            {/* Central Form Container */}
-            <div className="my-auto max-w-md mx-auto w-full">
-              {content}
-            </div>
-
-            {/* Bottom spacer */}
-            <div className="mt-8 pt-4" />
-          </div>
-
-          {/* Right Side - Hero Image */}
-          <div className="hidden lg:block lg:col-span-6 relative">
-            <div className="h-full min-h-[600px] lg:min-h-[700px]">
-              <HeroImage />
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </div>
+    <AuthLayout>{content}</AuthLayout>
   );
 
   if (showChangeEmail) {
@@ -212,7 +173,7 @@ function SetPasswordForm() {
           >
             ← Back
           </button>
-          <h1 className="font-anton font-bold text-black text-2xl sm:text-3xl md:text-4xl leading-tight uppercase mb-3 whitespace-nowrap">
+          <h1 className="mb-2 font-sans text-3xl font-extrabold leading-tight tracking-tight text-black sm:text-4xl">
             Change Email
           </h1>
           <p className="font-sans text-gray-400 text-sm">
@@ -241,7 +202,7 @@ function SetPasswordForm() {
               type="button"
               onClick={handleRequestChangeEmail}
               disabled={changeEmailLoading}
-              className="w-full bg-[#0012FF] hover:bg-[#000EB4] active:scale-[0.98] text-white font-sans font-bold py-3.5 px-6 rounded-full text-sm tracking-wide shadow-lg shadow-blue-500/20 transition-all disabled:opacity-50 mt-4 cursor-pointer"
+              className="mt-4 w-full cursor-pointer rounded-2xl bg-[#0012FF] px-6 py-3.5 font-sans text-sm font-bold tracking-wide text-white shadow-lg shadow-[#0012FF]/25 transition-all hover:bg-[#000EB4] active:scale-[0.98] disabled:opacity-50"
             >
               {changeEmailLoading ? 'Sending...' : 'Send Verification Code'}
             </button>
@@ -268,7 +229,7 @@ function SetPasswordForm() {
               type="button"
               onClick={handleVerifyChangeEmail}
               disabled={changeEmailLoading}
-              className="w-full bg-[#0012FF] hover:bg-[#000EB4] active:scale-[0.98] text-white font-sans font-bold py-3.5 px-6 rounded-full text-sm tracking-wide shadow-lg shadow-blue-500/20 transition-all disabled:opacity-50 mt-4 cursor-pointer"
+              className="mt-4 w-full cursor-pointer rounded-2xl bg-[#0012FF] px-6 py-3.5 font-sans text-sm font-bold tracking-wide text-white shadow-lg shadow-[#0012FF]/25 transition-all hover:bg-[#000EB4] active:scale-[0.98] disabled:opacity-50"
             >
               {changeEmailLoading ? 'Verifying...' : 'Verify & Change Email'}
             </button>
@@ -281,11 +242,11 @@ function SetPasswordForm() {
   return layout(
     <div>
       <div className="text-center mb-8">
-        <h1 className="font-anton font-bold text-black text-2xl sm:text-3xl md:text-4xl leading-tight uppercase mb-3 whitespace-nowrap">
+        <h1 className="mb-2 font-sans text-3xl font-extrabold leading-tight tracking-tight text-black sm:text-4xl">
           Set Your Password
         </h1>
         <p className="font-sans text-gray-400 text-sm">
-          Enter a new password for your account, make sure it's strong
+          Enter a new password for your account, make sure it&apos;s strong
         </p>
         <p className="font-sans text-gray-400 text-xs mt-2">
           For: <span className="text-black font-semibold">{email}</span>
@@ -355,7 +316,7 @@ function SetPasswordForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-[#0012FF] hover:bg-[#000EB4] active:scale-[0.98] text-white font-sans font-bold py-3.5 px-6 rounded-full text-sm tracking-wide shadow-lg shadow-blue-500/20 transition-all disabled:opacity-50 mt-6 cursor-pointer"
+          className="mt-6 w-full cursor-pointer rounded-2xl bg-[#0012FF] px-6 py-3.5 font-sans text-sm font-bold tracking-wide text-white shadow-lg shadow-[#0012FF]/25 transition-all hover:bg-[#000EB4] active:scale-[0.98] disabled:opacity-50"
         >
           {loading ? 'Setting password...' : 'Set Password'}
         </button>
@@ -372,7 +333,7 @@ function SetPasswordForm() {
         <button
           type="button"
           onClick={() => setShowChangeEmail(true)}
-          className="w-full bg-white border border-[#0012FF] text-[#0012FF] font-sans font-bold py-3 px-6 rounded-full text-xs hover:bg-[#0012FF]/5 transition-all cursor-pointer"
+          className="w-full cursor-pointer rounded-2xl border border-[#0012FF] bg-white px-6 py-3 font-sans text-xs font-bold text-[#0012FF] transition-all hover:bg-[#0012FF]/5"
         >
           Change Email Address
         </button>
@@ -383,13 +344,7 @@ function SetPasswordForm() {
 
 export default function SetPasswordPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-[#F4F5F8] flex items-center justify-center p-4 sm:p-6">
-        <div className="w-full max-w-7xl text-center">
-          <div className="animate-pulse text-[#0012FF]">Loading...</div>
-        </div>
-      </div>
-    }>
+    <Suspense fallback={<AuthLayout><div className="animate-pulse text-center text-sm text-[#0012FF]">Loading...</div></AuthLayout>}>
       <VerifyEmailForm />
     </Suspense>
   );

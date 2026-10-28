@@ -93,6 +93,7 @@ interface BookingState {
   answers: BookingAnswer[];
   step: number;
   bookingRef?: string;
+  reservationToken?: string;
   paymentMethod?: 'stripe' | 'easypaisa' | 'jazzcash';
 }
 

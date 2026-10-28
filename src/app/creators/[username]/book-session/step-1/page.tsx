@@ -5,6 +5,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import Image from 'next/image';
 import { ArrowLeft, BriefcaseBusiness } from 'lucide-react';
 import { Star } from 'lucide-react';
+import { toast } from 'sonner';
 import BookingProgress from '@/components/booking/BookingProgress';
 import CreatorProfileCard from '@/components/booking/CreatorProfileCard';
 import AvailabilityDateTimePicker from '@/components/booking/AvailabilityDateTimePicker';
@@ -108,7 +109,15 @@ export default function BookSessionStep1() {
         b.creator?.username &&
         String(b.creator.username).toLowerCase() === username.toLowerCase();
       if (same) return b;
-      return { ...b, creator: null, selectedSession: null, selectedDate: null, selectedTime: null, answers: [] };
+      return {
+        ...b,
+        creator: null,
+        selectedSession: null,
+        selectedDate: null,
+        selectedTime: null,
+        reservationToken: undefined,
+        answers: [],
+      };
     });
 
     // Hydrate from this username's cache only (never another creator's)
@@ -191,30 +200,75 @@ export default function BookSessionStep1() {
   }, [params.username, setBooking, wantedSessionId, router]);
 
   const handleSelectSession = (session: SessionType) => {
+    if (booking.reservationToken) void releaseReservation(booking.reservationToken);
     setBooking((b) => ({
       ...b,
       selectedSession: session,
       selectedTime: null,
+      reservationToken: undefined,
       // Reset answers when switching sessions
       answers: [],
     }));
   };
 
-  const handleContinue = () => {
+  const releaseReservation = (token: string) => {
+    void fetch(`/api/creators/${encodeURIComponent(routeUsername)}/availability/reservations`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token }),
+    }).catch((error) => console.error('Unable to release session slot reservation:', error));
+  };
+
+  const handleContinue = async () => {
     if (booking.selectedSession && booking.selectedDate && booking.selectedTime) {
       setIsLoadingContinue(true);
-      setBooking((b) => ({ ...b, step: 2 }));
-      router.push(`/creators/${params.username}/book-session/step-3${queryStr}`);
+      const token = booking.reservationToken || globalThis.crypto.randomUUID();
+      const date = booking.selectedDate;
+      const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+      try {
+        const response = await fetch(
+          `/api/creators/${encodeURIComponent(routeUsername)}/availability/reservations`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              sessionId: booking.selectedSession.id,
+              date: dateKey,
+              time: booking.selectedTime,
+              token,
+            }),
+          }
+        );
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+          releaseReservation(token);
+          setBooking((b) => ({ ...b, reservationToken: undefined }));
+          toast.error(data.error || 'This slot is no longer available. Please select another time.');
+          return;
+        }
+        setBooking((b) => ({ ...b, reservationToken: token, step: 2 }));
+        router.push(`/creators/${params.username}/book-session/step-3${queryStr}`);
+      } catch (error) {
+        console.error('Unable to reserve the selected session slot:', error);
+        releaseReservation(token);
+        setBooking((b) => ({ ...b, reservationToken: undefined }));
+        toast.error('Unable to reserve this slot. Please try again.');
+      } finally {
+        setIsLoadingContinue(false);
+      }
     }
   };
 
   const handleBack = () => {
     setIsLoadingBack(true);
     if (eventReturnUrl) {
+      if (booking.reservationToken) releaseReservation(booking.reservationToken);
       router.push(eventReturnUrl);
     } else if (fallbackUrl) {
+      if (booking.reservationToken) releaseReservation(booking.reservationToken);
       window.location.href = fallbackUrl;
     } else {
+      if (booking.reservationToken) releaseReservation(booking.reservationToken);
       router.push('/user/dashboard');
     }
   };
@@ -439,12 +493,22 @@ export default function BookSessionStep1() {
                       key={booking.selectedSession.id}
                       username={routeUsername}
                       sessionId={booking.selectedSession.id}
+                      reservationToken={booking.reservationToken}
                       selectedDate={booking.selectedDate}
                       selectedTime={booking.selectedTime}
-                      onDateChange={(date) =>
-                        setBooking((b) => ({ ...b, selectedDate: date, selectedTime: null }))
-                      }
-                      onTimeChange={(time) => setBooking((b) => ({ ...b, selectedTime: time }))}
+                      onDateChange={(date) => {
+                        if (booking.reservationToken) releaseReservation(booking.reservationToken);
+                        setBooking((b) => ({
+                          ...b,
+                          selectedDate: date,
+                          selectedTime: null,
+                          reservationToken: undefined,
+                        }));
+                      }}
+                      onTimeChange={(time) => {
+                        if (booking.reservationToken) releaseReservation(booking.reservationToken);
+                        setBooking((b) => ({ ...b, selectedTime: time, reservationToken: undefined }));
+                      }}
                     />
                   </section>
                 )}

@@ -65,6 +65,7 @@ export async function POST(req: NextRequest) {
       title,
       description,
       duration,
+      bufferTime,
       price,
       discountedPrice,
       questions,
@@ -85,6 +86,16 @@ export async function POST(req: NextRequest) {
     const durationNum = Number(duration);
     if (isNaN(durationNum) || durationNum < 1) {
       return NextResponse.json({ error: 'Duration must be at least 1 minute.' }, { status: 400 });
+    }
+
+    const bufferTimeNum = bufferTime === undefined || bufferTime === null || bufferTime === ''
+      ? 0
+      : Number(bufferTime);
+    if (!Number.isInteger(bufferTimeNum) || bufferTimeNum < 0) {
+      return NextResponse.json(
+        { error: 'Buffer time must be a whole number of 0 or more minutes.' },
+        { status: 400 }
+      );
     }
 
     const priceNum = Number(price);
@@ -139,6 +150,7 @@ export async function POST(req: NextRequest) {
       title: title.trim(),
       description: cleanDescription.value,
       duration: durationNum,
+      bufferTime: bufferTimeNum,
       price: priceNum,
       discountedPrice: parsedDiscountedPrice,
       questions: sanitizedQuestions,

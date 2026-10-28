@@ -88,6 +88,7 @@ export async function PUT(
       title,
       description,
       duration,
+      bufferTime,
       price,
       discountedPrice,
       questions,
@@ -121,6 +122,17 @@ export async function PUT(
         return NextResponse.json({ error: 'Duration must be at least 1 minute.' }, { status: 400 });
       }
       updatePayload.duration = dur;
+    }
+
+    if (bufferTime !== undefined) {
+      const buffer = bufferTime === null || bufferTime === '' ? 0 : Number(bufferTime);
+      if (!Number.isInteger(buffer) || buffer < 0) {
+        return NextResponse.json(
+          { error: 'Buffer time must be a whole number of 0 or more minutes.' },
+          { status: 400 }
+        );
+      }
+      updatePayload.bufferTime = buffer;
     }
 
     const currentPrice = price !== undefined ? Number(price) : existingSession.price;

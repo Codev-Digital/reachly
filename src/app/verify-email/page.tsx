@@ -2,9 +2,9 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Image from 'next/image';
-import HeroImage from '../components/HeroImage';
+import Link from 'next/link';
 import { verifyOTP, resendOTP } from '@/lib/auth-client';
+import AuthLayout from '@/components/auth/AuthLayout';
 
 function VerifyEmailForm() {
   const router = useRouter();
@@ -17,12 +17,12 @@ function VerifyEmailForm() {
   const [email, setEmail] = useState('');
 
   useEffect(() => {
-    const savedEmail = localStorage.getItem('signupEmail');
-    if (savedEmail) {
-      setEmail(savedEmail);
-    } else {
-      router.push('/signup');
-    }
+    const timer = window.setTimeout(() => {
+      const savedEmail = localStorage.getItem('signupEmail');
+      if (savedEmail) setEmail(savedEmail);
+      else router.push('/signup');
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [router]);
 
   const handlePaste = (e: React.ClipboardEvent) => {
@@ -77,7 +77,7 @@ function VerifyEmailForm() {
       } else {
         setError(res.error || 'Invalid code');
       }
-    } catch (err) {
+    } catch {
       setError('Network error. Please try again.');
     } finally {
       setLoading(false);
@@ -95,7 +95,7 @@ function VerifyEmailForm() {
       } else {
         setError(res.error || 'Failed to resend');
       }
-    } catch (err) {
+    } catch {
       setError('Network error. Please try again.');
     } finally {
       setResending(false);
@@ -103,113 +103,88 @@ function VerifyEmailForm() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F4F5F8] flex items-center justify-center p-4 sm:p-6 lg:p-8">
-      <div className="w-full max-w-7xl bg-white rounded-[32px] p-4 lg:p-6 shadow-xl border border-gray-100">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
-          
-          {/* Left Form Side */}
-          <div className="lg:col-span-6 p-4 sm:p-6 md:p-8 flex flex-col justify-between">
-            {/* Top Logo */}
-            <div className="mb-8">
-              <Image
-                src="/assets/logo1.png"
-                alt="Reachly Logo"
-                width={120}
-                height={40}
-                style={{ width: 'auto', height: '40px' }}
-                className="cursor-pointer"
-                onClick={() => router.push('/')}
-                priority
-              />
-            </div>
-
-            {/* Central Form Container */}
-            <div className="my-auto max-w-md mx-auto w-full">
-              <div className="text-center mb-8">
-                <h1 className="font-anton font-bold text-black text-2xl sm:text-3xl md:text-4xl leading-tight uppercase mb-3">
-                  Verify Email
-                </h1>
-                <p className="font-sans text-gray-400 text-sm">
-                  We've sent a 6-digit code to your email <span className="text-[#0012FF] font-semibold">{email}</span>
-                </p>
-              </div>
-
-              {error && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl">
-                  <p className="font-sans text-xs text-red-600 font-semibold">{error}</p>
-                </div>
-              )}
-
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* 6 OTP boxes */}
-                <div className="flex justify-between gap-2">
-                  {code.map((digit, index) => (
-                    <input
-                      key={index}
-                      id={`code-${index}`}
-                      type="text"
-                      value={digit}
-                      onChange={(e) => handleChange(index, e.target.value)}
-                      onPaste={handlePaste}
-                      onKeyDown={(e) => handleKeyDown(index, e)}
-                      className="w-12 h-14 bg-white border border-gray-200 rounded-xl text-center font-sans font-bold text-xl text-black focus:outline-none focus:border-[#0012FF] transition-all"
-                      maxLength={1}
-                      required
-                    />
-                  ))}
-                </div>
-
-                <div className="text-center">
-                  <p className="font-sans text-xs text-gray-400">
-                    Didn't receive the code?{' '}
-                    <button
-                      type="button"
-                      onClick={handleResend}
-                      disabled={resending}
-                      className="text-[#0012FF] font-bold hover:underline cursor-pointer disabled:opacity-50"
-                    >
-                      {resending ? 'Resending...' : 'Click to Resend'}
-                    </button>
-                  </p>
-                </div>
-
-                {/* Action button */}
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-[#0012FF] hover:bg-[#000EB4] active:scale-[0.98] text-white font-sans font-bold py-3.5 px-6 rounded-full text-sm tracking-wide shadow-lg shadow-blue-500/20 transition-all disabled:opacity-50 cursor-pointer"
-                >
-                  {loading ? 'Verifying...' : 'Verify Email'}
-                </button>
-              </form>
-            </div>
-
-            {/* Bottom spacer */}
-            <div className="mt-8 pt-4" />
-          </div>
-
-          {/* Right Side - Hero Image */}
-          <div className="hidden lg:block lg:col-span-6 relative">
-            <div className="h-full min-h-[600px] lg:min-h-[700px]">
-              <HeroImage />
-            </div>
-          </div>
-
-        </div>
+    <AuthLayout
+      footer={(
+        <p className="font-sans text-xs font-medium text-gray-500">
+          Need to use another email?{' '}
+          <Link href="/signup" className="font-bold text-[#0012FF] hover:underline">
+            Back to sign up
+          </Link>
+        </p>
+      )}
+    >
+      <div className="mb-8 text-center">
+        <h1 className="mb-2 font-sans text-3xl font-extrabold leading-tight tracking-tight text-black sm:text-4xl">
+          Verify Email
+        </h1>
+        <p className="font-sans text-sm text-gray-400">
+          We&apos;ve sent a 6-digit code to your email{' '}
+          <span className="font-semibold text-[#0012FF]">{email}</span>
+        </p>
       </div>
-    </div>
+
+      {error && (
+        <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3">
+          <p className="font-sans text-xs font-semibold text-red-600">{error}</p>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="flex justify-between gap-2">
+          {code.map((digit, index) => (
+            <input
+              key={index}
+              id={`code-${index}`}
+              type="text"
+              inputMode="numeric"
+              autoComplete={index === 0 ? 'one-time-code' : 'off'}
+              aria-label={`Verification digit ${index + 1}`}
+              value={digit}
+              onChange={(e) => handleChange(index, e.target.value)}
+              onPaste={handlePaste}
+              onKeyDown={(e) => handleKeyDown(index, e)}
+              className="h-14 min-w-0 flex-1 rounded-xl border border-gray-200 bg-white text-center font-sans text-xl font-bold text-black transition-all focus:border-[#0012FF] focus:outline-none sm:h-16"
+              maxLength={1}
+              required
+            />
+          ))}
+        </div>
+
+        <div className="text-center">
+          <p className="font-sans text-xs text-gray-400">
+            Didn&apos;t receive the code?{' '}
+            <button
+              type="button"
+              onClick={handleResend}
+              disabled={resending}
+              className="cursor-pointer font-bold text-[#0012FF] hover:underline disabled:opacity-50"
+            >
+              {resending ? 'Resending...' : 'Click to Resend'}
+            </button>
+          </p>
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading || code.join('').length !== 6}
+          className="mt-4 w-full cursor-pointer rounded-2xl bg-[#0012FF] px-6 py-3.5 font-sans text-sm font-bold tracking-wide text-white shadow-lg shadow-[#0012FF]/25 transition-all hover:bg-[#000EB4] active:scale-[0.98] disabled:opacity-50"
+        >
+          {loading ? 'Verifying...' : 'Verify Email'}
+        </button>
+      </form>
+    </AuthLayout>
   );
 }
 
 export default function VerifyEmailPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-[#F4F5F8] flex items-center justify-center p-4 sm:p-6">
-        <div className="w-full max-w-7xl text-center">
-          <div className="animate-pulse text-[#0012FF]">Loading...</div>
-        </div>
-      </div>
-    }>
+    <Suspense
+      fallback={(
+        <AuthLayout>
+          <div className="animate-pulse text-center text-sm text-[#0012FF]">Loading...</div>
+        </AuthLayout>
+      )}
+    >
       <VerifyEmailForm />
     </Suspense>
   );

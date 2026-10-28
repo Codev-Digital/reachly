@@ -4,11 +4,11 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import Image from 'next/image';
-import HeroImage from '../components/HeroImage';
 import { Mail, Lock } from 'lucide-react';
 import FormInput, { FormError } from '@/components/FormInput';
 import { isValidEmail } from '@/lib/validators';
 import { postAuthRoute } from '@/lib/postAuthRoute';
+import AuthLayout from '@/components/auth/AuthLayout';
 
 export default function LoginPage({ callbackUrl }: { callbackUrl: string }) {
   const router = useRouter();
@@ -23,15 +23,18 @@ export default function LoginPage({ callbackUrl }: { callbackUrl: string }) {
 
   // Load remembered email on mount
   useEffect(() => {
-    try {
-      const savedEmail = localStorage.getItem('reachly_remember_email');
-      if (savedEmail) {
-        setEmail(savedEmail);
-        setRememberMe(true);
+    const timer = window.setTimeout(() => {
+      try {
+        const savedEmail = localStorage.getItem('reachly_remember_email');
+        if (savedEmail) {
+          setEmail(savedEmail);
+          setRememberMe(true);
+        }
+      } catch {
+        /* ignore storage access issues */
       }
-    } catch {
-      /* ignore storage access issues */
-    }
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const signupUrl = `/signup?callbackUrl=${encodeURIComponent(callbackUrl)}`;
@@ -136,27 +139,21 @@ export default function LoginPage({ callbackUrl }: { callbackUrl: string }) {
   };
 
   return (
-    <div className="min-h-screen w-full bg-white">
-      <div className="grid min-h-screen w-full grid-cols-1 lg:grid-cols-2">
-
-          {/* Left Form Side */}
-          <div className="flex min-h-screen flex-col justify-between bg-white px-6 py-8 sm:px-10 sm:py-10 lg:px-14 lg:py-12">
-            {/* Top Logo */}
-            <div className="mb-6 sm:mb-8">
-              <Image
-                src="/assets/logo1.png"
-                alt="Reachly Logo"
-                width={120}
-                height={40}
-                style={{ width: 'auto', height: '40px' }}
-                className="cursor-pointer"
-                onClick={() => router.push('/')}
-                priority
-              />
-            </div>
-
-            {/* Central Form Container */}
-            <div className="my-auto max-w-[400px] mx-auto w-full">
+    <AuthLayout
+      footer={(
+        <p className="font-sans text-xs font-medium text-gray-500">
+          Do not have an account?{' '}
+          <button
+            type="button"
+            className="cursor-pointer font-bold text-[#0012FF] hover:underline"
+            onClick={() => router.push(signupUrl)}
+          >
+            Sign up
+          </button>
+        </p>
+      )}
+    >
+      <div>
               <div className="text-center mb-8">
                 <h1 className="font-sans font-extrabold text-black text-3xl sm:text-4xl leading-tight tracking-tight mb-2">
                   Welcome Back
@@ -261,28 +258,7 @@ export default function LoginPage({ callbackUrl }: { callbackUrl: string }) {
                 )}
                 {isGoogleLoading ? 'Redirecting...' : 'Log in with Google'}
               </button>
-            </div>
-
-            {/* Bottom Redirect Link */}
-            <div className="mt-8 pt-4 border-t border-gray-100 text-center">
-              <p className="font-sans text-xs text-gray-500 font-medium">
-                Do not have an account?{' '}
-                <span
-                  className="text-[#0012FF] font-bold cursor-pointer hover:underline"
-                  onClick={() => router.push(signupUrl)}
-                >
-                  Sign up
-                </span>
-              </p>
-            </div>
-          </div>
-
-          {/* Right hero — full viewport half, no outer padding / rounded shell */}
-          <div className="relative hidden min-h-screen lg:block">
-            <HeroImage className="absolute inset-0 h-full w-full" />
-          </div>
-
       </div>
-    </div>
+    </AuthLayout>
   );
 }

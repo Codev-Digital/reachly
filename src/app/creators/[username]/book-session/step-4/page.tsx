@@ -5,6 +5,7 @@ import { loadStripe, type StripeEmbeddedCheckout } from '@stripe/stripe-js';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { ArrowLeft, Check, Eye, RefreshCw, ShieldCheck, Smartphone, UploadCloud, X } from 'lucide-react';
+import { toast } from 'sonner';
 import BookingProgress from '@/components/booking/BookingProgress';
 import CreatorProfileCard from '@/components/booking/CreatorProfileCard';
 import { useBooking, sessionPrice } from '../layout';
@@ -152,6 +153,7 @@ export default function BookSessionStep4() {
       promoApplied: null,
       finalPrice: sessionPrice(booking.selectedSession),
       originalPrice: booking.selectedSession.price,
+      reservationToken: booking.reservationToken,
     };
   };
 
@@ -160,6 +162,7 @@ export default function BookSessionStep4() {
       ...current,
       bookingRef,
       paymentMethod,
+      reservationToken: undefined,
       step: 4,
     }));
     try {
@@ -221,7 +224,21 @@ export default function BookSessionStep4() {
       }
       goToConfirmation(createdBooking.ref);
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : 'Unable to complete payment.');
+      const message = submitError instanceof Error ? submitError.message : 'Unable to complete payment.';
+      if (message.toLowerCase().includes('reservation') || message.toLowerCase().includes('slot is no longer available')) {
+        if (booking.reservationToken) {
+          void fetch(`/api/creators/${encodeURIComponent(String(params.username))}/availability/reservations`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: booking.reservationToken }),
+          }).catch((releaseError) => console.error('Unable to release expired session slot:', releaseError));
+        }
+        setBooking((current) => ({ ...current, reservationToken: undefined, step: 1 }));
+        toast.error(message);
+        router.replace(`/creators/${params.username}/book-session/step-1${queryStr}`);
+      } else {
+        setError(message);
+      }
     } finally {
       setIsSubmitting(false);
     }
