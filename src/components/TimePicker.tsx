@@ -6,8 +6,8 @@ import { Clock } from 'lucide-react';
 import { INPUT_CLASSES } from '@/components/FormInput';
 import { cn } from '@/lib/cn';
 
-/** Hours in the order shown: 08 to 12, then 01 to 07. */
-export const HOUR_OPTIONS = ['08', '09', '10', '11', '12', '01', '02', '03', '04', '05', '06', '07'];
+/** Hours in natural order: 01 through 12. Overnight hours (01–07) appear at the top so 1 AM / 2 AM are easy to reach. */
+export const HOUR_OPTIONS = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
 
 /** Minutes 00 to 59. */
 export const MINUTE_OPTIONS = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
@@ -23,6 +23,7 @@ interface TimePickerProps {
   onChange: (hour: string, minute: string) => void;
   placeholder?: string;
   ariaLabel?: string;
+  error?: boolean | string;
   disabled?: boolean;
   wrapperClassName?: string;
 }
@@ -37,6 +38,7 @@ export default function TimePicker({
   onChange,
   placeholder = 'Select time',
   ariaLabel,
+  error,
   disabled,
   wrapperClassName,
 }: TimePickerProps) {
@@ -149,7 +151,8 @@ export default function TimePicker({
         className={cn(
           INPUT_CLASSES,
           'relative flex items-center justify-between px-4 text-left cursor-pointer disabled:cursor-not-allowed disabled:opacity-60',
-          open && 'border-[#0012FF]'
+          open && 'border-[#0012FF]',
+          error && 'border-red-500 focus:border-red-500'
         )}
       >
         <span className={cn('block truncate', !display && 'text-gray-400')}>{display || placeholder}</span>

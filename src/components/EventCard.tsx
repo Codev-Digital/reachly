@@ -15,6 +15,8 @@ export interface EventCardData {
   image?: string;
   /** Hidden events are not shown on the public profile. */
   visible: boolean;
+  /** Optional status text for admin event lists. */
+  statusLabel?: string;
 }
 
 interface EventCardProps {
@@ -23,6 +25,8 @@ interface EventCardProps {
   onToggleVisibility?: (id: string) => void;
   /** When true, shows the edit control linking to the edit page. */
   showEdit?: boolean;
+  /** Shows a text preview action linking to the customer-facing event page. */
+  showPreview?: boolean;
   onClick?: (id: string) => void;
 }
 
@@ -31,6 +35,7 @@ export default function EventCard({
   event,
   onToggleVisibility,
   showEdit = false,
+  showPreview = false,
   onClick,
 }: EventCardProps) {
   return (
@@ -77,8 +82,19 @@ export default function EventCard({
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/45 via-black/30 to-[#0012FF]/55" />
 
       {/* Creator actions */}
-      {(onToggleVisibility || showEdit) && (
+      {(onToggleVisibility || showEdit || showPreview) && (
         <div className="absolute right-3 top-3 z-10 flex items-center gap-2">
+          {showPreview && (
+            <Link
+              href={`/events/${event.id}?preview=1`}
+              aria-label={`Preview ${event.title}`}
+              onClick={(e) => e.stopPropagation()}
+              className="flex h-8 cursor-pointer items-center justify-center gap-1.5 rounded-full bg-white/25 px-3 text-xs font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/45"
+            >
+              <Eye size={14} />
+              Preview
+            </Link>
+          )}
           {showEdit && (
             <Link
               href={`/creators/events/${event.id}/edit`}
@@ -107,11 +123,15 @@ export default function EventCard({
         </div>
       )}
 
-      {!event.visible && (
+      {event.statusLabel ? (
+        <span className="absolute left-3 top-3 z-10 rounded-full bg-black/45 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-white/95 backdrop-blur-sm">
+          {event.statusLabel}
+        </span>
+      ) : !event.visible ? (
         <span className="absolute left-3 top-3 z-10 rounded-full bg-black/45 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-white/95 backdrop-blur-sm">
           Hidden
         </span>
-      )}
+      ) : null}
 
       {/* Details */}
       <div className="absolute inset-x-0 bottom-0 flex flex-col gap-1 p-4 sm:p-5">

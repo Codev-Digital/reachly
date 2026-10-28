@@ -270,31 +270,20 @@ export default function CreatorOnboardingStep3() {
                 key={session._id || idx}
                 className="bg-white border border-gray-200 rounded-xl p-5"
               >
-                <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-sans text-sm font-semibold text-black">{session.title}</span>
-                    <span className="bg-amber-50 text-amber-700 text-xs px-2.5 py-0.5 rounded-full font-medium border border-amber-200">
-                      Draft
-                    </span>
-                    <span className="bg-[#FFF7ED] text-[#C8A97E] text-xs px-3 py-1 rounded-full border border-[#C8A97E]/30">
-                      {formatDuration(session.duration)}
-                    </span>
-                    <PriceTag price={session.price} discountedPrice={session.discountedPrice} />
-                    {!!session.bufferTime && (
-                      <span className="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full border border-gray-200">
-                        {session.bufferTime} min buffer
-                      </span>
-                    )}
-                  </div>
+                <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-3">
+                  <h2 className="min-w-0 break-words font-sans text-sm font-semibold leading-5 text-black">
+                    {session.title}
+                  </h2>
 
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex shrink-0 items-center gap-1.5">
                     <button
                       type="button"
                       onClick={() => openEditForm(idx)}
-                      className="text-gray-400 hover:text-[#0012FF] transition-all p-1.5 rounded-lg hover:bg-gray-50 cursor-pointer"
+                      className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-50 hover:text-[#0012FF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0012FF]"
                       title="Edit Session"
+                      aria-label={`Edit ${session.title}`}
                     >
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                       </svg>
@@ -302,16 +291,34 @@ export default function CreatorOnboardingStep3() {
                     <button
                       type="button"
                       onClick={() => deleteSession(idx)}
-                      className="text-gray-400 hover:text-red-600 transition-all p-1.5 rounded-lg hover:bg-red-50 cursor-pointer"
+                      className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
                       title="Delete Session"
+                      aria-label={`Delete ${session.title}`}
                     >
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                       </svg>
                     </button>
                   </div>
+
+                  <div className="col-span-2 flex flex-wrap items-center gap-2">
+                    <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700">
+                      Draft
+                    </span>
+                    <span className="rounded-full border border-[#C8A97E]/30 bg-[#FFF7ED] px-3 py-1 text-xs text-[#C8A97E]">
+                      {formatDuration(session.duration)}
+                    </span>
+                    <PriceTag price={session.price} discountedPrice={session.discountedPrice} />
+                    {!!session.bufferTime && (
+                      <span className="rounded-full border border-gray-200 bg-gray-100 px-3 py-1 text-xs text-gray-600">
+                        {session.bufferTime} min buffer
+                      </span>
+                    )}
+                  </div>
+                  <p className="col-span-2 font-sans text-xs text-gray-500">
+                    {richTextPreview(session.description, 300)}
+                  </p>
                 </div>
-                <p className="font-sans text-gray-500 text-xs">{richTextPreview(session.description, 300)}</p>
               </div>
             ))}
           </div>

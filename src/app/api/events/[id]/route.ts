@@ -20,6 +20,7 @@ export async function GET(_req: NextRequest, context: RouteContext) {
     const event = await Event.findOne({
       _id: new mongoose.Types.ObjectId(id),
       status: 'published',
+      deletedAt: null,
     }).lean();
 
     if (!event) {

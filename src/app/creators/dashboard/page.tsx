@@ -653,7 +653,7 @@ const CreatorDashboard = () => {
       initial={{ y: 20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ delay: 0.2 + index * 0.05 }}
-      className="relative w-full bg-white rounded-[20px] p-5 border border-gray-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between min-h-[220px]"
+      className="relative w-full bg-white rounded-[12px] p-5 border border-[#e2e2e2]  transition-all flex flex-col justify-between min-h-[220px]"
     >
       <div>
         <div className="flex items-start justify-between mb-4">
@@ -690,7 +690,7 @@ const CreatorDashboard = () => {
               </span>
             )}
           </div>
-          <div className="flex items-center gap-2">
+          {/* <div className="flex items-center gap-2">
             <div className="w-3.5 h-3.5 flex items-center justify-center shrink-0">
               {booking.type === 'In-person' ? (
                 <div className="w-2.5 h-2.5 rounded-full bg-[#0012FF]" />
@@ -699,12 +699,21 @@ const CreatorDashboard = () => {
               )}
             </div>
             <span className="font-medium text-gray-700 capitalize">{booking.type}</span>
-          </div>
+          </div> */}
         </div>
 
         <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed mb-4">
-          {booking.note || 'I want to start a YouTube channel about Pakistani street food. How do I structure my videos and what...'}
-          <span className="text-[#0012FF] font-bold ml-1 cursor-pointer hover:underline">Read more</span>
+        {booking.note.length > 124 ? (
+  <>
+    {booking.note.slice(0, 100)}...
+    <span className="text-[#0012FF] font-bold ml-1 cursor-pointer hover:underline">
+      Read more
+    </span>
+  </>
+) : (
+  booking.note
+)}
+          {/* <span className="text-[#0012FF] font-bold ml-1 cursor-pointer hover:underline">Read more</span> */}
         </p>
       </div>
 

@@ -374,6 +374,7 @@ export default function BookSessionStep4() {
                   </div>
                 </div>
 
+
                 {amountDue > 0 && (
                   <div>
                     <input

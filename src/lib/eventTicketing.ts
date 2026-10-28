@@ -43,6 +43,22 @@ export interface TicketingValues {
   activeDate: string | null;
   /** Details saved per date. */
   days: Record<string, EventDayData>;
+  /** Event start date (YYYY-MM-DD) for the schedule range picker. */
+  startDate?: string;
+  /** Event end date (YYYY-MM-DD) for the schedule range picker. */
+  endDate?: string;
+  /** Start time (hour). */
+  startHour?: string;
+  /** Start time (minute). */
+  startMinute?: string;
+  /** Start period (AM/PM). */
+  startPeriod?: DayPeriod;
+  /** End time (hour). */
+  endHour?: string;
+  /** End time (minute). */
+  endMinute?: string;
+  /** End period (AM/PM). */
+  endPeriod?: DayPeriod;
 }
 
 export const emptyDay = (): EventDayData => ({
@@ -56,7 +72,20 @@ export const emptyDay = (): EventDayData => ({
   selectedTierId: null,
 });
 
-export const emptyTicketing = (): TicketingValues => ({ category: '', dates: [], activeDate: null, days: {} });
+export const emptyTicketing = (): TicketingValues => ({
+  category: '',
+  dates: [],
+  activeDate: null,
+  days: {},
+  startDate: '',
+  endDate: '',
+  startHour: '',
+  startMinute: '',
+  startPeriod: 'AM',
+  endHour: '',
+  endMinute: '',
+  endPeriod: 'PM',
+});
 
 export const newTierId = () => `tier_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
 

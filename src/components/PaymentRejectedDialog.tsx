@@ -23,6 +23,7 @@ export interface RejectedBookingInfo {
   scheduledTime?: string;
   price?: string | number;
   adminRemarks?: string;
+  [key: string]: any;
 }
 
 interface PaymentRejectedDialogProps {

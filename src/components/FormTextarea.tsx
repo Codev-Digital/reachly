@@ -49,7 +49,12 @@ export default function FormTextarea({
         required={required}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? errorId : undefined}
-        className={twMerge(INPUT_CLASSES, 'px-4 resize-none', className)}
+        className={twMerge(
+          INPUT_CLASSES,
+          'px-4 resize-none',
+          error && 'border-red-500 focus:border-red-500',
+          className
+        )}
       />
 
       {footer}

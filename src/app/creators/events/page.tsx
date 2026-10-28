@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Plus } from 'lucide-react';
+import { ArrowRight, CalendarPlus, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import CreatorDashboardNav from '@/components/CreatorDashboardNav';
 import EventCard, { EventCardData } from '@/components/EventCard';
@@ -131,16 +131,31 @@ export default function CreatorEventsPage() {
             ))}
           </div>
         ) : events.length === 0 ? (
-          <div className="rounded-[8px] border border-dashed border-[#e2e2e2] bg-white px-6 py-16 text-center">
-            <p className="text-base font-semibold text-gray-700">No events yet</p>
-            <p className="mt-1 text-sm text-gray-400">Create your first event to see it here.</p>
-            <Link
-              href="/creators/events/create"
-              className="mt-5 inline-flex cursor-pointer items-center gap-2 rounded-full bg-[#0012FF] px-5 py-2.5 text-sm font-bold text-white"
-            >
-              <Plus size={14} strokeWidth={2.5} />
-              Create Event
-            </Link>
+          <div className="relative isolate overflow-hidden rounded-2xl border border-[#e7e9f2] bg-white px-6 py-14 sm:py-20">
+            <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+              <div className="absolute -right-16 -top-28 h-72 w-72 rounded-full bg-[#EEF2FF] blur-3xl" />
+              <div className="absolute -bottom-36 -left-20 h-72 w-72 rounded-full bg-blue-50 blur-3xl" />
+            </div>
+            <div className="mx-auto flex max-w-lg flex-col items-center text-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-[#e5e9ff] bg-[#F5F6FF] text-[#0012FF] shadow-sm">
+                <CalendarPlus size={29} strokeWidth={1.7} />
+              </div>
+
+              <h2 className="mt-2 text-2xl font-bold tracking-tight text-gray-950 sm:text-3xl">
+                Bring your next idea to life
+              </h2>
+              <p className="mt-3 text-sm leading-6 text-gray-500 sm:text-base">
+                You haven’t created an event yet. Set up your first one to share what you do and give your community something to look forward to.
+              </p>
+              <Link
+                href="/creators/events/create"
+                className="mt-7 inline-flex cursor-pointer items-center gap-2.5 rounded-xl bg-[#0012FF] px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#0010d0] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0012FF] focus-visible:ring-offset-2"
+              >
+                Create your first event
+                <ArrowRight size={16} />
+              </Link>
+              <p className="mt-4 text-xs text-gray-400">You can edit or publish your event when it’s ready.</p>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 lg:gap-6">
@@ -149,6 +164,7 @@ export default function CreatorEventsPage() {
                 key={event.id}
                 event={event}
                 showEdit
+                showPreview
                 onToggleVisibility={requestVisibilityToggle}
               />
             ))}
