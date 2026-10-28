@@ -67,7 +67,7 @@ export async function GET(req: NextRequest) {
 
   await connectDB();
   const status = new URL(req.url).searchParams.get('status');
-  const filter: Record<string, unknown> = { creatorId };
+  const filter: Record<string, unknown> = { creatorId, deletedAt: null };
   if (status === 'draft' || status === 'published' || status === 'cancelled') {
     filter.status = status;
   }

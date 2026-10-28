@@ -10,6 +10,7 @@ interface EventFormSectionProps {
   description: string;
   open: boolean;
   onToggle: () => void;
+  errorCount?: number;
   children: ReactNode;
 }
 
@@ -19,12 +20,18 @@ export default function EventFormSection({
   description,
   open,
   onToggle,
+  errorCount = 0,
   children,
 }: EventFormSectionProps) {
   const panelId = useId();
 
   return (
-    <section className="overflow-hidden rounded-[16px] border border-[#e2e2e2] bg-white">
+    <section
+      className={cn(
+        'overflow-hidden rounded-[16px] border bg-white transition-colors',
+        errorCount > 0 ? 'border-red-300' : 'border-[#e2e2e2]'
+      )}
+    >
       <button
         type="button"
         onClick={onToggle}
@@ -33,7 +40,14 @@ export default function EventFormSection({
         className="flex w-full cursor-pointer items-center justify-between gap-4 px-5 py-4 text-left sm:px-6"
       >
         <span className="min-w-0">
-          <span className="block text-base font-semibold text-black sm:text-lg">{title}</span>
+          <span className="flex items-center gap-2">
+            <span className="block text-base font-semibold text-black sm:text-lg">{title}</span>
+            {errorCount > 0 && (
+              <span className="inline-flex items-center rounded-full bg-red-50 border border-red-200 px-2 py-0.5 text-[11px] font-semibold text-red-600">
+                {errorCount} {errorCount === 1 ? 'issue' : 'issues'}
+              </span>
+            )}
+          </span>
           <span className="mt-0.5 block text-xs text-gray-400 sm:text-[13px]">{description}</span>
         </span>
         <ChevronDown
@@ -51,7 +65,7 @@ export default function EventFormSection({
             id={panelId}
             key="content"
             initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
+            animate={{ height: 'auto', opacity: 1, transitionEnd: { overflow: 'visible' } }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }}
             className="overflow-hidden"

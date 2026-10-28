@@ -18,7 +18,7 @@ export default function PriceTag({
   const original = Number(price);
   const discounted = Number(discountedPrice);
   const hasDiscount = discounted > 0 && discounted < original;
-  const percentOff = hasDiscount ? Math.round((1 - discounted / original) * 100) : 0;
+  const percentOff = hasDiscount ? ((1 - discounted / original) * 100).toFixed(1) : '0.0';
 
   return (
     <span className={cn('inline-flex items-center gap-2 whitespace-nowrap', className)}>
@@ -28,7 +28,7 @@ export default function PriceTag({
           <span className="text-[11px] font-medium text-gray-400 line-through">{formatPkr(original)}</span>
         )}
       </span>
-      {hasDiscount && percentOff > 0 && (
+      {hasDiscount && Number(percentOff) > 0 && (
         <span className="rounded-lg bg-emerald-50 px-2 py-1 text-[11px] font-bold text-emerald-700">
           {percentOff}% OFF
         </span>

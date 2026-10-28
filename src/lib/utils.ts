@@ -386,6 +386,58 @@ export const generateOTPEmail = (
   return getOtpEmailTemplate(name, otp, title);
 };
 
+export const generateEventModerationEmail = (
+  name: string,
+  action: 'hidden' | 'deleted',
+  eventTitle: string,
+  eventImage: string
+): string => {
+  const escapeHtml = (value: string) =>
+    value.replace(/[&<>"']/g, (char) => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;',
+    })[char] || char);
+  const hidden = action === 'hidden';
+  const safeName = escapeHtml(name || 'Creator');
+  const safeTitle = escapeHtml(eventTitle);
+  const safeImage = /^https?:\/\//i.test(eventImage) ? escapeHtml(eventImage) : '';
+  const message = hidden
+    ? 'Our team has hidden this event from public view. You can contact Reachly support if you believe this was a mistake.'
+    : 'Our team has removed this event from public view. The event record has been retained for platform records.';
+
+  return `<!doctype html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Event update</title></head>
+<body style="margin:0;padding:0;background:#f2f4f4;font-family:Arial,Helvetica,sans-serif;color:#1f2937">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f2f4f4;padding:30px 15px">
+    <tr><td align="center">
+      <table role="presentation" width="650" cellpadding="0" cellspacing="0" style="width:100%;max-width:650px;background:#fff;border-radius:12px">
+        <tr><td style="padding:30px">
+          <img src="https://nkmneyqkztlogibyecsz.supabase.co/storage/v1/object/public/reachly/assets/reachly-logo.png" alt="Reachly" width="135" style="display:block;width:135px;height:auto;margin-bottom:16px;border:0">
+          <p style="margin:0;color:#64748b;font-size:15px">Creator account update</p>
+          <div style="padding:26px 0">
+            <p style="margin:0 0 16px;color:#475569;font-size:16px;line-height:24px">Hello <strong>${safeName}</strong>,</p>
+            <h1 style="margin:0 0 12px;color:#111827;font-size:23px;line-height:30px">${hidden ? 'Your event has been hidden' : 'Your event has been removed'}</h1>
+            <p style="margin:0 0 20px;color:#475569;font-size:15px;line-height:24px">${message}</p>
+            ${safeImage ? `<img src="${safeImage}" alt="${safeTitle}" width="590" style="display:block;width:100%;max-width:590px;height:auto;max-height:260px;object-fit:cover;border-radius:8px;margin:0 0 16px">` : ''}
+            <div style="padding:16px;border:1px solid #e5e7eb;border-radius:8px;background:#f8f9fc">
+              <p style="margin:0 0 5px;color:#94a3b8;font-size:11px;font-weight:bold;letter-spacing:1px;text-transform:uppercase">Event</p>
+              <p style="margin:0;color:#111827;font-size:17px;font-weight:bold">${safeTitle}</p>
+            </div>
+            <p style="margin:20px 0 0;color:#64748b;font-size:13px;line-height:21px">If you have questions, please contact the Reachly support team.</p>
+          </div>
+          <p style="margin:0;text-align:center;color:#94a3b8;font-size:13px">&copy; ${new Date().getFullYear()} Reachly. All rights reserved.</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+};
+
 const htmlToText = (html: string): string =>
   html
     .replace(/<style[\s\S]*?<\/style>/gi, '')

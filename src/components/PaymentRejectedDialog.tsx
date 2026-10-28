@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dialog';
 
 export interface RejectedBookingInfo {
-  id?: string;
+  id?: string | number;
   bookingRef?: string;
   ref?: string;
   creator?: string;
@@ -23,6 +23,7 @@ export interface RejectedBookingInfo {
   scheduledTime?: string;
   price?: string | number;
   adminRemarks?: string;
+  [key: string]: any;
 }
 
 interface PaymentRejectedDialogProps {

@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Calendar, Clock, MapPin, ChevronRight, Ticket, X } from 'lucide-react';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { ArrowLeft, BarChart3, Calendar, Clock, MapPin, ChevronRight, Eye, EyeOff, Pencil, Ticket, Trash2, Users, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { toast } from 'sonner';
 import UserNavbar from '@/components/UserNavbar';
 import AdminNavbar from '@/components/AdminNavbar';
 import CreatorDashboardNav from '@/components/CreatorDashboardNav';
@@ -13,6 +14,7 @@ import { formatEventCardDate, formatEventCardTime } from '@/lib/eventDisplay';
 import { isRichTextEmpty } from '@/lib/richText';
 import { cn } from '@/lib/cn';
 import { pktTodayISO } from '@/lib/pkt';
+import ActionDialog from '@/components/ActionDialog';
 
 interface EventTier {
   title: string;
@@ -34,6 +36,7 @@ interface EventDate {
 
 interface EventDetail {
   id: string;
+  status?: 'draft' | 'published' | 'cancelled';
   title: string;
   description: string;
   bannerUrl: string;
@@ -49,6 +52,26 @@ interface EventDetail {
     city?: string;
     country?: string;
   } | null;
+}
+
+interface EventSales {
+  totalBuyers: number;
+  totalTickets: number;
+  totalSeats: number;
+  totalRevenue: number;
+  buyers: Array<{
+    id: string;
+    name: string;
+    email: string;
+    profilePhoto: string | null;
+    date: string;
+    tier: string;
+    quantity: number;
+    seats: number;
+    amount: number;
+    purchasedAt: string;
+    ticketRef: string;
+  }>;
 }
 
 function firstAvailableTierKey(dates: EventDate[] | undefined, dateIndex: number): string | null {
@@ -73,6 +96,8 @@ function formatPkr(price: number) {
 export default function PublicEventDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isPreview = searchParams.get('preview') === '1';
   const id = typeof params?.id === 'string' ? params.id : '';
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -82,6 +107,10 @@ export default function PublicEventDetailPage() {
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
 
   const [event, setEvent] = useState<EventDetail | null>(null);
+  const [sales, setSales] = useState<EventSales | null>(null);
+  const [previewAction, setPreviewAction] = useState<'delete' | 'hide' | 'show' | null>(null);
+  const [previewActionSaving, setPreviewActionSaving] = useState(false);
+  const salesReportRef = useRef<HTMLElement>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [selectedDateIndex, setSelectedDateIndex] = useState(0);
@@ -104,7 +133,7 @@ export default function PublicEventDetailPage() {
       try {
         const [meRes, eventRes] = await Promise.all([
           fetch('/api/user/me'),
-          fetch(`/api/events/${id}`),
+          fetch(isPreview ? `/api/creators/events/${id}` : `/api/events/${id}`),
         ]);
 
         if (meRes.ok) {
@@ -133,6 +162,7 @@ export default function PublicEventDetailPage() {
           const data = await eventRes.json();
           const loaded: EventDetail = data.event;
           setEvent(loaded);
+          if (isPreview) setSales(data.sales || null);
           const today = pktTodayISO();
           const firstUpcoming = (loaded.dates || []).findIndex((d: EventDate) => d.date >= today);
           const firstWithTiers = (loaded.dates || []).findIndex(
@@ -151,10 +181,42 @@ export default function PublicEventDetailPage() {
         setLoading(false);
       }
     })();
-  }, [id]);
+  }, [id, isPreview]);
+
+  const confirmPreviewAction = async () => {
+    if (!previewAction || !event || previewActionSaving) return;
+    setPreviewActionSaving(true);
+    try {
+      const response = await fetch(`/api/creators/events/${event.id}`, {
+        method: previewAction === 'delete' ? 'DELETE' : 'PATCH',
+        ...(previewAction !== 'delete'
+          ? {
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ visible: previewAction === 'show' }),
+            }
+          : {}),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Unable to update this event.');
+      if (previewAction === 'delete') {
+        toast.success('Event deleted.');
+        router.push('/creators/events');
+        return;
+      }
+      setEvent((current) => current
+        ? { ...current, status: previewAction === 'show' ? 'published' : 'draft' }
+        : current);
+      toast.success(previewAction === 'show' ? 'Event is now visible.' : 'Event is now hidden.');
+      setPreviewAction(null);
+    } catch (actionError) {
+      toast.error(actionError instanceof Error ? actionError.message : 'Unable to update this event.');
+    } finally {
+      setPreviewActionSaving(false);
+    }
+  };
 
   const activeDate = event?.dates?.[selectedDateIndex];
-  const activeDateIsPast = !!activeDate && activeDate.date < pktTodayISO();
+  const activeDateIsPast = !isPreview && !!activeDate && activeDate.date < pktTodayISO();
   const tiers = activeDate?.tiers ?? [];
 
   const locationLabel = useMemo(() => {
@@ -172,7 +234,7 @@ export default function PublicEventDetailPage() {
 
   const selectDate = (i: number) => {
     const date = event?.dates?.[i];
-    if (!date || date.date < pktTodayISO()) return;
+    if (!date || (!isPreview && date.date < pktTodayISO())) return;
     setSelectedDateIndex(i);
     setSelectedTierKey(firstAvailableTierKey(event?.dates, i));
   };
@@ -228,7 +290,9 @@ export default function PublicEventDetailPage() {
   return (
     <div className="min-h-screen bg-[#F8F8FA] pb-28 text-[#1a1a1a]">
       {/* Navbar: Logged-in vs Guest */}
-      {isAuthenticated ? (
+      {isPreview ? (
+        <CreatorDashboardNav displayName={displayName} profilePhoto={profilePhoto} />
+      ) : isAuthenticated ? (
         isAdmin ? (
           <AdminNavbar />
         ) : isCreator ? (
@@ -357,11 +421,11 @@ export default function PublicEventDetailPage() {
       <main className="mx-auto max-w-[1536px] px-4 py-8 sm:px-6 lg:px-10">
         <button
           type="button"
-          onClick={() => router.push('/events')}
+          onClick={() => router.push(isPreview ? '/creators/events' : '/events')}
           className="mb-6 inline-flex cursor-pointer items-center gap-2 text-sm font-semibold text-gray-500 transition-colors hover:text-[#0012FF]"
         >
           <ArrowLeft size={16} />
-          Back to Events
+          {isPreview ? 'Back to My Events' : 'Back to Events'}
         </button>
 
         {loading ? (
@@ -406,7 +470,7 @@ export default function PublicEventDetailPage() {
                 </div>
 
                 <div className="flex flex-col justify-center p-6 sm:p-8 lg:p-10">
-                  {event.category && (
+                  {event.category && !isPreview && (
                     <span className="mb-3 inline-flex w-fit rounded-full bg-[#E8E9FB] px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-[#0012FF]">
                       {event.category}
                     </span>
@@ -434,7 +498,7 @@ export default function PublicEventDetailPage() {
                     <div className="mt-5 flex flex-wrap gap-2">
                       {event.dates.map((d, i) => (
                         (() => {
-                          const isPast = d.date < pktTodayISO();
+                          const isPast = !isPreview && d.date < pktTodayISO();
                           return (
                             <button
                               key={`${d.date}-${i}`}
@@ -466,6 +530,16 @@ export default function PublicEventDetailPage() {
                         const key = `${selectedDateIndex}:${i}`;
                         const selected = selectedTierKey === key;
                         const soldOut = Number(tier.quantity) <= 0;
+                        if (isPreview) {
+                          return (
+                            <article key={key} className={cn('rounded-[8px] px-4 py-3', style.bg)}>
+                              <p className={cn('text-[11px] font-semibold', style.label)}>{tier.title}</p>
+                              <p className={cn('mt-1 text-lg font-extrabold tracking-tight', style.text)}>
+                                {formatPkr(Number(tier.price) || 0)}
+                              </p>
+                            </article>
+                          );
+                        }
                         return (
                           <button
                             key={key}
@@ -489,6 +563,39 @@ export default function PublicEventDetailPage() {
                           </button>
                         );
                       })}
+                    </div>
+                  )}
+
+                  {isPreview && (
+                    <div className="mt-5 flex flex-wrap gap-2.5">
+                      <Link
+                        href={`/creators/events/${event.id}/edit`}
+                        className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+                      >
+                        <Pencil size={16} /> Edit
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => setPreviewAction(event.status === 'published' ? 'hide' : 'show')}
+                        className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+                      >
+                        {event.status === 'published' ? <EyeOff size={16} /> : <Eye size={16} />}
+                        {event.status === 'published' ? 'Hide event' : 'Show event'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPreviewAction('delete')}
+                        className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50"
+                      >
+                        <Trash2 size={16} /> Delete
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => salesReportRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                        className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-[#0012FF] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#0010d0]"
+                      >
+                        <BarChart3 size={16} /> Sales report
+                      </button>
                     </div>
                   )}
                 </div>
@@ -580,8 +687,83 @@ export default function PublicEventDetailPage() {
               </div>
             </section>
 
+            {isPreview && sales && (
+              <section ref={salesReportRef} className="mt-8 scroll-mt-6 overflow-hidden rounded-2xl border border-[#e2e2e2] bg-white shadow-sm">
+                <div className="flex flex-col gap-2 border-b border-gray-100 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                  <div>
+                    <h2 className="text-lg font-bold text-gray-950">Ticket sales</h2>
+                    <p className="mt-1 text-sm text-gray-500">Confirmed ticket purchases for this event.</p>
+                  </div>
+                  <span className="inline-flex w-fit items-center gap-2 rounded-full bg-[#EEF2FF] px-3 py-1.5 text-xs font-semibold text-[#0012FF]">
+                    <Users size={14} /> {sales.totalBuyers} {sales.totalBuyers === 1 ? 'buyer' : 'buyers'}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-4 sm:px-6">
+                  {[
+                    { label: 'Total buyers', value: sales.totalBuyers.toLocaleString() },
+                    { label: 'Tickets sold', value: sales.totalTickets.toLocaleString() },
+                    { label: 'Seats purchased', value: sales.totalSeats.toLocaleString() },
+                    { label: 'Ticket revenue', value: `PKR ${sales.totalRevenue.toLocaleString()}` },
+                  ].map((stat) => (
+                    <div key={stat.label} className="rounded-xl border border-gray-100 bg-gray-50/70 px-4 py-3">
+                      <p className="text-xs font-medium text-gray-500">{stat.label}</p>
+                      <p className="mt-1 text-lg font-bold tabular-nums text-gray-950">{stat.value}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {sales.buyers.length === 0 ? (
+                  <div className="border-t border-gray-100 px-5 py-10 text-center sm:px-6">
+                    <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-gray-100 text-gray-500">
+                      <Ticket size={20} />
+                    </div>
+                    <p className="mt-3 text-sm font-semibold text-gray-800">No tickets sold yet</p>
+                    <p className="mt-1 text-xs text-gray-500">Buyer and ticket details will appear here after a purchase is confirmed.</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto border-t border-gray-100">
+                    <table className="w-full min-w-[780px] text-left">
+                      <thead className="bg-gray-50 text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                        <tr>
+                          <th className="px-5 py-3 sm:px-6">Buyer</th>
+                          <th className="px-4 py-3">Event date</th>
+                          <th className="px-4 py-3">Ticket tier</th>
+                          <th className="px-4 py-3">Tickets / seats</th>
+                          <th className="px-4 py-3">Purchased</th>
+                          <th className="px-5 py-3 text-right sm:px-6">Amount</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {sales.buyers.map((buyer) => (
+                          <tr key={buyer.id} className="text-sm text-gray-700">
+                            <td className="px-5 py-4 sm:px-6">
+                              <p className="font-semibold text-gray-900">{buyer.name}</p>
+                              <p className="mt-0.5 text-xs text-gray-500">{buyer.email}</p>
+                            </td>
+                            <td className="px-4 py-4">{formatEventCardDate(buyer.date)}</td>
+                            <td className="px-4 py-4">{buyer.tier}</td>
+                            <td className="px-4 py-4">
+                              <span className="font-semibold text-gray-900">{buyer.quantity}</span>
+                              <span className="text-gray-500"> tickets · {buyer.seats} {buyer.seats === 1 ? 'seat' : 'seats'}</span>
+                            </td>
+                            <td className="px-4 py-4 text-xs text-gray-500">
+                              {new Date(buyer.purchasedAt).toLocaleString()}
+                            </td>
+                            <td className="px-5 py-4 text-right font-semibold tabular-nums text-gray-900 sm:px-6">
+                              {buyer.amount > 0 ? `PKR ${buyer.amount.toLocaleString()}` : 'Free'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
+            )}
+
             {/* Sticky Bottom Booking Bar */}
-            <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[#e2e2e2] bg-white/95 backdrop-blur-md">
+            {!isPreview && <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[#e2e2e2] bg-white/95 backdrop-blur-md">
               <div className="mx-auto flex max-w-[1536px] items-center justify-between gap-4 px-4 py-3.5 sm:px-6 lg:px-10">
                 <div className="min-w-0">
                   <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">
@@ -602,10 +784,10 @@ export default function PublicEventDetailPage() {
                   Book Ticket
                 </button>
               </div>
-            </div>
+            </div>}
 
             {/* Authenticated Confirmation Modal */}
-            {confirmOpen && selectedTier && (
+            {!isPreview && confirmOpen && selectedTier && (
               <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                 <div
                   className="absolute inset-0 bg-black/50 backdrop-blur-xs"
@@ -715,6 +897,51 @@ export default function PublicEventDetailPage() {
         mode="booking"
         callbackUrl={`/events/${id}`}
       />
+      {isPreview && event && (
+        <ActionDialog
+          open={!!previewAction}
+          onOpenChange={(open) => {
+            if (!open && !previewActionSaving) setPreviewAction(null);
+          }}
+          title={
+            previewAction === 'delete'
+              ? 'Delete this event?'
+              : previewAction === 'hide'
+                ? 'Hide this event?'
+                : 'Show this event?'
+          }
+          description={
+            previewAction === 'delete'
+              ? [
+                  'This event will be removed from your event list. It will be soft deleted and retained in the system.',
+                  'Events with ticket orders cannot be deleted. Hide the event instead to prevent new purchases.',
+                ]
+              : previewAction === 'hide'
+                ? 'This event will no longer appear publicly. Existing ticket orders and buyer details will be preserved.'
+                : 'This event will be visible to attendees and available for ticket purchases.'
+          }
+          actions={[
+            {
+              label: 'Cancel',
+              variant: 'outline',
+              onClick: () => setPreviewAction(null),
+              disabled: previewActionSaving,
+            },
+            {
+              label: previewActionSaving
+                ? 'Please wait…'
+                : previewAction === 'delete'
+                  ? 'Delete event'
+                  : previewAction === 'hide'
+                    ? 'Hide event'
+                    : 'Show event',
+              variant: previewAction === 'delete' || previewAction === 'hide' ? 'destructive' : 'default',
+              onClick: () => void confirmPreviewAction(),
+              disabled: previewActionSaving,
+            },
+          ]}
+        />
+      )}
     </div>
   );
 }

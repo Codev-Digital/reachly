@@ -88,7 +88,7 @@ export default function BannerUpload({
       />
 
       {shown ? (
-        <div className={cn(frame, 'group border border-[#e2e2e2] bg-[#F3F3F5]')}>
+        <div className={cn(frame, 'group border bg-[#F3F3F5]', error ? 'border-red-500' : 'border-[#e2e2e2]')}>
           {/* Cover the 300px frame; crop edges if needed so the banner always looks full */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -134,7 +134,7 @@ export default function BannerUpload({
           className={cn(
             frame,
             'flex cursor-pointer flex-col items-center justify-center gap-1 border border-dashed bg-[#E8E6F8] transition-colors',
-            dragging ? 'border-[#0012FF]' : error ? 'border-red-400' : 'border-[#B8B0F0]'
+            dragging ? 'border-[#0012FF]' : error ? 'border-red-500 ring-1 ring-red-500' : 'border-[#B8B0F0]'
           )}
         >
           <ImageIcon size={22} className="mb-1 text-[#0012FF]" />

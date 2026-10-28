@@ -307,6 +307,7 @@ export default function RichTextEditor({
         className={twMerge(
           'rich-text-editor rounded-[8px] border overflow-hidden transition-all',
           theme.box,
+          error && 'border-red-500 focus-within:border-red-500',
           className
         )}
       >
