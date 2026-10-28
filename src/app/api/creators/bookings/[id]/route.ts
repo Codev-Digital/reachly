@@ -63,8 +63,10 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
             return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
         }
 
-        // Ensure the booking belongs to this creator
-        if (booking.creatorId?.toString() !== user._id.toString()) {
+        // Ensure the booking belongs to this creator (as host creator or as client booker)
+        const isHost = booking.creatorId?.toString() === user._id.toString();
+        const isClient = booking.userId?.toString() === user._id.toString();
+        if (!isHost && !isClient) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
         }
 
@@ -199,8 +201,8 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
         const updatePayload: any = {};
         if (status) {
             updatePayload.status = status;
-            if (status === 'cancelled' && booking.paymentStatus === 'paid') {
-                updatePayload.paymentStatus = 'refunded';
+            if (status === 'cancelled') {
+                updatePayload.paymentStatus = booking.paymentStatus === 'paid' ? 'refunded' : 'failed';
             }
         }
         if (selectedDate) {

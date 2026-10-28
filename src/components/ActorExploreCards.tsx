@@ -96,6 +96,13 @@ function ActorCard({
 /**
  * Four random actor portraits that swap every 60s, with stacked hover + Explore CTA.
  */
+const INITIAL_ACTORS: string[] = [
+  '/actors/hania_amir.png',
+  '/actors/bilal_abbas.png',
+  '/actors/dananeer_mobeen.png',
+  '/actors/ahsan_khan.jpg',
+];
+
 export default function ActorExploreCards({
   href = '/explore-creators',
   className = '',
@@ -103,7 +110,7 @@ export default function ActorExploreCards({
   href?: string;
   className?: string;
 }) {
-  const [images, setImages] = useState<string[]>(() => pickRandomFour());
+  const [images, setImages] = useState<string[]>(INITIAL_ACTORS);
   const [batch, setBatch] = useState(0);
 
   useEffect(() => {

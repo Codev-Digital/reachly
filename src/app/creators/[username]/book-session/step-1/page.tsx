@@ -10,7 +10,7 @@ import BookingProgress from '@/components/booking/BookingProgress';
 import CreatorProfileCard from '@/components/booking/CreatorProfileCard';
 import AvailabilityDateTimePicker from '@/components/booking/AvailabilityDateTimePicker';
 import EventCard, { type EventCardData } from '@/components/EventCard';
-import { useBooking, SessionType, sessionPrice } from '../layout';
+import { useBooking, SessionType, sessionPrice, getCachedUserData } from '../layout';
 import { richTextToPlain, richTextPreview } from '@/lib/richText';
 import { formatEventCardDate, formatEventCardTime } from '@/lib/eventDisplay';
 
@@ -50,7 +50,7 @@ export default function BookSessionStep1() {
   if (returnTo) query.set('returnTo', returnTo);
   const queryString = query.toString();
   const queryStr = queryString ? `?${queryString}` : '';
-  const { booking, setBooking } = useBooking();
+  const { booking, setBooking, saveDraft, isDraftSaved } = useBooking();
   const [sessions, setSessions] = useState<SessionType[]>([]);
   const [reviews, setReviews] = useState<PublicReview[]>([]);
   const [creatorEvents, setCreatorEvents] = useState<CreatorEventRaw[]>([]);
@@ -103,22 +103,70 @@ export default function BookSessionStep1() {
     setReviews([]);
     setCreatorEvents([]);
 
-    // Drop previous creator immediately so cover/avatar never flash the wrong person
-    setBooking((b) => {
-      const same =
-        b.creator?.username &&
-        String(b.creator.username).toLowerCase() === username.toLowerCase();
-      if (same) return b;
-      return {
-        ...b,
-        creator: null,
-        selectedSession: null,
-        selectedDate: null,
-        selectedTime: null,
-        reservationToken: undefined,
-        answers: [],
-      };
-    });
+    try {
+      sessionStorage.removeItem('reachly_booking_state');
+    } catch {}
+
+    const cachedUser = getCachedUserData();
+    // Check if there is a saved draft for this creator
+    let draftBooking: any = null;
+    if (typeof window !== 'undefined') {
+      try {
+        const rawDraft = localStorage.getItem('reachly_booking_draft');
+        if (rawDraft) {
+          const parsed = JSON.parse(rawDraft);
+          if (
+            parsed?.creator?.username &&
+            String(parsed.creator.username).toLowerCase() === username.toLowerCase() &&
+            !parsed.bookingRef
+          ) {
+            draftBooking = {
+              ...parsed,
+              selectedDate: parsed.selectedDate ? new Date(parsed.selectedDate) : null,
+            };
+          }
+        }
+      } catch {}
+    }
+
+    if (draftBooking) {
+      setBooking((b) => ({
+        ...draftBooking,
+        userDetails: {
+          ...draftBooking.userDetails,
+          fullName: draftBooking.userDetails?.fullName || b.userDetails?.fullName || cachedUser.name || '',
+          email: draftBooking.userDetails?.email || b.userDetails?.email || cachedUser.email || '',
+          whatsapp: draftBooking.userDetails?.whatsapp || b.userDetails?.whatsapp || '',
+        },
+      }));
+    } else {
+      // Drop previous creator immediately so cover/avatar never flash the wrong person
+      // and reset session-specific fields so new bookings start completely clean
+      setBooking((b) => {
+        const same =
+          b.creator?.username &&
+          String(b.creator.username).toLowerCase() === username.toLowerCase();
+        return {
+          creator: same ? b.creator : null,
+          selectedSession: null,
+          selectedDate: null,
+          selectedTime: null,
+          answers: [],
+          step: 1,
+          bookingRef: undefined,
+          paymentMethod: undefined,
+          userDetails: {
+            fullName: b.userDetails?.fullName || cachedUser.name || '',
+            email: b.userDetails?.email || cachedUser.email || '',
+            whatsapp: b.userDetails?.whatsapp || '',
+            proceedAs: b.userDetails?.proceedAs || 'guest',
+            whatToDiscuss: '',
+            notes: '',
+            heardFrom: '',
+          },
+        };
+      });
+    }
 
     // Hydrate from this username's cache only (never another creator's)
     try {
@@ -157,34 +205,35 @@ export default function BookSessionStep1() {
           } catch {}
           setReviews(Array.isArray(data.reviews) ? data.reviews : []);
           setCreatorEvents(Array.isArray(data.events) ? data.events : []);
-          setBooking((b) => ({
-            ...b,
-            creator: {
-              id: data.creator.id,
-              name: data.creator.name,
-              username: data.creator.username,
-              displayName: data.creator.displayName,
-              profilePhoto: data.creator.profilePhoto,
-              coverPhoto: data.creator.coverPhoto,
-              shortBio: data.creator.shortBio,
-              niches: data.creator.niches || [],
-              city: data.creator.city,
-              country: data.creator.country,
-              languages: data.creator.languages || [],
-              socialLinks: data.creator.socialLinks || {},
-              rating: data.creator.rating,
-              ratingLabel: data.creator.ratingLabel,
-              reviewCount: data.creator.reviewCount,
-              ratingDisplay: data.creator.ratingDisplay,
-              stats: data.creator.stats,
-            },
-            selectedSession: (() => {
-              const wanted = wantedSessionId || b.selectedSession?.id;
-              return wanted
-                ? data.sessions.find((s: SessionType) => s.id === wanted) || null
-                : null;
-            })(),
-          }));
+          setBooking((b) => {
+            const sid = b.selectedSession?.id || wantedSessionId;
+            const sessionMatch = sid
+              ? (data.sessions || []).find((s: SessionType) => s.id === sid) || b.selectedSession
+              : null;
+            return {
+              ...b,
+              creator: {
+                id: data.creator.id,
+                name: data.creator.name,
+                username: data.creator.username,
+                displayName: data.creator.displayName,
+                profilePhoto: data.creator.profilePhoto,
+                coverPhoto: data.creator.coverPhoto,
+                shortBio: data.creator.shortBio,
+                niches: data.creator.niches || [],
+                city: data.creator.city,
+                country: data.creator.country,
+                languages: data.creator.languages || [],
+                socialLinks: data.creator.socialLinks || {},
+                rating: data.creator.rating,
+                ratingLabel: data.creator.ratingLabel,
+                reviewCount: data.creator.reviewCount,
+                ratingDisplay: data.creator.ratingDisplay,
+                stats: data.creator.stats,
+              },
+              selectedSession: sessionMatch,
+            };
+          });
 
         }
       } catch (err) {
@@ -222,40 +271,25 @@ export default function BookSessionStep1() {
   const handleContinue = async () => {
     if (booking.selectedSession && booking.selectedDate && booking.selectedTime) {
       setIsLoadingContinue(true);
-      const token = booking.reservationToken || globalThis.crypto.randomUUID();
-      const date = booking.selectedDate;
-      const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+      const cachedUser = getCachedUserData();
+      const updatedBooking = {
+        ...booking,
+        step: 2,
+        userDetails: {
+          ...booking.userDetails,
+          fullName: booking.userDetails?.fullName || cachedUser.name || '',
+          email: booking.userDetails?.email || cachedUser.email || '',
+          whatsapp: booking.userDetails?.whatsapp || '',
+        },
+      };
+      setBooking(updatedBooking);
       try {
-        const response = await fetch(
-          `/api/creators/${encodeURIComponent(routeUsername)}/availability/reservations`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              sessionId: booking.selectedSession.id,
-              date: dateKey,
-              time: booking.selectedTime,
-              token,
-            }),
-          }
-        );
-        const data = await response.json();
-        if (!response.ok || !data.success) {
-          releaseReservation(token);
-          setBooking((b) => ({ ...b, reservationToken: undefined }));
-          toast.error(data.error || 'This slot is no longer available. Please select another time.');
-          return;
-        }
-        setBooking((b) => ({ ...b, reservationToken: token, step: 2 }));
-        router.push(`/creators/${params.username}/book-session/step-3${queryStr}`);
-      } catch (error) {
-        console.error('Unable to reserve the selected session slot:', error);
-        releaseReservation(token);
-        setBooking((b) => ({ ...b, reservationToken: undefined }));
-        toast.error('Unable to reserve this slot. Please try again.');
-      } finally {
-        setIsLoadingContinue(false);
-      }
+        sessionStorage.setItem('reachly_booking_state', JSON.stringify({
+          ...updatedBooking,
+          selectedDate: updatedBooking.selectedDate ? updatedBooking.selectedDate.toISOString() : null,
+        }));
+      } catch {}
+      router.push(`/creators/${params.username}/book-session/step-3${queryStr}`);
     }
   };
 
@@ -514,33 +548,56 @@ export default function BookSessionStep1() {
                 )}
 
                 {/* Navigation Action Buttons */}
-                <div className="flex flex-wrap gap-2 mt-6 mb-12 justify-end w-full max-w-[790px] mx-auto px-4 relative z-[100]">
+                <div className="flex flex-wrap items-center justify-between gap-3 mt-6 mb-12 w-full max-w-[790px] mx-auto px-4 relative z-[100]">
                   <button
-                    onClick={handleBack}
-                    disabled={isLoadingBack}
-                    className="bg-white border border-gray-200 text-gray-700 font-bold py-2.5 px-4 sm:px-6 rounded-full text-xs hover:bg-gray-50 transition-colors shadow-sm flex items-center justify-center"
+                    type="button"
+                    onClick={() => saveDraft()}
+                    disabled={isDraftSaved}
+                    className={`font-bold py-2.5 px-4 sm:px-5 rounded-full text-xs transition-colors shadow-sm flex items-center justify-center gap-1.5 border ${isDraftSaved
+                      ? 'bg-green-50 border-green-200 text-green-600 cursor-default'
+                      : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                      }`}
                   >
-                    {isLoadingBack ? (
-                      <div className="w-4 h-4 rounded-full border-2 border-gray-300 border-t-gray-700 animate-spin"></div>
+                    {isDraftSaved ? (
+                      <>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                        Saved
+                      </>
                     ) : (
-                      "Back"
+                      'Save as Draft'
                     )}
                   </button>
 
-                  <button
-                    onClick={handleContinue}
-                    disabled={!booking.selectedSession || !booking.selectedDate || !booking.selectedTime || isLoadingContinue}
-                    className={`py-2.5 px-5 sm:px-8 rounded-full text-xs font-bold transition-all shadow-sm flex items-center justify-center ${booking.selectedSession && booking.selectedDate && booking.selectedTime
-                      ? 'bg-[#0012FF] text-white hover:bg-[#0010d0]'
-                      : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                      }`}
-                  >
-                    {isLoadingContinue ? (
-                      <div className="w-4 h-4 rounded-full border-2 border-[#808BFF] border-t-white animate-spin"></div>
-                    ) : (
-                      "Continue"
-                    )}
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleBack}
+                      disabled={isLoadingBack}
+                      className="bg-white border border-gray-200 text-gray-700 font-bold py-2.5 px-4 sm:px-6 rounded-full text-xs hover:bg-gray-50 transition-colors shadow-sm flex items-center justify-center"
+                    >
+                      {isLoadingBack ? (
+                        <div className="w-4 h-4 rounded-full border-2 border-gray-300 border-t-gray-700 animate-spin"></div>
+                      ) : (
+                        "Back"
+                      )}
+                    </button>
+
+                    <button
+                      onClick={handleContinue}
+                      disabled={!booking.selectedSession || !booking.selectedDate || !booking.selectedTime || isLoadingContinue}
+                      className={`py-2.5 px-5 sm:px-8 rounded-full text-xs font-bold transition-all shadow-sm flex items-center justify-center ${booking.selectedSession && booking.selectedDate && booking.selectedTime
+                        ? 'bg-[#0012FF] text-white hover:bg-[#0010d0]'
+                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                        }`}
+                    >
+                      {isLoadingContinue ? (
+                        <div className="w-4 h-4 rounded-full border-2 border-[#808BFF] border-t-white animate-spin"></div>
+                      ) : (
+                        "Continue"
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

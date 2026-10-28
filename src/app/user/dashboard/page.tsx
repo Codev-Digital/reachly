@@ -21,6 +21,7 @@ import {
 } from '@/lib/time';
 import { Star, CheckCircle, Video, MessageSquare, Clock, AlertTriangle } from 'lucide-react';
 import PaymentRejectedDialog from '@/components/PaymentRejectedDialog';
+import { toast } from 'sonner';
 import {
   getStoredFavourites,
   setStoredFavourites,
@@ -32,7 +33,6 @@ import {
   readAnyPendingSessionReview,
   storePendingSessionReview,
 } from '@/lib/pendingSessionReview';
-import { toast } from 'sonner';
 function LoginToExplore() {
   const router = useRouter();
   return (
@@ -75,6 +75,7 @@ interface DisplayBooking {
   eventId?: string | null;
   tierTitle?: string | null;
   adminRemarks?: string;
+  createdAt?: string | Date;
 }
 
 export default function UserDashboard() {
@@ -457,6 +458,7 @@ export default function UserDashboard() {
               eventId: b.eventId || null,
               tierTitle: b.tierTitle || null,
               adminRemarks: b.adminRemarks || '',
+              createdAt: b.createdAt,
             };
 
             // Events: trust API status (avoid time-parse false "Past")
@@ -621,6 +623,10 @@ export default function UserDashboard() {
   };
 
   const handleRefundClick = (booking: DisplayBooking) => {
+    if (booking.originalStatus === 'pending' || (typeof booking.status === 'string' && booking.status.includes('Pending')) || booking.paymentStatus === 'pending') {
+      toast.error('This ticket is awaiting admin verification and cannot be refunded yet.');
+      return;
+    }
     if (!assertModificationAllowed(booking, 'refund')) return;
     setEventToRefund(booking);
     setShowRefundConfirmModal(true);
@@ -1136,8 +1142,8 @@ export default function UserDashboard() {
                               );
                             }
 
-                            if (booking.isEvent) {
-                              if (isCancelled || isPast) {
+                            if (isCancelled || isPast) {
+                              if (booking.isEvent) {
                                 return (
                                   <button
                                     onClick={() =>
@@ -1154,6 +1160,38 @@ export default function UserDashboard() {
                                 );
                               }
 
+                              return (
+                                <button
+                                  onClick={() => router.push(`/user/chats?bookingRef=${booking.bookingRef}`)}
+                                  className="w-full py-2 bg-[#0012FF] hover:bg-[#0012FF]/90 text-white rounded-lg text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs shadow-[#0012FF]/20"
+                                >
+                                  <MessageSquare className="size-3.5 shrink-0" />
+                                  Chat now
+                                </button>
+                              );
+                            }
+
+                            if (isPending) {
+                              return (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    toast.info(
+                                      booking.isEvent
+                                        ? 'Payment verification is in progress. Once confirmed, you will be able to access the event chat and view your ticket.'
+                                        : 'Payment verification is in progress. Once confirmed, you will be able to join the meeting, reschedule, or cancel your appointment.',
+                                      { duration: 4000 }
+                                    );
+                                  }}
+                                  className="w-full py-2 bg-amber-50 hover:bg-amber-100/80 border border-amber-300/80 text-amber-900 rounded-full text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs active:scale-[0.99]"
+                                >
+                                  <Clock className="size-3.5 text-amber-700 shrink-0" />
+                                  <span>Payment Verification In Progress</span>
+                                </button>
+                              );
+                            }
+
+                            if (booking.isEvent) {
                               return (
                                 <div className="flex items-center gap-2">
                                   <button
@@ -1190,28 +1228,17 @@ export default function UserDashboard() {
                               );
                             }
 
-                            if (isPending) {
-                              return (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    toast.info(
-                                      'Payment verification is in progress. Once confirmed, you will be able to join the meeting, reschedule, or cancel your appointment.',
-                                      { duration: 4000 }
-                                    );
-                                  }}
-                                  className="w-full py-2 bg-amber-50 hover:bg-amber-100/80 border border-amber-300/80 text-amber-900 rounded-[8px] text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs active:scale-[0.99]"
-                                >
-                                  <Clock className="size-3.5 text-amber-700 shrink-0" />
-                                  <span>Payment Verification In Progress</span>
-                                </button>
-                              );
-                            }
+                            const isCompleted = Boolean(
+                              booking.meetingEnded ||
+                              booking.status === 'Completed' ||
+                              booking.status === 'completed' ||
+                              booking.originalStatus === 'completed'
+                            );
 
                             // Otherwise, upcoming active and confirmed
                             return (
                               <>
-                                {booking.meetingEnded ? (
+                                {isCompleted ? (
                                   booking.hasReviewed ? (
                                     <div className="w-full py-2 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1.5 bg-gray-100 text-gray-500 border border-gray-200 select-none">
                                       <CheckCircle className="size-3.5 shrink-0" />
@@ -1228,29 +1255,31 @@ export default function UserDashboard() {
                                     </button>
                                   )
                                 ) : (
-                                  <button
-                                    onClick={() => void handleUserJoinMeeting(booking)}
-                                    disabled={joiningMeetingId === String(booking.id)}
-                                    className="w-full py-2 bg-[#0012FF] hover:bg-[#0012FF]/90 text-white rounded-lg text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm disabled:opacity-60"
-                                  >
-                                    <Video className="size-3.5 shrink-0" />
-                                    {joiningMeetingId === String(booking.id) ? 'Checking…' : 'Join Meeting'}
-                                  </button>
+                                  <>
+                                    <button
+                                      onClick={() => void handleUserJoinMeeting(booking)}
+                                      disabled={joiningMeetingId === String(booking.id)}
+                                      className="w-full py-2 bg-[#0012FF] hover:bg-[#0012FF]/90 text-white rounded-lg text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm disabled:opacity-60"
+                                    >
+                                      <Video className="size-3.5 shrink-0" />
+                                      {joiningMeetingId === String(booking.id) ? 'Checking…' : 'Join Meeting'}
+                                    </button>
+                                    <div className="flex items-center gap-2">
+                                      <button
+                                        onClick={() => handleRescheduleNav(booking)}
+                                        className="flex-1 py-1.5 border border-gray-200 hover:bg-gray-50 text-gray-600 rounded-lg text-[11px] font-semibold text-center transition-all cursor-pointer"
+                                      >
+                                        Reschedule
+                                      </button>
+                                      <button
+                                        onClick={() => handleCancelClick(booking)}
+                                        className="flex-1 py-1.5 bg-[#FFF0F0] border border-red-100 hover:bg-red-100 text-[#FF3B3B] rounded-lg text-[11px] font-semibold text-center transition-all cursor-pointer"
+                                      >
+                                        Cancel
+                                      </button>
+                                    </div>
+                                  </>
                                 )}
-                                <div className="flex items-center gap-2">
-                                  <button
-                                    onClick={() => handleRescheduleNav(booking)}
-                                    className="flex-1 py-1.5 border border-gray-200 hover:bg-gray-50 text-gray-600 rounded-lg text-[11px] font-semibold text-center transition-all cursor-pointer"
-                                  >
-                                    Reschedule
-                                  </button>
-                                  <button
-                                    onClick={() => handleCancelClick(booking)}
-                                    className="flex-1 py-1.5 bg-[#FFF0F0] border border-red-100 hover:bg-red-100 text-[#FF3B3B] rounded-lg text-[11px] font-semibold text-center transition-all cursor-pointer"
-                                  >
-                                    Cancel
-                                  </button>
-                                </div>
                               </>
                             );
                           })()}
@@ -1572,19 +1601,6 @@ export default function UserDashboard() {
         target={reviewTarget}
         role="user"
         onSubmitted={markBookingReviewed}
-      />
-
-      <PaymentRejectedDialog
-        booking={rejectionRemarksBooking ? {
-          ...rejectionRemarksBooking,
-          id: String(rejectionRemarksBooking.id),
-          creator: rejectionRemarksBooking.name,
-          price: rejectionRemarksBooking.amount,
-        } : null}
-        open={!!rejectionRemarksBooking}
-        onOpenChange={(open) => {
-          if (!open) setRejectionRemarksBooking(null);
-        }}
       />
     </div>
   );

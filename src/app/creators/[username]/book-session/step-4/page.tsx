@@ -167,6 +167,7 @@ export default function BookSessionStep4() {
     }));
     try {
       localStorage.removeItem('reachly_booking_draft');
+      sessionStorage.removeItem('reachly_booking_state');
     } catch (storageError) {
       console.error('Unable to clear booking draft:', storageError);
     }

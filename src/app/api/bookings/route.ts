@@ -513,7 +513,7 @@ export async function POST(request: NextRequest) {
       scheduledDate: scheduledDateUTC,
       scheduledTime: time,
       status: requiresStripePayment || requiresManualVerification ? "pending" : "confirmed",
-      paymentStatus: "pending", // Will auto-settle to paid when session time passes
+      paymentStatus: (checkoutTotal <= 0 || (!requiresStripePayment && !requiresManualVerification)) ? "paid" : "pending",
       paymentMethod: paymentMethod || "jazzcash",
       price: originalPrice,
       promoApplied,
