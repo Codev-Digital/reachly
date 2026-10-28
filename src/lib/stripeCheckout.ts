@@ -119,22 +119,12 @@ export async function finalizeStripeCheckout(session: Stripe.Checkout.Session) {
       throw new Error('Stripe event amount does not match the ticket price in PKR.');
     }
 
-    let purchase = pendingPurchase;
-    let newlyPaid = false;
-    if (pendingPurchase.paymentStatus !== 'paid') {
-      const updatedPurchase = await EventPurchase.findOneAndUpdate(
-        { _id: purchaseId, paymentStatus: 'pending', status: 'pending' },
-        { $set: { paymentStatus: 'paid', status: 'confirmed' } },
-        { new: true }
-      );
-      if (updatedPurchase) {
-        purchase = updatedPurchase;
-        newlyPaid = true;
-      } else {
-        const currentPurchase = await EventPurchase.findById(purchaseId);
-        if (currentPurchase) purchase = currentPurchase;
-      }
-    }
+    const updatedPurchase = await EventPurchase.findOneAndUpdate(
+      { _id: purchaseId, status: 'pending', paymentStatus: { $in: ['pending', 'paid'] } },
+      { $set: { paymentStatus: 'paid', status: 'confirmed' } },
+      { new: true }
+    );
+    const purchase = updatedPurchase || await EventPurchase.findById(purchaseId);
     if (
       !purchase ||
       purchase.paymentStatus !== 'paid' ||
@@ -142,13 +132,11 @@ export async function finalizeStripeCheckout(session: Stripe.Checkout.Session) {
     ) {
       return { paid: false };
     }
-    if (newlyPaid) {
-      try {
-        const { addBuyerToEventBroadcast } = await import('@/lib/eventBroadcastChat');
-        await addBuyerToEventBroadcast(purchase.eventId, String(purchase.userId));
-      } catch (error) {
-        console.error('[Stripe checkout] event broadcast membership:', error);
-      }
+    try {
+      const { addBuyerToEventBroadcast } = await import('@/lib/eventBroadcastChat');
+      await addBuyerToEventBroadcast(purchase.eventId, String(purchase.userId));
+    } catch (error) {
+      console.error('[Stripe checkout] event broadcast membership:', error);
     }
     return { paid: true, kind, purchaseId };
   }

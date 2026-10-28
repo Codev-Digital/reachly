@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import mongoose from 'mongoose';
 import connectDB from '@/lib/mongodb';
 import Event from '@/models/Event';
+import EventPurchase from '@/models/EventPurchase';
+import CreatorProfile from '@/models/CreatorProfile';
+import User from '@/models/User';
 import { currentCreatorId } from '@/lib/creatorAuth';
 import { uploadToSupabase } from '@/lib/supabase';
 import {
@@ -39,6 +42,7 @@ async function ownedEvent(creatorId: string, id: string) {
   return Event.findOne({
     _id: new mongoose.Types.ObjectId(id),
     creatorId: new mongoose.Types.ObjectId(creatorId),
+    deletedAt: null,
   });
 }
 
@@ -82,7 +86,66 @@ export async function GET(_req: NextRequest, context: RouteContext) {
   const event = await ownedEvent(creatorId, id);
   if (!event) return NextResponse.json({ error: 'Event not found.' }, { status: 404 });
 
-  return NextResponse.json({ success: true, event: serialize(event) });
+  const purchases = await EventPurchase.find({
+    eventId: event._id,
+    status: { $in: ['confirmed', 'completed'] },
+    paymentStatus: 'paid',
+  }).sort({ createdAt: -1 }).lean();
+  const buyerIds = [...new Set(purchases.map((purchase) => String(purchase.userId)))];
+  const [buyers, creatorProfile] = await Promise.all([
+    buyerIds.length
+      ? User.find({ _id: { $in: buyerIds } }).select('name email profilePhoto').lean()
+      : [],
+    CreatorProfile.findOne({ userId: creatorId }).select('username displayName profilePhoto shortBio city country').lean(),
+  ]);
+  const buyerMap = new Map((buyers as Array<{
+    _id: mongoose.Types.ObjectId;
+    name?: string;
+    email?: string;
+    profilePhoto?: string;
+  }>).map((buyer) => [String(buyer._id), buyer]));
+  const buyerPurchases = purchases.map((purchase) => {
+    const buyer = buyerMap.get(String(purchase.userId));
+    const quantity = Number(purchase.quantity) || 1;
+    const persons = Number(purchase.tierPersons) || 1;
+    return {
+      id: String(purchase._id),
+      name: buyer?.name || 'Ticket holder',
+      email: buyer?.email || purchase.buyerEmail,
+      profilePhoto: buyer?.profilePhoto || null,
+      date: purchase.eventDate,
+      tier: purchase.tierTitle,
+      quantity,
+      seats: quantity * persons,
+      amount: Number(purchase.tierPrice) * quantity,
+      purchasedAt: purchase.createdAt,
+      ticketRef: purchase.ticketRef,
+    };
+  });
+  const eventData = serialize(event);
+  return NextResponse.json({
+    success: true,
+    event: {
+      ...eventData,
+      creator: creatorProfile ? {
+        username: creatorProfile.username || '',
+        displayName: creatorProfile.displayName || '',
+        profilePhoto: creatorProfile.profilePhoto || null,
+        shortBio: creatorProfile.shortBio || '',
+        city: creatorProfile.city || '',
+        country: creatorProfile.country || '',
+      } : null,
+    },
+    sales: {
+      totalBuyers: new Set(purchases.map((purchase) => String(purchase.userId))).size,
+      totalTickets: purchases.reduce((sum, purchase) => sum + (Number(purchase.quantity) || 1), 0),
+      totalSeats: purchases.reduce((sum, purchase) =>
+        sum + (Number(purchase.quantity) || 1) * (Number(purchase.tierPersons) || 1), 0),
+      totalRevenue: purchases.reduce((sum, purchase) =>
+        sum + (Number(purchase.tierPrice) || 0) * (Number(purchase.quantity) || 1), 0),
+      buyers: buyerPurchases,
+    },
+  });
 }
 
 /** PUT — update a draft / publish (multipart or JSON). */
@@ -265,12 +328,20 @@ export async function DELETE(_req: NextRequest, context: RouteContext) {
   const event = await ownedEvent(creatorId, id);
   if (!event) return NextResponse.json({ error: 'Event not found.' }, { status: 404 });
 
-  if (event.status === 'draft') {
-    await event.deleteOne();
-    return NextResponse.json({ success: true, deleted: true });
+  const existingTicketOrders = await EventPurchase.exists({
+    eventId: event._id,
+    status: { $in: ['pending', 'confirmed', 'completed'] },
+    paymentStatus: { $in: ['pending', 'paid'] },
+  });
+  if (existingTicketOrders) {
+    return NextResponse.json(
+      { error: 'This event has ticket orders and cannot be deleted. Hide the event instead to prevent new purchases.' },
+      { status: 409 }
+    );
   }
 
+  event.deletedAt = new Date();
   event.status = 'cancelled';
   await event.save();
-  return NextResponse.json({ success: true, cancelled: true });
+  return NextResponse.json({ success: true, deleted: true });
 }

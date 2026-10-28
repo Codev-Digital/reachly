@@ -39,6 +39,7 @@ export interface IEvent extends Document {
   refundPolicy: string;
   termsAndConditions: string;
   publishedAt?: Date | null;
+  deletedAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -135,6 +136,11 @@ const EventSchema = new Schema<IEvent>(
     publishedAt: {
       type: Date,
       default: null,
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
+      index: true,
     },
   },
   { timestamps: true }

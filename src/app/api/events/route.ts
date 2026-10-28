@@ -44,7 +44,7 @@ async function getFeaturedEvents() {
     await connectDB();
     const today = pktTodayISO();
     const events = await Event.aggregate([
-      { $match: { status: 'published', 'dates.date': { $gte: today } } },
+      { $match: { status: 'published', deletedAt: null, 'dates.date': { $gte: today } } },
       { $unwind: '$dates' },
       { $match: { 'dates.date': { $gte: today } } },
       { $sort: { 'dates.date': 1, publishedAt: -1, _id: 1 } },
@@ -122,7 +122,7 @@ export async function GET(request: NextRequest) {
 
     await connectDB();
 
-    const events = await Event.find({ status: 'published' })
+    const events = await Event.find({ status: 'published', deletedAt: null })
       .sort({ publishedAt: -1, createdAt: -1 })
       .lean();
 

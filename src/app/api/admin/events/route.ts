@@ -67,7 +67,7 @@ export async function GET(req: NextRequest) {
     const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
-    const mongoFilter: Record<string, unknown> = {};
+    const mongoFilter: Record<string, unknown> = { deletedAt: null };
     if (category && category !== 'All Categories') {
       mongoFilter.category = category;
     }
@@ -79,7 +79,7 @@ export async function GET(req: NextRequest) {
     }
 
     const [kpiRows, profiles, total, pageEvents, categoryRows] = await Promise.all([
-      Event.find({})
+      Event.find({ deletedAt: null })
         .select('status dates createdAt')
         .lean(),
       CreatorProfile.find({}).select('userId username displayName profilePhoto createdAt').lean(),
@@ -89,7 +89,7 @@ export async function GET(req: NextRequest) {
         .skip((page - 1) * limit)
         .limit(limit)
         .lean(),
-      Event.distinct('category'),
+      Event.distinct('category', { deletedAt: null }),
     ]);
 
     const profileMap = new Map((profiles as any[]).map((p) => [String(p.userId), p]));
