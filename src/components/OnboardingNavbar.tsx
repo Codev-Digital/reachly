@@ -142,25 +142,26 @@ export default function OnboardingNavbar({ showAuthButtons = false }: { showAuth
 
       {/* Unified Progress Stepper */}
       {showStepper && (
-        <div className="bg-white border border-gray-100 shadow-sm rounded-2xl sm:rounded-3xl p-3 max-w-md mx-auto mb-6">
-          <div className="flex items-center justify-between py-1 px-4">
+        <div className="bg-white border border-gray-100 shadow-sm rounded-2xl sm:rounded-3xl px-4 py-3 max-w-2xl mx-auto mb-6">
+          <div className="flex items-center w-full select-none">
             {[1, 2, 3, 4].map((num, idx) => {
               const isCompleted = activeStep > num;
               const isActive = activeStep === num;
 
               return (
                 <div key={num} className="flex items-center flex-1 last:flex-none">
-                  {/* Step Circle */}
                   <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold transition-all shadow-sm flex-shrink-0 ${isCompleted
-                      ? 'bg-[#0012FF] text-white border border-[#0012FF]'
+                    aria-current={isActive ? 'step' : undefined}
+                    aria-label={`Step ${num}${isCompleted ? ', completed' : isActive ? ', current' : ''}`}
+                    className={`w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold transition-all border shrink-0 ${isCompleted
+                      ? 'bg-[#0012FF] border-[#0012FF] text-white'
                       : isActive
-                        ? 'bg-[#EEF2FF] text-[#0012FF] border border-[#0012FF] ring-4 ring-blue-50'
-                        : 'bg-white text-gray-400 border border-gray-200'
+                        ? 'bg-[#EEF2FF] border-[#0012FF] text-[#0012FF]'
+                        : 'bg-white border-[#e2e2e2] text-gray-400'
                       }`}
                   >
                     {isCompleted ? (
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" className="w-3.5 h-3.5">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                         <polyline points="20 6 9 17 4 12" />
                       </svg>
                     ) : (
@@ -168,14 +169,11 @@ export default function OnboardingNavbar({ showAuthButtons = false }: { showAuth
                     )}
                   </div>
 
-                  {/* Connecting Line */}
                   {idx < 3 && (
-                    <div className="flex-1 mx-2 sm:mx-4 h-0.5 relative bg-gray-100 rounded-full overflow-hidden">
-                      <div
-                        className="absolute inset-y-0 left-0 bg-[#0012FF] transition-all duration-500"
-                        style={{ width: isCompleted ? '100%' : '0%' }}
-                      />
-                    </div>
+                    <div
+                      aria-hidden="true"
+                      className={`flex-grow h-px ${isCompleted ? 'bg-[#0012FF]' : 'bg-[#e2e2e2]'}`}
+                    />
                   )}
                 </div>
               );

@@ -329,6 +329,7 @@ export default function BookSessionStep4() {
                   </div>
                 </div>
 
+
                 {amountDue > 0 && (
                   <label className="group block cursor-pointer rounded-xl border border-dashed border-gray-300 bg-gray-50/50 px-4 py-4 transition-colors hover:border-[#0012FF] hover:bg-[#F7F8FF]">
                     <span className="flex items-center gap-3">
