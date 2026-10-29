@@ -27,6 +27,7 @@ export interface ICreatorProfile extends Document {
   isDeactivated?: boolean; // true when creator has no active sessions
   deactivatedAt?: Date;
   views?: number;
+  commissionPercent: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -69,6 +70,16 @@ const CreatorProfileSchema = new Schema<ICreatorProfile>(
       linkedin: { type: String, default: '' },
     },
     views: { type: Number, default: 0 },
+    commissionPercent: {
+      type: Number,
+      default: 20,
+      min: 0.1,
+      max: 99,
+      validate: {
+        validator: (value: number) => Number.isInteger(value * 10),
+        message: 'Commission must have at most one decimal place',
+      },
+    },
     isProfileComplete: { type: Boolean, default: false },
     isDeactivated: { type: Boolean, default: false, index: true },
     deactivatedAt: { type: Date },

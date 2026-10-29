@@ -9,6 +9,9 @@ import CreatorPayment from '@/models/CreatorPayment';
 import Booking from '@/models/Booking';
 import mongoose from 'mongoose';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 // Helper to verify admin session
 function isAdmin(email?: string | null) {
   if (!email) return false;
@@ -126,7 +129,8 @@ export async function GET(req: NextRequest) {
         bannerContact: contactInfo,
         sessionsCompleted: completedSessions,
         happyUsers: happyUsers,
-        totalCategories: totalCategories
+        totalCategories: totalCategories,
+        commissionPercent: profile?.commissionPercent ?? 20
       };
     });
 
@@ -154,10 +158,32 @@ export async function PUT(req: NextRequest) {
     }
 
     await connectDB();
-    const { userId, action } = await req.json();
+    const { userId, action, commissionPercent } = await req.json();
 
-    if (!userId || !['approve', 'reject', 'suspend', 'activate', 'restore'].includes(action)) {
+    if (!userId || !['approve', 'reject', 'suspend', 'activate', 'restore', 'updateCommission'].includes(action)) {
       return NextResponse.json({ error: 'Invalid data parameters' }, { status: 400 });
+    }
+
+    if (action === 'updateCommission') {
+      if (!mongoose.isValidObjectId(userId)) {
+        return NextResponse.json({ error: 'Invalid creator ID.' }, { status: 400 });
+      }
+
+      const value = typeof commissionPercent === 'number' ? commissionPercent : Number(commissionPercent);
+      if (!Number.isFinite(value) || value < 0.1 || value > 99 || !Number.isInteger(value * 10)) {
+        return NextResponse.json(
+          { error: 'Commission must be between 0.1% and 99% with at most one decimal place.' },
+          { status: 400 }
+        );
+      }
+
+      const profile = await CreatorProfile.findOneAndUpdate(
+        { userId },
+        { $set: { commissionPercent: value } },
+        { new: true, runValidators: true }
+      ).lean();
+      if (!profile) return NextResponse.json({ error: 'Creator profile not found' }, { status: 404 });
+      return NextResponse.json({ success: true, commissionPercent: profile.commissionPercent ?? value });
     }
 
     const user = await User.findById(userId);

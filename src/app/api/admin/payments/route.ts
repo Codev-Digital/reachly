@@ -190,9 +190,9 @@ export async function GET(req: Request) {
       }
       if (purchase) numericAmount = purchase.price; // the whole package, not one session's share
 
-      // Calculate platform fee (e.g. 20%) and creator earnings (80%)
-      const platformFeeNum = numericAmount * 0.20;
-      const creatorEarningsNum = numericAmount * 0.80;
+      const commissionPercent = creatorProfile?.commissionPercent ?? 20;
+      const platformFeeNum = numericAmount * (commissionPercent / 100);
+      const creatorEarningsNum = numericAmount - platformFeeNum;
 
       return {
         id: `TXN-${booking._id.toString().slice(-5).toUpperCase()}`,
@@ -213,6 +213,7 @@ export async function GET(req: Request) {
         amount: `${numericAmount.toLocaleString()} PKR`,
         rawAmount: numericAmount,
         platformFee: `${platformFeeNum.toLocaleString()} PKR`,
+        commissionPercent,
         creatorEarnings: `${creatorEarningsNum.toLocaleString()} PKR`,
         status: displayStatus
       };
@@ -342,8 +343,9 @@ export async function GET(req: Request) {
         numericAmount = booking.finalPrice;
       }
 
-      const platformFeeNum = numericAmount * 0.20;
-      const creatorEarningsNum = numericAmount * 0.80;
+      const commissionPercent = creatorProfile?.commissionPercent ?? 20;
+      const platformFeeNum = numericAmount * (commissionPercent / 100);
+      const creatorEarningsNum = numericAmount - platformFeeNum;
 
       const paymentDetail = {
         id: `TXN-${booking._id.toString().slice(-5).toUpperCase()}`,
@@ -358,6 +360,7 @@ export async function GET(req: Request) {
         amount: `${numericAmount.toLocaleString()} PKR`,
         rawAmount: numericAmount,
         platformFee: `${platformFeeNum.toLocaleString()} PKR`,
+        commissionPercent,
         creatorEarnings: `${creatorEarningsNum.toLocaleString()} PKR`,
         status: displayStatus,
         session: {

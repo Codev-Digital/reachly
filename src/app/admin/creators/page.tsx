@@ -37,6 +37,7 @@ interface Creator {
   sessionsCompleted?: number;
   happyUsers?: number;
   totalCategories?: number;
+  commissionPercent?: number;
 }
 
 export default function AdminCreatorsPage() {
@@ -99,7 +100,7 @@ export default function AdminCreatorsPage() {
   const loadCreators = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/admin/creators');
+      const res = await fetch('/api/admin/creators', { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
         setCreators(data.creators || []);
@@ -355,6 +356,7 @@ export default function AdminCreatorsPage() {
                 <th className="py-4 px-4 text-xs font-semibold text-gray-500">{selectedStatusFilter === 'Deleted' ? 'Deleted Date' : 'Joined Date'}</th>
                 <th className="py-4 px-4 text-xs font-semibold text-gray-500">{selectedStatusFilter === 'Deleted' ? 'Deleted Time' : 'Time'}</th>
                 <th className="py-4 px-4 text-xs font-semibold text-gray-500">Events Created</th>
+                <th className="py-4 px-4 text-xs font-semibold text-gray-500">Commission</th>
                 <th className="py-4 px-4 text-xs font-semibold text-gray-500">Status</th>
                 <th className="py-4 px-4 text-xs font-semibold text-gray-500">Actions</th>
               </tr>
@@ -362,7 +364,7 @@ export default function AdminCreatorsPage() {
             <tbody className="divide-y divide-gray-200 bg-[#F8F8F8] border-b border-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="py-8 text-center text-sm font-semibold text-gray-400">
+                  <td colSpan={9} className="py-8 text-center text-sm font-semibold text-gray-400">
                     Loading creators list...
                   </td>
                 </tr>
@@ -401,6 +403,9 @@ export default function AdminCreatorsPage() {
                     {/* Events Created */}
                     <td className="py-4 px-4 text-sm text-gray-500">{creator.eventsCreated}</td>
 
+                    {/* Commission */}
+                    <td className="py-4 px-4 text-sm font-semibold text-gray-700">{creator.commissionPercent ?? 20}%</td>
+
                     {/* Status Badge */}
                     <td className="py-4 px-4">
                       <span
@@ -437,7 +442,7 @@ export default function AdminCreatorsPage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={8} className="py-8 text-center text-sm font-semibold text-gray-400">
+                  <td colSpan={9} className="py-8 text-center text-sm font-semibold text-gray-400">
                     No creators found matching filter criteria.
                   </td>
                 </tr>

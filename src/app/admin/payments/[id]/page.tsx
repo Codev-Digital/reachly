@@ -49,6 +49,7 @@ interface PaymentDetail {
   amount: string;
   rawAmount: number;
   platformFee: string;
+  commissionPercent?: number;
   creatorEarnings: string;
   status: 'Completed' | 'Pending' | 'Refunded' | 'Rejected';
   isCreatorPayout?: boolean;
@@ -686,11 +687,11 @@ export default function AdminPaymentDetailPage() {
                 <span className="font-extrabold text-sm text-gray-900">{payment.amount}</span>
               </div>
               <div className="flex items-center justify-between py-2 border-b border-gray-50">
-                <span className="text-gray-500 font-medium">Platform Fee (20%)</span>
+                <span className="text-gray-500 font-medium">Platform Fee ({payment.commissionPercent ?? 20}%)</span>
                 <span className="font-bold text-gray-700">{payment.platformFee}</span>
               </div>
               <div className="flex items-center justify-between py-2 border-b border-gray-50">
-                <span className="text-gray-500 font-medium">Creator Payout (80%)</span>
+                <span className="text-gray-500 font-medium">Creator Payout ({100 - (payment.commissionPercent ?? 20)}%)</span>
                 <span className="font-bold text-emerald-600">{payment.creatorEarnings}</span>
               </div>
               <div className="flex items-center justify-between py-2 pt-3">

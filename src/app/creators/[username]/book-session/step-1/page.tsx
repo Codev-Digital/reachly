@@ -550,7 +550,10 @@ export default function BookSessionStep1() {
                       }}
                       onTimeChange={(time) => {
                         if (booking.reservationToken) releaseReservation(booking.reservationToken);
-                        setBooking((b) => ({ ...b, selectedTime: time, reservationToken: undefined }));
+                        setBooking((b) => ({ ...b, selectedTime: time }));
+                      }}
+                      onReservationTokenChange={(token) => {
+                        setBooking((b) => ({ ...b, reservationToken: token }));
                       }}
                     />
                   </section>

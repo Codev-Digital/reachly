@@ -378,6 +378,85 @@ export function getOtpEmailTemplate(
 </html>`;
 }
 
+type BookingEmailDetails = {
+  sessionTitle: string;
+  sessionImage: string;
+  creatorName: string;
+  creatorAvatar: string;
+  buyerName: string;
+  buyerAvatar: string;
+  date: string;
+  time: string;
+  totalPrice: number;
+};
+
+const escapeEmailHtml = (value: string) =>
+  String(value || '').replace(/[&<>"']/g, (char) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  })[char] || char);
+
+const bookingEmailLayout = (
+  title: string,
+  greeting: string,
+  details: BookingEmailDetails,
+  audience: 'user' | 'creator',
+) => {
+  const sessionTitle = escapeEmailHtml(details.sessionTitle);
+  const sessionImage = escapeEmailHtml(details.sessionImage);
+  const creatorName = escapeEmailHtml(details.creatorName);
+  const creatorAvatar = escapeEmailHtml(details.creatorAvatar);
+  const buyerName = escapeEmailHtml(details.buyerName);
+  const buyerAvatar = escapeEmailHtml(details.buyerAvatar);
+  const date = escapeEmailHtml(details.date);
+  const time = escapeEmailHtml(details.time);
+  const price = `PKR ${details.totalPrice.toLocaleString()}`;
+  const otherPerson = audience === 'user' ? `
+    <div style="display:flex;align-items:center;gap:14px;padding-top:20px;margin-top:20px;border-top:1px solid #f1f5f9">
+      <img src="${creatorAvatar}" alt="${creatorName}" width="52" height="52" style="border-radius:50%;object-fit:cover">
+      <div><p style="margin:0;color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:1px;font-weight:bold">Your creator</p>
+      <p style="margin:4px 0 0;color:#111827;font-size:16px;font-weight:700">${creatorName}</p></div>
+    </div>` : `
+    <div style="display:flex;align-items:center;gap:14px;padding-top:20px;margin-top:20px;border-top:1px solid #f1f5f9">
+      <img src="${buyerAvatar}" alt="${buyerName}" width="52" height="52" style="border-radius:50%;object-fit:cover">
+      <div><p style="margin:0;color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:1px;font-weight:bold">Booked by</p>
+      <p style="margin:4px 0 0;color:#111827;font-size:16px;font-weight:700">${buyerName}</p></div>
+    </div>`;
+
+  return `<!doctype html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>${escapeEmailHtml(title)}</title></head>
+<body style="margin:0;padding:0;background:#f7f7fa;color:#111827;font-family:Arial,Helvetica,sans-serif">
+  <div style="max-width:600px;margin:0 auto;padding:32px 16px">
+    <div style="text-align:center;margin-bottom:24px;color:#0012ff;font-size:28px;font-weight:900;letter-spacing:-1px">REACHLY</div>
+    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:18px;padding:30px;text-align:center">
+      <img src="${sessionImage}" alt="${sessionTitle}" width="100%" style="display:block;width:100%;height:220px;object-fit:cover;border-radius:12px;margin-bottom:22px">
+      <h1 style="margin:0 0 10px;color:#111827;font-size:24px;line-height:32px">${escapeEmailHtml(title)}</h1>
+      <p style="margin:0;color:#64748b;font-size:15px">${escapeEmailHtml(greeting)}</p>
+      <div style="text-align:left;background:#f8f9fc;border:1px solid #eef2f7;border-radius:12px;padding:20px;margin-top:24px">
+        <p style="margin:0 0 5px;color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:1px;font-weight:bold">Session</p>
+        <p style="margin:0;color:#111827;font-size:19px;font-weight:800">${sessionTitle}</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px">
+          <div><p style="margin:0 0 5px;color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:1px;font-weight:bold">Date</p><p style="margin:0;color:#111827;font-weight:700">${date}</p></div>
+          <div><p style="margin:0 0 5px;color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:1px;font-weight:bold">Time</p><p style="margin:0;color:#111827;font-weight:700">${time} PKT</p></div>
+        </div>
+        <div style="margin-top:18px;padding-top:18px;border-top:1px solid #e5e7eb"><p style="margin:0 0 5px;color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:1px;font-weight:bold">Total price</p><p style="margin:0;color:#0012ff;font-size:20px;font-weight:800">${price}</p></div>
+        ${otherPerson}
+      </div>
+    </div>
+    <p style="margin:24px 0 0;text-align:center;color:#94a3b8;font-size:12px">&copy; ${new Date().getFullYear()} Reachly. All rights reserved.</p>
+  </div>
+</body></html>`;
+};
+
+export const generateUserBookingApprovedEmail = (details: BookingEmailDetails) =>
+  bookingEmailLayout('Your slot is confirmed!', `Hi ${details.buyerName}, your payment has been verified and your session is confirmed.`, details, 'user');
+
+export const generateCreatorNewBookingEmail = (details: BookingEmailDetails) =>
+  bookingEmailLayout(`You have a new booking on ${details.date}`, `A new session has been booked and paid for by ${details.buyerName}.`, details, 'creator');
+
 export const generateOTPEmail = (
   name: string,
   otp: string,

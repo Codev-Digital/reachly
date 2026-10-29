@@ -30,6 +30,7 @@ type Props = {
   selectedTime: string | null;
   onDateChange: (date: Date) => void;
   onTimeChange: (time: string) => void;
+  onReservationTokenChange?: (token: string | undefined) => void;
   /** How many days to show from today (default 60). */
   dayCount?: number;
   /** Slightly tighter layout for modals. */
@@ -48,6 +49,7 @@ export default function AvailabilityDateTimePicker({
   selectedTime,
   onDateChange,
   onTimeChange,
+  onReservationTokenChange,
   dayCount = 60,
   compact = false,
 }: Props) {
@@ -284,9 +286,56 @@ export default function AvailabilityDateTimePicker({
   const handleDateSelect = (date: Date) => {
     onDateChange(date);
     onTimeChange('');
+    onReservationTokenChange?.(undefined);
     setLockedSlots([]);
     delete slotsCache.current[cacheKeyFor(toISO(date))];
     setFetchedDate(null);
+  };
+
+  const reserveTime = async (time: string) => {
+    const token = typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID()
+      : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (character) => {
+          const random = Math.random() * 16 | 0;
+          const value = character === 'x' ? random : (random & 0x3 | 0x8);
+          return value.toString(16);
+        });
+    const date = selectedDate ? toISO(selectedDate) : '';
+    if (!sessionId || !date) {
+      toast.error('Please select a date before choosing a time.');
+      return;
+    }
+
+    try {
+      if (reservationToken) {
+        await fetch(
+          `/api/creators/${encodeURIComponent(username)}/availability/reservations`,
+          {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: reservationToken }),
+          }
+        );
+      }
+      const response = await fetch(
+        `/api/creators/${encodeURIComponent(username)}/availability/reservations`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId, date, time, token }),
+        }
+      );
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        toast.error(data.error || 'Unable to reserve this slot. Please try again.');
+        return;
+      }
+      onReservationTokenChange?.(token);
+      onTimeChange(time);
+    } catch (error) {
+      console.error('Unable to reserve session slot:', error);
+      toast.error('Unable to reserve this slot. Please try again.');
+    }
   };
 
   const scrollDayIntoView = (iso: string) => {
@@ -479,7 +528,7 @@ export default function AvailabilityDateTimePicker({
                       toast.info('This slot is reserved by another user. Please choose another slot.');
                       return;
                     }
-                    onTimeChange(time);
+                    void reserveTime(time);
                   }}
                   aria-label={isLocked ? `${time}, reserved by another user` : time}
                   className={`relative py-3 px-4 rounded-[20px] text-[13px] font-bold transition-all text-center border border-[#e2e2e2] active:scale-95 ${

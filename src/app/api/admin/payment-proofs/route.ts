@@ -9,6 +9,10 @@ import Referral from '@/models/referral.model';
 import User from '@/models/User';
 import SessionPaymentProof from '@/models/SessionPaymentProof';
 import { supabaseAdmin } from '@/lib/supabase';
+import { generateCreatorNewBookingEmail, generateUserBookingApprovedEmail } from '@/lib/utils';
+import { queueEmail } from '@/lib/emailQueue';
+import CreatorProfile from '@/models/CreatorProfile';
+import SessionType from '@/models/SessionType';
 
 const BUCKET = process.env.SUPABASE_PAYMENT_PROOFS_BUCKET || process.env.SUPABASE_STORAGE_BUCKET || 'reachly';
 
@@ -125,6 +129,7 @@ export async function PATCH(request: NextRequest) {
     if (!booking) {
       return NextResponse.json({ error: 'Booking associated with payment proof not found.' }, { status: 404 });
     }
+    const shouldSendBookingEmails = decision === 'approved' && proof?.status !== 'approved';
 
     const proofUpdate: Record<string, any> = {
       status: decision,
@@ -193,6 +198,51 @@ export async function PATCH(request: NextRequest) {
               }
             ),
           ]);
+        }
+
+      }
+
+      if (shouldSendBookingEmails) {
+        const [buyerDetails, creatorUser, creatorProfile, sessionType] = await Promise.all([
+          booking.userId
+            ? User.findById(booking.userId).select('name email profilePhoto').lean()
+            : User.findOne({ email: proof?.payerEmail }).select('name email profilePhoto').lean(),
+          User.findById(booking.creatorId).select('name email profilePhoto').lean(),
+          CreatorProfile.findOne({ userId: booking.creatorId }).select('displayName profilePhoto').lean(),
+          SessionType.findById(booking.sessionTypeId).select('title').lean(),
+        ]);
+        const date = new Date(booking.scheduledDate).toLocaleDateString('en-GB', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+        });
+        const sessionImage = creatorProfile?.profilePhoto || `${process.env.NEXTAUTH_URL || ''}/assets/booking-confirm-sm.webp`;
+        const details = {
+          sessionTitle: sessionType?.title || 'Your booked session',
+          sessionImage,
+          creatorName: creatorProfile?.displayName || creatorUser?.name || 'Creator',
+          creatorAvatar: creatorProfile?.profilePhoto || creatorUser?.profilePhoto || `${process.env.NEXTAUTH_URL || ''}/avatar.png`,
+          buyerName: buyerDetails?.name || booking.guestDetails?.fullName || proof?.payerName || 'Client',
+          buyerAvatar: buyerDetails?.profilePhoto || `${process.env.NEXTAUTH_URL || ''}/avatar.png`,
+          date,
+          time: booking.scheduledTime,
+          totalPrice: proof?.amount ?? booking.finalPrice,
+        };
+        if (buyerDetails?.email) {
+          queueEmail({
+            to: buyerDetails.email,
+            subject: 'Your slot is confirmed!',
+            html: generateUserBookingApprovedEmail(details),
+            description: 'Manual payment booking confirmation for user',
+          });
+        }
+        if (creatorUser?.email) {
+          queueEmail({
+            to: creatorUser.email,
+            subject: `You have a new booking on ${date}`,
+            html: generateCreatorNewBookingEmail(details),
+            description: 'Manual payment booking notification for creator',
+          });
         }
       }
     }

@@ -7,6 +7,12 @@ import { motion } from 'framer-motion';
 import RichTextContent from '@/components/RichTextContent';
 import { AdminDetailSkeleton } from '@/components/admin/AdminSkeletons';
 import CreatorStatusActions from '@/components/admin/CreatorStatusActions';
+import { Pencil } from 'lucide-react';
+import ActionDialog from '@/components/ActionDialog';
+import FormInput from '@/components/FormInput';
+import { usePreloadImages } from '@/lib/usePreloadImages';
+
+const COMMISSION_DIALOG_IMAGE = '/assets/creator-data.svg';
 
 interface Creator {
   id: string;
@@ -34,18 +40,24 @@ interface Creator {
   sessionsCompleted?: number;
   happyUsers?: number;
   totalCategories?: number;
+  commissionPercent: number;
 }
 
 export default function AdminCreatorDetailPage() {
   const { id } = useParams<{ id: string }>();
+  usePreloadImages([COMMISSION_DIALOG_IMAGE]);
 
   const [creator, setCreator] = useState<Creator | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [commissionOpen, setCommissionOpen] = useState(false);
+  const [commissionInput, setCommissionInput] = useState('');
+  const [commissionError, setCommissionError] = useState('');
+  const [commissionSaving, setCommissionSaving] = useState(false);
 
   const loadCreator = useCallback(async () => {
     try {
-      const res = await fetch(`/api/admin/creators?id=${id}`);
+      const res = await fetch(`/api/admin/creators?id=${id}`, { cache: 'no-store' });
       if (res.ok) {
         setCreator((await res.json()).creator);
         setNotFound(false);
@@ -59,6 +71,43 @@ export default function AdminCreatorDetailPage() {
       setLoading(false);
     }
   }, [id]);
+
+  const openCommissionEditor = () => {
+    if (!creator) return;
+    setCommissionInput(String(creator.commissionPercent ?? 20));
+    setCommissionError('');
+    setCommissionOpen(true);
+  };
+
+  const saveCommission = async () => {
+    const normalizedInput = commissionInput.trim();
+    const value = Number(normalizedInput);
+    if (!/^(?:\d{1,2}(?:\.\d)?|0\.\d)$/.test(normalizedInput) || !Number.isFinite(value) || value < 0.1 || value > 99) {
+      setCommissionError('Enter a commission between 0.1% and 99%, with at most one decimal place.');
+      return;
+    }
+    setCommissionSaving(true);
+    setCommissionError('');
+    try {
+      const res = await fetch('/api/admin/creators', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: creator?.dbId, action: 'updateCommission', commissionPercent: value }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setCommissionError(data.error || 'Unable to update commission.');
+        return;
+      }
+      setCreator((current) => current ? { ...current, commissionPercent: Number(data.commissionPercent) } : current);
+      setCommissionOpen(false);
+      await loadCreator();
+    } catch {
+      setCommissionError('Unable to update commission. Please try again.');
+    } finally {
+      setCommissionSaving(false);
+    }
+  };
 
   useEffect(() => {
     loadCreator();
@@ -241,6 +290,22 @@ export default function AdminCreatorDetailPage() {
                 </p>
               </div>
 
+              {/* Commission */}
+              <div>
+                <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Platform Commission</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <p className="text-sm font-bold text-black">{creator.commissionPercent ?? 20}%</p>
+                  <button
+                    type="button"
+                    onClick={openCommissionEditor}
+                    aria-label="Edit platform commission"
+                    className="w-7 h-7 rounded-full bg-blue-50 text-[#0012FF] flex items-center justify-center hover:bg-blue-100 transition-colors"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
 
               {/* Actions */}
               <div className="col-span-2 sm:col-span-4 pt-5 mt-1 border-t border-gray-50">
@@ -338,6 +403,61 @@ export default function AdminCreatorDetailPage() {
           </a>
         </div>
       </div>
+
+      <ActionDialog
+        open={commissionOpen}
+        onOpenChange={(open) => {
+          if (!open && !commissionSaving) setCommissionOpen(false);
+        }}
+        // image={{ src: COMMISSION_DIALOG_IMAGE, alt: 'Edit creator commission' }}
+        title={<>Edit <span className="text-[#0012FF]">Commission</span></>}
+        description="Set the platform commission charged for this creator."
+        actions={[
+          {
+            label: 'Cancel',
+            variant: 'outline',
+            onClick: () => setCommissionOpen(false),
+            disabled: commissionSaving,
+            className: 'rounded-full border-gray-200 text-gray-700 hover:bg-gray-50',
+          },
+          {
+            label: commissionSaving ? 'Saving...' : 'Save commission',
+            onClick: saveCommission,
+            disabled: commissionSaving,
+            className: 'rounded-full font-bold',
+          },
+        ]}
+        classNames={{ content: 'sm:max-w-[480px]', description: 'mb-2' }}
+      >
+        <form
+          className="mb-6 w-full text-left"
+          onSubmit={(event) => {
+            event.preventDefault();
+            saveCommission();
+          }}
+        >
+          <FormInput
+            id="commission-percent"
+            label="Commission percentage"
+            type="text"
+            inputMode="decimal"
+            min="0.1"
+            max="99"
+            maxLength={4}
+            suffix="%"
+            value={commissionInput}
+            onChange={(event) => {
+              setCommissionInput(event.target.value);
+              setCommissionError('');
+            }}
+            error={commissionError}
+            placeholder="e.g. 5 or 5.5"
+            autoFocus
+            disabled={commissionSaving}
+          />
+          <button type="submit" className="hidden" aria-hidden="true" tabIndex={-1} />
+        </form>
+      </ActionDialog>
     </motion.div>
   );
 }

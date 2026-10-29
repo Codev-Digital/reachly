@@ -161,8 +161,17 @@ export default function BookSessionStepTwo() {
                   sessionId={sessionType.id}
                   selectedDate={booking.selectedSession?.id === sessionType.id ? booking.selectedDate : null}
                   selectedTime={booking.selectedSession?.id === sessionType.id ? booking.selectedTime : null}
-                  onDateChange={(date) => setBooking((current) => ({ ...current, selectedDate: date, selectedTime: null }))}
+                  onDateChange={(date) => setBooking((current) => ({
+                    ...current,
+                    selectedDate: date,
+                    selectedTime: null,
+                    reservationToken: undefined,
+                  }))}
                   onTimeChange={(time) => setBooking((current) => ({ ...current, selectedTime: time }))}
+                  onReservationTokenChange={(token) => setBooking((current) => ({
+                    ...current,
+                    reservationToken: token,
+                  }))}
                 />
                 <div className="mt-6 flex items-center justify-between gap-3">
                   <button
