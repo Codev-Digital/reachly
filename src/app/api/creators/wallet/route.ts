@@ -6,6 +6,7 @@ import User from '@/models/User';
 import Booking from '@/models/Booking';
 import SessionType from '@/models/SessionType';
 import CreatorProfile from '@/models/CreatorProfile';
+import CreatorPayout from '@/models/CreatorPayout';
 import { autoSettleEarnings } from '@/lib/autoSettleEarnings';
 import { packageInfo } from '@/lib/packageLabels';
 
@@ -133,6 +134,16 @@ export async function GET(req: NextRequest) {
       return 0;
     });
 
+    const creatorProfile = await CreatorProfile.findOne({ userId: user._id }).select('_id').lean() as { _id: any } | null;
+    if (creatorProfile) {
+      const payoutRecord = await CreatorPayout.findOne({ creatorProfileId: creatorProfile._id })
+        .select('payouts')
+        .lean() as any;
+      totalPaidOut += (payoutRecord?.payouts || [])
+        .filter((payout: any) => payout.status === 'funded')
+        .reduce((sum: number, payout: any) => sum + payout.withdrawAmount, 0);
+    }
+
     const availableBalance = Math.max(0, lifetimeEarning - totalPaidOut);
 
     return NextResponse.json({
@@ -148,4 +159,3 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });
   }
 }
-

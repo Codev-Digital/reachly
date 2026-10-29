@@ -1,4 +1,6 @@
-// {
+{
+  "postman.settings.dotenv-detection-notification-visibility": false
+} // {
 //     "workbench.colorCustomizations": {
 //         "titleBar.activeBackground": "#E86F4E",
 //         "titleBar.activeForeground": "#ECECF0",

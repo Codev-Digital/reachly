@@ -51,6 +51,17 @@ interface PaymentDetail {
   platformFee: string;
   creatorEarnings: string;
   status: 'Completed' | 'Pending' | 'Refunded' | 'Rejected';
+  isCreatorPayout?: boolean;
+  payout?: {
+    id: string;
+    bankName: string;
+    accountNumber: string;
+    requestedAt: string;
+    fundedAt?: string | null;
+    nextWithdrawDate: string;
+    status: 'pending' | 'funded' | 'rejected';
+    adminRemarks?: string;
+  };
   adminRemarks?: string;
   session: {
     title: string;
@@ -119,6 +130,7 @@ export default function AdminPaymentDetailPage() {
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [showAcceptModal, setShowAcceptModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
+  const [showFundModal, setShowFundModal] = useState(false);
   const [rejectRemarks, setRejectRemarks] = useState('');
 
   useEffect(() => {
@@ -264,11 +276,41 @@ export default function AdminPaymentDetailPage() {
                 adminRemarks: savedRemarks,
               },
         };
+
       });
       setShowRejectModal(false);
       setRejectRemarks(savedRemarks);
     } catch (err) {
       toast.error('Failed to reject payment');
+    } finally {
+      setReviewing(false);
+    }
+  };
+
+  const handleFundPayout = async () => {
+    if (!payment?.payout?.id) return;
+    setReviewing(true);
+    try {
+      const res = await fetch('/api/admin/payments', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ payoutId: payment.payout.id, status: 'funded' }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || 'Failed to mark payout as funded');
+        return;
+      }
+      const fundedAt = data.payout?.fundedAt || new Date().toISOString();
+      setPayment((prev) => prev ? {
+        ...prev,
+        status: 'Completed',
+        payout: prev.payout ? { ...prev.payout, status: 'funded', fundedAt } : prev.payout,
+      } : prev);
+      setShowFundModal(false);
+      toast.success('Payout marked as funded.');
+    } catch (error) {
+      toast.error('Failed to mark payout as funded');
     } finally {
       setReviewing(false);
     }
@@ -299,6 +341,102 @@ export default function AdminPaymentDetailPage() {
           </Link>
         </div>
       </div>
+    );
+  }
+
+  if (payment.isCreatorPayout && payment.payout) {
+    const payout = payment.payout;
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="pb-16"
+      >
+        <Link href="/admin/payments" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 font-semibold transition-colors mb-6">
+          <ArrowLeft className="w-4 h-4" /> Back to Payments
+        </Link>
+        <div className="mb-8">
+          <h1 className="text-3xl sm:text-4xl font-bold font-sans text-black">
+            <span className="text-[#0012FF] font-black">Payout</span> Request Details
+          </h1>
+          <p className="text-gray-400 text-sm mt-1">Review the creator&apos;s withdrawal request and transfer details.</p>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 bg-white rounded-[20px] border border-gray-100 p-6 space-y-6">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-5">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-gray-400">Request ID</p>
+                <p className="mt-1 text-sm font-bold text-gray-900">{payment.id}</p>
+              </div>
+              <span className={`rounded-full border px-3 py-1 text-xs font-bold ${
+                payout.status === 'funded'
+                  ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                  : payout.status === 'rejected'
+                    ? 'border-rose-200 bg-rose-50 text-rose-700'
+                    : 'border-amber-200 bg-amber-50 text-amber-700'
+              }`}>
+                {payout.status === 'funded' ? 'Funded' : payout.status === 'rejected' ? 'Rejected' : 'Pending'}
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 text-sm">
+              <div><p className="text-xs text-gray-400">Creator</p><p className="mt-1 font-bold text-gray-900">{payment.creator.name}</p><p className="text-xs text-gray-500">{payment.creator.email}</p></div>
+              <div><p className="text-xs text-gray-400">Withdrawal amount</p><p className="mt-1 text-lg font-extrabold text-[#0012FF]">{payment.amount}</p></div>
+              <div><p className="text-xs text-gray-400">Bank / wallet</p><p className="mt-1 font-bold text-gray-900">{payout.bankName}</p></div>
+              <div><p className="text-xs text-gray-400">Account number</p><p className="mt-1 font-bold text-gray-900">{payout.accountNumber}</p></div>
+              <div><p className="text-xs text-gray-400">Requested at</p><p className="mt-1 font-semibold text-gray-900">{new Date(payout.requestedAt).toLocaleString()}</p></div>
+              <div><p className="text-xs text-gray-400">Next eligible payout</p><p className="mt-1 font-semibold text-gray-900">{new Date(payout.nextWithdrawDate).toLocaleString()}</p></div>
+              {payout.fundedAt && <div><p className="text-xs text-gray-400">Funds sent at</p><p className="mt-1 font-semibold text-emerald-700">{new Date(payout.fundedAt).toLocaleString()}</p></div>}
+            </div>
+          </div>
+          <div className="bg-white rounded-[20px] border border-gray-100 p-6 h-fit">
+            <h2 className="text-base font-bold text-gray-900 mb-4">Admin action</h2>
+            {payout.status === 'pending' ? (
+              <button
+                type="button"
+                onClick={() => setShowFundModal(true)}
+                disabled={reviewing}
+                className="w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+              >
+                {reviewing ? 'Saving...' : 'Mark funds sent'}
+              </button>
+            ) : (
+              <p className="rounded-xl bg-gray-50 p-4 text-xs font-semibold text-gray-600">
+                This payout has already been {payout.status === 'funded' ? 'marked as funded.' : 'rejected.'}
+              </p>
+            )}
+          </div>
+        </div>
+        <ActionDialog
+          open={showFundModal}
+          onOpenChange={setShowFundModal}
+          image={{
+            src: '/assets/payout.svg',
+            alt: 'Confirm payout transfer',
+            width: 182,
+            height: 60,
+          }}
+          title="Mark funds as sent?"
+          description={[
+            `Confirm that ${payment.amount} has been transferred to ${payout.bankName}.`,
+            'This will record the transfer date and time and mark this payout as completed.',
+          ]}
+          actions={[
+            {
+              label: 'Cancel',
+              variant: 'outline',
+              onClick: () => setShowFundModal(false),
+              className: 'rounded-full border-gray-200 text-gray-700 hover:bg-gray-50',
+            },
+            {
+              label: reviewing ? 'Saving...' : 'Confirm transfer',
+              variant: 'success',
+              onClick: handleFundPayout,
+              disabled: reviewing,
+              className: 'rounded-full font-bold',
+            },
+          ]}
+        />
+      </motion.div>
     );
   }
 
@@ -947,4 +1085,3 @@ export default function AdminPaymentDetailPage() {
     </motion.div>
   );
 }
-

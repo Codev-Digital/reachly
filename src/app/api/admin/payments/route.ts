@@ -11,11 +11,46 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { autoSettleEarnings } from '@/lib/autoSettleEarnings';
 import mongoose from 'mongoose';
 import PackagePurchase from '@/models/PackagePurchase';
+import CreatorPayout from '@/models/CreatorPayout';
 
 function isAdmin(email?: string | null) {
   if (!email) return false;
   const adminEmails = ['abdullahgotaccess@gmail.com', 'admin@reachly.com'];
   return adminEmails.includes(email.toLowerCase());
+}
+
+export async function PATCH(req: Request) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email || !isAdmin(session.user.email)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { payoutId, status, adminRemarks } = await req.json();
+    if (!mongoose.isValidObjectId(payoutId) || !['funded', 'rejected'].includes(status)) {
+      return NextResponse.json({ error: 'Invalid payout update.' }, { status: 400 });
+    }
+
+    await connectDB();
+    const update: Record<string, unknown> = {
+      'payouts.$.status': status,
+      'payouts.$.adminRemarks': String(adminRemarks || '').trim(),
+    };
+    if (status === 'funded') update['payouts.$.fundedAt'] = new Date();
+
+    const payoutRecord = await CreatorPayout.findOneAndUpdate(
+      { 'payouts._id': payoutId },
+      { $set: update },
+      { new: true, runValidators: true }
+    ).lean();
+    if (!payoutRecord) return NextResponse.json({ error: 'Payout request not found.' }, { status: 404 });
+
+    const payout = payoutRecord.payouts.find((entry: any) => entry._id.toString() === payoutId);
+    return NextResponse.json({ success: true, payout });
+  } catch (error) {
+    console.error('Admin payout update API error:', error);
+    return NextResponse.json({ error: 'Unable to update payout request.' }, { status: 500 });
+  }
 }
 
 // GET all payments, or a single payment with ?id=<bookingId>
@@ -29,6 +64,57 @@ export async function GET(req: Request) {
     await connectDB();
 
     const id = new URL(req.url).searchParams.get('id');
+    if (id?.startsWith('PAYOUT-')) {
+      const payoutId = id.slice('PAYOUT-'.length);
+      if (!mongoose.isValidObjectId(payoutId)) {
+        return NextResponse.json({ error: 'Payout not found' }, { status: 404 });
+      }
+
+      const payoutRecord = await CreatorPayout.findOne({ 'payouts._id': payoutId })
+        .populate({ path: 'creatorProfileId', select: 'displayName username profilePhoto userId' })
+        .lean() as any;
+      if (!payoutRecord) return NextResponse.json({ error: 'Payout not found' }, { status: 404 });
+
+      const payout = payoutRecord.payouts.find((entry: any) => entry._id.toString() === payoutId);
+      const creatorProfile = payoutRecord.creatorProfileId;
+      const creatorUser = await User.findById(creatorProfile.userId).select('name email profilePhoto').lean() as any;
+      const requestedAt = new Date(payout.requestedAt);
+      const displayStatus = payout.status === 'funded' ? 'Completed' : payout.status === 'rejected' ? 'Rejected' : 'Pending';
+
+      return NextResponse.json({
+        success: true,
+        payment: {
+          id,
+          dbId: id,
+          isCreatorPayout: true,
+          paymentMethod: `Bank payout · ${payout.bankName}`,
+          date: requestedAt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+          time: requestedAt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
+          amount: `${payout.withdrawAmount.toLocaleString()} PKR`,
+          rawAmount: payout.withdrawAmount,
+          platformFee: '0 PKR',
+          creatorEarnings: `${payout.withdrawAmount.toLocaleString()} PKR`,
+          status: displayStatus,
+          creator: {
+            id: creatorProfile.userId?.toString(),
+            name: creatorProfile.displayName || creatorUser?.name || 'Creator',
+            username: creatorProfile.username ? `@${creatorProfile.username}` : '@creator',
+            avatar: creatorProfile.profilePhoto || creatorUser?.profilePhoto || '/avatar.png',
+            email: creatorUser?.email || '',
+          },
+          payout: {
+            id: payoutId,
+            bankName: payout.bankName,
+            accountNumber: payout.accountNumber,
+            requestedAt: requestedAt.toISOString(),
+            fundedAt: payout.fundedAt ? new Date(payout.fundedAt).toISOString() : null,
+            nextWithdrawDate: new Date(payout.nextWithdrawDate).toISOString(),
+            status: payout.status,
+            adminRemarks: payout.adminRemarks || '',
+          },
+        },
+      });
+    }
     if (id && !mongoose.isValidObjectId(id)) {
       return NextResponse.json({ error: 'Payment not found' }, { status: 404 });
     }
@@ -48,9 +134,14 @@ export async function GET(req: Request) {
 
     // A package is ONE payment of the whole price, made with its first session
     const purchaseIds = [...new Set(bookings.map((b: any) => b.packagePurchaseId?.toString()).filter(Boolean))];
-    const purchases = purchaseIds.length
-      ? ((await PackagePurchase.find({ _id: { $in: purchaseIds } }).select('price paymentStatus').lean()) as any[])
-      : [];
+    const [purchases, payoutRecords] = await Promise.all([
+      purchaseIds.length
+        ? PackagePurchase.find({ _id: { $in: purchaseIds } }).select('price paymentStatus').lean()
+        : Promise.resolve([]),
+      CreatorPayout.find({})
+        .populate({ path: 'creatorProfileId', select: 'displayName username profilePhoto userId' })
+        .lean(),
+    ]) as [any[], any[]];
     const purchaseMap = new Map(purchases.map((p) => [String(p._id), p]));
     const payableBookings = bookings.filter((b: any) => !b.packagePurchaseId || b.sessionNumber === 1);
 
@@ -65,6 +156,7 @@ export async function GET(req: Request) {
         month: 'short',
         year: 'numeric'
       });
+
       const time = d.toLocaleTimeString('en-US', {
         hour: 'numeric',
         minute: '2-digit',
@@ -124,6 +216,39 @@ export async function GET(req: Request) {
         creatorEarnings: `${creatorEarningsNum.toLocaleString()} PKR`,
         status: displayStatus
       };
+    });
+
+    const payoutPayments = payoutRecords.flatMap((record: any) => {
+      const profile = record.creatorProfileId;
+      const creatorUser = userMap.get(profile?.userId?.toString());
+      return (record.payouts || []).map((payout: any) => {
+        const requestedAt = new Date(payout.requestedAt);
+        const creatorName = profile?.displayName || creatorUser?.name || 'Creator';
+        const status = payout.status === 'funded' ? 'Completed' : payout.status === 'rejected' ? 'Rejected' : 'Pending';
+        return {
+          id: `PAYOUT-${payout._id.toString().slice(-6).toUpperCase()}`,
+          dbId: `PAYOUT-${payout._id.toString()}`,
+          user: {
+            name: creatorName,
+            username: profile?.username ? `@${profile.username}` : '@creator',
+            avatar: profile?.profilePhoto || creatorUser?.profilePhoto || '/avatar.png',
+          },
+          creator: {
+            name: creatorName,
+            username: profile?.username ? `@${profile.username}` : '@creator',
+            avatar: profile?.profilePhoto || creatorUser?.profilePhoto || '/avatar.png',
+          },
+          paymentMethod: `Payout · ${payout.bankName}`,
+          date: requestedAt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+          time: requestedAt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
+          amount: `${payout.withdrawAmount.toLocaleString()} PKR`,
+          rawAmount: payout.withdrawAmount,
+          platformFee: '0 PKR',
+          creatorEarnings: `${payout.withdrawAmount.toLocaleString()} PKR`,
+          status,
+          isCreatorPayout: true,
+        };
+      });
     });
 
     if (id) {
@@ -290,7 +415,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ success: true, payment: paymentDetail });
     }
 
-    return NextResponse.json({ success: true, payments: enrichedPayments });
+    return NextResponse.json({ success: true, payments: [...payoutPayments, ...enrichedPayments] });
   } catch (error: any) {
     console.error('Admin payments GET error:', error);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
