@@ -133,15 +133,15 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
     const { id } = await context.params;
     if (!isValidObjectId(id)) return NextResponse.json({ error: 'Event not found.' }, { status: 404 });
     const body = await req.json().catch(() => ({}));
-    if (body?.action !== 'hide' && body?.action !== 'show') {
-      return NextResponse.json({ error: 'Choose hide or show for this event.' }, { status: 422 });
+    if (body?.action !== 'hide' && body?.action !== 'show' && body?.action !== 'unhide') {
+      return NextResponse.json({ error: 'Choose hide or unhide for this event.' }, { status: 422 });
     }
 
     await connectDB();
     const event = await Event.findOne({ _id: id, deletedAt: null });
     if (!event) return NextResponse.json({ error: 'Event not found.' }, { status: 404 });
 
-    const nextStatus = body.action === 'hide' ? 'draft' : 'published';
+    const nextStatus = (body.action === 'show' || body.action === 'unhide') ? 'published' : 'draft';
     const wasVisible = event.status === 'published';
     if (event.status === 'cancelled') {
       return NextResponse.json({ error: 'Deleted events cannot be shown or hidden.' }, { status: 409 });

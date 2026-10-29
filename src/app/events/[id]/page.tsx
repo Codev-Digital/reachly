@@ -585,7 +585,7 @@ export default function PublicEventDetailPage() {
                         className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
                       >
                         {event.status === 'published' ? <EyeOff size={16} /> : <Eye size={16} />}
-                        {event.status === 'published' ? 'Hide event' : 'Show event'}
+                        {event.status === 'published' ? 'Hide event' : 'Unhide event'}
                       </button>
                       <button
                         type="button"
@@ -939,7 +939,7 @@ export default function PublicEventDetailPage() {
                   ? 'Delete event'
                   : previewAction === 'hide'
                     ? 'Hide event'
-                    : 'Show event',
+                    : 'Unhide event',
               variant: previewAction === 'delete' || previewAction === 'hide' ? 'destructive' : 'default',
               onClick: () => void confirmPreviewAction(),
               disabled: previewActionSaving,

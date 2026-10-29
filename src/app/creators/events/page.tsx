@@ -179,18 +179,18 @@ export default function CreatorEventsPage() {
         }}
         image={{
           src: hiding ? '/assets/cancel-appointment-sm.webp' : '/assets/booking-confirm-sm.webp',
-          alt: hiding ? 'Hide event' : 'Show event',
+          alt: hiding ? 'Hide event' : 'Unhide event',
         }}
-        title={hiding ? 'Hide this event?' : 'Show this event?'}
+        title={hiding ? 'Hide this event?' : 'Unhide this event?'}
         description={
           hiding
             ? [
                 `"${visibilityTarget?.title || 'This event'}" will be hidden from your public profile and followers.`,
-                'You can show it again anytime from this page.',
+                'You can unhide it again anytime from this page.',
               ]
             : [
                 `"${visibilityTarget?.title || 'This event'}" will appear on your public profile for followers to discover and book.`,
-                'Make sure all details are ready before showing it.',
+                'Make sure all details are ready before unhiding it.',
               ]
         }
         actions={[
@@ -204,10 +204,10 @@ export default function CreatorEventsPage() {
             label: visibilitySaving
               ? hiding
                 ? 'Hiding…'
-                : 'Showing…'
+                : 'Unhiding…'
               : hiding
                 ? 'Hide Event'
-                : 'Show Event',
+                : 'Unhide Event',
             variant: hiding ? 'destructive' : 'default',
             onClick: () => void confirmVisibilityToggle(),
             disabled: visibilitySaving,

@@ -159,7 +159,7 @@ export default function AdminEventDetailPage() {
       setEvent((current) => current
         ? { ...current, status: pendingAction === 'hide' ? 'draft' : 'published' }
         : current);
-      toast.success(pendingAction === 'hide' ? 'Event hidden.' : 'Event is now visible.');
+      toast.success(pendingAction === 'hide' ? 'Event hidden.' : 'Event unhidden.');
       setPendingAction(null);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Unable to complete event action.');
@@ -276,7 +276,7 @@ export default function AdminEventDetailPage() {
                 className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {event.status === 'published' ? <EyeOff size={16} /> : <Eye size={16} />}
-                {event.status === 'published' ? 'Hide event' : 'Show event'}
+                {event.status === 'published' ? 'Hide event' : 'Unhide event'}
               </button>
               <button
                 type="button"
@@ -423,7 +423,7 @@ export default function AdminEventDetailPage() {
         onOpenChange={(open) => {
           if (!open && !savingAction) setPendingAction(null);
         }}
-        title={pendingAction === 'delete' ? 'Delete this event?' : pendingAction === 'hide' ? 'Hide this event?' : 'Show this event?'}
+        title={pendingAction === 'delete' ? 'Delete this event?' : pendingAction === 'hide' ? 'Hide this event?' : 'Unhide this event?'}
         description={
           pendingAction === 'delete'
             ? [
@@ -437,7 +437,7 @@ export default function AdminEventDetailPage() {
         actions={[
           { label: 'Cancel', variant: 'outline', onClick: () => setPendingAction(null), disabled: savingAction },
           {
-            label: savingAction ? 'Please wait…' : pendingAction === 'delete' ? 'Delete event' : pendingAction === 'hide' ? 'Hide event' : 'Show event',
+            label: savingAction ? 'Please wait…' : pendingAction === 'delete' ? 'Delete event' : pendingAction === 'hide' ? 'Hide event' : 'Unhide event',
             variant: pendingAction === 'delete' || pendingAction === 'hide' ? 'destructive' : 'default',
             onClick: () => void confirmAction(),
             disabled: savingAction,
