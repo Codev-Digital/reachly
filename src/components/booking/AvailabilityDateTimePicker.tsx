@@ -89,9 +89,12 @@ export default function AvailabilityDateTimePicker({
     [schedule]
   );
 
+  const tokenRef = useRef(reservationToken);
+  tokenRef.current = reservationToken;
+
   const cacheKeyFor = useCallback(
-    (iso: string) => `${sessionId || 'default'}_${reservationToken || 'anonymous'}_${iso}`,
-    [reservationToken, sessionId]
+    (iso: string) => `${sessionId || 'default'}_${iso}`,
+    [sessionId]
   );
 
   const markDaySlots = useCallback(
@@ -119,7 +122,7 @@ export default function AvailabilityDateTimePicker({
 
       const request = (async () => {
         const sessionQuery = sessionId ? `&sessionId=${encodeURIComponent(sessionId)}` : '';
-        const tokenQuery = reservationToken ? `&reservationToken=${encodeURIComponent(reservationToken)}` : '';
+        const tokenQuery = tokenRef.current ? `&reservationToken=${encodeURIComponent(tokenRef.current)}` : '';
         const res = await fetch(
           `/api/creators/${encodeURIComponent(username)}/availability?date=${iso}${sessionQuery}${tokenQuery}`,
           { cache: 'no-store' }
@@ -157,7 +160,7 @@ export default function AvailabilityDateTimePicker({
         }
       }
     },
-    [cacheKeyFor, datesList, markDaySlots, reservationToken, sessionId, username]
+    [cacheKeyFor, datesList, markDaySlots, sessionId, username]
   );
 
   // Prefetch availability for the strip
@@ -211,7 +214,7 @@ export default function AvailabilityDateTimePicker({
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [username, sessionId, reservationToken, dayCount]);
+  }, [username, sessionId, dayCount]);
 
   // Default selection to today
   useEffect(() => {
@@ -306,16 +309,20 @@ export default function AvailabilityDateTimePicker({
       return;
     }
 
+    // Immediately update selection for snappy UI without waiting for network
+    onTimeChange(time);
+
     try {
-      if (reservationToken) {
+      const prevToken = tokenRef.current;
+      if (prevToken) {
         await fetch(
           `/api/creators/${encodeURIComponent(username)}/availability/reservations`,
           {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token: reservationToken }),
+            body: JSON.stringify({ token: prevToken }),
           }
-        );
+        ).catch(() => {});
       }
       const response = await fetch(
         `/api/creators/${encodeURIComponent(username)}/availability/reservations`,
@@ -328,13 +335,14 @@ export default function AvailabilityDateTimePicker({
       const data = await response.json();
       if (!response.ok || !data.success) {
         toast.error(data.error || 'Unable to reserve this slot. Please try again.');
+        onTimeChange('');
         return;
       }
       onReservationTokenChange?.(token);
-      onTimeChange(time);
     } catch (error) {
       console.error('Unable to reserve session slot:', error);
       toast.error('Unable to reserve this slot. Please try again.');
+      onTimeChange('');
     }
   };
 
