@@ -176,7 +176,7 @@ export default function UserEventDetailPage() {
       return;
     }
     if (!selectedTier || activeDateIsPast) return;
-    setConfirmOpen(true);
+    void confirmBuy();
   };
 
   const confirmBuy = async () => {
@@ -196,6 +196,15 @@ export default function UserEventDetailPage() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         alert(data.error || 'Failed to buy ticket');
+        return;
+      }
+      if (data.requiresPaymentProof) {
+        const purchaseId = data.purchase?.id || data.purchase?._id;
+        if (!purchaseId) {
+          throw new Error('Your ticket was created, but the payment verification page could not be opened. Please refresh and try again.');
+        }
+        setConfirmOpen(false);
+        window.location.assign(`/events/${event.id}/payment?purchaseId=${encodeURIComponent(String(purchaseId))}`);
         return;
       }
       setConfirmOpen(false);
