@@ -83,13 +83,13 @@ export default function EventPaymentPage() {
     <div className="min-h-screen bg-[#F8F8FA] pb-12">
       <UserNavbar displayName="" profilePhoto={null} />
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-10">
-        <button type="button" onClick={() => router.back()} className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-gray-500 transition hover:text-[#0012FF]">
+        {/* <button type="button" onClick={() => router.back()} className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-gray-500 transition hover:text-[#0012FF]">
           <ArrowLeft className="h-4 w-4" /> Back to event
-        </button>
+        </button> */}
         <div className="mb-8">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#0012FF]">Event booking</p>
+          {/* <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#0012FF]">Event booking</p> */}
           <h1 className="mt-2 text-3xl font-black tracking-tight text-gray-950 sm:text-4xl">Complete your payment</h1>
-          <p className="mt-2 max-w-2xl text-sm text-gray-500">Transfer the ticket amount using one of the available wallets, then upload your payment screenshot for admin verification.</p>
+          {/* <p className="mt-2 max-w-2xl text-sm text-gray-500">Transfer the ticket amount using one of the available wallets, then upload your payment screenshot for admin verification.</p> */}
         </div>
 
         <div className="grid items-start gap-6 lg:grid-cols-[370px_minmax(0,1fr)]">
@@ -100,7 +100,7 @@ export default function EventPaymentPage() {
             />
           </div>
 
-          <section className="rounded-[24px] border border-[#e2e2e2] bg-white p-4 shadow-sm sm:p-6">
+          <section className="rounded-[16px] border border-[#e2e2e2] bg-white p-4  sm:p-6">
             <div className="overflow-hidden rounded-[20px] bg-gray-100">
               {event?.bannerUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element

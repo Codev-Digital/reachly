@@ -35,7 +35,7 @@ type PaymentProof = {
 export default function ManualPaymentProofs() {
   const [proofs, setProofs] = useState<PaymentProof[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
   const [reviewingId, setReviewingId] = useState<string | null>(null);
   const [selectedProof, setSelectedProof] = useState<PaymentProof | null>(null);
   const [proofToApprove, setProofToApprove] = useState<PaymentProof | null>(null);
@@ -105,7 +105,7 @@ export default function ManualPaymentProofs() {
 
   return (
     <>
-      {/* <button
+      <button
         type="button"
         onClick={() => setIsOpen(true)}
         className="mb-8 inline-flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 text-left shadow-sm transition hover:border-[#0012FF]/40 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0012FF] focus-visible:ring-offset-2"
@@ -117,7 +117,7 @@ export default function ManualPaymentProofs() {
             {loading ? 'Loading review queue…' : `${proofs.length} awaiting review`}
           </span>
         </span>
-      </button> */}
+      </button>
 
       {/* ─── Main Proof List Dialog ─── */}
       <Dialog open={isOpen} onOpenChange={(o) => { if (!o) setIsOpen(false); }}>
@@ -222,7 +222,9 @@ export default function ManualPaymentProofs() {
                         {new Date(proof.scheduledDate).toLocaleDateString()} at {proof.scheduledTime} · {proof.bookingRef}
                       </p>
                       <Link
-                        href={`/admin/payments/${proof.bookingId || proof.bookingRef}`}
+                        href={`/admin/payments/${proof.isEventPayment
+                          ? `EVENT-${proof.bookingId || ''}`
+                          : proof.bookingId || proof.bookingRef}`}
                         className="mt-1.5 inline-flex items-center gap-1 text-xs font-bold text-[#0012FF] hover:underline"
                       >
                         View full details <ExternalLink className="h-3 w-3" />

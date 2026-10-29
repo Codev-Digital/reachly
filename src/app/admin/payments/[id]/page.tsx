@@ -53,6 +53,16 @@ interface PaymentDetail {
   creatorEarnings: string;
   status: 'Completed' | 'Pending' | 'Refunded' | 'Rejected';
   isCreatorPayout?: boolean;
+  isEventPayment?: boolean;
+  event?: {
+    title: string;
+    bannerUrl?: string;
+    date: string;
+    startTime?: string;
+    tierTitle: string;
+    quantity: number;
+    ticketRef: string;
+  };
   payout?: {
     id: string;
     bankName: string;
@@ -88,6 +98,13 @@ interface PaymentDetail {
     city?: string;
     country?: string;
     earningsShare: string;
+  };
+  user?: {
+    id?: string | null;
+    name: string;
+    username: string;
+    avatar: string;
+    email?: string;
   };
   client: {
     id?: string | null;
@@ -216,7 +233,7 @@ export default function AdminPaymentDetailPage() {
     }
   };
 
-  const handleReject = async () => {
+  const handleReject = async (remarksOverride?: string) => {
     const proofId = payment?.proof?.id;
     const bookingId = payment?.dbId || payment?.id;
     const bookingRef = payment?.bookingRef;
@@ -224,7 +241,8 @@ export default function AdminPaymentDetailPage() {
       toast.error('Payment identification missing.');
       return;
     }
-    if (!rejectRemarks.trim()) {
+    const remarksToSave = (remarksOverride ?? rejectRemarks).trim();
+    if (!remarksToSave) {
       toast.error('Please provide a reason for rejection.');
       return;
     }
@@ -238,7 +256,7 @@ export default function AdminPaymentDetailPage() {
           bookingId,
           bookingRef,
           decision: 'rejected',
-          remarks: rejectRemarks.trim()
+          remarks: remarksToSave
         }),
       });
       const data = await res.json();
@@ -247,7 +265,7 @@ export default function AdminPaymentDetailPage() {
         return;
       }
       toast.success('Payment rejected. Booking marked cancelled.');
-      const savedRemarks = rejectRemarks.trim();
+      const savedRemarks = remarksToSave;
       setPayment((prev) => {
         if (!prev) return prev;
         return {
@@ -342,6 +360,73 @@ export default function AdminPaymentDetailPage() {
           </Link>
         </div>
       </div>
+    );
+  }
+
+  if (payment.isEventPayment && payment.event) {
+    return (
+      <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="pb-16">
+        <Link href="/admin/payments" className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-gray-900">
+          <ArrowLeft className="h-4 w-4" /> Back to Payments
+        </Link>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-black sm:text-4xl"><span className="font-black text-[#0012FF]">Event</span> Payment Details</h1>
+          <p className="mt-1 text-sm text-gray-400">Review the event ticket payment and submitted proof.</p>
+        </div>
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+          <section className="rounded-[24px] border border-gray-100 bg-white p-6 shadow-sm">
+            {payment.event.bannerUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={payment.event.bannerUrl} alt={payment.event.title} className="mb-6 h-56 w-full rounded-2xl object-cover" />
+            )}
+            <div className="flex items-start justify-between gap-4 border-b border-gray-100 pb-5">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-gray-400">Event</p>
+                <h2 className="mt-1 text-2xl font-black text-gray-950">{payment.event.title}</h2>
+                <p className="mt-2 text-sm text-gray-500">{payment.event.tierTitle} · {payment.event.quantity} ticket(s)</p>
+              </div>
+              <span className={`rounded-full border px-3 py-1 text-xs font-bold ${payment.status === 'Completed' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : payment.status === 'Rejected' ? 'border-rose-200 bg-rose-50 text-rose-700' : 'border-amber-200 bg-amber-50 text-amber-700'}`}>
+                {payment.status}
+              </span>
+            </div>
+            <div className="grid gap-5 py-5 text-sm sm:grid-cols-2">
+              <div><p className="text-xs text-gray-400">Buyer</p><p className="mt-1 font-bold text-gray-900">{payment.user?.name || 'Event buyer'}</p><p className="text-xs text-gray-500">{payment.user?.email || ''}</p></div>
+              <div><p className="text-xs text-gray-400">Amount</p><p className="mt-1 text-lg font-extrabold text-[#0012FF]">{payment.amount}</p></div>
+              <div><p className="text-xs text-gray-400">Event date</p><p className="mt-1 font-semibold text-gray-900">{payment.event.date}</p></div>
+              <div><p className="text-xs text-gray-400">Payment method</p><p className="mt-1 font-semibold capitalize text-gray-900">{payment.paymentMethod}</p></div>
+              <div><p className="text-xs text-gray-400">Ticket reference</p><p className="mt-1 font-semibold text-gray-900">{payment.event.ticketRef}</p></div>
+              <div><p className="text-xs text-gray-400">Submitted</p><p className="mt-1 font-semibold text-gray-900">{payment.proof?.submittedAt || payment.date}</p></div>
+            </div>
+            {payment.proof?.screenshotUrl && (
+              <button type="button" onClick={() => setIsScreenshotModalOpen(true)} className="block w-full overflow-hidden rounded-2xl border border-gray-200 bg-gray-50">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={payment.proof.screenshotUrl} alt="Event payment proof" className="max-h-[520px] w-full object-contain" />
+              </button>
+            )}
+          </section>
+          <aside className="h-fit rounded-[24px] border border-gray-100 bg-white p-6 shadow-sm">
+            <p className="text-xs font-bold uppercase tracking-wider text-gray-400">Payment review</p>
+            <p className="mt-2 text-sm leading-6 text-gray-500">Approve the payment after checking the uploaded transfer screenshot.</p>
+            {payment.status === 'Pending' && (
+              <div className="mt-6 grid gap-3">
+                <button type="button" onClick={() => void handleAccept()} className="rounded-full bg-emerald-600 px-4 py-3 text-sm font-bold text-white hover:bg-emerald-700">Approve payment</button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const remarks = window.prompt('Reason for rejecting this payment:');
+                    if (remarks) {
+                      void handleReject(remarks);
+                    }
+                  }}
+                  className="rounded-full border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700 hover:bg-rose-100"
+                >
+                  Reject payment
+                </button>
+              </div>
+            )}
+          </aside>
+        </div>
+      </motion.div>
     );
   }
 

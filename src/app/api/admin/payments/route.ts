@@ -12,6 +12,10 @@ import { autoSettleEarnings } from '@/lib/autoSettleEarnings';
 import mongoose from 'mongoose';
 import PackagePurchase from '@/models/PackagePurchase';
 import CreatorPayout from '@/models/CreatorPayout';
+import EventPurchase from '@/models/EventPurchase';
+import EventPaymentProof from '@/models/EventPaymentProof';
+
+export const dynamic = 'force-dynamic';
 
 function isAdmin(email?: string | null) {
   if (!email) return false;
@@ -115,7 +119,7 @@ export async function GET(req: Request) {
         },
       });
     }
-    if (id && !mongoose.isValidObjectId(id)) {
+    if (id && !id.startsWith('EVENT-') && !mongoose.isValidObjectId(id)) {
       return NextResponse.json({ error: 'Payment not found' }, { status: 404 });
     }
 
@@ -123,7 +127,9 @@ export async function GET(req: Request) {
     await autoSettleEarnings();
 
     // Fetch all bookings sorted by newest first (or just the requested one)
-    const bookings = await Booking.find(id ? { _id: id } : {}).sort({ createdAt: -1 }).lean();
+    const bookings = await Booking.find(
+      id && mongoose.isValidObjectId(id) ? { _id: id } : {}
+    ).sort({ createdAt: -1 }).lean();
 
     // Fetch all users and creators for fast lookup
     const users = await User.find({}).lean();
@@ -134,15 +140,18 @@ export async function GET(req: Request) {
 
     // A package is ONE payment of the whole price, made with its first session
     const purchaseIds = [...new Set(bookings.map((b: any) => b.packagePurchaseId?.toString()).filter(Boolean))];
-    const [purchases, payoutRecords] = await Promise.all([
+    const [purchases, payoutRecords, eventPurchases, eventProofs] = await Promise.all([
       purchaseIds.length
         ? PackagePurchase.find({ _id: { $in: purchaseIds } }).select('price paymentStatus').lean()
         : Promise.resolve([]),
       CreatorPayout.find({})
         .populate({ path: 'creatorProfileId', select: 'displayName username profilePhoto userId' })
         .lean(),
-    ]) as [any[], any[]];
+      EventPurchase.find({}).sort({ createdAt: -1 }).lean(),
+      EventPaymentProof.find({}).sort({ createdAt: -1 }).lean(),
+    ]) as [any[], any[], any[], any[]];
     const purchaseMap = new Map(purchases.map((p) => [String(p._id), p]));
+    const eventProofMap = new Map(eventProofs.map((proof: any) => [String(proof.purchaseId), proof]));
     const payableBookings = bookings.filter((b: any) => !b.packagePurchaseId || b.sessionNumber === 1);
 
     const enrichedPayments = payableBookings.map((booking: any) => {
@@ -252,7 +261,134 @@ export async function GET(req: Request) {
       });
     });
 
+    const eventPayments = eventPurchases.map((purchase: any) => {
+      const buyer = userMap.get(purchase.userId?.toString());
+      const creatorProfile = creatorMap.get(purchase.creatorId?.toString());
+      const creatorUser = userMap.get(purchase.creatorId?.toString());
+      const proof = eventProofMap.get(String(purchase._id));
+      const createdAt = new Date(purchase.createdAt);
+      const status = purchase.paymentStatus === 'paid'
+        ? 'Completed'
+        : purchase.paymentStatus === 'failed' || purchase.status === 'cancelled'
+          ? 'Rejected'
+          : 'Pending';
+      const amount = Number(purchase.tierPrice || 0) * Number(purchase.quantity || 1);
+
+      return {
+        id: `EVENT-${purchase._id.toString().slice(-5).toUpperCase()}`,
+        dbId: `EVENT-${purchase._id.toString()}`,
+        bookingRef: purchase.ticketRef,
+        paymentMethod: proof?.paymentMethod || 'Manual event payment',
+        date: createdAt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+        time: createdAt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
+        amount: `${amount.toLocaleString()} PKR`,
+        rawAmount: amount,
+        platformFee: '0 PKR',
+        creatorEarnings: `${amount.toLocaleString()} PKR`,
+        status,
+        isEventPayment: true,
+        event: {
+          title: purchase.eventTitle,
+          bannerUrl: purchase.eventBannerUrl || '',
+          date: purchase.eventDate,
+          startTime: purchase.eventStartTime || '',
+          tierTitle: purchase.tierTitle,
+          quantity: purchase.quantity,
+          ticketRef: purchase.ticketRef,
+        },
+        user: {
+          name: buyer?.name || purchase.buyerEmail || 'Event buyer',
+          username: buyer?.name ? `@${buyer.name.toLowerCase().replace(/\s+/g, '')}` : '@buyer',
+          avatar: buyer?.profilePhoto || '/avatar.png',
+        },
+        creator: {
+          name: creatorProfile?.displayName || creatorUser?.name || 'Creator',
+          username: creatorProfile?.username ? `@${creatorProfile.username}` : '@creator',
+          avatar: creatorProfile?.profilePhoto || creatorUser?.profilePhoto || '/avatar.png',
+        },
+      };
+    });
+
     if (id) {
+      if (id.toUpperCase().startsWith('EVENT-')) {
+        const eventPurchaseId = id.slice(id.indexOf('-') + 1).trim();
+        if (!mongoose.isValidObjectId(eventPurchaseId)) {
+          return NextResponse.json({ error: 'Payment not found' }, { status: 404 });
+        }
+        const eventPurchase = await EventPurchase.findOne({
+          _id: new mongoose.Types.ObjectId(eventPurchaseId),
+        }).lean() as any;
+        if (!eventPurchase) return NextResponse.json({ error: 'Payment not found' }, { status: 404 });
+        const [buyer, creatorProfile, creatorUser, proof] = await Promise.all([
+          User.findById(eventPurchase.userId).lean() as any,
+          CreatorProfile.findOne({ userId: eventPurchase.creatorId }).lean() as any,
+          User.findById(eventPurchase.creatorId).lean() as any,
+          EventPaymentProof.findOne({ purchaseId: eventPurchase._id }).lean() as any,
+        ]);
+        let screenshotUrl = proof?.screenshotPath || '';
+        const bucket = process.env.SUPABASE_PAYMENT_PROOFS_BUCKET || process.env.SUPABASE_STORAGE_BUCKET || 'reachly';
+        if (screenshotUrl && !screenshotUrl.startsWith('data:') && !screenshotUrl.startsWith('http')) {
+          const { data } = await supabaseAdmin.storage.from(bucket).createSignedUrl(screenshotUrl, 3600);
+          screenshotUrl = data?.signedUrl || '';
+        }
+        const amount = Number(eventPurchase.tierPrice || 0) * Number(eventPurchase.quantity || 1);
+        const status = eventPurchase.paymentStatus === 'paid'
+          ? 'Completed'
+          : eventPurchase.paymentStatus === 'failed' || eventPurchase.status === 'cancelled'
+            ? 'Rejected'
+            : 'Pending';
+        return NextResponse.json({
+          success: true,
+          payment: {
+            id: `EVENT-${eventPurchase._id.toString().slice(-5).toUpperCase()}`,
+            dbId: id,
+            isEventPayment: true,
+            bookingRef: eventPurchase.ticketRef,
+            paymentMethod: proof?.paymentMethod || 'Manual event payment',
+            date: new Date(eventPurchase.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+            time: new Date(eventPurchase.createdAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
+            amount: `${amount.toLocaleString()} PKR`,
+            rawAmount: amount,
+            platformFee: '0 PKR',
+            creatorEarnings: `${amount.toLocaleString()} PKR`,
+            status,
+            event: {
+              title: eventPurchase.eventTitle,
+              bannerUrl: eventPurchase.eventBannerUrl || '',
+              date: eventPurchase.eventDate,
+              startTime: eventPurchase.eventStartTime || '',
+              tierTitle: eventPurchase.tierTitle,
+              quantity: eventPurchase.quantity,
+              ticketRef: eventPurchase.ticketRef,
+            },
+            user: {
+              id: buyer?._id?.toString() || null,
+              name: buyer?.name || eventPurchase.buyerEmail,
+              username: buyer?.name ? `@${buyer.name.toLowerCase().replace(/\s+/g, '')}` : '@buyer',
+              avatar: buyer?.profilePhoto || '/avatar.png',
+              email: buyer?.email || eventPurchase.buyerEmail,
+            },
+            creator: {
+              id: eventPurchase.creatorId?.toString(),
+              name: creatorProfile?.displayName || creatorUser?.name || 'Creator',
+              username: creatorProfile?.username ? `@${creatorProfile.username}` : '@creator',
+              avatar: creatorProfile?.profilePhoto || creatorUser?.profilePhoto || '/avatar.png',
+            },
+            proof: proof ? {
+              id: proof._id.toString(),
+              status: proof.status,
+              screenshotUrl,
+              paymentMethod: proof.paymentMethod,
+              amount: proof.amount,
+              submittedAt: proof.createdAt ? new Date(proof.createdAt).toLocaleString() : null,
+              reviewedAt: proof.reviewedAt ? new Date(proof.reviewedAt).toLocaleString() : null,
+              reviewedBy: proof.reviewedBy || null,
+              adminRemarks: proof.adminRemarks || '',
+            } : null,
+          },
+        });
+      }
+
       let booking: any = null;
       if (mongoose.isValidObjectId(id)) {
         booking = await Booking.findById(id).populate('sessionTypeId').lean();
@@ -418,7 +554,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ success: true, payment: paymentDetail });
     }
 
-    return NextResponse.json({ success: true, payments: [...payoutPayments, ...enrichedPayments] });
+    return NextResponse.json({ success: true, payments: [...payoutPayments, ...eventPayments, ...enrichedPayments] });
   } catch (error: any) {
     console.error('Admin payments GET error:', error);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
