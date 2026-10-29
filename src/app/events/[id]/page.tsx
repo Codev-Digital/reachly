@@ -267,8 +267,13 @@ export default function PublicEventDetailPage() {
         alert(data.error || 'Failed to buy ticket');
         return;
       }
-      if (data.requiresPaymentProof && data.purchase?.id) {
-        router.push(`/events/${event.id}/payment?purchaseId=${encodeURIComponent(data.purchase.id)}`);
+      if (data.requiresPaymentProof) {
+        const purchaseId = data.purchase?.id || data.purchase?._id;
+        if (!purchaseId) {
+          throw new Error('Your ticket was created, but the payment page could not be opened. Please refresh and try again.');
+        }
+        setConfirmOpen(false);
+        window.location.assign(`/events/${event.id}/payment?purchaseId=${encodeURIComponent(String(purchaseId))}`);
         return;
       }
       setConfirmOpen(false);

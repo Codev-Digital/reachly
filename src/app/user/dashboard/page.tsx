@@ -1184,7 +1184,7 @@ export default function UserDashboard() {
                                       { duration: 4000 }
                                     );
                                   }}
-                                  className="w-full py-2 bg-amber-50 hover:bg-amber-100/80 border border-amber-300/80 text-amber-900 rounded-full text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs active:scale-[0.99]"
+                                  className="w-full py-2 bg-amber-50 hover:bg-amber-100/80 border border-amber-300/80 text-amber-900 rounded-[8px] text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-2xs active:scale-[0.99]"
                                 >
                                   <Clock className="size-3.5 text-amber-700 shrink-0" />
                                   <span>Payment Verification In Progress</span>

@@ -42,11 +42,15 @@ export async function GET() {
         isEventPayment: true,
         bookingId: String(proof.purchaseId),
         bookingRef: `EVENT-${String(proof.purchaseId).slice(-8).toUpperCase()}`,
+        payerName: proof.buyerName,
+        payerEmail: proof.buyerEmail,
         creatorName: proof.eventTitle,
         creatorUsername: 'event',
         sessionTitle: proof.eventTitle,
         scheduledDate: proof.eventDate,
         scheduledTime: proof.eventStartTime || 'Event time',
+        tierTitle: proof.tierTitle,
+        quantity: proof.quantity,
       })),
     ];
     const results = await Promise.all(allProofs.map(async (proof: any) => {

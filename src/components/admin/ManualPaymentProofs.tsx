@@ -14,6 +14,7 @@ import ActionDialog from '@/components/ActionDialog';
 
 type PaymentProof = {
   _id: string;
+  isEventPayment?: boolean;
   bookingId?: string;
   bookingRef: string;
   payerName: string;
@@ -23,6 +24,8 @@ type PaymentProof = {
   sessionTitle: string;
   scheduledDate: string;
   scheduledTime: string;
+  tierTitle?: string;
+  quantity?: number;
   paymentMethod: 'easypaisa' | 'jazzcash';
   amount: number;
   screenshotUrl: string;
@@ -32,7 +35,7 @@ type PaymentProof = {
 export default function ManualPaymentProofs() {
   const [proofs, setProofs] = useState<PaymentProof[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
   const [reviewingId, setReviewingId] = useState<string | null>(null);
   const [selectedProof, setSelectedProof] = useState<PaymentProof | null>(null);
   const [proofToApprove, setProofToApprove] = useState<PaymentProof | null>(null);
@@ -211,7 +214,9 @@ export default function ManualPaymentProofs() {
                       </div>
                       <p className="mt-1 text-sm text-gray-700">{proof.payerName} · {proof.payerEmail}</p>
                       <p className="mt-1 text-sm text-gray-600">
-                        {proof.sessionTitle} with {proof.creatorName} (@{proof.creatorUsername})
+                        {proof.isEventPayment
+                          ? `${proof.sessionTitle} · ${proof.tierTitle || 'Ticket'} · ${proof.quantity || 1} ticket(s)`
+                          : `${proof.sessionTitle} with ${proof.creatorName} (@${proof.creatorUsername})`}
                       </p>
                       <p className="mt-1 text-xs text-gray-500">
                         {new Date(proof.scheduledDate).toLocaleDateString()} at {proof.scheduledTime} · {proof.bookingRef}
