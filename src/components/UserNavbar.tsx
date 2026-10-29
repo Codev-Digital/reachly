@@ -890,7 +890,11 @@ export default function UserNavbar({ displayName, profilePhoto }: UserNavbarProp
                         "=;expires=" + new Date().toUTCString() + ";path=/"
                       );
                   });
+                  const rememberedEmail = localStorage.getItem('reachly_remember_email');
                   localStorage.clear();
+                  if (rememberedEmail) {
+                    localStorage.setItem('reachly_remember_email', rememberedEmail);
+                  }
                   sessionStorage.clear();
                   logout("/login");
                 }}

@@ -21,21 +21,45 @@ export default function LoginPage({ callbackUrl }: { callbackUrl: string }) {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
-  // Load remembered email on mount
+  // Load remembered email on mount immediately
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      try {
-        const savedEmail = localStorage.getItem('reachly_remember_email');
-        if (savedEmail) {
-          setEmail(savedEmail);
-          setRememberMe(true);
-        }
-      } catch {
-        /* ignore storage access issues */
+    try {
+      const savedEmail = localStorage.getItem('reachly_remember_email');
+      if (savedEmail) {
+        setEmail(savedEmail);
+        setRememberMe(true);
       }
-    }, 0);
-    return () => window.clearTimeout(timer);
+    } catch {
+      /* ignore storage access issues */
+    }
   }, []);
+
+  const handleEmailChange = (val: string) => {
+    setEmail(val);
+    if (emailError) setEmailError('');
+    if (rememberMe) {
+      try {
+        if (val.trim()) {
+          localStorage.setItem('reachly_remember_email', val.trim());
+        } else {
+          localStorage.removeItem('reachly_remember_email');
+        }
+      } catch {}
+    }
+  };
+
+  const handleRememberMeChange = (checked: boolean) => {
+    setRememberMe(checked);
+    try {
+      if (checked) {
+        if (email.trim()) {
+          localStorage.setItem('reachly_remember_email', email.trim());
+        }
+      } else {
+        localStorage.removeItem('reachly_remember_email');
+      }
+    } catch {}
+  };
 
   const signupUrl = `/signup?callbackUrl=${encodeURIComponent(callbackUrl)}`;
 
@@ -59,6 +83,14 @@ export default function LoginPage({ callbackUrl }: { callbackUrl: string }) {
       hasError = true;
     }
     if (hasError) return;
+
+    try {
+      if (rememberMe && email.trim()) {
+        localStorage.setItem('reachly_remember_email', email.trim());
+      } else {
+        localStorage.removeItem('reachly_remember_email');
+      }
+    } catch {}
 
     setLoading(true);
 
@@ -199,10 +231,7 @@ export default function LoginPage({ callbackUrl }: { callbackUrl: string }) {
                   placeholder="Enter your email"
                   icon={<Mail className="w-4 h-4" />}
                   value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    if (emailError) setEmailError('');
-                  }}
+                  onChange={(e) => handleEmailChange(e.target.value)}
                   error={emailError}
                 />
 
@@ -229,7 +258,7 @@ export default function LoginPage({ callbackUrl }: { callbackUrl: string }) {
                     <input
                       type="checkbox"
                       checked={rememberMe}
-                      onChange={(e) => setRememberMe(e.target.checked)}
+                      onChange={(e) => handleRememberMeChange(e.target.checked)}
                       className="w-4 h-4 rounded border-gray-300 text-[#0012FF] focus:ring-[#0012FF] cursor-pointer accent-[#0012FF]"
                     />
                     <span className="font-sans text-xs text-gray-500 font-medium group-hover:text-gray-700 transition-colors">
