@@ -131,9 +131,26 @@ export default function DaysOfMonth({
     return () => window.removeEventListener('resize', updateScrollState);
   }, []);
 
-  const scrollStrip = (direction: 1 | -1) => {
+  const handleStripNav = (direction: 1 | -1) => {
     const el = stripRef.current;
-    if (el) el.scrollBy({ left: direction * el.clientWidth * 0.7, behavior: 'smooth' });
+    if (!el) return;
+    if (direction === 1) {
+      const canScrollMoreRight = el.scrollLeft + el.clientWidth < el.scrollWidth - 10;
+      if (canScrollMoreRight) {
+        el.scrollBy({ left: el.clientWidth * 0.7, behavior: 'smooth' });
+        setTimeout(updateScrollState, 250);
+      } else {
+        shiftMonth(1);
+      }
+    } else {
+      const canScrollMoreLeft = el.scrollLeft > 10;
+      if (canScrollMoreLeft) {
+        el.scrollBy({ left: -el.clientWidth * 0.7, behavior: 'smooth' });
+        setTimeout(updateScrollState, 250);
+      } else {
+        shiftMonth(-1);
+      }
+    }
   };
 
   const stepper = 'flex h-full w-6 shrink-0 items-center justify-center text-gray-400 transition-colors enabled:hover:text-[#0012FF] disabled:cursor-not-allowed disabled:opacity-30 enabled:cursor-pointer';
@@ -157,7 +174,7 @@ export default function DaysOfMonth({
 
       {/* Days of the month */}
       <div className={cn(box, 'order-3 h-[64px] w-full min-w-0 items-center px-1.5 sm:order-2 sm:w-auto sm:flex-1')}>
-        <button type="button" aria-label="Scroll days left" disabled={!canScroll.left} onClick={() => scrollStrip(-1)} className={stepper}>
+        <button type="button" aria-label={canScroll.left ? 'Scroll days left' : 'Previous month'} title={canScroll.left ? 'Scroll days left' : 'Previous month'} disabled={atMinMonth && !canScroll.left} onClick={() => handleStripNav(-1)} className={stepper}>
           <ChevronLeft size={16} />
         </button>
         <div
@@ -202,7 +219,7 @@ export default function DaysOfMonth({
             );
           })}
         </div>
-        <button type="button" aria-label="Scroll days right" disabled={!canScroll.right} onClick={() => scrollStrip(1)} className={stepper}>
+        <button type="button" aria-label={canScroll.right ? 'Scroll days right' : 'Next month'} title={canScroll.right ? 'Scroll days right' : 'Next month'} disabled={atMaxMonth && !canScroll.right} onClick={() => handleStripNav(1)} className={stepper}>
           <ChevronRight size={16} />
         </button>
       </div>
