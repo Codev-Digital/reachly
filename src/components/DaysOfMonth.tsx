@@ -18,6 +18,8 @@ export interface DaysOfMonthProps {
   activeDate?: string | null;
   /** Called with the clicked date (YYYY-MM-DD). The parent decides whether that selects or removes it. */
   onDateClick: (isoDate: string) => void;
+  /** Called when the displayed month or year changes via navigation arrows. */
+  onMonthChange?: (year: number, month: number) => void;
   /** Earlier days are disabled. Defaults to today. */
   minDate?: Date;
   /** How many years after the minimum year can be chosen. */
@@ -39,6 +41,7 @@ export default function DaysOfMonth({
   selectedDates,
   activeDate,
   onDateClick,
+  onMonthChange,
   minDate,
   yearsAhead = 5,
   yearsBehind = 1,
@@ -46,10 +49,12 @@ export default function DaysOfMonth({
   className,
 }: DaysOfMonthProps) {
   const marked = useMemo(() => new Set(markedDates), [markedDates]);
-  const min = useMemo(() => startOfDay(minDate ?? new Date()), [minDate]);
+  const today = useMemo(() => startOfDay(new Date()), []);
+  const min = useMemo(() => startOfDay(minDate ?? today), [minDate, today]);
+  const currentYear = today.getFullYear();
   const minYear = min.getFullYear();
-  const firstYear = minYear - yearsBehind;
-  const maxYear = minYear + yearsAhead;
+  const firstYear = Math.min(minYear, currentYear) - yearsBehind;
+  const maxYear = Math.max(minYear, currentYear) + yearsAhead;
 
   const initial = activeDate ? fromISODate(activeDate) : selectedDates[0] ? fromISODate(selectedDates[0]) : min;
   const [year, setYear] = useState(initial.getFullYear());
@@ -72,8 +77,8 @@ export default function DaysOfMonth({
     return { iso: toISODate(date), day: i + 1, weekday: WEEKDAYS[date.getDay()], disabled: date < min };
   });
 
-  const atMinMonth = year === firstYear && month === 0;
-  const atMaxMonth = year === maxYear && month === 11;
+  const atMinMonth = year < firstYear || (year === firstYear && month === 0);
+  const atMaxMonth = year > maxYear || (year === maxYear && month === 11);
 
   const shiftMonth = (delta: number) => {
     let y = year;
@@ -83,12 +88,14 @@ export default function DaysOfMonth({
     if (y < firstYear || y > maxYear) return;
     setYear(y);
     setMonth(m);
+    onMonthChange?.(y, m);
   };
 
   const shiftYear = (delta: number) => {
     const y = year + delta;
     if (y < firstYear || y > maxYear) return;
     setYear(y);
+    onMonthChange?.(y, month);
   };
 
   const updateScrollState = () => {
