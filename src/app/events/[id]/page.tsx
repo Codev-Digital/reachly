@@ -245,7 +245,7 @@ export default function PublicEventDetailPage() {
       return;
     }
     if (!selectedTier || activeDateIsPast) return;
-    setConfirmOpen(true);
+    void confirmBuy();
   };
 
   const confirmBuy = async () => {
@@ -267,8 +267,8 @@ export default function PublicEventDetailPage() {
         alert(data.error || 'Failed to buy ticket');
         return;
       }
-      if (data.checkoutUrl) {
-        window.location.assign(data.checkoutUrl);
+      if (data.requiresPaymentProof && data.purchase?.id) {
+        router.push(`/events/${event.id}/payment?purchaseId=${encodeURIComponent(data.purchase.id)}`);
         return;
       }
       setConfirmOpen(false);

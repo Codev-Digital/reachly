@@ -13,6 +13,10 @@ import { generateCreatorNewBookingEmail, generateUserBookingApprovedEmail } from
 import { queueEmail } from '@/lib/emailQueue';
 import CreatorProfile from '@/models/CreatorProfile';
 import SessionType from '@/models/SessionType';
+import EventPaymentProof from '@/models/EventPaymentProof';
+import EventPurchase from '@/models/EventPurchase';
+import Event from '@/models/Event';
+import { addBuyerToEventBroadcast } from '@/lib/eventBroadcastChat';
 
 const BUCKET = process.env.SUPABASE_PAYMENT_PROOFS_BUCKET || process.env.SUPABASE_STORAGE_BUCKET || 'reachly';
 
@@ -27,8 +31,25 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     await connectDB();
-    const proofs = await SessionPaymentProof.find({ status: 'pending' }).sort({ createdAt: -1 }).limit(100).lean();
-    const results = await Promise.all(proofs.map(async (proof) => {
+    const [proofs, eventProofs] = await Promise.all([
+      SessionPaymentProof.find({ status: 'pending' }).sort({ createdAt: -1 }).limit(100).lean(),
+      EventPaymentProof.find({ status: 'pending' }).sort({ createdAt: -1 }).limit(100).lean(),
+    ]);
+    const allProofs = [
+      ...proofs,
+      ...eventProofs.map((proof: any) => ({
+        ...proof,
+        isEventPayment: true,
+        bookingId: String(proof.purchaseId),
+        bookingRef: `EVENT-${String(proof.purchaseId).slice(-8).toUpperCase()}`,
+        creatorName: proof.eventTitle,
+        creatorUsername: 'event',
+        sessionTitle: proof.eventTitle,
+        scheduledDate: proof.eventDate,
+        scheduledTime: proof.eventStartTime || 'Event time',
+      })),
+    ];
+    const results = await Promise.all(allProofs.map(async (proof: any) => {
       let screenshotUrl = '';
       if (proof.screenshotPath?.startsWith('data:') || proof.screenshotPath?.startsWith('http')) {
         screenshotUrl = proof.screenshotPath;
@@ -72,6 +93,40 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid review request.' }, { status: 422 });
     }
     await connectDB();
+
+    const eventProof = proofId && mongoose.isValidObjectId(proofId)
+      ? await EventPaymentProof.findOne({ _id: proofId, status: 'pending' })
+      : null;
+    if (eventProof) {
+      const purchase = await EventPurchase.findOne({ _id: eventProof.purchaseId, status: 'pending', paymentStatus: 'pending' });
+      if (!purchase) return NextResponse.json({ error: 'Event purchase not found or already reviewed.' }, { status: 404 });
+
+      if (decision === 'approved') {
+        await EventPurchase.updateOne(
+          { _id: purchase._id },
+          { $set: { status: 'confirmed', paymentStatus: 'paid' } }
+        );
+        await addBuyerToEventBroadcast(purchase.eventId, purchase.userId);
+      } else {
+        const event = await Event.findById(purchase.eventId);
+        const day = event?.dates.find((item: any) => item.date === purchase.eventDate);
+        const tier = day?.tiers.find((item: any) => item.title === purchase.tierTitle);
+        if (tier && event) {
+          tier.quantity += purchase.quantity;
+          event.markModified('dates');
+          await event.save();
+        }
+        await EventPurchase.updateOne(
+          { _id: purchase._id },
+          { $set: { status: 'cancelled', paymentStatus: 'failed' } }
+        );
+      }
+      await EventPaymentProof.updateOne(
+        { _id: eventProof._id },
+        { $set: { status: decision, reviewedAt: new Date(), reviewedBy: session.user.email, adminRemarks: remarks || '' } }
+      );
+      return NextResponse.json({ success: true, status: decision });
+    }
 
     let proof: any = null;
     if (proofId && mongoose.isValidObjectId(proofId)) {

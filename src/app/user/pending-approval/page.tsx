@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import LoadingAnimation from "@/components/LoadingAnimation";
 import OnboardingNavbar from "@/components/OnboardingNavbar";
 import { useApprovalRefresh } from "@/lib/useApprovalRefresh";
 import { safeBookingReturnTo } from "@/lib/postAuthRoute";
 
-export default function UserPendingApprovalPage() {
+function UserPendingApprovalContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnTo = safeBookingReturnTo(searchParams.get("returnTo"));
@@ -144,5 +144,13 @@ export default function UserPendingApprovalPage() {
         &copy; {new Date().getFullYear()} Reachly. All rights reserved.
       </footer>
     </div>
+  );
+}
+
+export default function UserPendingApprovalPage() {
+  return (
+    <Suspense fallback={<LoadingAnimation />}>
+      <UserPendingApprovalContent />
+    </Suspense>
   );
 }
