@@ -1112,8 +1112,8 @@ export default function UserChatsPage() {
       (c.creator || '').toLowerCase().includes(q) ||
       (c.session || '').toLowerCase().includes(q);
   });
-  const filteredConversations = allFiltered.filter(c => !c.isArchivedByUser);
-  const archivedConversations = allFiltered.filter(c => c.isArchivedByUser);
+  const filteredConversations = allFiltered;
+  const archivedConversations: any[] = [];
 
   return (
     <div className="fixed inset-0 flex flex-col bg-[#F8F8FA] overflow-hidden">
@@ -1362,42 +1362,7 @@ export default function UserChatsPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-5 text-gray-400">
-                    <div className="relative">
-                      <button
-                        onClick={() => setShowDotsMenu(prev => !prev)}
-                        className="hover:text-gray-600 hover:bg-gray-100 w-9 h-9 rounded-full flex items-center justify-center transition-colors"
-                      >
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="1.5" /><circle cx="12" cy="5" r="1.5" /><circle cx="12" cy="19" r="1.5" /></svg>
-                      </button>
-                      {showDotsMenu && (
-                        <>
-                          <div className="fixed inset-0 z-10" onClick={() => setShowDotsMenu(false)} />
-                          <div className="absolute right-0 top-10 z-20 bg-white rounded-2xl shadow-xl border border-gray-100 py-1.5 min-w-[180px] overflow-hidden">
-                            {activeConv?.isArchivedByUser ? (
-                              <button
-                                onClick={() => handleArchiveChat(false)}
-                                disabled={isArchivingChat}
-                                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-                              >
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="5" rx="1" /><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8" /><path d="M10 12h4" /></svg>
-                                {isArchivingChat ? 'Unarchiving...' : 'Unarchive Chat'}
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => handleArchiveChat(true)}
-                                disabled={isArchivingChat}
-                                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-                              >
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="5" rx="1" /><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8" /><path d="M10 12h4" /></svg>
-                                {isArchivingChat ? 'Archiving...' : 'Archive Chat'}
-                              </button>
-                            )}
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
+
                 </div>
 
 
