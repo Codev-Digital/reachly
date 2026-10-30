@@ -56,6 +56,7 @@ interface ConversationInfo {
   isCreator: boolean;
   isArchivedByCreator?: boolean;
   isOnline?: boolean;
+  participantCount?: number;
 }
 
 interface ChatMessage {
@@ -212,8 +213,11 @@ export default function ChatsPage() {
   const uploadAbortController = useRef<AbortController | null>(null);
   const sendingRef = useRef<boolean>(false);
 
-  const triggerFileInput = () => {
-    if (fileInputRef.current) fileInputRef.current.click();
+  const triggerFileInput = (onlyImages?: boolean) => {
+    if (fileInputRef.current) {
+      fileInputRef.current.accept = onlyImages ? 'image/*' : 'image/*,video/*,application/pdf,.doc,.docx,.xls,.xlsx';
+      fileInputRef.current.click();
+    }
   };
 
   const cancelUpload = () => {
@@ -239,7 +243,10 @@ export default function ChatsPage() {
     if (fileInputRef.current) fileInputRef.current.value = '';
     if (!files.length) return;
 
-    const { accepted, oversized, error } = filterChatFiles(files);
+    const canCombine = previewFiles.length > 0 && previewFiles.every((f) => f.type.startsWith('image/')) && files.every((f) => f.type.startsWith('image/'));
+    const combined = canCombine ? [...previewFiles, ...files] : files;
+
+    const { accepted, oversized, error } = filterChatFiles(combined);
     if (error) {
       setFileError(error);
       return;
@@ -255,7 +262,7 @@ export default function ChatsPage() {
     }
 
     setFileError(null);
-    setPreviewFiles((prev) => [...prev, ...accepted]);
+    setPreviewFiles(accepted);
   };
 
   const uploadOneFile = (file: File, signal: AbortSignal, onProgress: (pct: number) => void) =>
@@ -478,6 +485,7 @@ export default function ChatsPage() {
             isCreator: c.isCreator,
             isArchivedByCreator: c.isArchivedByCreator ?? false,
             isOnline: c.isOnline || false,
+            participantCount: Number(c.participantCount) || (Array.isArray(c.participants) ? c.participants.length : 0),
           }))
           .sort((a: ConversationInfo, b: ConversationInfo) => {
             const hasMsgA = !!a.lastMessageTime;
@@ -1409,10 +1417,25 @@ export default function ChatsPage() {
                           style={{ width: 44, height: 44 }}
                         />
                       </div>
-                      <div className={`absolute bottom-0 right-0 w-3.5 h-3.5 border-3 border-white rounded-full ${onlineCount > 1 ? 'bg-[#12B76A]' : 'bg-gray-400'}`}></div>
+                      {activeConv.type !== 'broadcast' && (
+                        <div className={`absolute bottom-0 right-0 w-3.5 h-3.5 border-3 border-white rounded-full ${onlineCount > 1 ? 'bg-[#12B76A]' : 'bg-gray-400'}`}></div>
+                      )}
                     </div>
                     <div className="min-w-0">
-                      <h3 className="text-base font-bold text-gray-900 truncate">{activeConv.follower}</h3>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <h3 className="text-base font-bold text-gray-900 truncate">
+                          {activeConv.follower}
+                        </h3>
+                        {activeConv.type !== 'broadcast' && (
+                          <span
+                            className={`text-xs font-medium shrink-0 ${
+                              onlineCount > 1 ? 'text-[#12B76A]' : 'text-gray-400'
+                            }`}
+                          >
+                            {onlineCount > 1 ? 'Online' : 'Offline'}
+                          </span>
+                        )}
+                      </div>
                       {(() => {
                         const isBroadcast = activeConv.type === 'broadcast';
                         const creatorTyping = typingUsers.find((u) => u.role === 'creator');
@@ -1444,25 +1467,28 @@ export default function ChatsPage() {
                           );
                         }
 
-                        if (isBroadcast) {
+                        if (activeConv.email) {
                           return (
-                            <div className="mt-0.5 flex items-center gap-1.5">
-                              <span className={`h-2 w-2 rounded-full ${onlineCount > 1 ? 'bg-[#12B76A]' : 'bg-gray-400'}`} />
-                              <span className="text-xs font-medium text-gray-400">
-                                {onlineCount > 1 ? `${onlineCount} Online` : 'Offline'}
-                              </span>
-                            </div>
+                            <span className="mt-0.5 block truncate text-xs font-medium text-gray-400">
+                              {activeConv.email}
+                            </span>
                           );
                         }
 
-                        return (
-                          <div className="mt-0.5 flex items-center gap-1.5">
-                            <span className={`h-2 w-2 rounded-full ${onlineCount > 1 ? 'bg-[#12B76A]' : 'bg-gray-400'}`} />
-                            <span className="text-xs font-medium text-gray-400">
-                              {onlineCount > 1 ? 'Online' : 'Offline'}
+                        if (isBroadcast) {
+                          const count = activeConv.participants?.length || activeConv.participantCount || 0;
+                          return (
+                            <span className="mt-0.5 block truncate text-xs font-medium text-gray-400">
+                              {onlineCount > 1
+                                ? `${onlineCount} Online`
+                                : count > 0
+                                  ? `${count} participants`
+                                  : (activeConv.session || 'Event Chat')}
                             </span>
-                          </div>
-                        );
+                          );
+                        }
+
+                        return null;
                       })()}
                     </div>
                   </div>
@@ -1820,7 +1846,7 @@ export default function ChatsPage() {
                             files={previewFiles}
                             onRemove={(index) => setPreviewFiles((prev) => prev.filter((_, i) => i !== index))}
                             onClear={() => setPreviewFiles([])}
-                            onAddMore={triggerFileInput}
+                            onAddMore={() => triggerFileInput(true)}
                           />
                         )}
                         <input type="file" ref={fileInputRef} hidden multiple accept="image/*,video/*,application/pdf,.doc,.docx,.xls,.xlsx" onChange={handleFileInput} />
@@ -1868,7 +1894,7 @@ export default function ChatsPage() {
                                 className="w-full bg-[#F8F8F8] border border-transparent rounded-full py-3 pl-5 pr-20 text-xs sm:text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0012FF]/10 focus:border-[#0012FF]/20 transition-all"
                               />
                               <button
-                                onClick={triggerFileInput}
+                                onClick={() => triggerFileInput(false)}
                                 className="absolute right-10 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                                 title="Attach File"
                               >

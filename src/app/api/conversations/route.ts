@@ -328,13 +328,13 @@ export async function GET(request: NextRequest) {
             const otherUser = otherUserId ? otherUsersMap.get(otherUserId) : null;
             const creatorProfile = otherUserId ? creatorProfilesMap.get(otherUserId) : null;
 
+            const pairKey = `${conv.creatorId.toString()}-${conv.userId?.toString()}`;
+            const targetBooking = dateParam ? dateBookingMap.get(pairKey) : pairBookingMap.get(pairKey);
+
             const displayName = creatorProfile?.displayName || otherUser?.name || 'Unknown';
             const username = creatorProfile?.username || '';
             const avatar = creatorProfile?.profilePhoto || otherUser?.profilePhoto || '/avatar.png';
-            const email = otherUser?.email || '';
-
-            const pairKey = `${conv.creatorId.toString()}-${conv.userId?.toString()}`;
-            const targetBooking = dateParam ? dateBookingMap.get(pairKey) : pairBookingMap.get(pairKey);
+            const email = otherUser?.email || targetBooking?.user?.email || (targetBooking as any)?.email || '';
 
             let sessionTitle = '';
             let duration = '';

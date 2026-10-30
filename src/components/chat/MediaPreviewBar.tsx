@@ -82,6 +82,7 @@ export default function MediaPreviewBar({
   if (!files || files.length === 0) return null;
 
   const totalSize = files.reduce((acc, f) => acc + f.size, 0);
+  const isAllImages = files.length > 0 && files.every((f) => f.type.startsWith('image/'));
 
   return (
     <div className="mb-2.5 p-2.5 bg-gray-50/90 border border-gray-200/80 rounded-2xl shadow-xs transition-all">
@@ -117,18 +118,20 @@ export default function MediaPreviewBar({
           />
         ))}
 
-        <button
-          type="button"
-          onClick={onAddMore}
-          className="shrink-0 w-20 h-20 rounded-xl border border-dashed border-gray-300 hover:border-[#0012FF] bg-white hover:bg-[#0012FF]/5 flex flex-col items-center justify-center text-gray-400 hover:text-[#0012FF] transition-all cursor-pointer"
-          title="Add more files"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-          <span className="text-[10px] font-semibold mt-1">Add</span>
-        </button>
+        {isAllImages && files.length < 10 && (
+          <button
+            type="button"
+            onClick={onAddMore}
+            className="shrink-0 w-20 h-20 rounded-xl border border-dashed border-gray-300 hover:border-[#0012FF] bg-white hover:bg-[#0012FF]/5 flex flex-col items-center justify-center text-gray-400 hover:text-[#0012FF] transition-all cursor-pointer"
+            title="Add more images"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            <span className="text-[10px] font-semibold mt-1">Add</span>
+          </button>
+        )}
       </div>
     </div>
   );
