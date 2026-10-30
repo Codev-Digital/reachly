@@ -62,7 +62,34 @@ export async function PUT(req: NextRequest) {
     if (bookingWindowDays !== undefined) availability.bookingWindowDays = bookingWindowDays;
     if (minNoticeHours !== undefined) availability.minNoticeHours = minNoticeHours;
     if (blockedDates) availability.blockedDates = blockedDates;
-    if (duration) availability.duration = duration;
+    if (duration !== undefined) {
+      if (typeof duration === 'object' && duration !== null && typeof (duration as any).value === 'number') {
+        availability.duration = {
+          value: (duration as any).value,
+          unit: (duration as any).unit === 'hr' ? 'hr' : 'min',
+        };
+      } else if (typeof duration === 'string' && duration !== '[object Object]') {
+        const lower = duration.toLowerCase();
+        if (lower.includes('hour') || lower.includes('hr')) {
+          const match = lower.match(/\d+(\.\d+)?/);
+          availability.duration = {
+            value: match ? Math.max(1, Number(match[0])) : 1,
+            unit: 'hr',
+          };
+        } else {
+          const match = lower.match(/\d+/);
+          availability.duration = {
+            value: match ? Math.max(15, Number(match[0])) : 45,
+            unit: 'min',
+          };
+        }
+      } else if (typeof duration === 'number') {
+        availability.duration = {
+          value: duration,
+          unit: 'min',
+        };
+      }
+    }
     if (location !== undefined) {
       if (typeof location === 'string') {
         availability.location = {

@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import ActionDialog from '@/components/ActionDialog';
-import { formatEventCardDate, formatEventCardTime } from '@/lib/eventDisplay';
+import { formatEventCardDate, formatEventCardTime, formatEventLocation } from '@/lib/eventDisplay';
 import { isRichTextEmpty } from '@/lib/richText';
 import { cn } from '@/lib/cn';
 
@@ -159,7 +159,7 @@ export default function AdminEventDetailPage() {
       setEvent((current) => current
         ? { ...current, status: pendingAction === 'hide' ? 'draft' : 'published' }
         : current);
-      toast.success(pendingAction === 'hide' ? 'Event hidden.' : 'Event is now visible.');
+      toast.success(pendingAction === 'hide' ? 'Event hidden.' : 'Event unhidden.');
       setPendingAction(null);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Unable to complete event action.');
@@ -228,7 +228,7 @@ export default function AdminEventDetailPage() {
             <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-xs font-medium text-gray-600">
               <span className="inline-flex items-center gap-1.5"><Calendar size={14} className="text-[#0012FF]" />{formatEventCardDate(activeDate?.date)}</span>
               <span className="inline-flex items-center gap-1.5"><Clock size={14} className="text-[#0012FF]" />{formatEventCardTime(activeDate)}</span>
-              <span className="inline-flex items-center gap-1.5"><MapPin size={14} className="text-[#0012FF]" />{creatorLocation || event.category || 'Location TBA'}</span>
+              <span className="inline-flex items-center gap-1.5"><MapPin size={14} className="text-[#0012FF]" />{formatEventLocation(event)}</span>
             </div>
 
             {!!event.dates.length && (
@@ -276,7 +276,7 @@ export default function AdminEventDetailPage() {
                 className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {event.status === 'published' ? <EyeOff size={16} /> : <Eye size={16} />}
-                {event.status === 'published' ? 'Hide event' : 'Show event'}
+                {event.status === 'published' ? 'Hide event' : 'Unhide event'}
               </button>
               <button
                 type="button"
@@ -423,7 +423,7 @@ export default function AdminEventDetailPage() {
         onOpenChange={(open) => {
           if (!open && !savingAction) setPendingAction(null);
         }}
-        title={pendingAction === 'delete' ? 'Delete this event?' : pendingAction === 'hide' ? 'Hide this event?' : 'Show this event?'}
+        title={pendingAction === 'delete' ? 'Delete this event?' : pendingAction === 'hide' ? 'Hide this event?' : 'Unhide this event?'}
         description={
           pendingAction === 'delete'
             ? [
@@ -437,7 +437,7 @@ export default function AdminEventDetailPage() {
         actions={[
           { label: 'Cancel', variant: 'outline', onClick: () => setPendingAction(null), disabled: savingAction },
           {
-            label: savingAction ? 'Please wait…' : pendingAction === 'delete' ? 'Delete event' : pendingAction === 'hide' ? 'Hide event' : 'Show event',
+            label: savingAction ? 'Please wait…' : pendingAction === 'delete' ? 'Delete event' : pendingAction === 'hide' ? 'Hide event' : 'Unhide event',
             variant: pendingAction === 'delete' || pendingAction === 'hide' ? 'destructive' : 'default',
             onClick: () => void confirmAction(),
             disabled: savingAction,

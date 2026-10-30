@@ -570,23 +570,11 @@ export async function POST(request: NextRequest) {
     // Perform conversation check, notification, and email asynchronously without blocking HTTP response
     if (!requiresStripePayment && !requiresManualVerification) (async () => {
       try {
-        if (userToAttachId) {
-          try {
-            const Conversation = (await import("@/models/Conversation")).default;
-            const existingConv = await Conversation.findOne({
-              creatorId: creatorProfile.userId,
-              userId: userToAttachId,
-            }).lean();
-            if (!existingConv) {
-              await Conversation.create({
-                creatorId: creatorProfile.userId,
-                userId: userToAttachId,
-                isLocked: true,
-              });
-            }
-          } catch (convErr) {
-            console.error("Error creating conversation on booking:", convErr);
-          }
+        try {
+          const { ensureBookingConversation } = await import("@/lib/sessionChat");
+          await ensureBookingConversation(booking);
+        } catch (convErr) {
+          console.error("Error creating conversation on booking:", convErr);
         }
 
         // Notification for creator

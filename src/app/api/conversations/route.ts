@@ -9,6 +9,7 @@ import SessionType from '@/models/SessionType';
 import User from '@/models/User';
 import CreatorProfile from '@/models/CreatorProfile';
 import EventPurchase from '@/models/EventPurchase';
+import { backfillConversationsForUser } from '@/lib/sessionChat';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -31,6 +32,9 @@ export async function GET(request: NextRequest) {
         }
 
         const userId = user._id.toString();
+
+        // Auto-heal / backfill any missing conversations for confirmed bookings
+        await backfillConversationsForUser(user._id, user.email);
 
         // If a date is provided, find bookings on that date first and use them to
         // determine which conversations to show and which booking details to display.
@@ -324,13 +328,13 @@ export async function GET(request: NextRequest) {
             const otherUser = otherUserId ? otherUsersMap.get(otherUserId) : null;
             const creatorProfile = otherUserId ? creatorProfilesMap.get(otherUserId) : null;
 
+            const pairKey = `${conv.creatorId.toString()}-${conv.userId?.toString()}`;
+            const targetBooking = dateParam ? dateBookingMap.get(pairKey) : pairBookingMap.get(pairKey);
+
             const displayName = creatorProfile?.displayName || otherUser?.name || 'Unknown';
             const username = creatorProfile?.username || '';
             const avatar = creatorProfile?.profilePhoto || otherUser?.profilePhoto || '/avatar.png';
-            const email = otherUser?.email || '';
-
-            const pairKey = `${conv.creatorId.toString()}-${conv.userId?.toString()}`;
-            const targetBooking = dateParam ? dateBookingMap.get(pairKey) : pairBookingMap.get(pairKey);
+            const email = otherUser?.email || targetBooking?.user?.email || (targetBooking as any)?.email || '';
 
             let sessionTitle = '';
             let duration = '';

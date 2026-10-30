@@ -18,6 +18,8 @@ export interface DaysOfMonthProps {
   activeDate?: string | null;
   /** Called with the clicked date (YYYY-MM-DD). The parent decides whether that selects or removes it. */
   onDateClick: (isoDate: string) => void;
+  /** Called when the displayed month or year changes via navigation arrows. */
+  onMonthChange?: (year: number, month: number) => void;
   /** Earlier days are disabled. Defaults to today. */
   minDate?: Date;
   /** How many years after the minimum year can be chosen. */
@@ -39,6 +41,7 @@ export default function DaysOfMonth({
   selectedDates,
   activeDate,
   onDateClick,
+  onMonthChange,
   minDate,
   yearsAhead = 5,
   yearsBehind = 1,
@@ -46,10 +49,12 @@ export default function DaysOfMonth({
   className,
 }: DaysOfMonthProps) {
   const marked = useMemo(() => new Set(markedDates), [markedDates]);
-  const min = useMemo(() => startOfDay(minDate ?? new Date()), [minDate]);
+  const today = useMemo(() => startOfDay(new Date()), []);
+  const min = useMemo(() => startOfDay(minDate ?? today), [minDate, today]);
+  const currentYear = today.getFullYear();
   const minYear = min.getFullYear();
-  const firstYear = minYear - yearsBehind;
-  const maxYear = minYear + yearsAhead;
+  const firstYear = Math.min(minYear, currentYear) - yearsBehind;
+  const maxYear = Math.max(minYear, currentYear) + yearsAhead;
 
   const initial = activeDate ? fromISODate(activeDate) : selectedDates[0] ? fromISODate(selectedDates[0]) : min;
   const [year, setYear] = useState(initial.getFullYear());
@@ -72,8 +77,8 @@ export default function DaysOfMonth({
     return { iso: toISODate(date), day: i + 1, weekday: WEEKDAYS[date.getDay()], disabled: date < min };
   });
 
-  const atMinMonth = year === firstYear && month === 0;
-  const atMaxMonth = year === maxYear && month === 11;
+  const atMinMonth = year < firstYear || (year === firstYear && month === 0);
+  const atMaxMonth = year > maxYear || (year === maxYear && month === 11);
 
   const shiftMonth = (delta: number) => {
     let y = year;
@@ -83,12 +88,14 @@ export default function DaysOfMonth({
     if (y < firstYear || y > maxYear) return;
     setYear(y);
     setMonth(m);
+    onMonthChange?.(y, m);
   };
 
   const shiftYear = (delta: number) => {
     const y = year + delta;
     if (y < firstYear || y > maxYear) return;
     setYear(y);
+    onMonthChange?.(y, month);
   };
 
   const updateScrollState = () => {
@@ -124,9 +131,26 @@ export default function DaysOfMonth({
     return () => window.removeEventListener('resize', updateScrollState);
   }, []);
 
-  const scrollStrip = (direction: 1 | -1) => {
+  const handleStripNav = (direction: 1 | -1) => {
     const el = stripRef.current;
-    if (el) el.scrollBy({ left: direction * el.clientWidth * 0.7, behavior: 'smooth' });
+    if (!el) return;
+    if (direction === 1) {
+      const canScrollMoreRight = el.scrollLeft + el.clientWidth < el.scrollWidth - 10;
+      if (canScrollMoreRight) {
+        el.scrollBy({ left: el.clientWidth * 0.7, behavior: 'smooth' });
+        setTimeout(updateScrollState, 250);
+      } else {
+        shiftMonth(1);
+      }
+    } else {
+      const canScrollMoreLeft = el.scrollLeft > 10;
+      if (canScrollMoreLeft) {
+        el.scrollBy({ left: -el.clientWidth * 0.7, behavior: 'smooth' });
+        setTimeout(updateScrollState, 250);
+      } else {
+        shiftMonth(-1);
+      }
+    }
   };
 
   const stepper = 'flex h-full w-6 shrink-0 items-center justify-center text-gray-400 transition-colors enabled:hover:text-[#0012FF] disabled:cursor-not-allowed disabled:opacity-30 enabled:cursor-pointer';
@@ -150,7 +174,7 @@ export default function DaysOfMonth({
 
       {/* Days of the month */}
       <div className={cn(box, 'order-3 h-[64px] w-full min-w-0 items-center px-1.5 sm:order-2 sm:w-auto sm:flex-1')}>
-        <button type="button" aria-label="Scroll days left" disabled={!canScroll.left} onClick={() => scrollStrip(-1)} className={stepper}>
+        <button type="button" aria-label={canScroll.left ? 'Scroll days left' : 'Previous month'} title={canScroll.left ? 'Scroll days left' : 'Previous month'} disabled={atMinMonth && !canScroll.left} onClick={() => handleStripNav(-1)} className={stepper}>
           <ChevronLeft size={16} />
         </button>
         <div
@@ -195,7 +219,7 @@ export default function DaysOfMonth({
             );
           })}
         </div>
-        <button type="button" aria-label="Scroll days right" disabled={!canScroll.right} onClick={() => scrollStrip(1)} className={stepper}>
+        <button type="button" aria-label={canScroll.right ? 'Scroll days right' : 'Next month'} title={canScroll.right ? 'Scroll days right' : 'Next month'} disabled={atMaxMonth && !canScroll.right} onClick={() => handleStripNav(1)} className={stepper}>
           <ChevronRight size={16} />
         </button>
       </div>

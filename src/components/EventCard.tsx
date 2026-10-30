@@ -109,7 +109,7 @@ export default function EventCard({
           {onToggleVisibility && (
             <button
               type="button"
-              aria-label={event.visible ? 'Hide event' : 'Show event'}
+              aria-label={event.visible ? 'Hide event' : 'Unhide event'}
               title={event.visible ? 'Visible to followers' : 'Hidden from followers'}
               onClick={(e) => {
                 e.stopPropagation();

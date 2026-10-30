@@ -1075,6 +1075,24 @@ const CreatorDashboard = () => {
             selectedDates={[selectedDateIso]}
             activeDate={selectedDateIso}
             onDateClick={(iso) => setCurrentDate(fromISODate(iso))}
+            onMonthChange={(newYear, newMonth) => {
+              const monthPrefix = newYear + '-' + String(newMonth + 1).padStart(2, '0');
+              const todayIso = toISODate(new Date());
+              if (todayIso.startsWith(monthPrefix)) {
+                const upcomingThisMonth = markedBookingDates
+                  .filter((iso) => iso.startsWith(monthPrefix) && iso >= todayIso)
+                  .sort();
+                if (upcomingThisMonth[0]) {
+                  setCurrentDate(fromISODate(upcomingThisMonth[0]));
+                  return;
+                }
+                setCurrentDate(fromISODate(todayIso));
+                return;
+              }
+              const monthBookings = markedBookingDates.filter((iso) => iso.startsWith(monthPrefix)).sort();
+              const targetIso = monthBookings[0] || (monthPrefix + '-01');
+              setCurrentDate(fromISODate(targetIso));
+            }}
             minDate={new Date(2020, 0, 1)}
             yearsBehind={0}
             yearsAhead={5}

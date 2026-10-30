@@ -20,6 +20,8 @@ function serialize(event: any, creator?: any) {
     description: event.description,
     bannerUrl: event.bannerUrl || '',
     category: event.category || '',
+    eventMode: event.eventMode || '',
+    location: event.location || '',
     dates: event.dates || [],
     publishedAt: event.publishedAt || null,
     createdAt: event.createdAt,
@@ -29,6 +31,8 @@ function serialize(event: any, creator?: any) {
           username: creator.username || '',
           displayName: creator.displayName || 'Creator',
           profilePhoto: creator.profilePhoto || null,
+          city: creator.city || '',
+          country: creator.country || '',
         }
       : null,
   };
@@ -57,6 +61,8 @@ async function getFeaturedEvents() {
           description: 1,
           bannerUrl: 1,
           category: 1,
+          eventMode: 1,
+          location: 1,
           creatorId: 1,
           publishedAt: 1,
           dates: ['$dates'],
@@ -86,6 +92,8 @@ async function getFeaturedEvents() {
           description: event.description,
           bannerUrl: event.bannerUrl || '',
           category: event.category || '',
+          eventMode: event.eventMode || '',
+          location: event.location || '',
           dates: event.dates || [],
           creator: {
             username: creator.username || '',
@@ -135,7 +143,7 @@ export async function GET(request: NextRequest) {
           userId: { $in: creatorIds },
           isDeactivated: { $ne: true },
         })
-          .select('userId username displayName profilePhoto')
+          .select('userId username displayName profilePhoto city country')
           .lean()
       : [];
 

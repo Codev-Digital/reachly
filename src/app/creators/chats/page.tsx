@@ -7,6 +7,7 @@ import CreatorDashboardNav from '@/components/CreatorDashboardNav';
 import VoicePlayer from '@/components/VoicePlayer';
 import ChatAttachmentBubble from '@/components/chat/ChatAttachmentBubble';
 import ChatMessageShell, { chatTextBubbleClass } from '@/components/chat/ChatMessageShell';
+import MediaPreviewBar from '@/components/chat/MediaPreviewBar';
 import {
   attachmentTypeForFile,
   filterChatFiles,
@@ -55,6 +56,7 @@ interface ConversationInfo {
   isCreator: boolean;
   isArchivedByCreator?: boolean;
   isOnline?: boolean;
+  participantCount?: number;
 }
 
 interface ChatMessage {
@@ -211,8 +213,11 @@ export default function ChatsPage() {
   const uploadAbortController = useRef<AbortController | null>(null);
   const sendingRef = useRef<boolean>(false);
 
-  const triggerFileInput = () => {
-    if (fileInputRef.current) fileInputRef.current.click();
+  const triggerFileInput = (onlyImages?: boolean) => {
+    if (fileInputRef.current) {
+      fileInputRef.current.accept = onlyImages ? 'image/*' : 'image/*,video/*,application/pdf,.doc,.docx,.xls,.xlsx';
+      fileInputRef.current.click();
+    }
   };
 
   const cancelUpload = () => {
@@ -238,7 +243,10 @@ export default function ChatsPage() {
     if (fileInputRef.current) fileInputRef.current.value = '';
     if (!files.length) return;
 
-    const { accepted, oversized, error } = filterChatFiles(files);
+    const canCombine = previewFiles.length > 0 && previewFiles.every((f) => f.type.startsWith('image/')) && files.every((f) => f.type.startsWith('image/'));
+    const combined = canCombine ? [...previewFiles, ...files] : files;
+
+    const { accepted, oversized, error } = filterChatFiles(combined);
     if (error) {
       setFileError(error);
       return;
@@ -450,7 +458,7 @@ export default function ChatsPage() {
       if (res.ok) {
         const data = await res.json();
         const list: ConversationInfo[] = (data.conversations || [])
-          .filter((c: any) => c.scheduledDate || c.type === 'broadcast')
+          .filter((c: any) => c.scheduledDate || c.type === 'broadcast' || c.lastMessage || c.ref)
           .map((c: any) => ({
             id: c.id,
             conversationId: c.conversationId,
@@ -477,6 +485,7 @@ export default function ChatsPage() {
             isCreator: c.isCreator,
             isArchivedByCreator: c.isArchivedByCreator ?? false,
             isOnline: c.isOnline || false,
+            participantCount: Number(c.participantCount) || (Array.isArray(c.participants) ? c.participants.length : 0),
           }))
           .sort((a: ConversationInfo, b: ConversationInfo) => {
             const hasMsgA = !!a.lastMessageTime;
@@ -1225,8 +1234,8 @@ export default function ChatsPage() {
       (c.follower || '').toLowerCase().includes(q) ||
       (c.session || '').toLowerCase().includes(q);
   });
-  const filteredConversations = allFiltered.filter(c => !c.isArchivedByCreator);
-  const archivedConversations = allFiltered.filter(c => c.isArchivedByCreator);
+  const filteredConversations = allFiltered;
+  const archivedConversations: any[] = [];
 
   return (
     <div className="fixed inset-0 flex flex-col bg-[#F8F8FA] overflow-hidden">
@@ -1408,10 +1417,25 @@ export default function ChatsPage() {
                           style={{ width: 44, height: 44 }}
                         />
                       </div>
-                      <div className={`absolute bottom-0 right-0 w-3.5 h-3.5 border-3 border-white rounded-full ${onlineCount > 1 ? 'bg-[#12B76A]' : 'bg-gray-400'}`}></div>
+                      {activeConv.type !== 'broadcast' && (
+                        <div className={`absolute bottom-0 right-0 w-3.5 h-3.5 border-3 border-white rounded-full ${onlineCount > 1 ? 'bg-[#12B76A]' : 'bg-gray-400'}`}></div>
+                      )}
                     </div>
                     <div className="min-w-0">
-                      <h3 className="text-base font-bold text-gray-900 truncate">{activeConv.follower}</h3>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <h3 className="text-base font-bold text-gray-900 truncate">
+                          {activeConv.follower}
+                        </h3>
+                        {activeConv.type !== 'broadcast' && (
+                          <span
+                            className={`text-xs font-medium shrink-0 ${
+                              onlineCount > 1 ? 'text-[#12B76A]' : 'text-gray-400'
+                            }`}
+                          >
+                            {onlineCount > 1 ? 'Online' : 'Offline'}
+                          </span>
+                        )}
+                      </div>
                       {(() => {
                         const isBroadcast = activeConv.type === 'broadcast';
                         const creatorTyping = typingUsers.find((u) => u.role === 'creator');
@@ -1443,25 +1467,28 @@ export default function ChatsPage() {
                           );
                         }
 
-                        if (isBroadcast) {
+                        if (activeConv.email) {
                           return (
-                            <div className="mt-0.5 flex items-center gap-1.5">
-                              <span className={`h-2 w-2 rounded-full ${onlineCount > 1 ? 'bg-[#12B76A]' : 'bg-gray-400'}`} />
-                              <span className="text-xs font-medium text-gray-400">
-                                {onlineCount > 1 ? `${onlineCount} Online` : 'Offline'}
-                              </span>
-                            </div>
+                            <span className="mt-0.5 block truncate text-xs font-medium text-gray-400">
+                              {activeConv.email}
+                            </span>
                           );
                         }
 
-                        return (
-                          <div className="mt-0.5 flex items-center gap-1.5">
-                            <span className={`h-2 w-2 rounded-full ${onlineCount > 1 ? 'bg-[#12B76A]' : 'bg-gray-400'}`} />
-                            <span className="text-xs font-medium text-gray-400">
-                              {onlineCount > 1 ? 'Online' : 'Offline'}
+                        if (isBroadcast) {
+                          const count = activeConv.participants?.length || activeConv.participantCount || 0;
+                          return (
+                            <span className="mt-0.5 block truncate text-xs font-medium text-gray-400">
+                              {onlineCount > 1
+                                ? `${onlineCount} Online`
+                                : count > 0
+                                  ? `${count} participants`
+                                  : (activeConv.session || 'Event Chat')}
                             </span>
-                          </div>
-                        );
+                          );
+                        }
+
+                        return null;
                       })()}
                     </div>
                   </div>
@@ -1488,6 +1515,7 @@ export default function ChatsPage() {
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" /></svg>
                     </button> */}
                     {/* 3-dot menu with dropdown */}
+                    {activeConv?.isCreator !== false && (
                     <div className="relative">
                       <button
                         onClick={() => setShowDotsMenu(prev => !prev)}
@@ -1500,31 +1528,27 @@ export default function ChatsPage() {
                           <div className="fixed inset-0 z-10" onClick={() => setShowDotsMenu(false)} />
                           <div className="absolute right-0 top-10 z-20 bg-white rounded-2xl shadow-xl border border-gray-100 py-1.5 min-w-[180px] overflow-hidden">
                             {/* Lock / Unlock — only for the creator side */}
-                            {activeConv?.isCreator !== false && (
-                              <>
-                                <button
-                                  onClick={() => { setShowDotsMenu(false); handleLockToggleClick(); }}
-                                  disabled={isLockingLoading}
-                                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-                                >
-                                  {isChatLocked ? (
-                                    <>
-                                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 9.9-1" /></svg>
-                                      {isLockingLoading ? 'Unlocking...' : 'Unlock Chat'}
-                                    </>
-                                  ) : (
-                                    <>
-                                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
-                                      {isLockingLoading ? 'Locking...' : 'Lock Chat'}
-                                    </>
-                                  )}
-                                </button>
-                                <div className="border-t border-gray-100 my-1" />
-                              </>
-                            )}
+                            <button
+                              onClick={() => { setShowDotsMenu(false); handleLockToggleClick(); }}
+                              disabled={isLockingLoading}
+                              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+                            >
+                              {isChatLocked ? (
+                                <>
+                                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 9.9-1" /></svg>
+                                  {isLockingLoading ? 'Unlocking...' : 'Unlock Chat'}
+                                </>
+                              ) : (
+                                <>
+                                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                                  {isLockingLoading ? 'Locking...' : 'Lock Chat'}
+                                </>
+                              )}
+                            </button>
                             {/* Participants — event / broadcast chats only */}
-                            {activeConv?.type === 'broadcast' && activeConv?.isCreator !== false && (
+                            {activeConv?.type === 'broadcast' && (
                               <>
+                                <div className="border-t border-gray-100 my-1" />
                                 <button
                                   onClick={openParticipantsModal}
                                   className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
@@ -1532,47 +1556,24 @@ export default function ChatsPage() {
                                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
                                   Participants
                                 </button>
-                                <div className="border-t border-gray-100 my-1" />
                               </>
                             )}
-                            {/* Archive / Unarchive */}
-                            {activeConv?.isArchivedByCreator ? (
-                              <button
-                                onClick={() => handleArchiveChat(false)}
-                                disabled={isArchivingChat}
-                                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-                              >
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="5" rx="1" /><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8" /><path d="M10 12h4" /></svg>
-                                {isArchivingChat ? 'Unarchiving...' : 'Unarchive Chat'}
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => handleArchiveChat(true)}
-                                disabled={isArchivingChat}
-                                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-                              >
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="5" rx="1" /><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8" /><path d="M10 12h4" /></svg>
-                                {isArchivingChat ? 'Archiving...' : 'Archive Chat'}
-                              </button>
-                            )}
-                            {activeConv?.isCreator !== false && (
-                              <>
-                                <div className="border-t border-gray-100 my-1" />
-                                <button
-                                  onClick={() => { setShowDotsMenu(false); setShowClearModal(true); }}
-                                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors"
-                                >
-                                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4h6v2" /></svg>
-                                  Delete Chat
-                                </button>
-                              </>
-                            )}
+
+                            <div className="border-t border-gray-100 my-1" />
+                            <button
+                              onClick={() => { setShowDotsMenu(false); setShowClearModal(true); }}
+                              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                            >
+                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4h6v2" /></svg>
+                              Delete Chat
+                            </button>
                           </div>
 
 
                         </>
                       )}
                     </div>
+                    )}
                   </div>
                 </div>
 
@@ -1841,52 +1842,12 @@ export default function ChatsPage() {
                           </div>
                         )}
                         {previewFiles.length > 0 && !isUploading && (
-                          <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-[110]" onClick={() => setPreviewFiles([])}>
-                            <div className="bg-white border border-gray-200 rounded-3xl p-6 shadow-2xl relative flex flex-col gap-4 w-[90%] max-w-[450px]" onClick={(e) => e.stopPropagation()}>
-                              <div className="flex justify-between items-center w-full pb-3 border-b border-gray-100">
-                                <span className="text-base font-bold text-gray-800">
-                                  {previewFiles.length > 1 ? `Preview ${previewFiles.length} images` : 'Preview Attachment'}
-                                </span>
-                                <button onClick={() => setPreviewFiles([])} className="text-gray-400 hover:text-gray-600 transition-colors p-1 hover:bg-gray-100 rounded-full">
-                                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-                                </button>
-                              </div>
-
-                              {previewFiles.every((f) => f.type.startsWith('image/')) && previewFiles.length > 1 ? (
-                                <div className="grid max-h-[350px] grid-cols-2 gap-2 overflow-y-auto rounded-2xl border border-gray-100 bg-gray-50 p-2">
-                                  {previewFiles.map((file, i) => (
-                                    <div key={`${file.name}-${i}`} className="aspect-square overflow-hidden rounded-xl bg-black/5">
-                                      <img src={URL.createObjectURL(file)} alt={file.name} className="h-full w-full object-cover" />
-                                    </div>
-                                  ))}
-                                </div>
-                              ) : (
-                                <div className="flex items-center justify-center bg-gray-50 rounded-2xl overflow-hidden min-h-[200px] max-h-[350px] p-2 border border-gray-100">
-                                  {previewFiles[0].type.startsWith('image/') ? (
-                                    <img src={URL.createObjectURL(previewFiles[0])} alt="Preview" className="max-w-full max-h-[330px] object-contain rounded-lg" />
-                                  ) : previewFiles[0].type.startsWith('video/') ? (
-                                    <video src={URL.createObjectURL(previewFiles[0])} className="max-w-full max-h-[330px] object-contain rounded-lg" controls />
-                                  ) : (
-                                    <div className="flex flex-col items-center gap-3 p-8 text-gray-500">
-                                      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                                      <span className="text-sm font-semibold text-center truncate max-w-[280px]">{previewFiles[0].name}</span>
-                                      <span className="text-xs opacity-75">{formatFileSizeMb(previewFiles[0].size)}</span>
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-
-                              <div className="flex justify-end gap-3 mt-2">
-                                <button onClick={() => setPreviewFiles([])} className="px-5 py-2.5 text-sm font-semibold text-gray-500 hover:bg-gray-100 rounded-full transition-colors cursor-pointer">
-                                  Cancel
-                                </button>
-                                <button onClick={() => { startUpload(previewFiles); setPreviewFiles([]); }} className="px-6 py-2.5 text-sm font-bold text-white bg-[#0012FF] hover:bg-[#0010d0] rounded-full transition-colors shadow-lg active:scale-98 flex items-center gap-2 cursor-pointer">
-                                  <span>Send</span>
-                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
-                                </button>
-                              </div>
-                            </div>
-                          </div>
+                          <MediaPreviewBar
+                            files={previewFiles}
+                            onRemove={(index) => setPreviewFiles((prev) => prev.filter((_, i) => i !== index))}
+                            onClear={() => setPreviewFiles([])}
+                            onAddMore={() => triggerFileInput(true)}
+                          />
                         )}
                         <input type="file" ref={fileInputRef} hidden multiple accept="image/*,video/*,application/pdf,.doc,.docx,.xls,.xlsx" onChange={handleFileInput} />
 
@@ -1906,9 +1867,14 @@ export default function ChatsPage() {
                                 </button>
                                 <button
                                   onClick={stopRecording}
-                                  className="bg-red-600 hover:bg-red-700 text-white rounded-full py-1.5 px-4 text-xs font-bold shadow-md shadow-red-200"
+                                  aria-label="Send Voice Note"
+                                  title="Send Voice Note"
+                                  className="w-8 h-8 rounded-full bg-red-600 hover:bg-red-700 active:scale-95 text-white flex items-center justify-center shadow-md shadow-red-200 transition-all cursor-pointer"
                                 >
-                                  Send Voice
+                                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="translate-x-[1px]">
+                                    <line x1="22" y1="2" x2="11" y2="13" />
+                                    <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                                  </svg>
                                 </button>
                               </div>
                             </div>
@@ -1924,11 +1890,11 @@ export default function ChatsPage() {
                                     handleSendMessage();
                                   }
                                 }}
-                                placeholder="Type a message..."
+                                placeholder={previewFiles.length > 0 ? "Add a caption..." : "Type a message..."}
                                 className="w-full bg-[#F8F8F8] border border-transparent rounded-full py-3 pl-5 pr-20 text-xs sm:text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0012FF]/10 focus:border-[#0012FF]/20 transition-all"
                               />
                               <button
-                                onClick={triggerFileInput}
+                                onClick={() => triggerFileInput(false)}
                                 className="absolute right-10 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                                 title="Attach File"
                               >

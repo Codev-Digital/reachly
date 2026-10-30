@@ -10,7 +10,7 @@ import UserNavbar from '@/components/UserNavbar';
 import AdminNavbar from '@/components/AdminNavbar';
 import CreatorDashboardNav from '@/components/CreatorDashboardNav';
 import GuestLoginModal from '@/components/GuestLoginModal';
-import { formatEventCardDate, formatEventCardTime } from '@/lib/eventDisplay';
+import { formatEventCardDate, formatEventCardTime, formatEventLocation } from '@/lib/eventDisplay';
 import { isRichTextEmpty } from '@/lib/richText';
 import { cn } from '@/lib/cn';
 import { pktTodayISO } from '@/lib/pkt';
@@ -41,6 +41,8 @@ interface EventDetail {
   description: string;
   bannerUrl: string;
   category: string;
+  eventMode?: string;
+  location?: string;
   dates: EventDate[];
   refundPolicy: string;
   termsAndConditions: string;
@@ -69,6 +71,8 @@ interface EventSales {
     quantity: number;
     seats: number;
     amount: number;
+    status?: string;
+    paymentStatus?: string;
     purchasedAt: string;
     ticketRef: string;
   }>;
@@ -219,12 +223,7 @@ export default function PublicEventDetailPage() {
   const activeDateIsPast = !isPreview && !!activeDate && activeDate.date < pktTodayISO();
   const tiers = activeDate?.tiers ?? [];
 
-  const locationLabel = useMemo(() => {
-    if (!event?.creator) return event?.category || 'Location TBA';
-    const place = [event.creator.city, event.creator.country].filter(Boolean).join(', ');
-    if (place) return place;
-    return event.creator.displayName || event.category || 'Location TBA';
-  }, [event]);
+  const locationLabel = useMemo(() => formatEventLocation(event), [event]);
 
   const selectedTier = useMemo(() => {
     if (!selectedTierKey) return null;
@@ -585,7 +584,7 @@ export default function PublicEventDetailPage() {
                         className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
                       >
                         {event.status === 'published' ? <EyeOff size={16} /> : <Eye size={16} />}
-                        {event.status === 'published' ? 'Hide event' : 'Show event'}
+                        {event.status === 'published' ? 'Hide event' : 'Unhide event'}
                       </button>
                       <button
                         type="button"
@@ -735,6 +734,7 @@ export default function PublicEventDetailPage() {
                           <th className="px-4 py-3">Event date</th>
                           <th className="px-4 py-3">Ticket tier</th>
                           <th className="px-4 py-3">Tickets / seats</th>
+                          <th className="px-4 py-3">Status</th>
                           <th className="px-4 py-3">Purchased</th>
                           <th className="px-5 py-3 text-right sm:px-6">Amount</th>
                         </tr>
@@ -751,6 +751,17 @@ export default function PublicEventDetailPage() {
                             <td className="px-4 py-4">
                               <span className="font-semibold text-gray-900">{buyer.quantity}</span>
                               <span className="text-gray-500"> tickets · {buyer.seats} {buyer.seats === 1 ? 'seat' : 'seats'}</span>
+                            </td>
+                            <td className="px-4 py-4">
+                              {buyer.status === 'confirmed' || buyer.paymentStatus === 'paid' ? (
+                                <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                                  Confirmed
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">
+                                  Pending Review
+                                </span>
+                              )}
                             </td>
                             <td className="px-4 py-4 text-xs text-gray-500">
                               {new Date(buyer.purchasedAt).toLocaleString()}
@@ -939,7 +950,7 @@ export default function PublicEventDetailPage() {
                   ? 'Delete event'
                   : previewAction === 'hide'
                     ? 'Hide event'
-                    : 'Show event',
+                    : 'Unhide event',
               variant: previewAction === 'delete' || previewAction === 'hide' ? 'destructive' : 'default',
               onClick: () => void confirmPreviewAction(),
               disabled: previewActionSaving,

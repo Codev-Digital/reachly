@@ -24,3 +24,22 @@ export function formatEventCardTime(day?: {
   if (!day.endHour) return start;
   return `${start} - ${day.endHour}:${day.endMinute || '00'} ${day.endPeriod || 'PM'}`;
 }
+
+export function formatEventLocation(event?: {
+  eventMode?: string | null;
+  location?: string | null;
+  category?: string | null;
+  creator?: {
+    city?: string | null;
+    country?: string | null;
+    displayName?: string | null;
+  } | null;
+} | null): string {
+  if (!event) return 'Location TBA';
+  if (event.eventMode === 'Online') return 'Online';
+  if (event.location && event.location.trim()) return event.location.trim();
+  const place = [event.creator?.city, event.creator?.country].filter(Boolean).join(', ');
+  if (place) return place;
+  if (event.eventMode === 'Physical') return 'Location TBA';
+  return event.creator?.displayName || event.category || 'Online';
+}

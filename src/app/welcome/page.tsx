@@ -3,15 +3,13 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Suspense, useEffect, useState, useRef } from "react";
-import LoadingAnimation from "@/components/LoadingAnimation";
 import WelcomeModal from "@/components/WelcomeModal";
 import { safeBookingReturnTo } from "@/lib/postAuthRoute";
 
 function WelcomeContent() {
   const router = useRouter();
-  const { status, update } = useSession();
+  const { data: session, status, update } = useSession();
   const [redirected, setRedirected] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const [isLoadingButton, setIsLoadingButton] = useState(false);
   const [userData, setUserData] = useState<any>(null);
   const searchParams = useSearchParams();
@@ -20,7 +18,7 @@ function WelcomeContent() {
   const hasSelected = useRef(false);
 
   useEffect(() => {
-    if (status === "authenticated" && !redirected) {
+    if (status === "authenticated" && !redirected && !hasSelected.current) {
       const redirectUser = async () => {
         try {
           const res = await fetch("/api/user/me");
@@ -35,7 +33,7 @@ function WelcomeContent() {
             const isAdmin = [
               "admin@reachly.com",
               "abdullahgotaccess@gmail.com",
-            ].includes(user?.email);
+            ].includes(user?.email?.toLowerCase());
 
             if (isAdmin) {
               setRedirected(true);
@@ -93,12 +91,10 @@ function WelcomeContent() {
           }
         } catch (err) {
           console.error("Error fetching user data in welcome page:", err);
-        } finally {
-          setIsLoading(false);
         }
       };
       redirectUser();
-    } else if (status === "unauthenticated") {
+    } else if (status === "unauthenticated" && !hasSelected.current) {
       router.replace("/login");
     }
   }, [status, redirected, router, returnTo]);
@@ -136,12 +132,10 @@ function WelcomeContent() {
     }
   };
 
-  if (isLoading || status === "loading") {
-    return <LoadingAnimation />;
-  }
-
   const firstName =
-    (userData?.user?.name || "").trim().split(" ")[0] || "there";
+    (userData?.user?.name || (status === "authenticated" && session?.user?.name) || "")
+      .trim()
+      .split(" ")[0] || "";
 
   return (
     <div className="min-h-screen w-full bg-white">
@@ -156,7 +150,7 @@ function WelcomeContent() {
 
 export default function WelcomePage() {
   return (
-    <Suspense fallback={<LoadingAnimation />}>
+    <Suspense fallback={<div className="min-h-screen w-full bg-white" />}>
       <WelcomeContent />
     </Suspense>
   );

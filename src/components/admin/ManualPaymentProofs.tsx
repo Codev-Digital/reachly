@@ -260,7 +260,7 @@ export default function ManualPaymentProofs() {
       {/* ─── Screenshot Preview Dialog ─── */}
       <Dialog open={!!selectedProof} onOpenChange={(o) => { if (!o) setSelectedProof(null); }}>
         <DialogContent
-          className="font-poppins max-w-6xl max-h-[96vh] overflow-hidden rounded-[32px] p-0 flex flex-col"
+          className="font-poppins max-w-6xl max-h-[96vh] overflow-hidden rounded-[32px] p-0 flex flex-col z-[115]"
           showCloseButton={false}
           overlayClassName="z-[110]"
           closeClassName=""
@@ -353,7 +353,7 @@ export default function ManualPaymentProofs() {
           },
         ]}
         classNames={{
-          content: 'font-poppins max-w-md rounded-[32px] p-6 sm:p-8',
+          content: 'font-poppins max-w-md rounded-[32px] p-6 sm:p-8 z-[125]',
           overlay: 'z-[120]',
         }}
       />
@@ -394,7 +394,7 @@ export default function ManualPaymentProofs() {
           },
         ]}
         classNames={{
-          content: 'font-poppins max-w-md rounded-[32px] p-6 sm:p-8',
+          content: 'font-poppins max-w-md rounded-[32px] p-6 sm:p-8 z-[125]',
           overlay: 'z-[120]',
         }}
       >

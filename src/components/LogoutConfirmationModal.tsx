@@ -65,10 +65,14 @@ export default function LogoutConfirmationModal({
                     .replace(/^ +/, "")
                     .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
                 });
+                const rememberedEmail = localStorage.getItem('reachly_remember_email');
                 localStorage.clear();
+                if (rememberedEmail) {
+                  localStorage.setItem('reachly_remember_email', rememberedEmail);
+                }
                 sessionStorage.clear();
               }
-              logout('/');
+              logout('/login');
             }}
             className="flex-1 py-3.5 bg-[#0012FF] hover:bg-[#0010d0] text-white rounded-full font-bold text-xs sm:text-sm text-center transition-all shadow-md active:scale-98 cursor-pointer"
           >

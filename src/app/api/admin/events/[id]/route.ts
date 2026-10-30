@@ -42,8 +42,7 @@ export async function GET(_req: NextRequest, context: RouteContext) {
       User.findById(event.creatorId).select('name email profilePhoto').lean(),
       EventPurchase.find({
         eventId: event._id,
-        status: { $in: ['confirmed', 'completed'] },
-        paymentStatus: 'paid',
+        status: { $ne: 'cancelled' },
       }).sort({ createdAt: -1 }).lean(),
     ]);
 
@@ -51,9 +50,9 @@ export async function GET(_req: NextRequest, context: RouteContext) {
     const creatorCity = creatorProfile?.city || '';
     const creatorCountry = creatorProfile?.country || '';
     const locationParts = [creatorCity, creatorCountry].filter(Boolean);
-    const venue = locationParts.length > 0 
-      ? `${locationParts.join(', ')}`
-      : 'Nishat Hotel, Gulberg, Lahore';
+    const venue = (event as any).eventMode === 'Online'
+      ? 'Online'
+      : ((event as any).location?.trim() || (locationParts.length > 0 ? locationParts.join(', ') : 'Location TBA'));
 
     const buyerIds = [...new Set(purchases.map((purchase) => String(purchase.userId)))];
     const buyers = buyerIds.length
@@ -73,6 +72,8 @@ export async function GET(_req: NextRequest, context: RouteContext) {
         quantity,
         seats: quantity * persons,
         amount: (Number(purchase.tierPrice) || 0) * quantity,
+        status: purchase.status || 'pending',
+        paymentStatus: purchase.paymentStatus || 'pending',
         purchasedAt: purchase.createdAt,
         ticketRef: purchase.ticketRef,
       };
@@ -88,6 +89,8 @@ export async function GET(_req: NextRequest, context: RouteContext) {
         description: event.description,
         bannerUrl: event.bannerUrl || '',
         category: event.category || 'Workshops',
+        eventMode: (event as any).eventMode || '',
+        location: (event as any).location || '',
         status: event.status,
         dates: event.dates || [],
         formattedDate: formatEventCardDate(firstDate?.date) || '5 July 2026',
@@ -133,15 +136,15 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
     const { id } = await context.params;
     if (!isValidObjectId(id)) return NextResponse.json({ error: 'Event not found.' }, { status: 404 });
     const body = await req.json().catch(() => ({}));
-    if (body?.action !== 'hide' && body?.action !== 'show') {
-      return NextResponse.json({ error: 'Choose hide or show for this event.' }, { status: 422 });
+    if (body?.action !== 'hide' && body?.action !== 'show' && body?.action !== 'unhide') {
+      return NextResponse.json({ error: 'Choose hide or unhide for this event.' }, { status: 422 });
     }
 
     await connectDB();
     const event = await Event.findOne({ _id: id, deletedAt: null });
     if (!event) return NextResponse.json({ error: 'Event not found.' }, { status: 404 });
 
-    const nextStatus = body.action === 'hide' ? 'draft' : 'published';
+    const nextStatus = (body.action === 'show' || body.action === 'unhide') ? 'published' : 'draft';
     const wasVisible = event.status === 'published';
     if (event.status === 'cancelled') {
       return NextResponse.json({ error: 'Deleted events cannot be shown or hidden.' }, { status: 409 });

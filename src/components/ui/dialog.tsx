@@ -44,17 +44,22 @@ const DialogContent = React.forwardRef<
   (
     { className, children, showCloseButton = true, overlayClassName, closeClassName, ...props },
     ref,
-  ) => (
-    <DialogPortal>
-      <DialogOverlay className={overlayClassName} />
-      <DialogPrimitive.Content
-        ref={ref}
-        className={cn(
-          'ui-dialog-content fixed top-1/2 left-1/2 z-[101] w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 bg-white shadow-xl outline-none',
-          className,
-        )}
-        {...props}
-      >
+  ) => {
+    const overlayZ = overlayClassName?.match(/z-\[(\d+)\]/)?.[1];
+    const defaultContentZ = overlayZ ? `z-[${Number(overlayZ) + 1}]` : 'z-[101]';
+
+    return (
+      <DialogPortal>
+        <DialogOverlay className={overlayClassName} />
+        <DialogPrimitive.Content
+          ref={ref}
+          className={cn(
+            'ui-dialog-content fixed top-1/2 left-1/2 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 bg-white shadow-xl outline-none',
+            defaultContentZ,
+            className,
+          )}
+          {...props}
+        >
         {children}
         {showCloseButton && (
           <DialogPrimitive.Close
@@ -69,7 +74,8 @@ const DialogContent = React.forwardRef<
         )}
       </DialogPrimitive.Content>
     </DialogPortal>
-  ),
+    );
+  },
 );
 DialogContent.displayName = DialogPrimitive.Content.displayName;
 

@@ -17,7 +17,7 @@ import {
   toggleFavouriteApi,
   subscribeFavourites,
 } from '@/lib/favouritesSync';
-import { formatEventCardDate, formatEventCardTime } from '@/lib/eventDisplay';
+import { formatEventCardDate, formatEventCardTime, formatEventLocation } from '@/lib/eventDisplay';
 
 interface LandingEvent {
   id: string;
@@ -294,7 +294,11 @@ export default function Home() {
             .replace(/^ +/, "")
             .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
         });
+        const rememberedEmail = localStorage.getItem('reachly_remember_email');
         localStorage.clear();
+        if (rememberedEmail) {
+          localStorage.setItem('reachly_remember_email', rememberedEmail);
+        }
         sessionStorage.clear();
       }
     };
@@ -1017,7 +1021,7 @@ export default function Home() {
               ))
             ) : landingEvents.length ? landingEvents.map((event, index) => {
               const eventDate = event.dates[0];
-              const location = [event.creator.city, event.creator.country].filter(Boolean).join(', ');
+              const location = formatEventLocation(event);
               return (
               <motion.div
                 key={event.id}

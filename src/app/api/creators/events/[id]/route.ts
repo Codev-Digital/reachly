@@ -25,6 +25,8 @@ function serialize(event: any) {
     description: event.description,
     bannerUrl: event.bannerUrl || '',
     category: event.category || '',
+    eventMode: event.eventMode || '',
+    location: event.location || '',
     dates: event.dates || [],
     refundPolicy: event.refundPolicy || '',
     termsAndConditions: event.termsAndConditions || '',
@@ -89,8 +91,7 @@ export async function GET(_req: NextRequest, context: RouteContext) {
 
   const purchases = await EventPurchase.find({
     eventId: event._id,
-    status: { $in: ['confirmed', 'completed'] },
-    paymentStatus: 'paid',
+    status: { $ne: 'cancelled' },
   }).sort({ createdAt: -1 }).lean();
   const buyerIds = [...new Set(purchases.map((purchase) => String(purchase.userId)))];
   const [buyers, creatorProfile] = await Promise.all([
@@ -118,7 +119,9 @@ export async function GET(_req: NextRequest, context: RouteContext) {
       tier: purchase.tierTitle,
       quantity,
       seats: quantity * persons,
-      amount: Number(purchase.tierPrice) * quantity,
+      amount: (Number(purchase.tierPrice) || 0) * quantity,
+      status: purchase.status || 'pending',
+      paymentStatus: purchase.paymentStatus || 'pending',
       purchasedAt: purchase.createdAt,
       ticketRef: purchase.ticketRef,
     };
@@ -213,6 +216,8 @@ export async function PUT(req: NextRequest, context: RouteContext) {
     event.description = cleaned.value.description;
     event.bannerUrl = bannerUrl;
     event.category = cleaned.value.category;
+    event.eventMode = cleaned.value.eventMode || '';
+    event.location = cleaned.value.location || '';
     event.dates = cleaned.value.dates;
     event.refundPolicy = cleaned.value.refundPolicy;
     event.termsAndConditions = cleaned.value.termsAndConditions;
@@ -280,6 +285,8 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
           description: plain.description,
           bannerUrl: plain.bannerUrl,
           category: plain.category,
+          eventMode: plain.eventMode,
+          location: plain.location,
           dates: plain.dates,
           refundPolicy: plain.refundPolicy,
           termsAndConditions: plain.termsAndConditions,

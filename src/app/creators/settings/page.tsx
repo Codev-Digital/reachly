@@ -306,7 +306,7 @@ export default function CreatorSettings() {
         if (parsed.sessions) setSessions(parsed.sessions);
         if (parsed.enabledDays) setEnabledDays(parsed.enabledDays);
         if (parsed.dayTimes) setDayTimes(parsed.dayTimes);
-        if (parsed.duration) setDuration(parsed.duration);
+        if (parsed.duration && parsed.duration !== '[object Object]') setDuration(parsed.duration);
         if (parsed.locationAddress) setLocationAddress(parsed.locationAddress);
         setLoading(false);
       }
@@ -421,7 +421,19 @@ export default function CreatorSettings() {
               setDayTimes(cacheDayTimes);
             }
             if (avail.duration) {
-              cacheDuration = String(avail.duration);
+              if (typeof avail.duration === 'object' && avail.duration !== null) {
+                const val = (avail.duration as any).value ?? 30;
+                const unit = (avail.duration as any).unit ?? 'min';
+                if (unit === 'hr' || val === 60) {
+                  cacheDuration = val === 60 ? '1 hour' : (val + ' hour');
+                } else {
+                  cacheDuration = val + ' minutes';
+                }
+              } else if (typeof avail.duration === 'string' && avail.duration !== '[object Object]') {
+                cacheDuration = avail.duration;
+              } else {
+                cacheDuration = '30 minutes';
+              }
               setDuration(cacheDuration);
             }
             if (avail.location) {
@@ -592,12 +604,26 @@ export default function CreatorSettings() {
         };
       });
 
+      let durationObj: { value: number; unit: 'min' | 'hr' } = { value: 30, unit: 'min' };
+      if (typeof duration === 'string') {
+        const lower = duration.toLowerCase();
+        if (lower.includes('hour') || lower.includes('hr')) {
+          const match = lower.match(/\d+(\.\d+)?/);
+          durationObj = { value: match ? Math.max(1, Number(match[0])) : 1, unit: 'hr' };
+        } else {
+          const match = lower.match(/\d+/);
+          durationObj = { value: match ? Math.max(15, Number(match[0])) : 30, unit: 'min' };
+        }
+      } else if (typeof duration === 'object' && duration !== null && (duration as any).value) {
+        durationObj = duration;
+      }
+
       const res = await fetch('/api/creator-onboarding/step-5', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           schedule,
-          duration,
+          duration: durationObj,
           location: locationAddress,
           timezone: 'Asia/Karachi'
         })
