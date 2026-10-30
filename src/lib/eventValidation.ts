@@ -47,6 +47,8 @@ export interface CleanEventPayload {
   description: string;
   bannerUrl: string;
   category: string;
+  eventMode?: 'Online' | 'Physical' | '';
+  location?: string;
   dates: IEventDate[];
   refundPolicy: string;
   termsAndConditions: string;
@@ -339,6 +341,17 @@ export function cleanEventPayload(
   }
   if (strict && !category) return { error: 'Category is required.', field: 'category' };
 
+  const rawMode = typeof body.eventMode === 'string' ? body.eventMode.trim() : '';
+  const eventMode: 'Online' | 'Physical' | '' = rawMode === 'Online' || rawMode === 'Physical' ? rawMode : '';
+  if (strict && !eventMode) {
+    return { error: 'Event mode is required.', field: 'eventMode' };
+  }
+
+  const location = typeof body.location === 'string' ? cleanPlainText(body.location, 200) : '';
+  if (strict && eventMode === 'Physical' && !location) {
+    return { error: 'Location is required for physical events.', field: 'location' };
+  }
+
   const dates = cleanDates(body.dates, strict);
   if ('error' in dates) return { error: dates.error, field: 'dates' };
 
@@ -357,6 +370,8 @@ export function cleanEventPayload(
       description: description.value,
       bannerUrl,
       category,
+      eventMode,
+      location,
       dates: dates.value,
       refundPolicy,
       termsAndConditions,

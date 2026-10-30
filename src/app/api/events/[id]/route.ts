@@ -47,6 +47,8 @@ export async function GET(_req: NextRequest, context: RouteContext) {
         description: (event as any).description,
         bannerUrl: (event as any).bannerUrl || '',
         category: (event as any).category || '',
+        eventMode: (event as any).eventMode || '',
+        location: (event as any).location || '',
         dates: (event as any).dates || [],
         refundPolicy: (event as any).refundPolicy || '',
         termsAndConditions: (event as any).termsAndConditions || '',

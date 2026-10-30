@@ -57,6 +57,8 @@ async function getFeaturedEvents() {
           description: 1,
           bannerUrl: 1,
           category: 1,
+          eventMode: 1,
+          location: 1,
           creatorId: 1,
           publishedAt: 1,
           dates: ['$dates'],

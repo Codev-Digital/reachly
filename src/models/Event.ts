@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
 export type EventStatus = 'draft' | 'published' | 'cancelled';
+export type EventMode = 'Online' | 'Physical';
 export type DayPeriod = 'AM' | 'PM';
 
 export interface IEventTier {
@@ -43,6 +44,8 @@ export interface IEvent extends Document {
   description: string; // sanitized HTML
   bannerUrl: string;
   category: string;
+  eventMode?: EventMode | '';
+  location?: string;
   dates: IEventDate[];
   volunteers?: IEventVolunteer[];
   refundPolicy: string;
@@ -137,6 +140,17 @@ const EventSchema = new Schema<IEvent>(
       default: '',
       trim: true,
       maxlength: 40,
+    },
+    eventMode: {
+      type: String,
+      enum: ['Online', 'Physical', ''],
+      default: '',
+    },
+    location: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: 200,
     },
     volunteers: {
       type: [EventVolunteerSchema],

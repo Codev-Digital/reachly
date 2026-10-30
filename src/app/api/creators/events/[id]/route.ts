@@ -25,6 +25,8 @@ function serialize(event: any) {
     description: event.description,
     bannerUrl: event.bannerUrl || '',
     category: event.category || '',
+    eventMode: event.eventMode || '',
+    location: event.location || '',
     dates: event.dates || [],
     refundPolicy: event.refundPolicy || '',
     termsAndConditions: event.termsAndConditions || '',
@@ -213,6 +215,8 @@ export async function PUT(req: NextRequest, context: RouteContext) {
     event.description = cleaned.value.description;
     event.bannerUrl = bannerUrl;
     event.category = cleaned.value.category;
+    event.eventMode = cleaned.value.eventMode || '';
+    event.location = cleaned.value.location || '';
     event.dates = cleaned.value.dates;
     event.refundPolicy = cleaned.value.refundPolicy;
     event.termsAndConditions = cleaned.value.termsAndConditions;
@@ -280,6 +284,8 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
           description: plain.description,
           bannerUrl: plain.bannerUrl,
           category: plain.category,
+          eventMode: plain.eventMode,
+          location: plain.location,
           dates: plain.dates,
           refundPolicy: plain.refundPolicy,
           termsAndConditions: plain.termsAndConditions,

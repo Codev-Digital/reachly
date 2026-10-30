@@ -20,6 +20,8 @@ function serialize(event: any) {
     description: event.description,
     bannerUrl: event.bannerUrl || '',
     category: event.category || '',
+    eventMode: event.eventMode || '',
+    location: event.location || '',
     dates: event.dates || [],
     refundPolicy: event.refundPolicy || '',
     termsAndConditions: event.termsAndConditions || '',
