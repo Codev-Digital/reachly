@@ -91,8 +91,7 @@ export async function GET(_req: NextRequest, context: RouteContext) {
 
   const purchases = await EventPurchase.find({
     eventId: event._id,
-    status: { $in: ['confirmed', 'completed'] },
-    paymentStatus: 'paid',
+    status: { $ne: 'cancelled' },
   }).sort({ createdAt: -1 }).lean();
   const buyerIds = [...new Set(purchases.map((purchase) => String(purchase.userId)))];
   const [buyers, creatorProfile] = await Promise.all([
@@ -120,7 +119,9 @@ export async function GET(_req: NextRequest, context: RouteContext) {
       tier: purchase.tierTitle,
       quantity,
       seats: quantity * persons,
-      amount: Number(purchase.tierPrice) * quantity,
+      amount: (Number(purchase.tierPrice) || 0) * quantity,
+      status: purchase.status || 'pending',
+      paymentStatus: purchase.paymentStatus || 'pending',
       purchasedAt: purchase.createdAt,
       ticketRef: purchase.ticketRef,
     };

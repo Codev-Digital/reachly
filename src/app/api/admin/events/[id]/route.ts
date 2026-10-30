@@ -42,8 +42,7 @@ export async function GET(_req: NextRequest, context: RouteContext) {
       User.findById(event.creatorId).select('name email profilePhoto').lean(),
       EventPurchase.find({
         eventId: event._id,
-        status: { $in: ['confirmed', 'completed'] },
-        paymentStatus: 'paid',
+        status: { $ne: 'cancelled' },
       }).sort({ createdAt: -1 }).lean(),
     ]);
 
@@ -73,6 +72,8 @@ export async function GET(_req: NextRequest, context: RouteContext) {
         quantity,
         seats: quantity * persons,
         amount: (Number(purchase.tierPrice) || 0) * quantity,
+        status: purchase.status || 'pending',
+        paymentStatus: purchase.paymentStatus || 'pending',
         purchasedAt: purchase.createdAt,
         ticketRef: purchase.ticketRef,
       };

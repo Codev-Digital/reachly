@@ -69,6 +69,8 @@ interface EventSales {
     quantity: number;
     seats: number;
     amount: number;
+    status?: string;
+    paymentStatus?: string;
     purchasedAt: string;
     ticketRef: string;
   }>;
@@ -735,6 +737,7 @@ export default function PublicEventDetailPage() {
                           <th className="px-4 py-3">Event date</th>
                           <th className="px-4 py-3">Ticket tier</th>
                           <th className="px-4 py-3">Tickets / seats</th>
+                          <th className="px-4 py-3">Status</th>
                           <th className="px-4 py-3">Purchased</th>
                           <th className="px-5 py-3 text-right sm:px-6">Amount</th>
                         </tr>
@@ -751,6 +754,17 @@ export default function PublicEventDetailPage() {
                             <td className="px-4 py-4">
                               <span className="font-semibold text-gray-900">{buyer.quantity}</span>
                               <span className="text-gray-500"> tickets · {buyer.seats} {buyer.seats === 1 ? 'seat' : 'seats'}</span>
+                            </td>
+                            <td className="px-4 py-4">
+                              {buyer.status === 'confirmed' || buyer.paymentStatus === 'paid' ? (
+                                <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                                  Confirmed
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">
+                                  Pending Review
+                                </span>
+                              )}
                             </td>
                             <td className="px-4 py-4 text-xs text-gray-500">
                               {new Date(buyer.purchasedAt).toLocaleString()}
