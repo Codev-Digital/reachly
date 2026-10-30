@@ -7,6 +7,7 @@ import UserNavbar from '@/components/UserNavbar';
 import VoicePlayer from '@/components/VoicePlayer';
 import ChatAttachmentBubble from '@/components/chat/ChatAttachmentBubble';
 import ChatMessageShell, { chatTextBubbleClass } from '@/components/chat/ChatMessageShell';
+import MediaPreviewBar from '@/components/chat/MediaPreviewBar';
 import {
   attachmentTypeForFile,
   filterChatFiles,
@@ -247,7 +248,7 @@ export default function UserChatsPage() {
     }
 
     setFileError(null);
-    setPreviewFiles(accepted);
+    setPreviewFiles((prev) => [...prev, ...accepted]);
   };
 
   const uploadOneFile = (file: File, signal: AbortSignal, onProgress: (pct: number) => void) =>
@@ -1634,52 +1635,12 @@ export default function UserChatsPage() {
                           </div>
                         )}
                         {previewFiles.length > 0 && !isUploading && (
-                          <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-[110]" onClick={() => setPreviewFiles([])}>
-                            <div className="bg-white border border-gray-200 rounded-3xl p-6 shadow-2xl relative flex flex-col gap-4 w-[90%] max-w-[450px]" onClick={(e) => e.stopPropagation()}>
-                              <div className="flex justify-between items-center w-full pb-3 border-b border-gray-100">
-                                <span className="text-base font-bold text-gray-800">
-                                  {previewFiles.length > 1 ? `Preview ${previewFiles.length} images` : 'Preview Attachment'}
-                                </span>
-                                <button onClick={() => setPreviewFiles([])} className="text-gray-400 hover:text-gray-600 transition-colors p-1 hover:bg-gray-100 rounded-full">
-                                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-                                </button>
-                              </div>
-
-                              {previewFiles.every((f) => f.type.startsWith('image/')) && previewFiles.length > 1 ? (
-                                <div className="grid max-h-[350px] grid-cols-2 gap-2 overflow-y-auto rounded-2xl border border-gray-100 bg-gray-50 p-2">
-                                  {previewFiles.map((file, i) => (
-                                    <div key={`${file.name}-${i}`} className="aspect-square overflow-hidden rounded-xl bg-black/5">
-                                      <img src={URL.createObjectURL(file)} alt={file.name} className="h-full w-full object-cover" />
-                                    </div>
-                                  ))}
-                                </div>
-                              ) : (
-                                <div className="flex items-center justify-center bg-gray-50 rounded-2xl overflow-hidden min-h-[200px] max-h-[350px] p-2 border border-gray-100">
-                                  {previewFiles[0].type.startsWith('image/') ? (
-                                    <img src={URL.createObjectURL(previewFiles[0])} alt="Preview" className="max-w-full max-h-[330px] object-contain rounded-lg" />
-                                  ) : previewFiles[0].type.startsWith('video/') ? (
-                                    <video src={URL.createObjectURL(previewFiles[0])} className="max-w-full max-h-[330px] object-contain rounded-lg" controls />
-                                  ) : (
-                                    <div className="flex flex-col items-center gap-3 p-8 text-gray-500">
-                                      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                                      <span className="text-sm font-semibold text-center truncate max-w-[280px]">{previewFiles[0].name}</span>
-                                      <span className="text-xs opacity-75">{formatFileSizeMb(previewFiles[0].size)}</span>
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-
-                              <div className="flex justify-end gap-3 mt-2">
-                                <button onClick={() => setPreviewFiles([])} className="px-5 py-2.5 text-sm font-semibold text-gray-500 hover:bg-gray-100 rounded-full transition-colors cursor-pointer">
-                                  Cancel
-                                </button>
-                                <button onClick={() => { startUpload(previewFiles); setPreviewFiles([]); }} className="px-6 py-2.5 text-sm font-bold text-white bg-[#0012FF] hover:bg-[#0010d0] rounded-full transition-colors shadow-lg active:scale-98 flex items-center gap-2 cursor-pointer">
-                                  <span>Send</span>
-                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
-                                </button>
-                              </div>
-                            </div>
-                          </div>
+                          <MediaPreviewBar
+                            files={previewFiles}
+                            onRemove={(index) => setPreviewFiles((prev) => prev.filter((_, i) => i !== index))}
+                            onClear={() => setPreviewFiles([])}
+                            onAddMore={triggerFileInput}
+                          />
                         )}
                         <input type="file" ref={fileInputRef} hidden multiple accept="image/*,video/*,application/pdf,.doc,.docx,.xls,.xlsx" onChange={handleFileInput} />
 
@@ -1700,9 +1661,14 @@ export default function UserChatsPage() {
                                 </button>
                                 <button
                                   onClick={stopRecording}
-                                  className="bg-red-600 hover:bg-red-700 text-white rounded-full py-1.5 px-4 text-xs font-bold shadow-md shadow-red-200"
+                                  aria-label="Send Voice Note"
+                                  title="Send Voice Note"
+                                  className="w-8 h-8 rounded-full bg-red-600 hover:bg-red-700 active:scale-95 text-white flex items-center justify-center shadow-md shadow-red-200 transition-all cursor-pointer"
                                 >
-                                  Send Voice
+                                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="translate-x-[1px]">
+                                    <line x1="22" y1="2" x2="11" y2="13" />
+                                    <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                                  </svg>
                                 </button>
                               </div>
                             </div>
@@ -1719,7 +1685,7 @@ export default function UserChatsPage() {
                                     handleSendMessage();
                                   }
                                 }}
-                                placeholder="Type a message..."
+                                placeholder={previewFiles.length > 0 ? "Add a caption..." : "Type a message..."}
                                 className="w-full bg-[#F8F8F8] border border-transparent rounded-full py-3 pl-5 pr-20 text-xs sm:text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0012FF]/10 focus:border-[#0012FF]/20 transition-all"
                               />
                               <button
