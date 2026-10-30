@@ -450,7 +450,7 @@ export default function ChatsPage() {
       if (res.ok) {
         const data = await res.json();
         const list: ConversationInfo[] = (data.conversations || [])
-          .filter((c: any) => c.scheduledDate || c.type === 'broadcast')
+          .filter((c: any) => c.scheduledDate || c.type === 'broadcast' || c.lastMessage || c.ref)
           .map((c: any) => ({
             id: c.id,
             conversationId: c.conversationId,

@@ -9,6 +9,7 @@ import SessionType from '@/models/SessionType';
 import User from '@/models/User';
 import CreatorProfile from '@/models/CreatorProfile';
 import EventPurchase from '@/models/EventPurchase';
+import { backfillConversationsForUser } from '@/lib/sessionChat';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -31,6 +32,9 @@ export async function GET(request: NextRequest) {
         }
 
         const userId = user._id.toString();
+
+        // Auto-heal / backfill any missing conversations for confirmed bookings
+        await backfillConversationsForUser(user._id, user.email);
 
         // If a date is provided, find bookings on that date first and use them to
         // determine which conversations to show and which booking details to display.

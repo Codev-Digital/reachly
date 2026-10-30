@@ -17,6 +17,7 @@ import EventPaymentProof from '@/models/EventPaymentProof';
 import EventPurchase from '@/models/EventPurchase';
 import Event from '@/models/Event';
 import { addBuyerToEventBroadcast } from '@/lib/eventBroadcastChat';
+import { ensureBookingConversation } from '@/lib/sessionChat';
 
 const BUCKET = process.env.SUPABASE_PAYMENT_PROOFS_BUCKET || process.env.SUPABASE_STORAGE_BUCKET || 'reachly';
 
@@ -104,7 +105,6 @@ export async function PATCH(request: NextRequest) {
     if (eventProof) {
       const purchase = await EventPurchase.findOne({ _id: eventProof.purchaseId, status: 'pending', paymentStatus: 'pending' });
       if (!purchase) return NextResponse.json({ error: 'Event purchase not found or already reviewed.' }, { status: 404 });
-
       if (decision === 'approved') {
         await EventPurchase.updateOne(
           { _id: purchase._id },
@@ -226,6 +226,7 @@ export async function PATCH(request: NextRequest) {
       }
     }
     if (decision === 'approved') {
+      await ensureBookingConversation(booking);
       const buyer = booking.userId
         ? await User.findById(booking.userId)
         : await User.findOne({ email: proof.payerEmail });

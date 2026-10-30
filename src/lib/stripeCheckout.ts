@@ -8,6 +8,7 @@ import EventPurchase from '@/models/EventPurchase';
 import PackagePurchase from '@/models/PackagePurchase';
 import { generateBookingConfirmationEmail, sendEmail } from '@/lib/utils';
 import { richTextToPlain } from '@/lib/richText';
+import { ensureBookingConversation } from '@/lib/sessionChat';
 
 export async function finalizeStripeCheckout(session: Stripe.Checkout.Session) {
   if (session.payment_status !== 'paid') return { paid: false };
@@ -53,6 +54,7 @@ export async function finalizeStripeCheckout(session: Stripe.Checkout.Session) {
     if (!booking || booking.paymentStatus !== 'paid') return { paid: false };
 
     if (newlyPaid) {
+      await ensureBookingConversation(booking);
       const [creator, sessionType] = await Promise.all([
         CreatorProfile.findOne({ userId: booking.creatorId }).lean(),
         SessionType.findById(booking.sessionTypeId).lean(),
