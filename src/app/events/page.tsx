@@ -9,7 +9,7 @@ import AdminNavbar from '@/components/AdminNavbar';
 import CreatorDashboardNav from '@/components/CreatorDashboardNav';
 import EventCard, { EventCardData } from '@/components/EventCard';
 import { richTextPreview } from '@/lib/richText';
-import { formatEventCardDate, formatEventCardTime } from '@/lib/eventDisplay';
+import { formatEventCardDate, formatEventCardTime, formatEventLocation } from '@/lib/eventDisplay';
 
 export default function EventsPage() {
   const router = useRouter();
@@ -53,15 +53,13 @@ export default function EventsPage() {
           const data = await eventsRes.json();
           const mapped: EventCardData[] = (data.events || []).map((e: any) => {
             const first = e.dates?.[0];
-            const creatorLabel = e.creator?.displayName || e.creator?.username;
-            const category = e.category || 'Category TBA';
             return {
               id: e.id,
               title: e.title,
               description: richTextPreview(e.description, 140) || 'No description yet.',
               date: formatEventCardDate(first?.date),
               time: formatEventCardTime(first),
-              location: creatorLabel ? `${category} · ${creatorLabel}` : category,
+              location: formatEventLocation(e),
               image: e.bannerUrl || undefined,
               visible: true,
             };

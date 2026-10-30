@@ -12,7 +12,7 @@ import AvailabilityDateTimePicker from '@/components/booking/AvailabilityDateTim
 import EventCard, { type EventCardData } from '@/components/EventCard';
 import { useBooking, SessionType, sessionPrice, getCachedUserData } from '../layout';
 import { richTextToPlain, richTextPreview } from '@/lib/richText';
-import { formatEventCardDate, formatEventCardTime } from '@/lib/eventDisplay';
+import { formatEventCardDate, formatEventCardTime, formatEventLocation } from '@/lib/eventDisplay';
 
 const COMMA_SVGS = ['/assets/comma-1.svg', '/assets/comma-2.svg', '/assets/comma3.svg'];
 
@@ -332,7 +332,7 @@ export default function BookSessionStep1() {
         description: richTextPreview(e.description, 140) || 'No description yet.',
         date: formatEventCardDate(first?.date),
         time: formatEventCardTime(first),
-        location: e.category || 'Event',
+        location: formatEventLocation(e),
         image: e.bannerUrl || undefined,
         visible: true,
       };

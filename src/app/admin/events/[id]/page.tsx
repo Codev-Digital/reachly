@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import ActionDialog from '@/components/ActionDialog';
-import { formatEventCardDate, formatEventCardTime } from '@/lib/eventDisplay';
+import { formatEventCardDate, formatEventCardTime, formatEventLocation } from '@/lib/eventDisplay';
 import { isRichTextEmpty } from '@/lib/richText';
 import { cn } from '@/lib/cn';
 
@@ -228,7 +228,7 @@ export default function AdminEventDetailPage() {
             <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-xs font-medium text-gray-600">
               <span className="inline-flex items-center gap-1.5"><Calendar size={14} className="text-[#0012FF]" />{formatEventCardDate(activeDate?.date)}</span>
               <span className="inline-flex items-center gap-1.5"><Clock size={14} className="text-[#0012FF]" />{formatEventCardTime(activeDate)}</span>
-              <span className="inline-flex items-center gap-1.5"><MapPin size={14} className="text-[#0012FF]" />{creatorLocation || event.category || 'Location TBA'}</span>
+              <span className="inline-flex items-center gap-1.5"><MapPin size={14} className="text-[#0012FF]" />{formatEventLocation(event)}</span>
             </div>
 
             {!!event.dates.length && (

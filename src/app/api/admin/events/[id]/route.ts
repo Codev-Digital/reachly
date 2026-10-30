@@ -50,9 +50,9 @@ export async function GET(_req: NextRequest, context: RouteContext) {
     const creatorCity = creatorProfile?.city || '';
     const creatorCountry = creatorProfile?.country || '';
     const locationParts = [creatorCity, creatorCountry].filter(Boolean);
-    const venue = locationParts.length > 0 
-      ? `${locationParts.join(', ')}`
-      : 'Nishat Hotel, Gulberg, Lahore';
+    const venue = (event as any).eventMode === 'Online'
+      ? 'Online'
+      : ((event as any).location?.trim() || (locationParts.length > 0 ? locationParts.join(', ') : 'Location TBA'));
 
     const buyerIds = [...new Set(purchases.map((purchase) => String(purchase.userId)))];
     const buyers = buyerIds.length
@@ -89,6 +89,8 @@ export async function GET(_req: NextRequest, context: RouteContext) {
         description: event.description,
         bannerUrl: event.bannerUrl || '',
         category: event.category || 'Workshops',
+        eventMode: (event as any).eventMode || '',
+        location: (event as any).location || '',
         status: event.status,
         dates: event.dates || [],
         formattedDate: formatEventCardDate(firstDate?.date) || '5 July 2026',

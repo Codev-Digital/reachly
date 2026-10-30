@@ -8,7 +8,7 @@ import CreatorDashboardNav from '@/components/CreatorDashboardNav';
 import EventCard, { EventCardData } from '@/components/EventCard';
 import ActionDialog from '@/components/ActionDialog';
 import { richTextPreview } from '@/lib/richText';
-import { formatEventCardDate, formatEventCardTime } from '@/lib/eventDisplay';
+import { formatEventCardDate, formatEventCardTime, formatEventLocation } from '@/lib/eventDisplay';
 
 export default function CreatorEventsPage() {
   const [displayName, setDisplayName] = useState('');
@@ -49,7 +49,7 @@ export default function CreatorEventsPage() {
                 description: richTextPreview(e.description, 140) || 'No description yet.',
                 date: formatEventCardDate(first?.date),
                 time: formatEventCardTime(first),
-                location: e.category || 'Category TBA',
+                location: formatEventLocation(e),
                 image: e.bannerUrl || undefined,
                 visible: e.status === 'published',
               };

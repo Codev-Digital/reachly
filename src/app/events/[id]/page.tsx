@@ -10,7 +10,7 @@ import UserNavbar from '@/components/UserNavbar';
 import AdminNavbar from '@/components/AdminNavbar';
 import CreatorDashboardNav from '@/components/CreatorDashboardNav';
 import GuestLoginModal from '@/components/GuestLoginModal';
-import { formatEventCardDate, formatEventCardTime } from '@/lib/eventDisplay';
+import { formatEventCardDate, formatEventCardTime, formatEventLocation } from '@/lib/eventDisplay';
 import { isRichTextEmpty } from '@/lib/richText';
 import { cn } from '@/lib/cn';
 import { pktTodayISO } from '@/lib/pkt';
@@ -41,6 +41,8 @@ interface EventDetail {
   description: string;
   bannerUrl: string;
   category: string;
+  eventMode?: string;
+  location?: string;
   dates: EventDate[];
   refundPolicy: string;
   termsAndConditions: string;
@@ -221,12 +223,7 @@ export default function PublicEventDetailPage() {
   const activeDateIsPast = !isPreview && !!activeDate && activeDate.date < pktTodayISO();
   const tiers = activeDate?.tiers ?? [];
 
-  const locationLabel = useMemo(() => {
-    if (!event?.creator) return event?.category || 'Location TBA';
-    const place = [event.creator.city, event.creator.country].filter(Boolean).join(', ');
-    if (place) return place;
-    return event.creator.displayName || event.category || 'Location TBA';
-  }, [event]);
+  const locationLabel = useMemo(() => formatEventLocation(event), [event]);
 
   const selectedTier = useMemo(() => {
     if (!selectedTierKey) return null;
