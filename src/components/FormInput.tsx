@@ -74,6 +74,8 @@ export interface FormInputProps extends Omit<InputHTMLAttributes<HTMLInputElemen
   suffixClassName?: string;
   /** Extra classes for the <input> itself — merged over the defaults. */
   className?: string;
+  /** Override browser-native required validation while retaining the required label indicator. */
+  nativeRequired?: boolean;
   labelClassName?: string;
   errorClassName?: string;
   wrapperClassName?: string;
@@ -91,6 +93,7 @@ export default function FormInput({
   labelClassName,
   errorClassName,
   wrapperClassName,
+  nativeRequired,
   id,
   required,
   ...rest
@@ -138,7 +141,7 @@ export default function FormInput({
           {...rest}
           id={inputId}
           type={isPassword && showPassword ? 'text' : type}
-          required={required}
+          required={nativeRequired ?? required}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? errorId : undefined}
           className={twMerge(

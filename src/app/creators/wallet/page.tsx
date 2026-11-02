@@ -4,7 +4,7 @@ import { useState, useEffect, type FormEvent } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import CreatorDashboardNav from '@/components/CreatorDashboardNav';
-import FormInput, { FormLabel } from '@/components/FormInput';
+import FormInput, { FormError, FormLabel } from '@/components/FormInput';
 import { InfoTooltip } from '@/components/ui/tooltip';
 import { usePreloadImages } from '@/lib/usePreloadImages';
 import {
@@ -71,6 +71,11 @@ export default function CreatorWallet() {
   const [accountNumber, setAccountNumber] = useState('');
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [payoutError, setPayoutError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({
+    bank: '',
+    accountNumber: '',
+    amount: '',
+  });
   const [payoutSuccess, setPayoutSuccess] = useState(false);
   const [payoutEligibleAt, setPayoutEligibleAt] = useState(0);
   const [currentTime, setCurrentTime] = useState(Date.now());
@@ -162,43 +167,47 @@ export default function CreatorWallet() {
     setBankEditing(false);
     setWithdrawAmount('');
     setPayoutError('');
+    setFieldErrors({ bank: '', accountNumber: '', amount: '' });
     setPayoutSuccess(false);
   };
 
   const handlePayoutSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const amount = Number(withdrawAmount);
+    const errors = {
+      bank: '',
+      accountNumber: '',
+      amount: '',
+    };
 
     if (payoutIsOnCooldown) {
       setPayoutError(`Your next payout will be available in about ${cooldownMinutes} minutes.`);
       return;
     }
     if (!selectedBank && !otherBankSelected) {
-      setPayoutError('Please select a bank or wallet.');
-      return;
+      errors.bank = 'Please select a bank or wallet.';
     }
     if (otherBankSelected && !otherBankName.trim()) {
-      setPayoutError('Please enter your bank name.');
-      return;
+      errors.bank = 'Please enter your bank name.';
     }
     if (!accountNumber.trim()) {
-      setPayoutError('Please enter your account number.');
-      return;
+      errors.accountNumber = 'Please enter your account number.';
     }
-    if (!/^[0-9]{6,24}$/.test(accountNumber.replace(/\s/g, ''))) {
-      setPayoutError('Enter a valid account number using 6 to 24 digits.');
-      return;
+    if (accountNumber.trim() && !/^[0-9]{6,24}$/.test(accountNumber.replace(/\s/g, ''))) {
+      errors.accountNumber = 'Enter a valid account number using 6 to 24 digits.';
     }
     if (!Number.isFinite(amount) || amount < 1000) {
-      setPayoutError('Enter an amount between 1,000 and 50,000 PKR.');
-      return;
+      errors.amount = 'Enter an amount between 1,000 and 50,000 PKR.';
     }
     if (amount > 50000) {
-      setPayoutError('The maximum withdrawal amount is 50,000 PKR.');
-      return;
+      errors.amount = 'The maximum withdrawal amount is 50,000 PKR.';
     }
     if (amount > availableBalance) {
-      setPayoutError('The withdrawal amount cannot exceed your available balance.');
+      errors.amount = 'The withdrawal amount cannot exceed your available balance.';
+    }
+    if (errors.bank || errors.accountNumber || errors.amount) {
+      setFieldErrors(errors);
+      setPayoutError('');
       return;
     }
 
@@ -223,6 +232,7 @@ export default function CreatorWallet() {
 
       setPayoutEligibleAt(new Date(data.nextWithdrawDate).getTime());
       setPayoutError('');
+      setFieldErrors({ bank: '', accountNumber: '', amount: '' });
       setPayoutSuccess(true);
     } catch (error) {
       console.error('Failed to submit payout request:', error);
@@ -230,13 +240,13 @@ export default function CreatorWallet() {
     }
   };
 
-  const amountError = withdrawAmount && (
+  const amountError = fieldErrors.amount || (withdrawAmount && (
     Number(withdrawAmount) < 1000
       ? 'Minimum withdrawal amount is 1,000 PKR.'
       : Number(withdrawAmount) > 50000
         ? 'Maximum withdrawal amount is 50,000 PKR.'
         : ''
-  );
+  )) || '';
   const payoutDestinationName = otherBankSelected ? otherBankName : selectedBank?.name;
 
   const filteredTransactions = transactions.filter(txn => {
@@ -518,7 +528,7 @@ export default function CreatorWallet() {
           closeClassName="bg-[#F5F7FF] text-[#0012FF] hover:bg-[#EEF2FF] hover:text-[#0012FF]"
           className={`rounded-[28px] border border-gray-100 p-0 overflow-visible shadow-[0_24px_70px_rgba(15,23,42,0.18)] ${availableBalance < MINIMUM_PAYOUT_BALANCE ? 'max-w-md' : 'max-w-lg'}`}
         >
-          <div className="max-h-[90vh] overflow-y-auto p-6 sm:p-8">
+          <div className="max-h-[90vh] overflow-y-auto no-scrollbar p-6 sm:p-8">
             {availableBalance < MINIMUM_PAYOUT_BALANCE ? (
               <>
                 <DialogHeader className="items-center text-center">
@@ -613,7 +623,7 @@ export default function CreatorWallet() {
                 <div className="relative">
                   <FormLabel htmlFor="payout-bank" required>Bank or wallet</FormLabel>
                   {!bankEditing && (selectedBank || (otherBankSelected && otherBankName)) ? (
-                    <div className="flex items-center gap-3 rounded-lg border border-[#e2e2e2] bg-white px-3.5 py-2.5">
+                    <div className={`flex items-center gap-3 rounded-lg border bg-white px-3.5 py-2.5 ${fieldErrors.bank ? 'border-red-500' : 'border-[#e2e2e2]'}`}>
                       <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-gray-100 bg-[#F5F7FF] p-1">
                         <Image
                           src={selectedBank?.logo || '/assets/wallet.svg'}
@@ -637,9 +647,9 @@ export default function CreatorWallet() {
                       </button>
                     </div>
                   ) : otherBankSelected ? (
-                    <div className="flex items-center gap-3 rounded-lg border border-[#e2e2e2] bg-white px-3.5 py-2.5 transition-all focus-within:border-[#0012FF]">
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-gray-100 bg-[#F5F7FF] p-1">
-                        <Image src="/assets/wallet.svg" alt="" width={32} height={32} unoptimized className="h-full w-full object-contain" />
+                    <div className={`flex items-center gap-3 rounded-lg border bg-white px-3.5 py-2.5 transition-all focus-within:border-[#0012FF] ${fieldErrors.bank ? 'border-red-500 focus-within:border-red-500' : 'border-[#e2e2e2]'}`}>
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center text-[#0012FF]">
+                        <Building2 className="h-4 w-4" />
                       </span>
                       <input
                         id="payout-bank"
@@ -649,9 +659,10 @@ export default function CreatorWallet() {
                         value={otherBankName}
                         onChange={(event) => {
                           setOtherBankName(event.target.value);
+                          setFieldErrors((errors) => ({ ...errors, bank: '' }));
                           setPayoutError('');
                         }}
-                        className="min-w-0 flex-1 bg-transparent py-0.5 text-sm font-semibold text-gray-900 outline-none placeholder:font-normal placeholder:text-gray-400"
+                        className={`min-w-0 flex-1 bg-transparent py-0.5 text-sm font-semibold text-gray-900 outline-none placeholder:font-normal placeholder:text-gray-400 ${fieldErrors.bank ? 'text-red-900' : ''}`}
                       />
                       <button
                         type="button"
@@ -669,7 +680,7 @@ export default function CreatorWallet() {
                       aria-haspopup="listbox"
                       aria-expanded={bankDropdownOpen}
                       onClick={() => setBankDropdownOpen((open) => !open)}
-                      className="flex w-full items-center justify-between rounded-lg border border-[#e2e2e2] bg-white px-3.5 py-3 text-left text-sm transition-all hover:border-[#0012FF] focus:outline-none focus:border-[#0012FF]"
+                      className={`flex w-full items-center justify-between rounded-lg border bg-white px-3.5 py-3 text-left text-sm transition-all hover:border-[#0012FF] focus:outline-none focus:border-[#0012FF] ${fieldErrors.bank ? 'border-red-500 focus:border-red-500' : 'border-[#e2e2e2]'}`}
                     >
                       {selectedBank ? (
                         <span className="flex items-center gap-3">
@@ -684,6 +695,7 @@ export default function CreatorWallet() {
                       <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${bankDropdownOpen ? 'rotate-180' : ''}`} />
                     </button>
                   )}
+                  {fieldErrors.bank && <FormError className="mt-2">{fieldErrors.bank}</FormError>}
 
                   {bankDropdownOpen && (
                     <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-30 max-h-64 overflow-y-auto rounded-xl border border-gray-100 bg-white p-1.5 shadow-xl">
@@ -697,6 +709,7 @@ export default function CreatorWallet() {
                             setSelectedBank(bank);
                             setOtherBankSelected(false);
                             setBankDropdownOpen(false);
+                            setFieldErrors((errors) => ({ ...errors, bank: '' }));
                             setPayoutError('');
                           }}
                           className="flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-[#0012FF]/5"
@@ -717,6 +730,7 @@ export default function CreatorWallet() {
                           setSelectedBank(null);
                           setOtherBankSelected(true);
                           setBankDropdownOpen(false);
+                          setFieldErrors((errors) => ({ ...errors, bank: '' }));
                           setPayoutError('');
                         }}
                         className={`flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-[#0012FF]/5 ${
@@ -740,11 +754,17 @@ export default function CreatorWallet() {
                   id="payout-account"
                   label="Account number"
                   required
+                  nativeRequired={false}
                   inputMode="numeric"
                   placeholder="Enter your account number"
                   icon={<Building2 className="h-4 w-4" />}
                   value={accountNumber}
-                  onChange={(event) => setAccountNumber(event.target.value.replace(/\D/g, ''))}
+                  onChange={(event) => {
+                    setAccountNumber(event.target.value.replace(/\D/g, ''));
+                    setFieldErrors((errors) => ({ ...errors, accountNumber: '' }));
+                    setPayoutError('');
+                  }}
+                  error={fieldErrors.accountNumber || undefined}
                 />
 
                 <FormInput
@@ -757,6 +777,7 @@ export default function CreatorWallet() {
                     </InfoTooltip>
                   }
                   required
+                  nativeRequired={false}
                   type="number"
                   min="1000"
                   max="50000"
@@ -767,6 +788,7 @@ export default function CreatorWallet() {
                   error={amountError || undefined}
                   onChange={(event) => {
                     setWithdrawAmount(event.target.value);
+                    setFieldErrors((errors) => ({ ...errors, amount: '' }));
                     setPayoutError('');
                   }}
                 />
