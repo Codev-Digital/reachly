@@ -587,7 +587,7 @@ export default function Home() {
                     className="flex flex-col w-[290px] sm:w-[325px] shrink-0 group"
                   >
                     {/* Top Image Container */}
-                    <div className="relative w-full h-[300px] sm:h-[330px] rounded-[24px] overflow-hidden bg-gray-100 mb-3 shadow-xs transition-transform duration-300 group-hover:scale-[1.01]">
+                    <div className="relative w-full h-[300px] sm:h-[330px] rounded-t-[12px] overflow-hidden bg-gray-100 mb-3 shadow-xs transition-transform duration-300 group-hover:scale-[1.01]">
                       <img
                         src={creator.profilePhoto || '/merium.png'} loading="lazy" decoding="async"
                         alt={creator.displayName}
@@ -876,7 +876,7 @@ export default function Home() {
                         className="flex flex-col w-[290px] sm:w-[325px] shrink-0 group"
                       >
                         {/* Top Image Container */}
-                        <div className="relative w-full h-[300px] sm:h-[330px] rounded-[24px] overflow-hidden bg-gray-100 mb-3 shadow-xs transition-transform duration-300 group-hover:scale-[1.01]">
+                        <div className="relative w-full h-[300px] sm:h-[330px] rounded-t-[12px] overflow-hidden bg-gray-100 mb-3 shadow-xs transition-transform duration-300 group-hover:scale-[1.01]">
                           <img
                             src={creator.profilePhoto || '/merium.png'} loading="lazy" decoding="async"
                             alt={creator.displayName}
@@ -1253,7 +1253,7 @@ export default function Home() {
               className="flex gap-5 w-max"
             >
               {marqueeTestimonials1.map((t, i) => (
-                <div key={i} className="w-[270px] sm:w-[330px] shrink-0 bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-gray-100 relative">
+                <div key={i} className="w-[270px] sm:w-[330px] shrink-0 bg-white rounded-xl p-5 sm:p-6  border border-[#e2e2e2] relative">
                   {/* Big quote mark top-right */}
                   <div className="absolute -mt-8 sm:-mt-10 right-4 sm:right-5">
                     <img
@@ -1291,7 +1291,7 @@ export default function Home() {
               className="flex gap-5 w-max"
             >
               {marqueeTestimonials2.map((t, i) => (
-                <div key={i} className="w-[270px] sm:w-[330px] shrink-0 bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-gray-100 relative">
+                <div key={i} className="w-[270px] sm:w-[330px] shrink-0 bg-white rounded-xl p-5 sm:p-6  border border-[#e2e2e2] relative">
                   {/* Big quote mark top-right */}
                   <div className="absolute -mt-10 sm:-mt-12 right-4 sm:right-5">
                     <img src={commaSvgs[t.commaIndex]} alt="quote" className="w-12 h-12 sm:w-16 sm:h-16" />

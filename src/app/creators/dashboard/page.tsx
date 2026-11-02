@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -313,7 +313,6 @@ const CreatorDashboard = () => {
           const list = data.bookings || [];
           setDashboardStats(data.stats);
           setBookingsList(list);
-          jumpToNearestBookingDay(list);
           writeDashboardCache({
             dashboardStats: data.stats,
             bookingsList: list,
@@ -358,7 +357,6 @@ const CreatorDashboard = () => {
             const list = data.bookings || [];
             setDashboardStats(data.stats);
             setBookingsList(list);
-            jumpToNearestBookingDay(list);
             writeDashboardCache({
               displayName: nextName,
               profilePhoto: nextPhoto,
@@ -379,33 +377,6 @@ const CreatorDashboard = () => {
       cancelled = true;
     };
   }, []);
-
-  const didAutoJumpDate = useRef(false);
-
-  const jumpToNearestBookingDay = (list: any[]) => {
-    if (didAutoJumpDate.current || !list.length) return;
-    didAutoJumpDate.current = true;
-
-    const todayIso = toISODate(new Date());
-    const hasToday = list.some((b) => bookingDateIso(b) === todayIso);
-    if (hasToday) return;
-
-    const upcomingIsos = list
-      .map((b) => bookingDateIso(b))
-      .filter((iso: string) => iso && iso >= todayIso)
-      .sort();
-    if (upcomingIsos[0]) {
-      setCurrentDate(fromISODate(upcomingIsos[0]));
-      return;
-    }
-
-    const pastIsos = list
-      .map((b) => bookingDateIso(b))
-      .filter(Boolean)
-      .sort();
-    const last = pastIsos[pastIsos.length - 1];
-    if (last) setCurrentDate(fromISODate(last));
-  };
 
   // Fetch reschedule slots when date changes
   useEffect(() => {
@@ -1075,24 +1046,6 @@ const CreatorDashboard = () => {
             selectedDates={[selectedDateIso]}
             activeDate={selectedDateIso}
             onDateClick={(iso) => setCurrentDate(fromISODate(iso))}
-            onMonthChange={(newYear, newMonth) => {
-              const monthPrefix = newYear + '-' + String(newMonth + 1).padStart(2, '0');
-              const todayIso = toISODate(new Date());
-              if (todayIso.startsWith(monthPrefix)) {
-                const upcomingThisMonth = markedBookingDates
-                  .filter((iso) => iso.startsWith(monthPrefix) && iso >= todayIso)
-                  .sort();
-                if (upcomingThisMonth[0]) {
-                  setCurrentDate(fromISODate(upcomingThisMonth[0]));
-                  return;
-                }
-                setCurrentDate(fromISODate(todayIso));
-                return;
-              }
-              const monthBookings = markedBookingDates.filter((iso) => iso.startsWith(monthPrefix)).sort();
-              const targetIso = monthBookings[0] || (monthPrefix + '-01');
-              setCurrentDate(fromISODate(targetIso));
-            }}
             minDate={new Date(2020, 0, 1)}
             yearsBehind={0}
             yearsAhead={5}

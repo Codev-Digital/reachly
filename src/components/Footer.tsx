@@ -289,7 +289,10 @@ export default function Footer() {
           </p>
           <p className="mt-2 text-center font-sans text-[11px] tracking-wide text-white/30">
             Powered by{" "}
-            <span className="font-medium tracking-wider text-white/50">
+            <span onClick={()=>{
+               window.open("https://codevdigital.com", "_blank")
+              }
+            } className="font-medium tracking-wider text-white/50 hover:underline cursor-pointer">
               Codev Digital
             </span>
           </p>
