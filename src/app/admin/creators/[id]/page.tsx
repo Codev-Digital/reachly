@@ -41,6 +41,14 @@ interface Creator {
   happyUsers?: number;
   totalCategories?: number;
   commissionPercent: number;
+  wallet?: {
+    availableBalance: number;
+    lifetimeEarning: number;
+    pendingEarning: number;
+    pendingSessionPayments: number;
+    pendingEventPayments: number;
+    totalPaidOut: number;
+  };
 }
 
 export default function AdminCreatorDetailPage() {
@@ -318,6 +326,44 @@ export default function AdminCreatorDetailPage() {
                 />
               </div>
             </div>
+
+            <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+              <div className="flex flex-col gap-1 border-b border-gray-100 bg-gray-50/70 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h3 className="text-sm font-bold text-gray-950">Creator wallet overview</h3>
+                  <p className="mt-1 text-xs text-gray-500">Earnings and payout totals in PKR</p>
+                </div>
+                <span className="w-fit rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-[#0012FF]">
+                  Financial summary
+                </span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[420px]">
+                  <thead>
+                    <tr className="border-b border-gray-100 bg-white text-left">
+                      <th className="px-5 py-3 text-[10px] font-bold uppercase tracking-wider text-gray-400">Wallet metric</th>
+                      <th className="px-5 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-gray-400">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {([
+                      { label: 'Available balance', value: creator.wallet?.availableBalance ?? 0, tone: 'text-[#0012FF]' },
+                      { label: 'Lifetime earnings', value: creator.wallet?.lifetimeEarning ?? 0, tone: 'text-gray-900' },
+                      { label: 'Session pending payments', value: creator.wallet?.pendingSessionPayments ?? 0, tone: 'text-amber-700' },
+                      { label: 'Events pending payment', value: creator.wallet?.pendingEventPayments ?? 0, tone: 'text-amber-700' },
+                      { label: 'Total paid out', value: creator.wallet?.totalPaidOut ?? 0, tone: 'text-emerald-700' },
+                    ]).map((metric) => (
+                      <tr key={metric.label} className="transition-colors hover:bg-gray-50/70">
+                        <th scope="row" className="px-5 py-3.5 text-left text-sm font-semibold text-gray-600">{metric.label}</th>
+                        <td className={`px-5 py-3.5 text-right text-sm font-extrabold tabular-nums ${metric.tone}`}>
+                          PKR {metric.value.toLocaleString('en-PK')}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
 
             {/* Bio Field 1 */}
             <div className="mt-4 pt-4 border-t border-gray-50">

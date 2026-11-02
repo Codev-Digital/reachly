@@ -7,10 +7,24 @@ import CreatorProfile from '@/models/CreatorProfile';
 import { sanitizeRichText } from '@/lib/sanitizeRichText';
 import CreatorPayment from '@/models/CreatorPayment';
 import Booking from '@/models/Booking';
+import EventPurchase from '@/models/EventPurchase';
+import CreatorPayout from '@/models/CreatorPayout';
 import mongoose from 'mongoose';
+import { autoSettleEarnings } from '@/lib/autoSettleEarnings';
+import { packageInfo } from '@/lib/packageLabels';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
+
+type WalletBooking = {
+  _id: mongoose.Types.ObjectId;
+  creatorId: mongoose.Types.ObjectId;
+  paymentStatus?: string;
+  status?: string;
+  finalPrice?: number;
+  packagePurchaseId?: mongoose.Types.ObjectId | null;
+  sessionNumber?: number;
+};
 
 // Helper to verify admin session
 function isAdmin(email?: string | null) {
@@ -32,6 +46,10 @@ export async function GET(req: NextRequest) {
     const id = new URL(req.url).searchParams.get('id');
     if (id && !mongoose.isValidObjectId(id)) {
       return NextResponse.json({ error: 'Creator not found' }, { status: 404 });
+    }
+
+    if (id) {
+      await autoSettleEarnings(id);
     }
 
     // Fetch creator profiles, payments, and bookings (only this creator's when ?id= is given)
@@ -139,7 +157,79 @@ export async function GET(req: NextRequest) {
       if (!creator) {
         return NextResponse.json({ error: 'Creator not found' }, { status: 404 });
       }
-      return NextResponse.json({ success: true, creator });
+
+      const creatorProfile = profiles[0];
+      const creatorBookings = allBookings.filter(
+        (booking: WalletBooking) => booking.creatorId.toString() === id,
+      ) as WalletBooking[];
+      const [outgoingBookings, payoutRecord, pendingEventPurchases] = await Promise.all([
+        Booking.find({ userId: id, creatorId: { $ne: id } })
+          .select('_id finalPrice packagePurchaseId sessionNumber status paymentStatus')
+          .lean(),
+        CreatorPayout.findOne({ creatorProfileId: creatorProfile._id })
+          .select('payouts')
+          .lean(),
+        EventPurchase.find({
+          creatorId: id,
+          paymentStatus: 'pending',
+          status: { $ne: 'cancelled' },
+        })
+          .select('tierPrice quantity')
+          .lean(),
+      ]);
+
+      const lifetimeEarning = creatorBookings.reduce(
+        (total, booking) =>
+          booking.paymentStatus === 'paid' ? total + Number(booking.finalPrice || 0) : total,
+        0,
+      );
+      const pendingSessionPayments = creatorBookings.reduce(
+        (total, booking) =>
+          booking.paymentStatus === 'pending' &&
+          booking.status !== 'cancelled' &&
+          booking.status !== 'refunded'
+            ? total + Number(booking.finalPrice || 0)
+            : total,
+        0,
+      );
+      const pendingEventPayments = pendingEventPurchases.reduce(
+        (total, purchase) =>
+          total + Number(purchase.tierPrice || 0) * Number(purchase.quantity || 1),
+        0,
+      );
+
+      const payableOutgoingBookings = outgoingBookings.filter(
+        (booking) => !(booking.packagePurchaseId && booking.sessionNumber !== 1),
+      );
+      const { paid: packagePayments } = await packageInfo(payableOutgoingBookings);
+      const outgoingPaid = payableOutgoingBookings.reduce((total, booking) => {
+        if (
+          booking.status === 'cancelled' ||
+          booking.paymentStatus === 'refunded'
+        ) {
+          return total;
+        }
+        return total + (packagePayments.get(String(booking._id)) ?? Number(booking.finalPrice || 0));
+      }, 0);
+      const fundedPayouts = (payoutRecord?.payouts || [])
+        .filter((payout) => payout.status === 'funded')
+        .reduce((total, payout) => total + Number(payout.withdrawAmount || 0), 0);
+      const totalPaidOut = outgoingPaid + fundedPayouts;
+
+      return NextResponse.json({
+        success: true,
+        creator: {
+          ...creator,
+          wallet: {
+            availableBalance: Math.max(0, lifetimeEarning - totalPaidOut),
+            lifetimeEarning,
+            pendingSessionPayments,
+            pendingEventPayments,
+            pendingEarning: pendingSessionPayments + pendingEventPayments,
+            totalPaidOut,
+          },
+        },
+      });
     }
 
     return NextResponse.json({ success: true, creators: formattedCreators });
