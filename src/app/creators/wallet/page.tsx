@@ -514,8 +514,11 @@ export default function CreatorWallet() {
           if (!open) resetPayoutForm();
         }}
       >
-        <DialogContent className={`rounded-[28px] p-0 overflow-visible ${availableBalance < MINIMUM_PAYOUT_BALANCE ? 'max-w-md' : 'max-w-lg'}`}>
-          <div className="max-h-[90vh] overflow-y-auto p-6 sm:p-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <DialogContent
+          closeClassName="bg-[#F5F7FF] text-[#0012FF] hover:bg-[#EEF2FF] hover:text-[#0012FF]"
+          className={`rounded-[28px] border border-gray-100 p-0 overflow-visible shadow-[0_24px_70px_rgba(15,23,42,0.18)] ${availableBalance < MINIMUM_PAYOUT_BALANCE ? 'max-w-md' : 'max-w-lg'}`}
+        >
+          <div className="max-h-[90vh] overflow-y-auto p-6 sm:p-8">
             {availableBalance < MINIMUM_PAYOUT_BALANCE ? (
               <>
                 <DialogHeader className="items-center text-center">
@@ -582,9 +585,11 @@ export default function CreatorWallet() {
                 </button>
               </div>
                 ) : payoutIsOnCooldown ? (
-              <div className="mt-8 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-center">
-                <Clock3 className="mx-auto mb-3 h-10 w-10 text-amber-600" />
-                <h3 className="text-base font-bold text-amber-950">Next Payout In</h3>
+              <div className="mt-8 rounded-2xl border border-[#DDE3FF] bg-[#F7F8FF] p-5 text-center">
+                <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-[#EEF2FF]">
+                  <Clock3 className="h-8 w-8 text-[#0012FF]" />
+                </div>
+                <h3 className="text-base font-bold text-gray-950">Next Payout In</h3>
                 {/* <p className="mt-1 text-sm leading-relaxed text-amber-900">
                   You can submit your next payout request when the eligibility period ends.
                 </p> */}
@@ -595,13 +600,13 @@ export default function CreatorWallet() {
                     ['Minutes', cooldownMinutes],
                     ['Seconds', cooldownSeconds],
                   ].map(([label, value]) => (
-                    <div key={label} className="rounded-xl bg-white px-2 py-2 border border-amber-100">
-                      <p className="text-lg font-extrabold text-amber-900">{String(value).padStart(2, '0')}</p>
-                      <p className="text-[10px] font-bold uppercase tracking-wide text-amber-700">{label}</p>
+                    <div key={label} className="rounded-xl border border-[#E5E9FF] bg-white px-2 py-2">
+                      <p className="text-lg font-extrabold text-[#0012FF]">{String(value).padStart(2, '0')}</p>
+                      <p className="text-[10px] font-bold uppercase tracking-wide text-gray-500">{label}</p>
                     </div>
                   ))}
                 </div>
-                <p className="mt-4 text-xs font-medium text-amber-800">You will be eligible to request a payout after this countdown.</p>
+                <p className="mt-4 text-xs font-medium text-gray-500">You will be eligible to request a payout after this countdown.</p>
               </div>
                 ) : (
               <form onSubmit={handlePayoutSubmit} className="mt-7 space-y-5">
