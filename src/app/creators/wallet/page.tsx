@@ -515,7 +515,7 @@ export default function CreatorWallet() {
         }}
       >
         <DialogContent className={`rounded-[28px] p-0 overflow-visible ${availableBalance < MINIMUM_PAYOUT_BALANCE ? 'max-w-md' : 'max-w-lg'}`}>
-          <div className="max-h-[90vh] overflow-y-auto p-6 sm:p-8">
+          <div className="max-h-[90vh] overflow-y-auto p-6 sm:p-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {availableBalance < MINIMUM_PAYOUT_BALANCE ? (
               <>
                 <DialogHeader className="items-center text-center">
