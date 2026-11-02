@@ -4,6 +4,7 @@ import CreatorNavbar from "@/components/CreatorNavbar";
 import Footer from "@/components/Footer";
 import ContactForm from "@/components/ContactForm";
 
+
 const values = [
   { title: "Real access", text: "Book one-on-one video sessions with creators you follow and learn from." },
   { title: "Verified creators", text: "Every creator is reviewed by our team before their profile goes live." },
