@@ -345,6 +345,7 @@ export default function AdminCreatorDetailPage() {
                       <th className="px-5 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-gray-400">Amount</th>
                     </tr>
                   </thead>
+                  
                   <tbody className="divide-y divide-gray-100">
                     {([
                       { label: 'Available balance', value: creator.wallet?.availableBalance ?? 0, tone: 'text-[#0012FF]' },
