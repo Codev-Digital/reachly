@@ -6,6 +6,7 @@ import Link from 'next/link';
 import CreatorDashboardNav from '@/components/CreatorDashboardNav';
 import FormInput, { FormLabel } from '@/components/FormInput';
 import { InfoTooltip } from '@/components/ui/tooltip';
+import { usePreloadImages } from '@/lib/usePreloadImages';
 import {
   Dialog,
   DialogContent,
@@ -45,8 +46,10 @@ const payoutBanks = [
   { name: 'JazzCash', type: 'Wallet', logo: '/assets/jazzcash.png' },
 ];
 type PayoutBank = (typeof payoutBanks)[number];
+const MINIMUM_PAYOUT_BALANCE = 50000;
 
 export default function CreatorWallet() {
+  usePreloadImages(['/assets/no-appointment.webp', '/assets/booking-confirm-sm.webp']);
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -511,30 +514,58 @@ export default function CreatorWallet() {
           if (!open) resetPayoutForm();
         }}
       >
-        <DialogContent className="max-w-lg rounded-[28px] p-0 overflow-visible">
+        <DialogContent className={`rounded-[28px] p-0 overflow-visible ${availableBalance < MINIMUM_PAYOUT_BALANCE ? 'max-w-md' : 'max-w-lg'}`}>
           <div className="max-h-[90vh] overflow-y-auto p-6 sm:p-8">
-            {/* <div className="mx-auto mb-4 mt-1 h-24 w-24 sm:h-28 sm:w-28"> */}
-              {/* <Image
-                src="/assets/wallet.svg"
-                alt="Wallet payout"
-                width={96}
-                height={96}
-                unoptimized
-                priority
-                className="h-full w-full object-contain"
-              /> */}
-            {/* </div> */}
-            <DialogHeader className="items-center text-center">
-              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[#0012FF]/10 text-[#0012FF]">
-                <WalletCards className="h-5 w-5" />
-              </div>
-              <DialogTitle className="text-2xl">Request a payout</DialogTitle>
-              <DialogDescription className="mt-1">
-                Choose where you want to receive your available balance.
-              </DialogDescription>
-            </DialogHeader>
+            {availableBalance < MINIMUM_PAYOUT_BALANCE ? (
+              <>
+                <DialogHeader className="items-center text-center">
+                  <Image
+                    src="/assets/no-appointment.webp"
+                    alt=""
+                    width={176}
+                    height={132}
+                    unoptimized
+                    priority
+                    className="mb-3 h-28 w-40 object-contain"
+                  />
+                  <DialogTitle className="text-2xl">Build your payout balance</DialogTitle>
+                  <DialogDescription className="mt-2 max-w-sm text-sm leading-relaxed">
+                    You can request a payout once your available wallet balance reaches PKR 50,000.
+                    Keep earning from your bookings and check back when you meet the minimum.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="mt-6 rounded-2xl border border-[#0012FF]/10 bg-[#F7F8FF] p-4 text-center">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Your available balance</p>
+                  <p className="mt-1 text-2xl font-extrabold text-gray-950">PKR {availableBalance.toLocaleString()}</p>
+                 
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsPayoutOpen(false)}
+                  className="mt-5 w-full rounded-xl bg-[#0012FF] px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-[#000dcc]"
+                >
+                  Got it
+                </button>
+              </>
+            ) : (
+              <>
+                <DialogHeader className="items-center text-center">
+                  <Image
+                    src="/assets/booking-confirm-sm.webp"
+                    alt=""
+                    width={144}
+                    height={108}
+                    unoptimized
+                    priority
+                    className="mb-2 h-24 w-32 object-contain"
+                  />
+                  <DialogTitle className="text-2xl">Request a payout</DialogTitle>
+                  <DialogDescription className="mt-1">
+                    Choose where you want to receive your available balance.
+                  </DialogDescription>
+                </DialogHeader>
 
-            {payoutSuccess ? (
+                {payoutSuccess ? (
               <div className="mt-8 rounded-2xl border border-green-200 bg-green-50 p-5 text-center">
                 <CheckCircle2 className="mx-auto mb-3 h-10 w-10 text-green-600" />
                 <h3 className="text-base font-bold text-green-900">Payout request received</h3>
@@ -550,7 +581,7 @@ export default function CreatorWallet() {
                   Done
                 </button>
               </div>
-            ) : payoutIsOnCooldown ? (
+                ) : payoutIsOnCooldown ? (
               <div className="mt-8 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-center">
                 <Clock3 className="mx-auto mb-3 h-10 w-10 text-amber-600" />
                 <h3 className="text-base font-bold text-amber-950">Next Payout In</h3>
@@ -572,7 +603,7 @@ export default function CreatorWallet() {
                 </div>
                 <p className="mt-4 text-xs font-medium text-amber-800">You will be eligible to request a payout after this countdown.</p>
               </div>
-            ) : (
+                ) : (
               <form onSubmit={handlePayoutSubmit} className="mt-7 space-y-5">
                 <div className="relative">
                   <FormLabel htmlFor="payout-bank" required>Bank or wallet</FormLabel>
@@ -748,6 +779,8 @@ export default function CreatorWallet() {
                   {payoutIsOnCooldown ? 'Payout temporarily unavailable' : 'Request payout'}
                 </button>
               </form>
+            )}
+              </>
             )}
           </div>
         </DialogContent>

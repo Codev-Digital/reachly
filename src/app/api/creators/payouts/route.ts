@@ -9,6 +9,7 @@ import CreatorProfile from '@/models/CreatorProfile';
 import User from '@/models/User';
 
 const COOLDOWN_DAYS = 15;
+const MINIMUM_PAYOUT_BALANCE = 50000;
 
 function asAmount(value: unknown) {
   if (typeof value === 'number') return value;
@@ -98,7 +99,14 @@ export async function POST(req: Request) {
     const alreadyRequested = (payoutRecord?.payouts || [])
       .filter((p) => p.status !== 'rejected')
       .reduce((sum, payout) => sum + payout.withdrawAmount, 0);
-    if (withdrawAmount > Math.max(0, earned - alreadyRequested)) {
+    const withdrawableBalance = Math.max(0, earned - alreadyRequested);
+    if (withdrawableBalance < MINIMUM_PAYOUT_BALANCE) {
+      return NextResponse.json(
+        { error: 'Your available wallet balance must be at least PKR 50,000 to request a payout.' },
+        { status: 400 },
+      );
+    }
+    if (withdrawAmount > withdrawableBalance) {
       return NextResponse.json({ error: 'Withdrawal amount exceeds your available balance.' }, { status: 400 });
     }
 
