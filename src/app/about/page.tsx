@@ -10,6 +10,7 @@ const values = [
   { title: "Fair for creators", text: "Creators set their own sessions, prices and availability, and get paid to their bank account." },
 ];
 
+
 export default function AboutPage() {
   return (
     <div className="relative flex min-h-screen flex-col overflow-x-hidden bg-[#070b19] bg-cover bg-center" style={{ backgroundImage: "url('/assets/new-bg-image.png')" }}>
