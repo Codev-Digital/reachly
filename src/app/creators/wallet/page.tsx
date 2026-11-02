@@ -766,7 +766,6 @@ export default function CreatorWallet() {
                   }}
                   error={fieldErrors.accountNumber || undefined}
                 />
-
                 <FormInput
                   id="payout-amount"
                   label="How much would you like to withdraw?"
