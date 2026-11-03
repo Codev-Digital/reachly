@@ -1,3 +1,566 @@
+// import { NextResponse } from 'next/server';
+// import { getServerSession } from 'next-auth';
+// import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+// import connectDB from '@/lib/mongodb';
+// import Booking from '@/models/Booking';
+// import User from '@/models/User';
+// import CreatorProfile from '@/models/CreatorProfile';
+// import SessionType from '@/models/SessionType';
+// import SessionPaymentProof from '@/models/SessionPaymentProof';
+// import { supabaseAdmin } from '@/lib/supabase';
+// import { autoSettleEarnings } from '@/lib/autoSettleEarnings';
+// import mongoose from 'mongoose';
+// import PackagePurchase from '@/models/PackagePurchase';
+// import CreatorPayout from '@/models/CreatorPayout';
+// import EventPurchase from '@/models/EventPurchase';
+// import EventPaymentProof from '@/models/EventPaymentProof';
+
+// export const dynamic = 'force-dynamic';
+
+// function isAdmin(email?: string | null) {
+//   if (!email) return false;
+//   const adminEmails = ['abdullahgotaccess@gmail.com', 'admin@reachly.com'];
+//   return adminEmails.includes(email.toLowerCase());
+// }
+
+// export async function PATCH(req: Request) {
+//   try {
+//     const session = await getServerSession(authOptions);
+//     if (!session?.user?.email || !isAdmin(session.user.email)) {
+//       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+//     }
+
+//     const { payoutId, status, adminRemarks } = await req.json();
+//     if (!mongoose.isValidObjectId(payoutId) || !['funded', 'rejected'].includes(status)) {
+//       return NextResponse.json({ error: 'Invalid payout update.' }, { status: 400 });
+//     }
+
+//     await connectDB();
+//     const update: Record<string, unknown> = {
+//       'payouts.$.status': status,
+//       'payouts.$.adminRemarks': String(adminRemarks || '').trim(),
+//     };
+//     if (status === 'funded') update['payouts.$.fundedAt'] = new Date();
+
+//     const payoutRecord = await CreatorPayout.findOneAndUpdate(
+//       { 'payouts._id': payoutId },
+//       { $set: update },
+//       { new: true, runValidators: true }
+//     ).lean();
+//     if (!payoutRecord) return NextResponse.json({ error: 'Payout request not found.' }, { status: 404 });
+
+//     const payout = payoutRecord.payouts.find((entry: any) => entry._id.toString() === payoutId);
+//     return NextResponse.json({ success: true, payout });
+//   } catch (error) {
+//     console.error('Admin payout update API error:', error);
+//     return NextResponse.json({ error: 'Unable to update payout request.' }, { status: 500 });
+//   }
+// }
+
+// // GET all payments, or a single payment with ?id=<bookingId>
+// export async function GET(req: Request) {
+//   try {
+//     const session = await getServerSession(authOptions);
+//     if (!session?.user?.email || !isAdmin(session.user.email)) {
+//       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+//     }
+
+//     await connectDB();
+
+//     const id = new URL(req.url).searchParams.get('id');
+//     if (id?.startsWith('PAYOUT-')) {
+//       const payoutId = id.slice('PAYOUT-'.length);
+//       if (!mongoose.isValidObjectId(payoutId)) {
+//         return NextResponse.json({ error: 'Payout not found' }, { status: 404 });
+//       }
+
+//       const payoutRecord = await CreatorPayout.findOne({ 'payouts._id': payoutId })
+//         .populate({ path: 'creatorProfileId', select: 'displayName username profilePhoto userId' })
+//         .lean() as any;
+//       if (!payoutRecord) return NextResponse.json({ error: 'Payout not found' }, { status: 404 });
+
+//       const payout = payoutRecord.payouts.find((entry: any) => entry._id.toString() === payoutId);
+//       const creatorProfile = payoutRecord.creatorProfileId;
+//       const creatorUser = await User.findById(creatorProfile.userId).select('name email profilePhoto').lean() as any;
+//       const requestedAt = new Date(payout.requestedAt);
+//       const displayStatus = payout.status === 'funded' ? 'Completed' : payout.status === 'rejected' ? 'Rejected' : 'Pending';
+
+//       return NextResponse.json({
+//         success: true,
+//         payment: {
+//           id,
+//           dbId: id,
+//           isCreatorPayout: true,
+//           paymentMethod: `Bank payout · ${payout.bankName}`,
+//           date: requestedAt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+//           time: requestedAt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
+//           amount: `${payout.withdrawAmount.toLocaleString()} PKR`,
+//           rawAmount: payout.withdrawAmount,
+//           platformFee: '0 PKR',
+//           creatorEarnings: `${payout.withdrawAmount.toLocaleString()} PKR`,
+//           status: displayStatus,
+//           creator: {
+//             id: creatorProfile.userId?.toString(),
+//             name: creatorProfile.displayName || creatorUser?.name || 'Creator',
+//             username: creatorProfile.username ? `@${creatorProfile.username}` : '@creator',
+//             avatar: creatorProfile.profilePhoto || creatorUser?.profilePhoto || '/avatar.png',
+//             email: creatorUser?.email || '',
+//           },
+//           payout: {
+//             id: payoutId,
+//             bankName: payout.bankName,
+//             accountNumber: payout.accountNumber,
+//             requestedAt: requestedAt.toISOString(),
+//             fundedAt: payout.fundedAt ? new Date(payout.fundedAt).toISOString() : null,
+//             nextWithdrawDate: new Date(payout.nextWithdrawDate).toISOString(),
+//             status: payout.status,
+//             adminRemarks: payout.adminRemarks || '',
+//           },
+//         },
+//       });
+//     }
+//     if (id && !id.startsWith('EVENT-') && !mongoose.isValidObjectId(id)) {
+//       return NextResponse.json({ error: 'Payment not found' }, { status: 404 });
+//     }
+
+//     // Auto-settle all creators: mark past-due pending earnings as paid
+//     await autoSettleEarnings();
+
+//     // Fetch all bookings sorted by newest first (or just the requested one)
+//     const bookings = await Booking.find(
+//       id && mongoose.isValidObjectId(id) ? { _id: id } : {}
+//     ).sort({ createdAt: -1 }).lean();
+
+//     // Fetch all users and creators for fast lookup
+//     const users = await User.find({}).lean();
+//     const creatorProfiles = await CreatorProfile.find({}).lean();
+
+//     const userMap = new Map(users.map((u: any) => [u._id.toString(), u]));
+//     const creatorMap = new Map(creatorProfiles.map((cp: any) => [cp.userId.toString(), cp]));
+
+//     // A package is ONE payment of the whole price, made with its first session
+//     const purchaseIds = [...new Set(bookings.map((b: any) => b.packagePurchaseId?.toString()).filter(Boolean))];
+//     const [purchases, payoutRecords, eventPurchases, eventProofs] = await Promise.all([
+//       purchaseIds.length
+//         ? PackagePurchase.find({ _id: { $in: purchaseIds } }).select('price paymentStatus').lean()
+//         : Promise.resolve([]),
+//       CreatorPayout.find({})
+//         .populate({ path: 'creatorProfileId', select: 'displayName username profilePhoto userId' })
+//         .lean(),
+//       EventPurchase.find({}).sort({ createdAt: -1 }).lean(),
+//       EventPaymentProof.find({}).sort({ createdAt: -1 }).lean(),
+//     ]) as [any[], any[], any[], any[]];
+//     const purchaseMap = new Map(purchases.map((p) => [String(p._id), p]));
+//     const eventProofMap = new Map(eventProofs.map((proof: any) => [String(proof.purchaseId), proof]));
+//     const payableBookings = bookings.filter((b: any) => !b.packagePurchaseId || b.sessionNumber === 1);
+
+//     const enrichedPayments = payableBookings.map((booking: any) => {
+//       const user = userMap.get(booking.userId?.toString());
+//       const creatorProfile = creatorMap.get(booking.creatorId?.toString());
+//       const creatorUser = userMap.get(booking.creatorId?.toString()); // in case we need their basic user details
+
+//       const d = new Date(booking.createdAt);
+//       const formattedDate = d.toLocaleDateString('en-GB', {
+//         day: '2-digit',
+//         month: 'short',
+//         year: 'numeric'
+//       });
+
+//       const time = d.toLocaleTimeString('en-US', {
+//         hour: 'numeric',
+//         minute: '2-digit',
+//         hour12: true
+//       });
+
+//       // Status mapping based on paymentStatus (source of truth for earnings)
+//       let displayStatus = 'Pending';
+//       if (booking.paymentStatus === 'paid') {
+//         displayStatus = 'Completed';
+//       } else if (booking.paymentStatus === 'refunded' || booking.status === 'refunded') {
+//         displayStatus = 'Refunded';
+//       } else if (booking.paymentStatus === 'failed' || booking.status === 'cancelled') {
+//         displayStatus = 'Rejected';
+//       }
+
+//       const purchase = booking.packagePurchaseId ? purchaseMap.get(booking.packagePurchaseId.toString()) : null;
+//       if (purchase) {
+//         if (purchase.paymentStatus === 'paid') displayStatus = 'Completed';
+//         else if (purchase.paymentStatus === 'refunded') displayStatus = 'Refunded';
+//         else if (purchase.paymentStatus === 'failed') displayStatus = 'Rejected';
+//         else displayStatus = 'Pending';
+//       }
+
+//       // Parse amount (assume finalPrice is string like "25,000" or number)
+//       let numericAmount = 0;
+//       if (typeof booking.finalPrice === 'string') {
+//         numericAmount = parseFloat(booking.finalPrice.replace(/[^0-9.]/g, '')) || 0;
+//       } else if (typeof booking.finalPrice === 'number') {
+//         numericAmount = booking.finalPrice;
+//       }
+//       if (purchase) numericAmount = purchase.price; // the whole package, not one session's share
+
+//       const commissionPercent = creatorProfile?.commissionPercent ?? 20;
+//       const platformFeeNum = numericAmount * (commissionPercent / 100);
+//       const creatorEarningsNum = numericAmount - platformFeeNum;
+
+//       return {
+//         id: `TXN-${booking._id.toString().slice(-5).toUpperCase()}`,
+//         dbId: booking._id.toString(),
+//         user: {
+//           name: user?.name || booking.guestDetails?.name || 'Guest User',
+//           username: user?.name ? `@${user.name.toLowerCase().replace(/\s+/g, '')}` : '@guest',
+//           avatar: user?.profilePhoto || '/avatar.png'
+//         },
+//         creator: {
+//           name: creatorProfile?.displayName || creatorUser?.name || 'Unknown Creator',
+//           username: creatorProfile?.username || '@unknown',
+//           avatar: creatorProfile?.profilePhoto || creatorUser?.profilePhoto || '/avatar.png'
+//         },
+//         paymentMethod: booking.paymentMethod || 'Card',
+//         date: formattedDate,
+//         time: time,
+//         amount: `${numericAmount.toLocaleString()} PKR`,
+//         rawAmount: numericAmount,
+//         platformFee: `${platformFeeNum.toLocaleString()} PKR`,
+//         commissionPercent,
+//         creatorEarnings: `${creatorEarningsNum.toLocaleString()} PKR`,
+//         status: displayStatus
+//       };
+//     });
+
+//     const payoutPayments = payoutRecords.flatMap((record: any) => {
+//       const profile = record.creatorProfileId;
+//       const creatorUser = userMap.get(profile?.userId?.toString());
+//       return (record.payouts || []).map((payout: any) => {
+//         const requestedAt = new Date(payout.requestedAt);
+//         const creatorName = profile?.displayName || creatorUser?.name || 'Creator';
+//         const status = payout.status === 'funded' ? 'Completed' : payout.status === 'rejected' ? 'Rejected' : 'Pending';
+//         return {
+//           id: `PAYOUT-${payout._id.toString().slice(-6).toUpperCase()}`,
+//           dbId: `PAYOUT-${payout._id.toString()}`,
+//           user: {
+//             name: creatorName,
+//             username: profile?.username ? `@${profile.username}` : '@creator',
+//             avatar: profile?.profilePhoto || creatorUser?.profilePhoto || '/avatar.png',
+//           },
+//           creator: {
+//             name: creatorName,
+//             username: profile?.username ? `@${profile.username}` : '@creator',
+//             avatar: profile?.profilePhoto || creatorUser?.profilePhoto || '/avatar.png',
+//           },
+//           paymentMethod: `Payout · ${payout.bankName}`,
+//           date: requestedAt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+//           time: requestedAt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
+//           amount: `${payout.withdrawAmount.toLocaleString()} PKR`,
+//           rawAmount: payout.withdrawAmount,
+//           platformFee: '0 PKR',
+//           creatorEarnings: `${payout.withdrawAmount.toLocaleString()} PKR`,
+//           status,
+//           isCreatorPayout: true,
+//         };
+//       });
+//     });
+
+//     const eventPayments = eventPurchases.map((purchase: any) => {
+//       const buyer = userMap.get(purchase.userId?.toString());
+//       const creatorProfile = creatorMap.get(purchase.creatorId?.toString());
+//       const creatorUser = userMap.get(purchase.creatorId?.toString());
+//       const proof = eventProofMap.get(String(purchase._id));
+//       const createdAt = new Date(purchase.createdAt);
+//       const status = purchase.paymentStatus === 'paid'
+//         ? 'Completed'
+//         : purchase.paymentStatus === 'failed' || purchase.status === 'cancelled'
+//           ? 'Rejected'
+//           : 'Pending';
+//       const amount = Number(purchase.tierPrice || 0) * Number(purchase.quantity || 1);
+
+//       return {
+//         id: `EVENT-${purchase._id.toString().slice(-5).toUpperCase()}`,
+//         dbId: `EVENT-${purchase._id.toString()}`,
+//         bookingRef: purchase.ticketRef,
+//         paymentMethod: proof?.paymentMethod || 'Manual event payment',
+//         date: createdAt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+//         time: createdAt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
+//         amount: `${amount.toLocaleString()} PKR`,
+//         rawAmount: amount,
+//         platformFee: '0 PKR',
+//         creatorEarnings: `${amount.toLocaleString()} PKR`,
+//         status,
+//         isEventPayment: true,
+//         event: {
+//           title: purchase.eventTitle,
+//           bannerUrl: purchase.eventBannerUrl || '',
+//           date: purchase.eventDate,
+//           startTime: purchase.eventStartTime || '',
+//           tierTitle: purchase.tierTitle,
+//           quantity: purchase.quantity,
+//           ticketRef: purchase.ticketRef,
+//         },
+//         user: {
+//           name: buyer?.name || purchase.buyerEmail || 'Event buyer',
+//           username: buyer?.name ? `@${buyer.name.toLowerCase().replace(/\s+/g, '')}` : '@buyer',
+//           avatar: buyer?.profilePhoto || '/avatar.png',
+//         },
+//         creator: {
+//           name: creatorProfile?.displayName || creatorUser?.name || 'Creator',
+//           username: creatorProfile?.username ? `@${creatorProfile.username}` : '@creator',
+//           avatar: creatorProfile?.profilePhoto || creatorUser?.profilePhoto || '/avatar.png',
+//         },
+//       };
+//     });
+
+//     if (id) {
+//       if (id.toUpperCase().startsWith('EVENT-')) {
+//         const eventPurchaseId = id.slice(id.indexOf('-') + 1).trim();
+//         if (!mongoose.isValidObjectId(eventPurchaseId)) {
+//           return NextResponse.json({ error: 'Payment not found' }, { status: 404 });
+//         }
+//         const eventPurchase = await EventPurchase.findOne({
+//           _id: new mongoose.Types.ObjectId(eventPurchaseId),
+//         }).lean() as any;
+//         if (!eventPurchase) return NextResponse.json({ error: 'Payment not found' }, { status: 404 });
+//         const [buyer, creatorProfile, creatorUser, proof] = await Promise.all([
+//           User.findById(eventPurchase.userId).lean() as any,
+//           CreatorProfile.findOne({ userId: eventPurchase.creatorId }).lean() as any,
+//           User.findById(eventPurchase.creatorId).lean() as any,
+//           EventPaymentProof.findOne({ purchaseId: eventPurchase._id }).lean() as any,
+//         ]);
+//         let screenshotUrl = proof?.screenshotPath || '';
+//         const bucket = process.env.SUPABASE_PAYMENT_PROOFS_BUCKET || process.env.SUPABASE_STORAGE_BUCKET || 'reachly';
+//         if (screenshotUrl && !screenshotUrl.startsWith('data:') && !screenshotUrl.startsWith('http')) {
+//           const { data } = await supabaseAdmin.storage.from(bucket).createSignedUrl(screenshotUrl, 3600);
+//           screenshotUrl = data?.signedUrl || '';
+//         }
+//         const amount = Number(eventPurchase.tierPrice || 0) * Number(eventPurchase.quantity || 1);
+//         const status = eventPurchase.paymentStatus === 'paid'
+//           ? 'Completed'
+//           : eventPurchase.paymentStatus === 'failed' || eventPurchase.status === 'cancelled'
+//             ? 'Rejected'
+//             : 'Pending';
+//         return NextResponse.json({
+//           success: true,
+//           payment: {
+//             id: `EVENT-${eventPurchase._id.toString().slice(-5).toUpperCase()}`,
+//             dbId: id,
+//             isEventPayment: true,
+//             bookingRef: eventPurchase.ticketRef,
+//             paymentMethod: proof?.paymentMethod || 'Manual event payment',
+//             date: new Date(eventPurchase.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+//             time: new Date(eventPurchase.createdAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
+//             amount: `${amount.toLocaleString()} PKR`,
+//             rawAmount: amount,
+//             platformFee: '0 PKR',
+//             creatorEarnings: `${amount.toLocaleString()} PKR`,
+//             status,
+//             event: {
+//               title: eventPurchase.eventTitle,
+//               bannerUrl: eventPurchase.eventBannerUrl || '',
+//               date: eventPurchase.eventDate,
+//               startTime: eventPurchase.eventStartTime || '',
+//               tierTitle: eventPurchase.tierTitle,
+//               quantity: eventPurchase.quantity,
+//               ticketRef: eventPurchase.ticketRef,
+//             },
+//             user: {
+//               id: buyer?._id?.toString() || null,
+//               name: buyer?.name || eventPurchase.buyerEmail,
+//               username: buyer?.name ? `@${buyer.name.toLowerCase().replace(/\s+/g, '')}` : '@buyer',
+//               avatar: buyer?.profilePhoto || '/avatar.png',
+//               email: buyer?.email || eventPurchase.buyerEmail,
+//             },
+//             creator: {
+//               id: eventPurchase.creatorId?.toString(),
+//               name: creatorProfile?.displayName || creatorUser?.name || 'Creator',
+//               username: creatorProfile?.username ? `@${creatorProfile.username}` : '@creator',
+//               avatar: creatorProfile?.profilePhoto || creatorUser?.profilePhoto || '/avatar.png',
+//             },
+//             proof: proof ? {
+//               id: proof._id.toString(),
+//               status: proof.status,
+//               screenshotUrl,
+//               paymentMethod: proof.paymentMethod,
+//               amount: proof.amount,
+//               submittedAt: proof.createdAt ? new Date(proof.createdAt).toLocaleString() : null,
+//               reviewedAt: proof.reviewedAt ? new Date(proof.reviewedAt).toLocaleString() : null,
+//               reviewedBy: proof.reviewedBy || null,
+//               adminRemarks: proof.adminRemarks || '',
+//             } : null,
+//           },
+//         });
+//       }
+
+//       let booking: any = null;
+//       if (mongoose.isValidObjectId(id)) {
+//         booking = await Booking.findById(id).populate('sessionTypeId').lean();
+//       } else if (id.startsWith('TXN-')) {
+//         const allBookings = await Booking.find({}).sort({ createdAt: -1 }).populate('sessionTypeId').lean();
+//         booking = allBookings.find((b: any) => b._id.toString().slice(-5).toUpperCase() === id.slice(-5).toUpperCase() || b.bookingRef === id);
+//       } else {
+//         booking = await Booking.findOne({ bookingRef: id }).populate('sessionTypeId').lean();
+//       }
+
+//       if (!booking) {
+//         return NextResponse.json({ error: 'Payment not found' }, { status: 404 });
+//       }
+
+//       const BUCKET = process.env.SUPABASE_PAYMENT_PROOFS_BUCKET || process.env.SUPABASE_STORAGE_BUCKET || 'reachly';
+
+//       const [creatorProfile, creatorUser, clientUser, proof] = await Promise.all([
+//         CreatorProfile.findOne({ userId: booking.creatorId }).lean() as any,
+//         User.findById(booking.creatorId).lean() as any,
+//         booking.userId ? (User.findById(booking.userId).lean() as any) : null,
+//         SessionPaymentProof.findOne({
+//           $or: [
+//             { bookingId: booking._id },
+//             { bookingRef: booking.bookingRef },
+//           ]
+//         }).lean() as any,
+//       ]);
+
+//       let screenshotUrl = '';
+//       if (proof) {
+//         if (proof.screenshotPath?.startsWith('data:') || proof.screenshotPath?.startsWith('http')) {
+//           screenshotUrl = proof.screenshotPath;
+//         } else if (proof.screenshotPath) {
+//           try {
+//             const { data, error } = await supabaseAdmin.storage
+//               .from(BUCKET)
+//               .createSignedUrl(proof.screenshotPath, 3600);
+//             if (!error && data?.signedUrl) {
+//               screenshotUrl = data.signedUrl;
+//             } else {
+//               const { data: pubData } = supabaseAdmin.storage
+//                 .from(BUCKET)
+//                 .getPublicUrl(proof.screenshotPath);
+//               screenshotUrl = pubData.publicUrl;
+//             }
+//           } catch {
+//             const { data: pubData } = supabaseAdmin.storage
+//               .from(BUCKET)
+//               .getPublicUrl(proof.screenshotPath);
+//             screenshotUrl = pubData.publicUrl;
+//           }
+//         }
+//       }
+
+//       const d = new Date(booking.createdAt);
+//       const formattedDate = d.toLocaleDateString('en-GB', {
+//         day: '2-digit',
+//         month: 'short',
+//         year: 'numeric'
+//       });
+//       const time = d.toLocaleTimeString('en-US', {
+//         hour: 'numeric',
+//         minute: '2-digit',
+//         hour12: true
+//       });
+
+//       const scheduledD = booking.scheduledDate ? new Date(booking.scheduledDate) : null;
+//       const formattedScheduledDate = scheduledD ? scheduledD.toLocaleDateString('en-GB', {
+//         weekday: 'short',
+//         day: 'numeric',
+//         month: 'short',
+//         year: 'numeric'
+//       }) : 'Not scheduled';
+
+//       let displayStatus = 'Pending';
+//       if (booking.paymentStatus === 'paid') {
+//         displayStatus = 'Completed';
+//       } else if (booking.paymentStatus === 'refunded' || booking.status === 'refunded') {
+//         displayStatus = 'Refunded';
+//       } else if (booking.paymentStatus === 'failed' || booking.status === 'cancelled' || proof?.status === 'rejected') {
+//         displayStatus = 'Rejected';
+//       }
+
+//       let numericAmount = 0;
+//       if (typeof booking.finalPrice === 'string') {
+//         numericAmount = parseFloat(booking.finalPrice.replace(/[^0-9.]/g, '')) || 0;
+//       } else if (typeof booking.finalPrice === 'number') {
+//         numericAmount = booking.finalPrice;
+//       }
+
+//       const commissionPercent = creatorProfile?.commissionPercent ?? 20;
+//       const platformFeeNum = numericAmount * (commissionPercent / 100);
+//       const creatorEarningsNum = numericAmount - platformFeeNum;
+
+//       const paymentDetail = {
+//         id: `TXN-${booking._id.toString().slice(-5).toUpperCase()}`,
+//         dbId: booking._id.toString(),
+//         bookingRef: booking.bookingRef,
+//         bookingStatus: booking.status,
+//         paymentStatus: booking.paymentStatus,
+//         paymentMethod: booking.paymentMethod || proof?.paymentMethod || 'manual',
+//         adminRemarks: booking.adminRemarks || proof?.adminRemarks || '',
+//         date: formattedDate,
+//         time: time,
+//         amount: `${numericAmount.toLocaleString()} PKR`,
+//         rawAmount: numericAmount,
+//         platformFee: `${platformFeeNum.toLocaleString()} PKR`,
+//         commissionPercent,
+//         creatorEarnings: `${creatorEarningsNum.toLocaleString()} PKR`,
+//         status: displayStatus,
+//         session: {
+//           title: booking.sessionTypeId?.title || '1-on-1 Consultation',
+//           duration: `${booking.sessionTypeId?.duration || 0} minutes`,
+//           durationMins: booking.sessionTypeId?.duration || 0,
+//           description: booking.sessionTypeId?.description || '',
+//           features: booking.sessionTypeId?.features || [],
+//           scheduledDate: formattedScheduledDate,
+//           scheduledTime: booking.scheduledTime || '',
+//           meetingUrl: booking.meetingUrl || null,
+//           meetingStartedAt: booking.meetingStartedAt || null,
+//           meetingEndedAt: booking.meetingEndedAt || null,
+//         },
+//         creator: {
+//           id: booking.creatorId?.toString(),
+//           name: creatorProfile?.displayName || creatorUser?.name || 'Creator',
+//           username: creatorProfile?.username ? `@${creatorProfile.username}` : (creatorUser?.name ? `@${creatorUser.name.toLowerCase().replace(/\s+/g, '')}` : '@creator'),
+//           avatar: creatorProfile?.profilePhoto || creatorUser?.profilePhoto || '/avatar.png',
+//           email: creatorUser?.email || '',
+//           phone: creatorUser?.phone || creatorProfile?.whatsapp || '',
+//           category: creatorProfile?.category || 'General',
+//           bio: creatorProfile?.bio || '',
+//           city: creatorProfile?.city || '',
+//           country: creatorProfile?.country || '',
+//           earningsShare: `${creatorEarningsNum.toLocaleString()} PKR`,
+//         },
+//         client: {
+//           id: clientUser?._id?.toString() || null,
+//           name: clientUser?.name || booking.guestDetails?.fullName || 'Guest User',
+//           username: clientUser?.name ? `@${clientUser.name.toLowerCase().replace(/\s+/g, '')}` : '@guest',
+//           avatar: clientUser?.profilePhoto || '/avatar.png',
+//           email: clientUser?.email || booking.guestDetails?.email || proof?.payerEmail || 'Not provided',
+//           phone: clientUser?.phone || booking.guestDetails?.whatsapp || 'Not provided',
+//           isGuest: !booking.userId,
+//           whatToDiscuss: booking.guestDetails?.whatToDiscuss || booking.guestDetails?.notes || '',
+//           heardFrom: booking.guestDetails?.heardFrom || '',
+//           answers: booking.answers || [],
+//         },
+//         proof: proof ? {
+//           id: proof._id.toString(),
+//           status: proof.status,
+//           screenshotUrl: screenshotUrl || '',
+//           payerName: proof.payerName || '',
+//           payerEmail: proof.payerEmail || '',
+//           amount: proof.amount || numericAmount,
+//           paymentMethod: proof.paymentMethod || booking.paymentMethod,
+//           reviewedAt: proof.reviewedAt ? new Date(proof.reviewedAt).toLocaleString() : null,
+//           reviewedBy: proof.reviewedBy || null,
+//           submittedAt: proof.createdAt ? new Date(proof.createdAt).toLocaleString() : null,
+//           adminRemarks: booking.adminRemarks || proof.adminRemarks || '',
+//         } : null,
+//       };
+
+//       return NextResponse.json({ success: true, payment: paymentDetail });
+//     }
+
+//     return NextResponse.json({ success: true, payments: [...payoutPayments, ...eventPayments, ...enrichedPayments] });
+//   } catch (error: any) {
+//     console.error('Admin payments GET error:', error);
+//     return NextResponse.json({ error: 'Server error' }, { status: 500 });
+//   }
+// }
+
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
@@ -198,9 +761,10 @@ export async function GET(req: Request) {
         numericAmount = booking.finalPrice;
       }
       if (purchase) numericAmount = purchase.price; // the whole package, not one session's share
+      numericAmount = booking.updated_total_amount ?? numericAmount;
 
       const commissionPercent = creatorProfile?.commissionPercent ?? 20;
-      const platformFeeNum = numericAmount * (commissionPercent / 100);
+      const platformFeeNum = booking.updated_platform_amount ?? numericAmount * (commissionPercent / 100);
       const creatorEarningsNum = numericAmount - platformFeeNum;
 
       return {
@@ -272,7 +836,8 @@ export async function GET(req: Request) {
         : purchase.paymentStatus === 'failed' || purchase.status === 'cancelled'
           ? 'Rejected'
           : 'Pending';
-      const amount = Number(purchase.tierPrice || 0) * Number(purchase.quantity || 1);
+      const amount = purchase.updated_total_amount ?? Number(purchase.tierPrice || 0) * Number(purchase.quantity || 1);
+      const platformFee = purchase.updated_platform_amount ?? 0;
 
       return {
         id: `EVENT-${purchase._id.toString().slice(-5).toUpperCase()}`,
@@ -283,8 +848,8 @@ export async function GET(req: Request) {
         time: createdAt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
         amount: `${amount.toLocaleString()} PKR`,
         rawAmount: amount,
-        platformFee: '0 PKR',
-        creatorEarnings: `${amount.toLocaleString()} PKR`,
+        platformFee: `${platformFee.toLocaleString()} PKR`,
+        creatorEarnings: `${(amount - platformFee).toLocaleString()} PKR`,
         status,
         isEventPayment: true,
         event: {
@@ -331,7 +896,9 @@ export async function GET(req: Request) {
           const { data } = await supabaseAdmin.storage.from(bucket).createSignedUrl(screenshotUrl, 3600);
           screenshotUrl = data?.signedUrl || '';
         }
-        const amount = Number(eventPurchase.tierPrice || 0) * Number(eventPurchase.quantity || 1);
+        const amount = eventPurchase.updated_total_amount ??
+          Number(eventPurchase.tierPrice || 0) * Number(eventPurchase.quantity || 1);
+        const platformFee = eventPurchase.updated_platform_amount ?? 0;
         const status = eventPurchase.paymentStatus === 'paid'
           ? 'Completed'
           : eventPurchase.paymentStatus === 'failed' || eventPurchase.status === 'cancelled'
@@ -349,8 +916,8 @@ export async function GET(req: Request) {
             time: new Date(eventPurchase.createdAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
             amount: `${amount.toLocaleString()} PKR`,
             rawAmount: amount,
-            platformFee: '0 PKR',
-            creatorEarnings: `${amount.toLocaleString()} PKR`,
+            platformFee: `${platformFee.toLocaleString()} PKR`,
+            creatorEarnings: `${(amount - platformFee).toLocaleString()} PKR`,
             status,
             event: {
               title: eventPurchase.eventTitle,
@@ -478,9 +1045,10 @@ export async function GET(req: Request) {
       } else if (typeof booking.finalPrice === 'number') {
         numericAmount = booking.finalPrice;
       }
+      numericAmount = booking.updated_total_amount ?? numericAmount;
 
       const commissionPercent = creatorProfile?.commissionPercent ?? 20;
-      const platformFeeNum = numericAmount * (commissionPercent / 100);
+      const platformFeeNum = booking.updated_platform_amount ?? numericAmount * (commissionPercent / 100);
       const creatorEarningsNum = numericAmount - platformFeeNum;
 
       const paymentDetail = {

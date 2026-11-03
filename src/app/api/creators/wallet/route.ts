@@ -1,3 +1,165 @@
+// import { NextRequest, NextResponse } from 'next/server';
+// import { getServerSession } from 'next-auth';
+// import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+// import connectDB from '@/lib/mongodb';
+// import User from '@/models/User';
+// import Booking from '@/models/Booking';
+// import SessionType from '@/models/SessionType';
+// import CreatorProfile from '@/models/CreatorProfile';
+// import CreatorPayout from '@/models/CreatorPayout';
+// import { autoSettleEarnings } from '@/lib/autoSettleEarnings';
+// import { packageInfo } from '@/lib/packageLabels';
+
+// export async function GET(req: NextRequest) {
+//   try {
+//     const session = await getServerSession(authOptions);
+//     if (!session?.user?.email) {
+//       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+//     }
+
+//     await connectDB();
+//     const user = await User.findOne({ email: session.user.email }).select('_id').lean() as any;
+//     if (!user) {
+//       return NextResponse.json({ error: 'User not found' }, { status: 404 });
+//     }
+
+//     // Auto-settle: mark past-due pending earnings as paid before fetching
+//     await autoSettleEarnings(user._id.toString());
+
+//     // Fetch incoming and outgoing bookings in parallel with .lean()
+//     const [incomingBookings, outgoingBookings] = (await Promise.all([
+//       Booking.find({
+//         creatorId: user._id,
+//         status: { $ne: 'pending' },
+//         paymentStatus: { $nin: ['pending', 'failed'] },
+//       })
+//         .populate({ path: 'sessionTypeId', model: SessionType, select: 'title' })
+//         .sort({ createdAt: -1 })
+//         .lean(),
+//       Booking.find({ userId: user._id, creatorId: { $ne: user._id } })
+//         .populate({ path: 'sessionTypeId', model: SessionType, select: 'title' })
+//         .sort({ createdAt: -1 })
+//         .lean()
+//     ])) as [any[], any[]];
+
+//     // Collect other creator IDs for name lookup on outgoing in parallel
+//     const otherCreatorIds = Array.from(new Set(outgoingBookings.map((b: any) => b.creatorId?.toString()).filter(Boolean)));
+//     const [otherCreatorProfiles, otherCreatorUsers] = (await Promise.all([
+//       otherCreatorIds.length > 0
+//         ? CreatorProfile.find({ userId: { $in: otherCreatorIds } }).select('userId displayName').lean()
+//         : Promise.resolve([]),
+//       otherCreatorIds.length > 0
+//         ? User.find({ _id: { $in: otherCreatorIds } }).select('name').lean()
+//         : Promise.resolve([])
+//     ])) as [any[], any[]];
+//     const otherCreatorProfilesMap = new Map<string, string>((otherCreatorProfiles as any[]).map((cp) => [cp.userId.toString(), cp.displayName]));
+//     const otherCreatorUsersMap = new Map<string, string>((otherCreatorUsers as any[]).map((u: any) => [u._id.toString(), u.name]));
+
+//     // Calculate metrics
+//     let lifetimeEarning = 0;
+//     let pendingEarning = 0;
+//     let totalPaidOut = 0; // Default to 0 since there's no payout schema/actions yet
+
+//     // Map incoming bookings to transactions
+//     const incomingTransactions = incomingBookings.map((b: any) => {
+//       const amount = b.finalPrice || 0;
+//       const payStatus = b.paymentStatus || 'pending';
+//       const bookingStatus = b.status;
+
+//       if (payStatus === 'paid') {
+//         lifetimeEarning += amount;
+//       } else if (payStatus === 'pending' && bookingStatus !== 'cancelled' && bookingStatus !== 'refunded') {
+//         pendingEarning += amount;
+//       }
+
+//       const d = new Date(b.createdAt);
+//       const formattedDate = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+//       const formattedTime = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+
+//       let displayStatus = 'Pending';
+//       if (b.paymentStatus === 'paid') displayStatus = 'Completed';
+//       if (b.status === 'cancelled' || b.status === 'refunded' || b.paymentStatus === 'refunded') displayStatus = 'Failed';
+
+//       return {
+//         id: b.bookingRef || `TXN-${b._id.toString().slice(-5).toUpperCase()}`,
+//         type: bookingStatus === 'refunded'
+//           ? 'Refund'
+//           : b.packagePurchaseId
+//             ? `Package Earning · session ${b.sessionNumber}${payStatus === 'pending' ? ' (on hold until the package is complete)' : ''}`
+//             : 'Booking Earning',
+//         date: formattedDate,
+//         time: formattedTime,
+//         amount: `${amount.toLocaleString()} PKR`,
+//         status: displayStatus,
+//         rawAmount: amount
+//       };
+//     });
+
+//     // Packages are paid once, with their first session: later package sessions are not payments
+//     const { paid: pkgPaid } = await packageInfo(outgoingBookings);
+//     const outgoingTransactions = outgoingBookings.filter((b: any) => !(b.packagePurchaseId && b.sessionNumber !== 1)).map((b: any) => {
+//       const amount = pkgPaid.has(b._id.toString()) ? (pkgPaid.get(b._id.toString()) as number) : (b.finalPrice || 0);
+//       const payStatus = b.paymentStatus || 'pending';
+//       const bookingStatus = b.status;
+
+//       // Outgoing bookings are expenses — deduct from wallet immediately by adding to totalPaidOut
+//       if (bookingStatus !== 'cancelled' && bookingStatus !== 'refunded' && payStatus !== 'refunded') {
+//         totalPaidOut += amount;
+//       }
+
+//       const d = new Date(b.createdAt);
+//       const formattedDate = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+//       const formattedTime = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+
+//       let displayStatus = 'Pending';
+//       if (b.paymentStatus === 'paid') displayStatus = 'Completed';
+//       if (b.status === 'cancelled' || b.paymentStatus === 'refunded') displayStatus = 'Failed';
+
+//       const creatorIdStr = b.creatorId?.toString() || '';
+//       const otherCreatorName = otherCreatorProfilesMap.get(creatorIdStr) || otherCreatorUsersMap.get(creatorIdStr) || 'Creator';
+
+//       return {
+//         id: b.bookingRef || `TXN-${b._id.toString().slice(-5).toUpperCase()}`,
+//         type: `Paid to ${otherCreatorName}`,
+//         date: formattedDate,
+//         time: formattedTime,
+//         amount: `-${amount.toLocaleString()} PKR`,
+//         status: displayStatus,
+//         rawAmount: -amount
+//       };
+//     });
+
+//     const allTransactions = [...incomingTransactions, ...outgoingTransactions].sort((a, b) => {
+//       // Sort by id (bookingRef is date-ish); fallback keeps original order
+//       return 0;
+//     });
+
+//     const creatorProfile = await CreatorProfile.findOne({ userId: user._id }).select('_id').lean() as { _id: any } | null;
+//     if (creatorProfile) {
+//       const payoutRecord = await CreatorPayout.findOne({ creatorProfileId: creatorProfile._id })
+//         .select('payouts')
+//         .lean() as any;
+//       totalPaidOut += (payoutRecord?.payouts || [])
+//         .filter((payout: any) => payout.status === 'funded')
+//         .reduce((sum: number, payout: any) => sum + payout.withdrawAmount, 0);
+//     }
+
+//     const availableBalance = Math.max(0, lifetimeEarning - totalPaidOut);
+
+//     return NextResponse.json({
+//       success: true,
+//       availableBalance,
+//       lifetimeEarning,
+//       pendingEarning,
+//       totalPaidOut,
+//       transactions: allTransactions
+//     });
+//   } catch (error: any) {
+//     console.error('Creator wallet API error:', error);
+//     return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });
+//   }
+// }
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
@@ -60,9 +222,27 @@ export async function GET(req: NextRequest) {
     let pendingEarning = 0;
     let totalPaidOut = 0; // Default to 0 since there's no payout schema/actions yet
 
+    const adjustedPackageIds = new Set(
+      incomingBookings
+        .filter((booking: any) =>
+          booking.packagePurchaseId &&
+          booking.sessionNumber === 1 &&
+          booking.updated_total_amount !== undefined,
+        )
+        .map((booking: any) => booking.packagePurchaseId.toString()),
+    );
+
     // Map incoming bookings to transactions
     const incomingTransactions = incomingBookings.map((b: any) => {
-      const amount = b.finalPrice || 0;
+      const isAdjustedPackage = b.packagePurchaseId &&
+        adjustedPackageIds.has(b.packagePurchaseId.toString());
+      const amount = isAdjustedPackage
+        ? b.sessionNumber === 1
+          ? Math.max(0, b.updated_total_amount - (b.updated_platform_amount ?? 0))
+          : 0
+        : b.updated_total_amount !== undefined
+          ? Math.max(0, b.updated_total_amount - (b.updated_platform_amount ?? 0))
+          : b.finalPrice || 0;
       const payStatus = b.paymentStatus || 'pending';
       const bookingStatus = b.status;
 
@@ -134,7 +314,13 @@ export async function GET(req: NextRequest) {
       return 0;
     });
 
-    const creatorProfile = await CreatorProfile.findOne({ userId: user._id }).select('_id').lean() as { _id: any } | null;
+    const creatorProfile = await CreatorProfile.findOne({ userId: user._id })
+      .select('_id updated_totall_earning updated_life_time_earning')
+      .lean() as {
+        _id: any;
+        updated_totall_earning?: number;
+        updated_life_time_earning?: number;
+      } | null;
     if (creatorProfile) {
       const payoutRecord = await CreatorPayout.findOne({ creatorProfileId: creatorProfile._id })
         .select('payouts')
@@ -144,12 +330,25 @@ export async function GET(req: NextRequest) {
         .reduce((sum: number, payout: any) => sum + payout.withdrawAmount, 0);
     }
 
-    const availableBalance = Math.max(0, lifetimeEarning - totalPaidOut);
+    const calculatedAvailableBalance = Math.max(0, lifetimeEarning - totalPaidOut);
+    if (creatorProfile) {
+      await CreatorProfile.updateOne(
+        { _id: creatorProfile._id },
+        {
+          $set: {
+            actual_totall_earning: calculatedAvailableBalance,
+            actual_life_time_earning: lifetimeEarning,
+          },
+        },
+      );
+    }
+    const availableBalance = creatorProfile?.updated_totall_earning ?? calculatedAvailableBalance;
+    const displayedLifetimeEarning = creatorProfile?.updated_life_time_earning ?? lifetimeEarning;
 
     return NextResponse.json({
       success: true,
       availableBalance,
-      lifetimeEarning,
+      lifetimeEarning: displayedLifetimeEarning,
       pendingEarning,
       totalPaidOut,
       transactions: allTransactions

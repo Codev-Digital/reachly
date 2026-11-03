@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { AdminDetailSkeleton } from '@/components/admin/AdminSkeletons';
 import {
@@ -139,6 +139,13 @@ interface PaymentDetail {
 
 export default function AdminPaymentDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const requestedReturnTo = searchParams.get('returnTo');
+  const returnTo = requestedReturnTo?.startsWith('/admin/creators/') && requestedReturnTo.endsWith('/wallet')
+    ? requestedReturnTo
+    : '/admin/payments';
+  const returnLabel = returnTo === '/admin/payments' ? 'Back to Payments' : 'Back to Creator Profile';
 
   const [payment, setPayment] = useState<PaymentDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -226,6 +233,7 @@ export default function AdminPaymentDetailPage() {
         };
       });
       setShowAcceptModal(false);
+      if (returnTo !== '/admin/payments') router.push(returnTo);
     } catch (err) {
       toast.error('Failed to approve payment');
     } finally {
@@ -299,6 +307,7 @@ export default function AdminPaymentDetailPage() {
       });
       setShowRejectModal(false);
       setRejectRemarks(savedRemarks);
+      if (returnTo !== '/admin/payments') router.push(returnTo);
     } catch (err) {
       toast.error('Failed to reject payment');
     } finally {
@@ -341,10 +350,10 @@ export default function AdminPaymentDetailPage() {
     return (
       <div className="pb-12">
         <Link
-          href="/admin/payments"
+          href={returnTo}
           className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors mb-4 font-semibold"
         >
-          <ArrowLeft className="w-4 h-4" /> Back to Payments
+          <ArrowLeft className="w-4 h-4" /> {returnLabel}
         </Link>
         <div className="bg-white rounded-[32px] p-12 border border-gray-100 shadow-sm text-center max-w-lg mx-auto">
           <AlertCircle className="w-12 h-12 text-rose-500 mx-auto mb-4" />
@@ -353,7 +362,7 @@ export default function AdminPaymentDetailPage() {
             This transaction could not be located. It might have been deleted or the identifier is invalid.
           </p>
           <Link
-            href="/admin/payments"
+            href={returnTo}
             className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#0012FF] text-white rounded-full text-xs font-bold hover:bg-[#0012FF]/90 transition"
           >
             Return to All Payments
@@ -366,8 +375,8 @@ export default function AdminPaymentDetailPage() {
   if (payment.isEventPayment && payment.event) {
     return (
       <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="pb-16">
-        <Link href="/admin/payments" className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-gray-900">
-          <ArrowLeft className="h-4 w-4" /> Back to Payments
+        <Link href={returnTo} className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-gray-900">
+        <ArrowLeft className="h-4 w-4" /> {returnLabel}
         </Link>
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-black sm:text-4xl"><span className="font-black text-[#0012FF]">Event</span> Payment Details</h1>
@@ -409,15 +418,18 @@ export default function AdminPaymentDetailPage() {
             <p className="mt-2 text-sm leading-6 text-gray-500">Approve the payment after checking the uploaded transfer screenshot.</p>
             {payment.status === 'Pending' && (
               <div className="mt-6 grid gap-3">
-                <button type="button" onClick={() => void handleAccept()} className="rounded-full bg-emerald-600 px-4 py-3 text-sm font-bold text-white hover:bg-emerald-700">Approve payment</button>
                 <button
                   type="button"
-                  onClick={() => {
-                    const remarks = window.prompt('Reason for rejecting this payment:');
-                    if (remarks) {
-                      void handleReject(remarks);
-                    }
-                  }}
+                  onClick={() => setShowAcceptModal(true)}
+                  disabled={reviewing}
+                  className="rounded-full bg-emerald-600 px-4 py-3 text-sm font-bold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Approve payment
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowRejectModal(true)}
+                  disabled={reviewing}
                   className="rounded-full border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700 hover:bg-rose-100"
                 >
                   Reject payment
@@ -426,6 +438,80 @@ export default function AdminPaymentDetailPage() {
             )}
           </aside>
         </div>
+        <ActionDialog
+          open={showRejectModal}
+          onOpenChange={(open) => {
+            if (!open && !reviewing) setShowRejectModal(false);
+          }}
+          image={{ src: '/assets/cancel-appointment-sm.webp', alt: 'Reject Payment' }}
+          title="Reject Payment"
+          description="Please provide a reason for rejecting this event payment."
+          actions={[
+            {
+              label: 'Cancel',
+              variant: 'outline',
+              onClick: () => setShowRejectModal(false),
+              disabled: reviewing,
+              className: 'rounded-full border-gray-200 text-gray-700 hover:bg-gray-50',
+            },
+            {
+              label: reviewing ? 'Processing...' : 'Reject Payment',
+              variant: 'destructive',
+              onClick: () => void handleReject(),
+              disabled: reviewing || !rejectRemarks.trim(),
+              className: 'rounded-full bg-rose-600 font-bold text-white hover:bg-rose-700',
+            },
+          ]}
+          classNames={{
+            content: 'font-poppins max-w-md rounded-[32px] p-6 sm:p-8',
+          }}
+        >
+          <div className="w-full text-left">
+            <label htmlFor="event-admin-remarks" className="mb-1.5 block text-xs font-bold text-gray-700">
+              Admin Remarks <span className="text-rose-500">*</span>
+            </label>
+            <textarea
+              id="event-admin-remarks"
+              rows={3}
+              value={rejectRemarks}
+              onChange={(event) => setRejectRemarks(event.target.value)}
+              placeholder="e.g. Screenshot is blurry, amount doesn't match, wrong account number..."
+              disabled={reviewing}
+              className="w-full resize-none rounded-2xl border border-gray-200 px-4 py-3 text-sm text-gray-800 placeholder-gray-400 transition-all focus:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-400/20 disabled:bg-gray-50"
+            />
+            <p className="mt-1.5 text-[11px] text-gray-400">
+              This message will appear in the buyer&apos;s account under their event payment.
+            </p>
+          </div>
+        </ActionDialog>
+        <ActionDialog
+          open={showAcceptModal}
+          onOpenChange={(open) => {
+            if (!open && !reviewing) setShowAcceptModal(false);
+          }}
+          image={{ src: '/assets/booking-confirm-sm.webp', alt: 'Approve Payment' }}
+          title="Approve This Payment?"
+          description="Confirm approval of this event payment. The buyer will receive access to the event."
+          actions={[
+            {
+              label: 'Cancel',
+              variant: 'outline',
+              onClick: () => setShowAcceptModal(false),
+              disabled: reviewing,
+              className: 'rounded-full border-gray-200 text-gray-700 hover:bg-gray-50',
+            },
+            {
+              label: reviewing ? 'Processing...' : 'Confirm Approval',
+              variant: 'success',
+              onClick: () => void handleAccept(),
+              disabled: reviewing,
+              className: 'rounded-full bg-emerald-600 font-bold text-white hover:bg-emerald-700',
+            },
+          ]}
+          classNames={{
+            content: 'font-poppins max-w-md rounded-[32px] p-6 sm:p-8',
+          }}
+        />
       </motion.div>
     );
   }
@@ -438,8 +524,8 @@ export default function AdminPaymentDetailPage() {
         animate={{ opacity: 1, y: 0 }}
         className="pb-16"
       >
-        <Link href="/admin/payments" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 font-semibold transition-colors mb-6">
-          <ArrowLeft className="w-4 h-4" /> Back to Payments
+        <Link href={returnTo} className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 font-semibold transition-colors mb-6">
+          <ArrowLeft className="w-4 h-4" /> {returnLabel}
         </Link>
         <div className="mb-8">
           <h1 className="text-3xl sm:text-4xl font-bold font-sans text-black">
@@ -538,10 +624,10 @@ export default function AdminPaymentDetailPage() {
       {/* Top Navigation */}
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <Link
-          href="/admin/payments"
+          href={returnTo}
           className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 font-semibold transition-colors"
         >
-          <ArrowLeft className="w-4 h-4" /> Back to Payments
+          <ArrowLeft className="w-4 h-4" /> {returnLabel}
         </Link>
 
         {/* Quick status chips */}
