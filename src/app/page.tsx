@@ -1433,10 +1433,10 @@ export default function Home() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.4, delay: i * 0.07 }}
-                  className={`bg-white rounded-2xl border transition-all duration-300 overflow-hidden ${
+                  className={`bg-white rounded-xl border transition-all duration-300 overflow-hidden ${
                     openFaq === i
                       ? 'border-blue-300/80 shadow-[0_0_28px_rgba(0,18,255,0.18)]'
-                      : 'border-gray-100 shadow-sm'
+                      : 'border-[#e2e2e2] '
                   }`}
                 >
                   <button

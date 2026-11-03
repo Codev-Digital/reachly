@@ -8,6 +8,14 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { usePreloadImages } from '@/lib/usePreloadImages';
 import CreatorStatusActions from '@/components/admin/CreatorStatusActions';
+import FormInput from '@/components/FormInput';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface Creator {
   id: string;
@@ -491,86 +499,58 @@ export default function AdminCreatorsPage() {
         </div>
       </div>
 
-      {/* Add Category Modal */}
-      <AnimatePresence>
-        {showAddCategoryModal && (
-          <div className="fixed inset-0 flex items-center justify-center z-[100] p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowAddCategoryModal(false)}
-              className="absolute inset-0 bg-black/40"
-            />
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="relative w-full max-w-sm flex flex-col items-center p-8 z-10 bg-white rounded-[24px] shadow-xl animate-fade-in"
-            >
-              {/* Close Button */}
-              <button
-                onClick={() => setShowAddCategoryModal(false)}
-                className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-500 hover:bg-gray-100 transition-all z-20"
-              >
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                >
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-              </button>
-
-              {/* Responsive Illustration */}
-              <div className="w-28 sm:w-36 md:w-44 lg:w-56 aspect-[3/2] mt-3 mb-4">
+      <Dialog
+        open={showAddCategoryModal}
+        onOpenChange={(open) => {
+          setShowAddCategoryModal(open);
+          if (!open) {
+            setIsCategoryDropdownOpen(false);
+            setCategoryError('');
+          }
+        }}
+      >
+        <DialogContent className="max-w-md rounded-[28px] border border-gray-100 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.18)] sm:p-8">
+              <DialogHeader>
                 <Image
                   src="/assets/add-category-sm.webp"
                   unoptimized
-                  alt="Add category"
-                  width={480}
-                  height={320}
+                  alt=""
+                  width={176}
+                  height={132}
                   loading="eager"
-                  className="w-full h-full object-contain"
+                  className="mb-3 h-28 w-40 object-contain"
                 />
-              </div>
+                <DialogTitle>Add Creator Category</DialogTitle>
+                <DialogDescription className="mt-1">Add a new category for creators.</DialogDescription>
+              </DialogHeader>
 
-              <h3 className="text-xl sm:text-2xl font-bold text-black mb-2 text-center">
-                Add Creator Category
-              </h3>
-
-              <p className="text-xs sm:text-sm text-gray-500 text-center mb-6">
-                Add a new category for creators.
-              </p>
-
-              {/* Custom Input / Dropdown Container */}
-              <div className="w-full mb-6 relative">
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 text-left">Category</label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={selectedCategory}
-                    onChange={(e) => {
-                      setSelectedCategory(e.target.value);
-                      setCategoryError('');
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleAddCategorySubmit();
-                      }
-                    }}
-                    placeholder="Type or select category (e.g. Gaming)"
-                    className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-semibold text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#0012FF] transition-all pr-10"
-                  />
+              <form
+                className="mt-6 space-y-5"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void handleAddCategorySubmit();
+                }}
+              >
+              <div className="relative">
+                <FormInput
+                  id="creator-category"
+                  label="Category"
+                  required
+                  placeholder="Type or select category (e.g. Gaming)"
+                  value={selectedCategory}
+                  error={categoryError}
+                  onChange={(e) => {
+                    setSelectedCategory(e.target.value);
+                    setCategoryError('');
+                  }}
+                  className="pr-11 font-semibold"
+                  disabled={isSubmittingCategory}
+                />
                 <button
                     type="button"
-                  onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 cursor-pointer"
+                    onClick={() => setIsCategoryDropdownOpen((open) => !open)}
+                    disabled={isSubmittingCategory}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-gray-400 hover:bg-gray-50 hover:text-gray-700 disabled:opacity-50"
                 >
                   <svg
                     width="14"
@@ -584,22 +564,8 @@ export default function AdminCreatorsPage() {
                     <polyline points="6 9 12 15 18 9" />
                   </svg>
                 </button>
-                </div>
-
-                {categoryError && (
-                  <p className="text-xs text-red-500 font-semibold mt-1.5 text-left">{categoryError}</p>
-                )}
-
-                <AnimatePresence>
-                  {isCategoryDropdownOpen && (
-                    <>
-                      <div className="fixed inset-0 z-20" onClick={() => setIsCategoryDropdownOpen(false)} />
-                      <motion.div
-                        initial={{ opacity: 0, y: 5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 5 }}
-                        className="absolute left-0 right-0 mt-1 bg-white border border-gray-100 rounded-xl shadow-xl z-30 max-h-48 overflow-y-auto py-1"
-                      >
+                {isCategoryDropdownOpen && (
+                      <div className="absolute left-0 right-0 top-full z-30 mt-1 max-h-48 overflow-y-auto rounded-xl border border-gray-100 bg-white py-1 shadow-xl">
                         <div className="px-3 py-1.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider border-b border-gray-50">
                           Existing Categories
                         </div>
@@ -612,7 +578,7 @@ export default function AdminCreatorsPage() {
                               setIsCategoryDropdownOpen(false);
                               setCategoryError('');
                             }}
-                            className={`w-full text-left px-4 py-2 text-sm font-semibold transition-all ${selectedCategory === cat
+                            className={`w-full px-4 py-2 text-left text-sm font-semibold transition-all ${selectedCategory === cat
                               ? 'bg-[#0012FF] text-white'
                               : 'text-gray-600 hover:bg-gray-50'
                               }`}
@@ -620,38 +586,31 @@ export default function AdminCreatorsPage() {
                             {cat}
                           </button>
                         ))}
-                      </motion.div>
-                    </>
-                  )}
-                </AnimatePresence>
+                      </div>
+                )}
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex gap-3 w-full">
+              <div className="flex gap-3">
                 <button
                   type="button"
-                  onClick={() => {
-                    setShowAddCategoryModal(false);
-                    setCategoryError('');
-                  }}
-                  className="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-all bg-white cursor-pointer"
+                  onClick={() => setShowAddCategoryModal(false)}
+                  disabled={isSubmittingCategory}
+                  className="flex-1 rounded-xl border border-gray-200 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50"
                 >
                   Cancel
                 </button>
 
                 <button
-                  type="button"
-                  onClick={handleAddCategorySubmit}
-                  disabled={!selectedCategory || isSubmittingCategory}
-                  className="flex-1 py-2.5 bg-[#0012FF] disabled:bg-blue-300 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-all cursor-pointer"
+                  type="submit"
+                  disabled={!selectedCategory.trim() || isSubmittingCategory}
+                  className="flex-1 rounded-xl bg-[#0012FF] py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
                 >
                   {isSubmittingCategory ? 'Adding...' : 'Add'}
                 </button>
               </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+              </form>
+        </DialogContent>
+      </Dialog>
     </motion.div>
   );
 }

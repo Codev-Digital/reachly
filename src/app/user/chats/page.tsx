@@ -1,13 +1,15 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, useRef } from 'react';
-import Image from 'next/image';
-import { toast } from 'sonner';
-import UserNavbar from '@/components/UserNavbar';
-import VoicePlayer from '@/components/VoicePlayer';
-import ChatAttachmentBubble from '@/components/chat/ChatAttachmentBubble';
-import ChatMessageShell, { chatTextBubbleClass } from '@/components/chat/ChatMessageShell';
-import MediaPreviewBar from '@/components/chat/MediaPreviewBar';
+import React, { useState, useEffect, useRef } from "react";
+import Image from "next/image";
+import { toast } from "sonner";
+import UserNavbar from "@/components/UserNavbar";
+import VoicePlayer from "@/components/VoicePlayer";
+import ChatAttachmentBubble from "@/components/chat/ChatAttachmentBubble";
+import ChatMessageShell, {
+  chatTextBubbleClass,
+} from "@/components/chat/ChatMessageShell";
+import MediaPreviewBar from "@/components/chat/MediaPreviewBar";
 import {
   attachmentTypeForFile,
   filterChatFiles,
@@ -15,12 +17,13 @@ import {
   normalizeMessageAttachments,
   parseEncodedAttachmentMessage,
   type ChatAttachment,
-} from '@/lib/chatAttachments';
+} from "@/lib/chatAttachments";
+import { BadgeCheck } from "lucide-react";
 
 interface ConversationInfo {
   id: string;
   conversationId: string;
-  type?: 'dm' | 'broadcast';
+  type?: "dm" | "broadcast";
   eventId?: string | null;
   /** Channel title (event title for broadcasts). */
   creator: string;
@@ -55,7 +58,7 @@ interface ChatMessage {
   id: string;
   conversationId: string;
   senderId: string;
-  senderRole: 'creator' | 'user';
+  senderRole: "creator" | "user";
   senderName?: string;
   senderAvatar?: string;
   content: string;
@@ -67,55 +70,68 @@ interface ChatMessage {
 }
 
 const formatMsgTime = (dateStr: string | null): string => {
-  if (!dateStr) return '';
+  if (!dateStr) return "";
   const date = new Date(dateStr);
   let hours = date.getHours();
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  const ampm = hours >= 12 ? 'pm' : 'am';
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const ampm = hours >= 12 ? "pm" : "am";
   hours = hours % 12;
   hours = hours ? hours : 12;
   return `${hours}:${minutes}${ampm}`;
 };
 
 const formatMsgDate = (dateStr: string | null): string => {
-  if (!dateStr) return '';
+  if (!dateStr) return "";
   const date = new Date(dateStr);
   const now = new Date();
-  
+
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+  const yesterday = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate() - 1,
+  );
   const msgDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
   if (msgDate.getTime() === today.getTime()) {
-    return 'Today';
+    return "Today";
   } else if (msgDate.getTime() === yesterday.getTime()) {
-    return 'Yesterday';
+    return "Yesterday";
   } else {
-    return date.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+    return date.toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   }
 };
 
 // Format scheduled time range e.g. "Sat at 03:00 PM to 05:00 PM"
-const formatTimeRange = (scheduledDate: string, timeStr: string, durationStr: string): string => {
-  if (!scheduledDate || !timeStr) return timeStr || '';
+const formatTimeRange = (
+  scheduledDate: string,
+  timeStr: string,
+  durationStr: string,
+): string => {
+  if (!scheduledDate || !timeStr) return timeStr || "";
   try {
     const base = new Date(scheduledDate);
-    const dayName = base.toLocaleDateString('en-US', { weekday: 'short' });
+    const dayName = base.toLocaleDateString("en-US", { weekday: "short" });
     // Parse the time string (e.g. "03:00 PM")
-    const [timePart, meridiem] = timeStr.split(' ');
-    let [h, m] = timePart.split(':').map(Number);
-    if (meridiem === 'PM' && h !== 12) h += 12;
-    if (meridiem === 'AM' && h === 12) h = 0;
+    const [timePart, meridiem] = timeStr.split(" ");
+    let [h, m] = timePart.split(":").map(Number);
+    if (meridiem === "PM" && h !== 12) h += 12;
+    if (meridiem === "AM" && h === 12) h = 0;
     const startDate = new Date(base);
     startDate.setHours(h, m, 0, 0);
-    const durMin = parseInt(durationStr || '0', 10);
+    const durMin = parseInt(durationStr || "0", 10);
     const endDate = new Date(startDate.getTime() + durMin * 60000);
-    const fmt = (d: Date) => d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    const fmt = (d: Date) =>
+      d.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      });
     if (durMin > 0) return `${dayName} at ${fmt(startDate)} to ${fmt(endDate)}`;
     return `${dayName} at ${fmt(startDate)}`;
   } catch {
@@ -130,8 +146,8 @@ export default function UserChatsPage() {
   const [conversations, setConversations] = useState<ConversationInfo[]>([]);
   const [activeChat, setActiveChat] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [message, setMessage] = useState('');
-  const [searchText, setSearchText] = useState('');
+  const [message, setMessage] = useState("");
+  const [searchText, setSearchText] = useState("");
 
   // Audio recording states
   const [isRecording, setIsRecording] = useState(false);
@@ -144,7 +160,7 @@ export default function UserChatsPage() {
   const [loadingConversations, setLoadingConversations] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
-  const [displayName, setDisplayName] = useState<string>('');
+  const [displayName, setDisplayName] = useState<string>("");
   const [userId, setUserId] = useState<string | null>(null);
   const [participantProfiles, setParticipantProfiles] = useState<
     Record<string, { name: string; avatar: string }>
@@ -153,7 +169,9 @@ export default function UserChatsPage() {
   // Load cached conversations on mount
   useEffect(() => {
     try {
-      const cachedConvs = sessionStorage.getItem('reachly_user_conversations_cache');
+      const cachedConvs = sessionStorage.getItem(
+        "reachly_user_conversations_cache",
+      );
       if (cachedConvs) {
         setConversations(JSON.parse(cachedConvs));
         setLoadingConversations(false);
@@ -163,7 +181,7 @@ export default function UserChatsPage() {
   const [isOtherUserOnline, setIsOtherUserOnline] = useState(false);
   const [onlineCount, setOnlineCount] = useState(0);
   const [typingUsers, setTypingUsers] = useState<
-    { id: string; name: string; avatar: string; role: 'creator' | 'user' }[]
+    { id: string; name: string; avatar: string; role: "creator" | "user" }[]
   >([]);
   const [isOtherUserTyping, setIsOtherUserTyping] = useState(false);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -183,7 +201,7 @@ export default function UserChatsPage() {
   const [lightboxMedia, setLightboxMedia] = useState<{
     urls: string[];
     index: number;
-    type: 'image' | 'video';
+    type: "image" | "video";
   } | null>(null);
   const uploadAbortController = useRef<AbortController | null>(null);
   const sendingRef = useRef<boolean>(false);
@@ -193,22 +211,30 @@ export default function UserChatsPage() {
   const [isArchivingChat, setIsArchivingChat] = useState(false);
 
   // localStorage helpers — survive tab switches, remounts, and polls
-  const LS_KEY = 'reachly_user_archived_chats';
+  const LS_KEY = "reachly_user_archived_chats";
   const getArchivedIds = (): Set<string> => {
-    try { return new Set(JSON.parse(localStorage.getItem(LS_KEY) || '[]')); } catch { return new Set(); }
+    try {
+      return new Set(JSON.parse(localStorage.getItem(LS_KEY) || "[]"));
+    } catch {
+      return new Set();
+    }
   };
   const addArchivedId = (id: string) => {
-    const s = getArchivedIds(); s.add(id);
+    const s = getArchivedIds();
+    s.add(id);
     localStorage.setItem(LS_KEY, JSON.stringify([...s]));
   };
   const removeArchivedId = (id: string) => {
-    const s = getArchivedIds(); s.delete(id);
+    const s = getArchivedIds();
+    s.delete(id);
     localStorage.setItem(LS_KEY, JSON.stringify([...s]));
   };
 
   const triggerFileInput = (onlyImages?: boolean) => {
     if (fileInputRef.current) {
-      fileInputRef.current.accept = onlyImages ? 'image/*' : 'image/*,video/*,application/pdf,.doc,.docx,.xls,.xlsx';
+      fileInputRef.current.accept = onlyImages
+        ? "image/*"
+        : "image/*,video/*,application/pdf,.doc,.docx,.xls,.xlsx";
       fileInputRef.current.click();
     }
   };
@@ -233,10 +259,13 @@ export default function UserChatsPage() {
 
   const handleFileInput = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
-    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (fileInputRef.current) fileInputRef.current.value = "";
     if (!files.length) return;
 
-    const canCombine = previewFiles.length > 0 && previewFiles.every((f) => f.type.startsWith('image/')) && files.every((f) => f.type.startsWith('image/'));
+    const canCombine =
+      previewFiles.length > 0 &&
+      previewFiles.every((f) => f.type.startsWith("image/")) &&
+      files.every((f) => f.type.startsWith("image/"));
     const combined = canCombine ? [...previewFiles, ...files] : files;
 
     const { accepted, oversized, error } = filterChatFiles(combined);
@@ -258,35 +287,44 @@ export default function UserChatsPage() {
     setPreviewFiles(accepted);
   };
 
-  const uploadOneFile = (file: File, signal: AbortSignal, onProgress: (pct: number) => void) =>
+  const uploadOneFile = (
+    file: File,
+    signal: AbortSignal,
+    onProgress: (pct: number) => void,
+  ) =>
     new Promise<{ publicUrl: string }>(async (resolve, reject) => {
       try {
-        const tokenRes = await fetch('/api/messages/upload/token', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fileName: file.name, fileType: file.type, fileSize: file.size }),
+        const tokenRes = await fetch("/api/messages/upload/token", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fileName: file.name,
+            fileType: file.type,
+            fileSize: file.size,
+          }),
           signal,
         });
         if (!tokenRes.ok) {
           const errBody = await tokenRes.json().catch(() => ({}));
-          throw new Error(errBody.error || 'Failed to get upload token');
+          throw new Error(errBody.error || "Failed to get upload token");
         }
         const { signedUrl, publicUrl } = await tokenRes.json();
 
         const xhr = new XMLHttpRequest();
         xhr.upload.onprogress = (event) => {
-          if (event.lengthComputable) onProgress(Math.round((event.loaded / event.total) * 100));
+          if (event.lengthComputable)
+            onProgress(Math.round((event.loaded / event.total) * 100));
         };
-        xhr.open('PUT', signedUrl, true);
+        xhr.open("PUT", signedUrl, true);
         xhr.onload = () => {
           if (xhr.status >= 200 && xhr.status < 300) resolve({ publicUrl });
           else reject(new Error(`Upload failed: ${xhr.statusText}`));
         };
-        xhr.onerror = () => reject(new Error('Upload failed'));
-        xhr.onabort = () => reject(new Error('Upload canceled'));
-        xhr.setRequestHeader('Content-Type', file.type);
+        xhr.onerror = () => reject(new Error("Upload failed"));
+        xhr.onabort = () => reject(new Error("Upload canceled"));
+        xhr.setRequestHeader("Content-Type", file.type);
         xhr.send(file);
-        signal.addEventListener('abort', () => xhr.abort());
+        signal.addEventListener("abort", () => xhr.abort());
       } catch (err) {
         reject(err);
       }
@@ -318,10 +356,16 @@ export default function UserChatsPage() {
       const uploaded: ChatAttachment[] = [];
       for (let i = 0; i < accepted.length; i++) {
         const file = accepted[i];
-        const { publicUrl } = await uploadOneFile(file, abortController.signal, (pct) => {
-          const overall = Math.round(((i + pct / 100) / accepted.length) * 100);
-          setUploadProgress(overall);
-        });
+        const { publicUrl } = await uploadOneFile(
+          file,
+          abortController.signal,
+          (pct) => {
+            const overall = Math.round(
+              ((i + pct / 100) / accepted.length) * 100,
+            );
+            setUploadProgress(overall);
+          },
+        );
         uploaded.push({
           url: publicUrl,
           fileType: attachmentTypeForFile(file),
@@ -330,39 +374,45 @@ export default function UserChatsPage() {
         });
       }
 
-      const primaryType = uploaded.every((a) => a.fileType === 'image')
-        ? 'image'
+      const primaryType = uploaded.every((a) => a.fileType === "image")
+        ? "image"
         : uploaded[0].fileType;
-      const lastMessageLabel = uploaded.length > 1
-        ? `[Attached ${uploaded.length} images]`
-        : `[Attached ${primaryType}]`;
+      const lastMessageLabel =
+        uploaded.length > 1
+          ? `[Attached ${uploaded.length} images]`
+          : `[Attached ${primaryType}]`;
 
       const tempId = `temp-${Date.now()}`;
       const optimisticAttachments = uploaded.map((a, i) => ({
         ...a,
-        url: a.fileType === 'image' ? URL.createObjectURL(accepted[i]) : a.url,
+        url: a.fileType === "image" ? URL.createObjectURL(accepted[i]) : a.url,
       }));
       const optimisticMsg: ChatMessage = {
         id: tempId,
         tempId,
         conversationId: activeChat,
         senderId: userId,
-        senderRole: 'user',
+        senderRole: "user",
         content: lastMessageLabel,
         createdAt: new Date().toISOString(),
         read: false,
         attachment: optimisticAttachments[0],
         attachments: optimisticAttachments,
       };
-      setMessages(prev => [...prev, optimisticMsg]);
+      setMessages((prev) => [...prev, optimisticMsg]);
       scrollToBottom();
 
-      setConversations(prev =>
+      setConversations((prev) =>
         prev
-          .map(c =>
+          .map((c) =>
             c.id === activeChat
-              ? { ...c, lastMessage: lastMessageLabel, lastMessageTime: optimisticMsg.createdAt, lastMessageSenderRole: 'user' }
-              : c
+              ? {
+                  ...c,
+                  lastMessage: lastMessageLabel,
+                  lastMessageTime: optimisticMsg.createdAt,
+                  lastMessageSenderRole: "user",
+                }
+              : c,
           )
           .sort((a, b) => {
             const hasMsgA = !!a.lastMessageTime;
@@ -370,143 +420,166 @@ export default function UserChatsPage() {
             if (hasMsgA && !hasMsgB) return -1;
             if (!hasMsgA && hasMsgB) return 1;
             if (hasMsgA && hasMsgB)
-              return new Date(b.lastMessageTime!).getTime() - new Date(a.lastMessageTime!).getTime();
+              return (
+                new Date(b.lastMessageTime!).getTime() -
+                new Date(a.lastMessageTime!).getTime()
+              );
             return 0;
-          })
+          }),
       );
 
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
         const attachMeta = JSON.stringify(uploaded);
-        wsRef.current.send(JSON.stringify({
-          type: 'message',
-          conversationId: activeChat,
-          senderId: userId,
-          senderRole: 'user',
-          content: `${lastMessageLabel}|||${attachMeta}|||`,
-          tempId,
-          attachment: uploaded[0],
-          attachments: uploaded,
-        }));
+        wsRef.current.send(
+          JSON.stringify({
+            type: "message",
+            conversationId: activeChat,
+            senderId: userId,
+            senderRole: "user",
+            content: `${lastMessageLabel}|||${attachMeta}|||`,
+            tempId,
+            attachment: uploaded[0],
+            attachments: uploaded,
+          }),
+        );
       }
 
       setUploadFiles([]);
     } catch (err: any) {
-      if (err.message === 'Upload canceled' || err.name === 'AbortError') {
+      if (err.message === "Upload canceled" || err.name === "AbortError") {
         setUploadError(true);
       } else {
-        console.error('File upload error:', err);
+        console.error("File upload error:", err);
         setUploadError(true);
-        setFileError(err.message || 'Upload failed');
+        setFileError(err.message || "Upload failed");
       }
-      setMessages(prev => prev.filter(m => {
-        const atts = normalizeMessageAttachments(m);
-        return !m.tempId || !atts.some((a) => a.url.startsWith('blob:'));
-      }));
+      setMessages((prev) =>
+        prev.filter((m) => {
+          const atts = normalizeMessageAttachments(m);
+          return !m.tempId || !atts.some((a) => a.url.startsWith("blob:"));
+        }),
+      );
     } finally {
       setIsUploading(false);
       uploadAbortController.current = null;
     }
   };
 
-  const scrollToBottom = (behavior: 'smooth' | 'auto' = 'smooth') => {
-    const container = document.getElementById('chat-messages-container');
+  const scrollToBottom = (behavior: "smooth" | "auto" = "smooth") => {
+    const container = document.getElementById("chat-messages-container");
     if (container) {
       container.scrollTo({
         top: container.scrollHeight,
-        behavior: behavior
+        behavior: behavior,
       });
     }
   };
 
   useEffect(() => {
     if (!loadingMessages) {
-      scrollToBottom('auto');
-      const t = setTimeout(() => scrollToBottom('smooth'), 100);
+      scrollToBottom("auto");
+      const t = setTimeout(() => scrollToBottom("smooth"), 100);
       return () => clearTimeout(t);
     }
   }, [messages, loadingMessages]);
 
   // Fetch user data
   useEffect(() => {
-    fetch('/api/user/me')
-      .then(res => res.json())
-      .then(data => {
+    fetch("/api/user/me")
+      .then((res) => res.json())
+      .then((data) => {
         if (data?.user) {
-          setDisplayName(data.user.name || '');
+          setDisplayName(data.user.name || "");
           setProfilePhoto(data.user.profilePhoto || data.user.image || null);
           setUserId(data.user.id || null);
         }
       })
-      .catch(err => console.error('Error fetching user data:', err));
+      .catch((err) => console.error("Error fetching user data:", err));
   }, []);
 
   // Fetch conversations
   const fetchConversations = async () => {
     try {
-      const res = await fetch('/api/conversations');
+      const res = await fetch("/api/conversations");
       if (res.ok) {
         const data = await res.json();
-        const list: ConversationInfo[] = (data.conversations || []).map((c: any) => ({
-          id: c.id,
-          conversationId: c.conversationId,
-          type: c.type === 'broadcast' ? 'broadcast' : 'dm',
-          eventId: c.eventId ? String(c.eventId) : null,
-          // Broadcast channel name = event title (API `follower` / `creator`)
-          creator: c.type === 'broadcast'
-            ? (c.follower || c.creator || 'Event')
-            : (c.creator || c.follower || 'Unknown'),
-          creatorName: c.creatorName || '',
-          creatorAvatar: c.creatorAvatar || '',
-          username: c.username || '',
-          session: c.session || '',
-          shortDate: c.shortDate || '',
-          time: c.time || '',
-          duration: c.duration || '',
-          price: c.price || '',
-          // Broadcast group avatar = event banner
-          image: c.image || c.avatar || '/avatar.png',
-          meetingUrl: c.meetingUrl || null,
-          isLocked: c.isLocked,
-          isMutedForMe: Boolean(c.isMutedForMe),
-          lastMessage: c.lastMessage || '',
-          lastMessageTime: c.lastMessageTime || null,
-          lastMessageSenderRole: c.lastMessageSenderRole || null,
-          ref: c.ref || '',
-          unreadCount: c.unreadCount || 0,
-          scheduledDate: c.scheduledDate || '',
-          isArchivedByUser: c.isArchivedByUser ?? false,
-          isOnline: c.isOnline || false,
-          participantCount: Number(c.participantCount) || 0,
-        })).sort((a: ConversationInfo, b: ConversationInfo) => {
-          const hasMsgA = !!a.lastMessageTime;
-          const hasMsgB = !!b.lastMessageTime;
-          if (hasMsgA && !hasMsgB) return -1;
-          if (!hasMsgA && hasMsgB) return 1;
-          if (hasMsgA && hasMsgB) {
-            return new Date(b.lastMessageTime!).getTime() - new Date(a.lastMessageTime!).getTime();
-          }
-          const dateA = a.scheduledDate ? new Date(a.scheduledDate).getTime() : 0;
-          const dateB = b.scheduledDate ? new Date(b.scheduledDate).getTime() : 0;
-          return dateB - dateA;
-        });
-        setConversations(prev => {
+        const list: ConversationInfo[] = (data.conversations || [])
+          .map((c: any) => ({
+            id: c.id,
+            conversationId: c.conversationId,
+            type: c.type === "broadcast" ? "broadcast" : "dm",
+            eventId: c.eventId ? String(c.eventId) : null,
+            // Broadcast channel name = event title (API `follower` / `creator`)
+            creator:
+              c.type === "broadcast"
+                ? c.follower || c.creator || "Event"
+                : c.creator || c.follower || "Unknown",
+            creatorName: c.creatorName || "",
+            creatorAvatar: c.creatorAvatar || "",
+            username: c.username || "",
+            session: c.session || "",
+            shortDate: c.shortDate || "",
+            time: c.time || "",
+            duration: c.duration || "",
+            price: c.price || "",
+            // Broadcast group avatar = event banner
+            image: c.image || c.avatar || "/avatar.png",
+            meetingUrl: c.meetingUrl || null,
+            isLocked: c.isLocked,
+            isMutedForMe: Boolean(c.isMutedForMe),
+            lastMessage: c.lastMessage || "",
+            lastMessageTime: c.lastMessageTime || null,
+            lastMessageSenderRole: c.lastMessageSenderRole || null,
+            ref: c.ref || "",
+            unreadCount: c.unreadCount || 0,
+            scheduledDate: c.scheduledDate || "",
+            isArchivedByUser: c.isArchivedByUser ?? false,
+            isOnline: c.isOnline || false,
+            participantCount: Number(c.participantCount) || 0,
+          }))
+          .sort((a: ConversationInfo, b: ConversationInfo) => {
+            const hasMsgA = !!a.lastMessageTime;
+            const hasMsgB = !!b.lastMessageTime;
+            if (hasMsgA && !hasMsgB) return -1;
+            if (!hasMsgA && hasMsgB) return 1;
+            if (hasMsgA && hasMsgB) {
+              return (
+                new Date(b.lastMessageTime!).getTime() -
+                new Date(a.lastMessageTime!).getTime()
+              );
+            }
+            const dateA = a.scheduledDate
+              ? new Date(a.scheduledDate).getTime()
+              : 0;
+            const dateB = b.scheduledDate
+              ? new Date(b.scheduledDate).getTime()
+              : 0;
+            return dateB - dateA;
+          });
+        setConversations((prev) => {
           const localArchived = getArchivedIds();
           // Also sync any API-confirmed archives into localStorage
-          list.forEach(c => { if (Boolean(c.isArchivedByUser)) localArchived.add(c.id); });
+          list.forEach((c) => {
+            if (Boolean(c.isArchivedByUser)) localArchived.add(c.id);
+          });
           localStorage.setItem(LS_KEY, JSON.stringify([...localArchived]));
-          const updatedList = list.map(c => ({
+          const updatedList = list.map((c) => ({
             ...c,
             // localStorage is the source of truth — survives everything
-            isArchivedByUser: localArchived.has(c.id) || Boolean(c.isArchivedByUser),
+            isArchivedByUser:
+              localArchived.has(c.id) || Boolean(c.isArchivedByUser),
           }));
           try {
-            sessionStorage.setItem('reachly_user_conversations_cache', JSON.stringify(updatedList));
+            sessionStorage.setItem(
+              "reachly_user_conversations_cache",
+              JSON.stringify(updatedList),
+            );
           } catch (e) {}
           return updatedList;
         });
       }
     } catch (err) {
-      console.error('Error fetching conversations:', err);
+      console.error("Error fetching conversations:", err);
     } finally {
       setLoadingConversations(false);
     }
@@ -517,29 +590,32 @@ export default function UserChatsPage() {
     void fetchConversations();
     const id = setInterval(() => void fetchConversations(), 15000);
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
+      if (document.visibilityState === "visible") {
         void fetchConversations();
       }
     };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => {
       clearInterval(id);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, []);
 
   // Auto-activate chat if bookingRef or eventId is passed in URL query
   useEffect(() => {
-    if (typeof window !== 'undefined' && conversations.length > 0) {
+    if (typeof window !== "undefined" && conversations.length > 0) {
       const params = new URLSearchParams(window.location.search);
-      const bookingRef = params.get('bookingRef');
-      const eventId = params.get('eventId');
+      const bookingRef = params.get("bookingRef");
+      const eventId = params.get("eventId");
       if (bookingRef) {
         const found = conversations.find((c) => c.ref === bookingRef);
         if (found) setActiveChat(found.id);
       } else if (eventId) {
         const found = conversations.find(
-          (c) => c.type === 'broadcast' && c.eventId && String(c.eventId) === String(eventId)
+          (c) =>
+            c.type === "broadcast" &&
+            c.eventId &&
+            String(c.eventId) === String(eventId),
         );
         if (found) setActiveChat(found.id);
       }
@@ -548,7 +624,7 @@ export default function UserChatsPage() {
 
   // WebSocket + message history
   useEffect(() => {
-    const currentConv = conversations.find(c => c.id === activeChat);
+    const currentConv = conversations.find((c) => c.id === activeChat);
 
     setIsOtherUserOnline(false);
     setOnlineCount(0);
@@ -561,55 +637,66 @@ export default function UserChatsPage() {
     }
     setParticipantProfiles({});
 
-    setConversations(prev => {
-      const updated = prev.map(c => (c.id === activeChat ? { ...c, unreadCount: 0 } : c));
+    setConversations((prev) => {
+      const updated = prev.map((c) =>
+        c.id === activeChat ? { ...c, unreadCount: 0 } : c,
+      );
       try {
-        sessionStorage.setItem('reachly_user_conversations_cache', JSON.stringify(updated));
+        sessionStorage.setItem(
+          "reachly_user_conversations_cache",
+          JSON.stringify(updated),
+        );
       } catch (e) {}
       return updated;
     });
 
-    fetch('/api/conversations/mark-read', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ conversationId: activeChat, role: 'user' })
+    fetch("/api/conversations/mark-read", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ conversationId: activeChat, role: "user" }),
     }).catch(console.error);
 
     // Try to load messages from cache immediately to skip spinner
     try {
-      const cachedMessagesStr = sessionStorage.getItem(`reachly_chat_messages_${activeChat}`);
-      let cachedMessages: ChatMessage[] = cachedMessagesStr ? JSON.parse(cachedMessagesStr) : [];
+      const cachedMessagesStr = sessionStorage.getItem(
+        `reachly_chat_messages_${activeChat}`,
+      );
+      let cachedMessages: ChatMessage[] = cachedMessagesStr
+        ? JSON.parse(cachedMessagesStr)
+        : [];
 
       if (currentConv && currentConv.lastMessage) {
         const cacheLastMsg = cachedMessages[cachedMessages.length - 1];
-        const isLastMsgInCacheSame = cacheLastMsg && (
-          cacheLastMsg.content === currentConv.lastMessage ||
-          (cacheLastMsg.attachment && currentConv.lastMessage.startsWith('[Attached'))
-        );
+        const isLastMsgInCacheSame =
+          cacheLastMsg &&
+          (cacheLastMsg.content === currentConv.lastMessage ||
+            (cacheLastMsg.attachment &&
+              currentConv.lastMessage.startsWith("[Attached")));
 
         if (!isLastMsgInCacheSame) {
           const tempMsg: ChatMessage = {
             id: `temp-sidebar-${Date.now()}`,
             conversationId: activeChat,
-            senderId: '',
-            senderRole: (currentConv.lastMessageSenderRole as any) || 'user',
+            senderId: "",
+            senderRole: (currentConv.lastMessageSenderRole as any) || "user",
             content: currentConv.lastMessage,
             createdAt: currentConv.lastMessageTime || new Date().toISOString(),
-            read: true
+            read: true,
           };
 
           // Handle if the last message is an attachment
-          if (currentConv.lastMessage.startsWith('[Attached')) {
-            let fileType = 'document';
-            if (currentConv.lastMessage.includes('image')) fileType = 'image';
-            else if (currentConv.lastMessage.includes('video')) fileType = 'video';
-            else if (currentConv.lastMessage.includes('pdf')) fileType = 'pdf';
+          if (currentConv.lastMessage.startsWith("[Attached")) {
+            let fileType = "document";
+            if (currentConv.lastMessage.includes("image")) fileType = "image";
+            else if (currentConv.lastMessage.includes("video"))
+              fileType = "video";
+            else if (currentConv.lastMessage.includes("pdf")) fileType = "pdf";
 
             tempMsg.attachment = {
-              url: '', // Will be loaded by the API call
+              url: "", // Will be loaded by the API call
               fileType,
-              fileName: 'File',
-              fileSize: 0
+              fileName: "File",
+              fileSize: 0,
             };
           }
 
@@ -624,71 +711,102 @@ export default function UserChatsPage() {
     }
 
     fetch(`/api/conversations/messages?conversationId=${activeChat}`)
-      .then(res => res.json())
-      .then(data => {
+      .then((res) => res.json())
+      .then((data) => {
         if (data.success) {
-          const parsedMessages = (data.messages || []).map((m: any) => parseEncodedAttachment(m));
+          const parsedMessages = (data.messages || []).map((m: any) =>
+            parseEncodedAttachment(m),
+          );
           setMessages(parsedMessages);
-          if (data.participantProfiles && typeof data.participantProfiles === 'object') {
+          if (
+            data.participantProfiles &&
+            typeof data.participantProfiles === "object"
+          ) {
             setParticipantProfiles(data.participantProfiles);
           } else {
-            const fromMsgs: Record<string, { name: string; avatar: string }> = {};
+            const fromMsgs: Record<string, { name: string; avatar: string }> =
+              {};
             for (const m of parsedMessages) {
               if (m.senderId && (m.senderName || m.senderAvatar)) {
                 fromMsgs[m.senderId] = {
-                  name: m.senderName || 'User',
-                  avatar: m.senderAvatar || '/avatar.png',
+                  name: m.senderName || "User",
+                  avatar: m.senderAvatar || "/avatar.png",
                 };
               }
             }
             setParticipantProfiles(fromMsgs);
           }
           try {
-            sessionStorage.setItem(`reachly_chat_messages_${activeChat}`, JSON.stringify(parsedMessages));
+            sessionStorage.setItem(
+              `reachly_chat_messages_${activeChat}`,
+              JSON.stringify(parsedMessages),
+            );
           } catch (e) {}
         }
       })
-      .catch(err => console.error('Error fetching messages:', err))
+      .catch((err) => console.error("Error fetching messages:", err))
       .finally(() => setLoadingMessages(false));
 
-    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'ws://localhost:3001';
+    const socketUrl =
+      process.env.NEXT_PUBLIC_SOCKET_URL || "ws://localhost:3001";
     const socket = new WebSocket(socketUrl);
     wsRef.current = socket;
 
     socket.onopen = () => {
-      socket.send(JSON.stringify({ type: 'join', conversationId: activeChat, senderRole: 'user' }));
+      socket.send(
+        JSON.stringify({
+          type: "join",
+          conversationId: activeChat,
+          senderRole: "user",
+        }),
+      );
     };
 
     socket.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        if (data.type === 'message') {
+        if (data.type === "message") {
           const parsedMsg = parseEncodedAttachment(data.message);
           if (parsedMsg.conversationId === activeChat) {
-            if (parsedMsg.senderId && (parsedMsg.senderName || parsedMsg.senderAvatar)) {
-              setParticipantProfiles(prev => ({
+            if (
+              parsedMsg.senderId &&
+              (parsedMsg.senderName || parsedMsg.senderAvatar)
+            ) {
+              setParticipantProfiles((prev) => ({
                 ...prev,
                 [parsedMsg.senderId]: {
-                  name: parsedMsg.senderName || prev[parsedMsg.senderId]?.name || 'User',
-                  avatar: parsedMsg.senderAvatar || prev[parsedMsg.senderId]?.avatar || '/avatar.png',
+                  name:
+                    parsedMsg.senderName ||
+                    prev[parsedMsg.senderId]?.name ||
+                    "User",
+                  avatar:
+                    parsedMsg.senderAvatar ||
+                    prev[parsedMsg.senderId]?.avatar ||
+                    "/avatar.png",
                 },
               }));
             }
-            setMessages(prev => {
-              if (prev.some(m => m.id === parsedMsg.id)) return prev;
+            setMessages((prev) => {
+              if (prev.some((m) => m.id === parsedMsg.id)) return prev;
 
               let matchedIndex = -1;
               if (parsedMsg.tempId) {
-                matchedIndex = prev.findIndex(m => m.tempId === parsedMsg.tempId);
+                matchedIndex = prev.findIndex(
+                  (m) => m.tempId === parsedMsg.tempId,
+                );
               }
 
               if (matchedIndex === -1) {
                 const incomingTime = new Date(parsedMsg.createdAt).getTime();
-                matchedIndex = prev.findIndex(m =>
-                  m.id.startsWith('temp-') &&
-                  (m.content === parsedMsg.content || m.content + `|||` === parsedMsg.content.substring(0, m.content.length + 3)) &&
-                  m.senderId === parsedMsg.senderId &&
-                  Math.abs(new Date(m.createdAt).getTime() - incomingTime) < 15000
+                matchedIndex = prev.findIndex(
+                  (m) =>
+                    m.id.startsWith("temp-") &&
+                    (m.content === parsedMsg.content ||
+                      m.content + `|||` ===
+                        parsedMsg.content.substring(0, m.content.length + 3)) &&
+                    m.senderId === parsedMsg.senderId &&
+                    Math.abs(new Date(m.createdAt).getTime() - incomingTime) <
+                      15000,
                 );
               }
 
@@ -697,7 +815,8 @@ export default function UserChatsPage() {
                 copy[matchedIndex] = {
                   ...copy[matchedIndex],
                   ...parsedMsg,
-                  attachment: parsedMsg.attachment || copy[matchedIndex].attachment,
+                  attachment:
+                    parsedMsg.attachment || copy[matchedIndex].attachment,
                   attachments: parsedMsg.attachments?.length
                     ? parsedMsg.attachments
                     : copy[matchedIndex].attachments,
@@ -708,12 +827,17 @@ export default function UserChatsPage() {
               return [...prev, parsedMsg];
             });
           }
-          setConversations(prev =>
+          setConversations((prev) =>
             prev
-              .map(c =>
+              .map((c) =>
                 c.id === parsedMsg.conversationId
-                  ? { ...c, lastMessage: parsedMsg.content, lastMessageTime: parsedMsg.createdAt, lastMessageSenderRole: parsedMsg.senderRole }
-                  : c
+                  ? {
+                      ...c,
+                      lastMessage: parsedMsg.content,
+                      lastMessageTime: parsedMsg.createdAt,
+                      lastMessageSenderRole: parsedMsg.senderRole,
+                    }
+                  : c,
               )
               .sort((a, b) => {
                 const hasMsgA = !!a.lastMessageTime;
@@ -721,21 +845,34 @@ export default function UserChatsPage() {
                 if (hasMsgA && !hasMsgB) return -1;
                 if (!hasMsgA && hasMsgB) return 1;
                 if (hasMsgA && hasMsgB)
-                  return new Date(b.lastMessageTime!).getTime() - new Date(a.lastMessageTime!).getTime();
+                  return (
+                    new Date(b.lastMessageTime!).getTime() -
+                    new Date(a.lastMessageTime!).getTime()
+                  );
                 return 0;
-              })
+              }),
           );
-        } else if (data.type === 'presence' && data.conversationId === activeChat) {
+        } else if (
+          data.type === "presence" &&
+          data.conversationId === activeChat
+        ) {
           const count = Number(data.count) || 0;
           setOnlineCount(count);
           setIsOtherUserOnline(count > 1);
-        } else if (data.type === 'typing' && data.conversationId === activeChat) {
-          const tid = String(data.senderId || data.senderRole || 'unknown');
+        } else if (
+          data.type === "typing" &&
+          data.conversationId === activeChat
+        ) {
+          const tid = String(data.senderId || data.senderRole || "unknown");
           const entry = {
             id: tid,
-            name: data.senderName || (data.senderRole === 'creator' ? 'Creator' : 'User'),
-            avatar: data.senderAvatar || '/avatar.png',
-            role: (data.senderRole === 'creator' ? 'creator' : 'user') as 'creator' | 'user',
+            name:
+              data.senderName ||
+              (data.senderRole === "creator" ? "Creator" : "User"),
+            avatar: data.senderAvatar || "/avatar.png",
+            role: (data.senderRole === "creator" ? "creator" : "user") as
+              | "creator"
+              | "user",
           };
           setTypingUsers((prev) => {
             if (data.isTyping) {
@@ -745,44 +882,76 @@ export default function UserChatsPage() {
             return prev.filter((u) => u.id !== tid);
           });
           setIsOtherUserTyping(Boolean(data.isTyping));
-        } else if (data.type === 'read_receipt' && data.conversationId === activeChat) {
-          setMessages(prev => prev.map(m => ({ ...m, read: true })));
-        } else if (data.type === 'lock_status' && data.conversationId === activeChat) {
-          setConversations(prev =>
-            prev.map(c => (c.id === data.conversationId ? { ...c, isLocked: data.isLocked } : c))
+        } else if (
+          data.type === "read_receipt" &&
+          data.conversationId === activeChat
+        ) {
+          setMessages((prev) => prev.map((m) => ({ ...m, read: true })));
+        } else if (
+          data.type === "lock_status" &&
+          data.conversationId === activeChat
+        ) {
+          setConversations((prev) =>
+            prev.map((c) =>
+              c.id === data.conversationId
+                ? { ...c, isLocked: data.isLocked }
+                : c,
+            ),
           );
-        } else if (data.type === 'mute_status' && data.conversationId === activeChat) {
+        } else if (
+          data.type === "mute_status" &&
+          data.conversationId === activeChat
+        ) {
           setConversations((prev) =>
             prev.map((c) => {
               if (c.id !== data.conversationId) return c;
-              const mutedIds: string[] = Array.isArray(data.mutedUserIds) ? data.mutedUserIds : [];
+              const mutedIds: string[] = Array.isArray(data.mutedUserIds)
+                ? data.mutedUserIds
+                : [];
               const isMutedForMe =
-                Boolean(data.muteAll) || (userId ? mutedIds.includes(userId) : false);
+                Boolean(data.muteAll) ||
+                (userId ? mutedIds.includes(userId) : false);
               return { ...c, isMutedForMe };
-            })
+            }),
           );
-        } else if (data.type === 'message_rejected' && data.conversationId === activeChat) {
+        } else if (
+          data.type === "message_rejected" &&
+          data.conversationId === activeChat
+        ) {
           if (data.tempId) {
-            setMessages((prev) => prev.filter((m) => m.tempId !== data.tempId && m.id !== data.tempId));
-          }
-          if (data.reason === 'muted') {
-            setConversations((prev) =>
-              prev.map((c) => (c.id === data.conversationId ? { ...c, isMutedForMe: true } : c))
+            setMessages((prev) =>
+              prev.filter(
+                (m) => m.tempId !== data.tempId && m.id !== data.tempId,
+              ),
             );
           }
-        } else if (data.type === 'chat_cleared' && data.conversationId === activeChat) {
+          if (data.reason === "muted") {
+            setConversations((prev) =>
+              prev.map((c) =>
+                c.id === data.conversationId ? { ...c, isMutedForMe: true } : c,
+              ),
+            );
+          }
+        } else if (
+          data.type === "chat_cleared" &&
+          data.conversationId === activeChat
+        ) {
           setMessages([]);
           setParticipantProfiles({});
-          setConversations(prev =>
-            prev.map(c => (c.id === data.conversationId ? { ...c, lastMessage: '', lastMessageTime: null } : c))
+          setConversations((prev) =>
+            prev.map((c) =>
+              c.id === data.conversationId
+                ? { ...c, lastMessage: "", lastMessageTime: null }
+                : c,
+            ),
           );
         }
       } catch (err) {
-        console.error('Error parsing WebSocket message:', err);
+        console.error("Error parsing WebSocket message:", err);
       }
     };
 
-    socket.onclose = () => console.log('WebSocket disconnected');
+    socket.onclose = () => console.log("WebSocket disconnected");
     return () => socket.close();
   }, [activeChat]);
 
@@ -792,7 +961,7 @@ export default function UserChatsPage() {
       setPreviewFiles([]);
       const text = message.trim();
       if (!text) {
-        setMessage('');
+        setMessage("");
         return;
       }
     }
@@ -801,7 +970,7 @@ export default function UserChatsPage() {
     if (!trimmed || !activeChat || !userId || sendingRef.current) return;
 
     sendingRef.current = true;
-    setMessage('');
+    setMessage("");
 
     // Release lock in next tick/event loop
     setTimeout(() => {
@@ -819,21 +988,26 @@ export default function UserChatsPage() {
       tempId,
       conversationId: activeChat,
       senderId: userId,
-      senderRole: 'user',
+      senderRole: "user",
       content: trimmed,
       createdAt: new Date().toISOString(),
-      read: false
+      read: false,
     };
 
-    setMessages(prev => [...prev, optimisticMsg]);
+    setMessages((prev) => [...prev, optimisticMsg]);
     scrollToBottom();
 
-    setConversations(prev =>
+    setConversations((prev) =>
       prev
-        .map(c =>
+        .map((c) =>
           c.id === activeChat
-            ? { ...c, lastMessage: trimmed, lastMessageTime: optimisticMsg.createdAt, lastMessageSenderRole: 'user' }
-            : c
+            ? {
+                ...c,
+                lastMessage: trimmed,
+                lastMessageTime: optimisticMsg.createdAt,
+                lastMessageSenderRole: "user",
+              }
+            : c,
         )
         .sort((a, b) => {
           const hasMsgA = !!a.lastMessageTime;
@@ -841,38 +1015,50 @@ export default function UserChatsPage() {
           if (hasMsgA && !hasMsgB) return -1;
           if (!hasMsgA && hasMsgB) return 1;
           if (hasMsgA && hasMsgB)
-            return new Date(b.lastMessageTime!).getTime() - new Date(a.lastMessageTime!).getTime();
+            return (
+              new Date(b.lastMessageTime!).getTime() -
+              new Date(a.lastMessageTime!).getTime()
+            );
           return 0;
-        })
+        }),
     );
 
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({
-        type: 'message',
-        conversationId: activeChat,
-        senderId: userId,
-        senderRole: 'user',
-        content: trimmed,
-        tempId
-      }));
+      wsRef.current.send(
+        JSON.stringify({
+          type: "message",
+          conversationId: activeChat,
+          senderId: userId,
+          senderRole: "user",
+          content: trimmed,
+          tempId,
+        }),
+      );
     } else {
-      console.error('WebSocket server is offline.');
+      console.error("WebSocket server is offline.");
     }
   };
 
   const sendTypingStatus = (typingState: boolean) => {
-    if (!activeChat || !wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+    if (
+      !activeChat ||
+      !wsRef.current ||
+      wsRef.current.readyState !== WebSocket.OPEN
+    )
+      return;
     if (lastTypingSentRef.current === typingState) return;
 
-    wsRef.current.send(JSON.stringify({
-      type: 'typing',
-      conversationId: activeChat,
-      senderRole: 'user',
-      senderId: userId,
-      senderName: displayName || 'User',
-      senderAvatar: profilePhoto || '/avatar.png',
-      isTyping: typingState
-    }));
+    wsRef.current.send(
+      JSON.stringify({
+        type: "typing",
+        conversationId: activeChat,
+        senderRole: "user",
+        senderId: userId,
+        senderName: displayName || "User",
+        senderAvatar: profilePhoto || "/avatar.png",
+        isTyping: typingState,
+      }),
+    );
     lastTypingSentRef.current = typingState;
   };
 
@@ -915,11 +1101,15 @@ export default function UserChatsPage() {
 
       mediaRecorder.onstop = async () => {
         if (isRecordingCancelledRef.current) {
-          console.log('Recording cancelled, skipping upload');
+          console.log("Recording cancelled, skipping upload");
           return;
         }
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        const file = new File([audioBlob], 'Voice message.webm', { type: 'audio/webm' });
+        const audioBlob = new Blob(audioChunksRef.current, {
+          type: "audio/webm",
+        });
+        const file = new File([audioBlob], "Voice message.webm", {
+          type: "audio/webm",
+        });
 
         setIsUploading(true);
         setUploadFiles([file]);
@@ -930,7 +1120,7 @@ export default function UserChatsPage() {
         uploadAbortController.current = abortController;
 
         const formData = new FormData();
-        formData.append('audio', audioBlob, 'voice-note.webm');
+        formData.append("audio", audioBlob, "voice-note.webm");
 
         const xhr = new XMLHttpRequest();
         xhr.upload.onprogress = (event) => {
@@ -942,40 +1132,47 @@ export default function UserChatsPage() {
 
         try {
           const res = await new Promise<any>((resolve, reject) => {
-            xhr.open('POST', '/api/conversations/upload-voice', true);
+            xhr.open("POST", "/api/conversations/upload-voice", true);
             xhr.onload = () => {
               if (xhr.status >= 200 && xhr.status < 300) {
                 try {
                   resolve(JSON.parse(xhr.responseText));
                 } catch (e) {
-                  reject(new Error('Failed to parse upload response'));
+                  reject(new Error("Failed to parse upload response"));
                 }
               } else {
                 reject(new Error(`Upload failed: ${xhr.statusText}`));
               }
             };
-            xhr.onerror = () => reject(new Error('Upload failed'));
-            xhr.onabort = () => reject(new Error('Upload canceled'));
+            xhr.onerror = () => reject(new Error("Upload failed"));
+            xhr.onabort = () => reject(new Error("Upload canceled"));
             xhr.send(formData);
-            abortController.signal.addEventListener('abort', () => xhr.abort());
+            abortController.signal.addEventListener("abort", () => xhr.abort());
           });
 
           if (res.url && wsRef.current?.readyState === WebSocket.OPEN) {
-            wsRef.current.send(JSON.stringify({
-              type: 'message',
-              conversationId: activeChat,
-              senderId: userId,
-              senderRole: 'user',
-              content: res.url,
-            }));
+            wsRef.current.send(
+              JSON.stringify({
+                type: "message",
+                conversationId: activeChat,
+                senderId: userId,
+                senderRole: "user",
+                content: res.url,
+              }),
+            );
 
             // Optimistic update for the sidebar
-            setConversations(prev =>
+            setConversations((prev) =>
               prev
-                .map(c =>
+                .map((c) =>
                   c.id === activeChat
-                    ? { ...c, lastMessage: '[Voice message]', lastMessageTime: new Date().toISOString(), lastMessageSenderRole: 'user' }
-                    : c
+                    ? {
+                        ...c,
+                        lastMessage: "[Voice message]",
+                        lastMessageTime: new Date().toISOString(),
+                        lastMessageSenderRole: "user",
+                      }
+                    : c,
                 )
                 .sort((a, b) => {
                   const hasMsgA = !!a.lastMessageTime;
@@ -983,14 +1180,17 @@ export default function UserChatsPage() {
                   if (hasMsgA && !hasMsgB) return -1;
                   if (!hasMsgA && hasMsgB) return 1;
                   if (hasMsgA && hasMsgB)
-                    return new Date(b.lastMessageTime!).getTime() - new Date(a.lastMessageTime!).getTime();
+                    return (
+                      new Date(b.lastMessageTime!).getTime() -
+                      new Date(a.lastMessageTime!).getTime()
+                    );
                   return 0;
-                })
+                }),
             );
           }
           setUploadFiles([]);
         } catch (uploadErr) {
-          console.error('Voice upload failed:', uploadErr);
+          console.error("Voice upload failed:", uploadErr);
           setUploadError(true);
         } finally {
           setIsUploading(false);
@@ -1003,11 +1203,10 @@ export default function UserChatsPage() {
       setRecordingSeconds(0);
 
       recordingTimerRef.current = setInterval(() => {
-        setRecordingSeconds(prev => prev + 1);
+        setRecordingSeconds((prev) => prev + 1);
       }, 1000);
-
     } catch (err) {
-      console.error('Error starting audio record:', err);
+      console.error("Error starting audio record:", err);
     }
   };
 
@@ -1015,7 +1214,9 @@ export default function UserChatsPage() {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
       // Stop all tracks to release mic resources
-      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+      mediaRecorderRef.current.stream
+        .getTracks()
+        .forEach((track) => track.stop());
       setIsRecording(false);
       if (recordingTimerRef.current) {
         clearInterval(recordingTimerRef.current);
@@ -1027,7 +1228,9 @@ export default function UserChatsPage() {
     if (mediaRecorderRef.current && isRecording) {
       isRecordingCancelledRef.current = true;
       mediaRecorderRef.current.stop();
-      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+      mediaRecorderRef.current.stream
+        .getTracks()
+        .forEach((track) => track.stop());
       setIsRecording(false);
       audioChunksRef.current = [];
       if (recordingTimerRef.current) {
@@ -1039,16 +1242,22 @@ export default function UserChatsPage() {
   const formatTimer = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+    return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
   };
 
   // Check if message is a voice note URL
   const isAudioMsg = (content: any) => {
-    if (typeof content !== 'string') return false;
-    return content.startsWith('http') && (content.includes('.webm') || content.includes('.mp3') || content.includes('.ogg') || content.includes('voice-notes'));
+    if (typeof content !== "string") return false;
+    return (
+      content.startsWith("http") &&
+      (content.includes(".webm") ||
+        content.includes(".mp3") ||
+        content.includes(".ogg") ||
+        content.includes("voice-notes"))
+    );
   };
 
-  const activeConv = conversations.find(c => c.id === activeChat);
+  const activeConv = conversations.find((c) => c.id === activeChat);
   const isChatLocked = activeConv?.isLocked ?? false;
   const isMutedForMe = activeConv?.isMutedForMe ?? false;
   const canSendMessages = !isChatLocked && !isMutedForMe;
@@ -1057,9 +1266,9 @@ export default function UserChatsPage() {
     if (!activeChat) return;
     setIsArchivingChat(true);
     try {
-      const res = await fetch('/api/conversations/archive', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/conversations/archive", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ conversationId: activeChat, archive }),
       });
       if (res.ok) {
@@ -1069,13 +1278,15 @@ export default function UserChatsPage() {
         } else {
           removeArchivedId(activeChat);
         }
-        setConversations(prev =>
-          prev.map(c => c.id === activeChat ? { ...c, isArchivedByUser: archive } : c)
+        setConversations((prev) =>
+          prev.map((c) =>
+            c.id === activeChat ? { ...c, isArchivedByUser: archive } : c,
+          ),
         );
         if (archive) setActiveChat(null);
       }
     } catch (err) {
-      console.error('Error archiving chat:', err);
+      console.error("Error archiving chat:", err);
     } finally {
       setIsArchivingChat(false);
       setShowDotsMenu(false);
@@ -1083,43 +1294,105 @@ export default function UserChatsPage() {
   };
 
   const sidebarChatName = (chat: ConversationInfo) =>
-    chat.type === 'broadcast' ? 'Event Chat' : (chat.creator || 'User');
+    chat.type === "broadcast" ? "Event Chat" : chat.creator || "User";
 
-  const renderMessagePreview = (chat: ConversationInfo, myRole: 'creator' | 'user') => {
+  const renderMessagePreview = (
+    chat: ConversationInfo,
+    myRole: "creator" | "user",
+  ) => {
     if (chat.isLocked) {
-      return <span className="flex items-center gap-1 text-gray-600 font-semibold"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg> Chat is locked</span>;
+      return (
+        <span className="flex items-center gap-1 text-gray-600 font-semibold">
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+          </svg>{" "}
+          Chat is locked
+        </span>
+      );
     }
-    if (!chat.lastMessage) return <span className="text-gray-400 font-medium">No messages yet</span>;
-    
-    let prefix = '';
+    if (!chat.lastMessage)
+      return <span className="text-gray-400 font-medium">No messages yet</span>;
+
+    let prefix = "";
     if (chat.lastMessageSenderRole) {
       if (chat.lastMessageSenderRole === myRole) {
-        prefix = 'You: ';
+        prefix = "You: ";
       } else {
-        const otherName = chat.creator || 'User';
+        const otherName = chat.creator || "User";
         prefix = `${otherName.charAt(0)}: `;
       }
     }
     let content: React.ReactNode = chat.lastMessage;
-    if (chat.lastMessage === '[Attached image]' || /^\[Attached \d+ images\]$/.test(chat.lastMessage || '')) content = <span className="inline-flex items-center gap-1"><span className="translate-y-[-1px]">📷</span><span>Photo</span></span>;
-    else if (chat.lastMessage === '[Attached video]') content = <span className="inline-flex items-center gap-1"><span className="translate-y-[-1px]">🎥</span><span>Video</span></span>;
-    else if (chat.lastMessage === '[Attached document]' || chat.lastMessage === '[Attached pdf]') content = <span className="inline-flex items-center gap-1"><span className="translate-y-[-1px]">📄</span><span>Document</span></span>;
-    else if (isAudioMsg(chat.lastMessage)) content = <span className="inline-flex items-center gap-1"><span className="translate-y-[-1px]">🎤</span><span>Voice message</span></span>;
-    else if (chat.lastMessage.startsWith('http')) content = <span className="inline-flex items-center gap-1"><span className="translate-y-[-1px]">🔗</span><span>Link</span></span>;
+    if (
+      chat.lastMessage === "[Attached image]" ||
+      /^\[Attached \d+ images\]$/.test(chat.lastMessage || "")
+    )
+      content = (
+        <span className="inline-flex items-center gap-1">
+          <span className="translate-y-[-1px]">📷</span>
+          <span>Photo</span>
+        </span>
+      );
+    else if (chat.lastMessage === "[Attached video]")
+      content = (
+        <span className="inline-flex items-center gap-1">
+          <span className="translate-y-[-1px]">🎥</span>
+          <span>Video</span>
+        </span>
+      );
+    else if (
+      chat.lastMessage === "[Attached document]" ||
+      chat.lastMessage === "[Attached pdf]"
+    )
+      content = (
+        <span className="inline-flex items-center gap-1">
+          <span className="translate-y-[-1px]">📄</span>
+          <span>Document</span>
+        </span>
+      );
+    else if (isAudioMsg(chat.lastMessage))
+      content = (
+        <span className="inline-flex items-center gap-1">
+          <span className="translate-y-[-1px]">🎤</span>
+          <span>Voice message</span>
+        </span>
+      );
+    else if (chat.lastMessage.startsWith("http"))
+      content = (
+        <span className="inline-flex items-center gap-1">
+          <span className="translate-y-[-1px]">🔗</span>
+          <span>Link</span>
+        </span>
+      );
     return (
       <span className="flex items-center gap-1 truncate text-[14px] text-gray-500 mt-0.5">
-        {prefix && <span className="font-semibold text-gray-700 shrink-0">{prefix}</span>}
+        {prefix && (
+          <span className="font-semibold text-gray-700 shrink-0">{prefix}</span>
+        )}
         <span className="truncate">{content}</span>
       </span>
     );
   };
 
-  const allFiltered = conversations.filter(c => {
-    const q = (searchText || '').toLowerCase();
-    const name = c.type === 'broadcast' ? 'event chat' : (c.creator || '').toLowerCase();
-    return name.includes(q) ||
-      (c.creator || '').toLowerCase().includes(q) ||
-      (c.session || '').toLowerCase().includes(q);
+  const allFiltered = conversations.filter((c) => {
+    const q = (searchText || "").toLowerCase();
+    const name =
+      c.type === "broadcast" ? "event chat" : (c.creator || "").toLowerCase();
+    return (
+      name.includes(q) ||
+      (c.creator || "").toLowerCase().includes(q) ||
+      (c.session || "").toLowerCase().includes(q)
+    );
   });
   const filteredConversations = allFiltered;
   const archivedConversations: any[] = [];
@@ -1139,10 +1412,10 @@ export default function UserChatsPage() {
         </h1> */}
 
         <div className="flex-1 flex flex-col lg:flex-row gap-6 min-h-0 mb-0">
-
           {/* Left Sidebar */}
-          <div className={`w-full lg:w-[380px] flex flex-col gap-4 h-full lg:h-full shrink-0 ${activeChat ? 'hidden lg:flex' : 'flex'}`}>
-
+          <div
+            className={`w-full lg:w-[380px] flex flex-col gap-4 h-full lg:h-full shrink-0 ${activeChat ? "hidden lg:flex" : "flex"}`}
+          >
             {/* Search Box */}
             <div className="relative shrink-0">
               <input
@@ -1150,29 +1423,60 @@ export default function UserChatsPage() {
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
                 placeholder="Search"
-                className="w-full bg-white border border-gray-200 shadow-sm rounded-full py-3 pl-10 pr-4 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0012FF]/20 focus:border-[#0012FF]/30 transition-all"
+                className="w-full bg-white border border-gray-200 rounded-full py-3 pl-10 pr-4 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0012FF]/20 focus:border-[#0012FF]/30 transition-all"
               />
-              <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#0012FF]" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+              <svg
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#0012FF]"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
               </svg>
             </div>
 
             {/* Chat List */}
             <div className="flex-1 overflow-y-auto pr-2 no-scrollbar">
-
               {/* Archived Section – at the top */}
               {!loadingConversations && archivedConversations.length > 0 && (
                 <div className="mb-1">
                   <button
-                    onClick={() => setShowArchived(prev => !prev)}
-                    className="w-full flex items-center justify-between px-4 py-3 rounded-2xl bg-white border border-gray-100 shadow-xs hover:border-gray-200 transition-all"
+                    onClick={() => setShowArchived((prev) => !prev)}
+                    className="w-full flex items-center justify-between px-4 py-3 rounded-[14px] bg-white border border-[#e2e2e2] shadow-xs hover:border-gray-200 transition-all"
                   >
                     <div className="flex items-center gap-2.5 text-gray-500">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="5" rx="1" /><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8" /><path d="M10 12h4" /></svg>
-                      <span className="text-sm font-semibold text-gray-600">Archived</span>
-                      <span className="text-xs bg-gray-100 text-gray-500 font-bold px-2 py-0.5 rounded-full">{archivedConversations.length}</span>
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <rect x="2" y="3" width="20" height="5" rx="1" />
+                        <path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8" />
+                        <path d="M10 12h4" />
+                      </svg>
+                      <span className="text-sm font-semibold text-gray-600">
+                        Archived
+                      </span>
+                      <span className="text-xs bg-gray-100 text-gray-500 font-bold px-2 py-0.5 rounded-full">
+                        {archivedConversations.length}
+                      </span>
                     </div>
-                    <svg className={`transition-transform duration-200 text-gray-400 ${showArchived ? 'rotate-180' : ''}`} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <svg
+                      className={`transition-transform duration-200 text-gray-400 ${showArchived ? "rotate-180" : ""}`}
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
                       <polyline points="6 9 12 15 18 9" />
                     </svg>
                   </button>
@@ -1182,32 +1486,43 @@ export default function UserChatsPage() {
                         <div
                           key={chat.id}
                           onClick={() => setActiveChat(chat.id)}
-                          className={`py-5 px-4 cursor-pointer transition-all flex flex-col justify-center ${activeChat === chat.id ? 'rounded-2xl border border-[#0012FF]/30 bg-[#F4F5FF] ring-1 ring-[#0012FF]/10 my-1' : 'border-b border-gray-200 hover:bg-gray-50 bg-transparent'}`}
+                          className={`my-2 flex cursor-pointer flex-col justify-center rounded-[14px] px-4 py-5 transition-all ${activeChat === chat.id ? "border-2 border-[#B7C0FF] bg-white shadow-[4px_4px_10px_0px_#00000024]" : "border border-[#e2e2e2] bg-white hover:bg-gray-50"}`}
                         >
                           <div className="flex justify-between items-start mb-1">
                             <div className="flex gap-3 items-center">
                               <div className="w-[50px] h-[50px] rounded-full overflow-hidden bg-gray-200">
-                                <img src={chat.image} alt={sidebarChatName(chat)} className="object-cover w-full h-full" />
+                                <img
+                                  src={chat.image}
+                                  alt={sidebarChatName(chat)}
+                                  className="object-cover w-full h-full"
+                                />
                               </div>
                               <div>
                                 <div className="flex items-center gap-1">
-                                  <h4 className="text-[16px] font-semibold text-gray-900">{sidebarChatName(chat)}</h4>
-                                  <span className="text-[10px] bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded-full font-medium">Archived</span>
+                                  <h4 className="text-[16px] font-semibold text-gray-900">
+                                    {sidebarChatName(chat)}
+                                  </h4>
+                                  <span className="text-[10px] bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded-full font-medium">
+                                    Archived
+                                  </span>
                                 </div>
                                 <div className="max-w-[200px] truncate">
-                                  {renderMessagePreview(chat, 'user')}
+                                  {renderMessagePreview(chat, "user")}
                                 </div>
                               </div>
                             </div>
                             <div className="flex flex-col items-end gap-1.5 shrink-0">
                               <span className="text-[12px] text-gray-400 font-medium">
-                                {chat.lastMessageTime ? formatMsgTime(chat.lastMessageTime) : chat.time}
+                                {chat.lastMessageTime
+                                  ? formatMsgTime(chat.lastMessageTime)
+                                  : chat.time}
                               </span>
-                              {chat.unreadCount > 0 && chat.id !== activeChat && (
-                                <span className="w-5 h-5 bg-[#0012FF] text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-md">
-                                  {chat.unreadCount}
-                                </span>
-                              )}
+                              {chat.unreadCount > 0 &&
+                                chat.id !== activeChat && (
+                                  <span className="w-5 h-5 bg-[#0012FF] text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-md">
+                                    {chat.unreadCount}
+                                  </span>
+                                )}
                             </div>
                           </div>
                         </div>
@@ -1229,40 +1544,88 @@ export default function UserChatsPage() {
                     if (hasMsgA && !hasMsgB) return -1;
                     if (!hasMsgA && hasMsgB) return 1;
                     if (hasMsgA && hasMsgB) {
-                      return new Date(b.lastMessageTime!).getTime() - new Date(a.lastMessageTime!).getTime();
+                      return (
+                        new Date(b.lastMessageTime!).getTime() -
+                        new Date(a.lastMessageTime!).getTime()
+                      );
                     }
-                    return new Date(b.scheduledDate).getTime() - new Date(a.scheduledDate).getTime();
+                    return (
+                      new Date(b.scheduledDate).getTime() -
+                      new Date(a.scheduledDate).getTime()
+                    );
                   })
                   .map((chat) => (
                     <div
                       key={chat.id}
                       onClick={() => setActiveChat(chat.id)}
-                      className={`py-5 px-4 cursor-pointer transition-all flex flex-col justify-center ${activeChat === chat.id ? 'rounded-2xl border border-[#0012FF]/30 bg-[#F4F5FF] ring-1 ring-[#0012FF]/10 my-1' : 'border-b border-gray-200 hover:bg-gray-50 bg-transparent'}`}
+                      className={`my-2 flex cursor-pointer flex-col justify-center rounded-[14px] px-4 py-5 transition-all ${activeChat === chat.id ? "border-2 border-[#B7C0FF] bg-white shadow-[4px_4px_10px_0px_#00000024]" : "border border-[#e2e2e2] bg-white hover:bg-gray-50"}`}
                     >
                       <div className="flex justify-between items-start">
                         <div className="flex gap-3">
                           <div className="relative w-[50px] h-[50px] shrink-0">
                             <div className="w-full h-full rounded-full overflow-hidden bg-gray-200">
-                              <img src={chat.image} alt={sidebarChatName(chat)} className="object-cover w-full h-full" />
+                              <img
+                                src={chat.image}
+                                alt={sidebarChatName(chat)}
+                                className="object-cover w-full h-full"
+                              />
                             </div>
-                            <div className={`absolute bottom-0 right-0 w-3.5 h-3.5 border-2 border-white rounded-full ${chat.isOnline ? 'bg-[#12B76A]' : 'bg-gray-400'}`}></div>
+                            <div
+                              className={`absolute bottom-0 right-0 w-3.5 h-3.5 border-2 border-white rounded-full ${chat.isOnline ? "bg-[#12B76A]" : "bg-gray-400"}`}
+                            ></div>
                           </div>
                           <div>
                             <div className="flex items-center gap-1">
-                              <h4 className="text-[16px] font-semibold text-gray-900">{sidebarChatName(chat)}</h4>
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <h4 className="text-[16px] font-semibold text-gray-900">
+                                {sidebarChatName(chat)}
+                              </h4>
+                              {/* <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <circle cx="12" cy="12" r="12" fill="#12B76A" />
                                 <polyline points="7 12.5 10.5 16 17 9" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg> */}
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="24"
+                                height="24"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  d="M12 2.5
+       C13.8 2.5 14.5 4 16 4.2
+       C17.8 4.4 18.6 5.2 18.8 7
+       C19 8.5 20.5 9.2 20.5 11
+       C20.5 12.8 19 13.5 18.8 15
+       C18.6 16.8 17.8 17.6 16 17.8
+       C14.5 18 13.8 19.5 12 19.5
+       C10.2 19.5 9.5 18 8 17.8
+       C6.2 17.6 5.4 16.8 5.2 15
+       C5 13.5 3.5 12.8 3.5 11
+       C3.5 9.2 5 8.5 5.2 7
+       C5.4 5.2 6.2 4.4 8 4.2
+       C9.5 4 10.2 2.5 12 2.5Z"
+                                  fill="#16a34a"
+                                />
+                                <path
+                                  d="M8.2 11.5L10.5 13.8L15.8 8.8"
+                                  fill="none"
+                                  stroke="white"
+                                  strokeWidth="2.3"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
                               </svg>
+                              {/* <BadgeCheck className='text-green-500' size={15} strokeWidth={3}/> */}
                             </div>
-                              <div className="max-w-[200px] truncate">
-                                {renderMessagePreview(chat, 'user')}
-                              </div>
+                            <div className="max-w-[200px] truncate">
+                              {renderMessagePreview(chat, "user")}
+                            </div>
                           </div>
                         </div>
                         <div className="flex flex-col items-end gap-1.5 shrink-0">
                           <span className="text-[12px] text-gray-400 font-medium">
-                            {chat.lastMessageTime ? formatMsgTime(chat.lastMessageTime) : chat.time}
+                            {chat.lastMessageTime
+                              ? formatMsgTime(chat.lastMessageTime)
+                              : chat.time}
                           </span>
                           {chat.unreadCount > 0 && chat.id !== activeChat && (
                             <span className="w-5 h-5 bg-[#0012FF] text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-md">
@@ -1282,7 +1645,9 @@ export default function UserChatsPage() {
           </div>
 
           {/* Right Main Chat Area */}
-          <div className={`flex-1 bg-white rounded-[24px] shadow-sm border border-gray-100 flex flex-col overflow-hidden h-full min-h-0 ${activeChat ? 'flex' : 'hidden lg:flex'}`}>
+          <div
+            className={`flex-1 bg-white rounded-[20px]  border border-[#e2e2e2] flex flex-col overflow-hidden h-full min-h-0 ${activeChat ? "flex" : "hidden lg:flex"}`}
+          >
             {activeConv ? (
               <>
                 {/* Header */}
@@ -1292,15 +1657,28 @@ export default function UserChatsPage() {
                       onClick={() => setActiveChat(null)}
                       className="lg:hidden p-1 mr-1 text-gray-500 hover:text-gray-900 transition-colors"
                     >
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                        <line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" />
+                      <svg
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                      >
+                        <line x1="19" y1="12" x2="5" y2="12" />
+                        <polyline points="12 19 5 12 12 5" />
                       </svg>
                     </button>
 
                     <div className="relative shrink-0">
                       <div
                         className="rounded-full overflow-hidden bg-gray-200"
-                        style={{ width: 44, height: 44, minWidth: 44, minHeight: 44 }}
+                        style={{
+                          width: 44,
+                          height: 44,
+                          minWidth: 44,
+                          minHeight: 44,
+                        }}
                       >
                         <img
                           src={activeConv.image}
@@ -1309,36 +1687,75 @@ export default function UserChatsPage() {
                           style={{ width: 44, height: 44 }}
                         />
                       </div>
-                      {activeConv.type !== 'broadcast' && (
-                        <div className={`absolute bottom-0 right-0 w-3.5 h-3.5 border-3 border-white rounded-full ${onlineCount > 1 ? 'bg-[#12B76A]' : 'bg-gray-400'}`}></div>
+                      {activeConv.type !== "broadcast" && (
+                        <div
+                          className={`absolute bottom-0 right-0 w-3.5 h-3.5 border-3 border-white rounded-full ${onlineCount > 1 ? "bg-[#12B76A]" : "bg-gray-400"}`}
+                        ></div>
                       )}
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1 overflow-visible">
-                        <h3 className="text-sm sm:text-base font-bold text-gray-900 truncate whitespace-nowrap max-w-[110px] sm:max-w-none">
-                          {activeConv.type === 'broadcast' ? 'Event Chat' : activeConv.creator}
+                    <div className="min-w-0 flex-1 py-2">
+                      <div className="flex items-center gap-1 overflow-visible ">
+                        <h3 className="text-sm sm:text-base font-bold text-gray-900 truncate whitespace-nowrap max-w-[110px] sm:max-w-none ">
+                          {activeConv.type === "broadcast"
+                            ? "Event Chat"
+                            : activeConv.creator}
                         </h3>
-                        {activeConv.type !== 'broadcast' && (
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="shrink-0">
-                            <circle cx="12" cy="12" r="12" fill="#12B76A" />
-                            <polyline points="7 12.5 10.5 16 17 9" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
+                        {activeConv.type !== "broadcast" && (
+                         <svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+>
+  <path
+    d="M12 2.5
+       C13.8 2.5 14.5 4 16 4.2
+       C17.8 4.4 18.6 5.2 18.8 7
+       C19 8.5 20.5 9.2 20.5 11
+       C20.5 12.8 19 13.5 18.8 15
+       C18.6 16.8 17.8 17.6 16 17.8
+       C14.5 18 13.8 19.5 12 19.5
+       C10.2 19.5 9.5 18 8 17.8
+       C6.2 17.6 5.4 16.8 5.2 15
+       C5 13.5 3.5 12.8 3.5 11
+       C3.5 9.2 5 8.5 5.2 7
+       C5.4 5.2 6.2 4.4 8 4.2
+       C9.5 4 10.2 2.5 12 2.5Z"
+    fill="#16a34a"
+  />
+  <path
+    d="M8.2 11.5L10.5 13.8L15.8 8.8"
+    fill="none"
+    stroke="white"
+    strokeWidth="2.3"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  />
+</svg>
                         )}
                       </div>
                       {(() => {
-                        const isBroadcast = activeConv.type === 'broadcast';
-                        const creatorTyping = typingUsers.find((u) => u.role === 'creator');
-                        const displayTypers = creatorTyping ? [creatorTyping] : typingUsers;
+                        const isBroadcast = activeConv.type === "broadcast";
+                        const creatorTyping = typingUsers.find(
+                          (u) => u.role === "creator",
+                        );
+                        const displayTypers = creatorTyping
+                          ? [creatorTyping]
+                          : typingUsers;
 
                         if (displayTypers.length > 0) {
-                          const multi = !creatorTyping && displayTypers.length > 1;
+                          const multi =
+                            !creatorTyping && displayTypers.length > 1;
                           return (
                             <div className="mt-0.5 flex min-w-0 items-center gap-1.5">
                               <div className="flex shrink-0 -space-x-1.5">
-                                {(multi ? displayTypers.slice(0, 3) : displayTypers.slice(0, 1)).map((u) => (
+                                {(multi
+                                  ? displayTypers.slice(0, 3)
+                                  : displayTypers.slice(0, 1)
+                                ).map((u) => (
                                   <img
                                     key={u.id}
-                                    src={u.avatar || '/avatar.png'}
+                                    src={u.avatar || "/avatar.png"}
                                     alt=""
                                     className="h-4 w-4 rounded-full object-cover ring-1 ring-white"
                                   />
@@ -1363,7 +1780,7 @@ export default function UserChatsPage() {
                                 ? `${onlineCount} Online`
                                 : count > 0
                                   ? `${count} participants`
-                                  : 'Event Chat'}
+                                  : "Event Chat"}
                             </span>
                           );
                         }
@@ -1376,34 +1793,81 @@ export default function UserChatsPage() {
                       })()}
                     </div>
                   </div>
-
-
                 </div>
 
-
                 {/* Conditional View: lock screen ONLY if empty */}
-                {(isChatLocked && messages.length === 0 && !loadingMessages) ? (
+                {isChatLocked && messages.length === 0 && !loadingMessages ? (
                   <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-[#FAFAFA]">
                     <div className="mb-6 mt-4 w-[240px] h-[180px] relative">
-                      <Image src="/assets/lock-chat.webp" alt="Lock Chat" fill className="object-contain" />
+                      <Image
+                        src="/assets/lock-chat.webp"
+                        alt="Lock Chat"
+                        fill
+                        className="object-contain"
+                      />
                     </div>
-                    <h3 className="text-xl font-bold text-gray-800 mb-1">Creator has locked this chat</h3>
+                    <h3 className="text-xl font-bold text-gray-800 mb-1">
+                      Creator has locked this chat
+                    </h3>
                     <p className="text-sm text-gray-400 max-w-[340px] mb-6">
-                      The creator has locked this chat. You'll be able to send messages once they unlock it. Please check back later.
+                      The creator has locked this chat. You'll be able to send
+                      messages once they unlock it. Please check back later.
                     </p>
 
                     {/* Booking Details */}
                     <div className="bg-white border border-gray-100 rounded-2xl p-4 flex flex-col gap-3 max-w-[360px] w-full text-left text-xs text-gray-500 font-medium">
                       <div className="flex items-center gap-2">
-                        <svg className="text-[#0012FF]" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
+                        <svg
+                          className="text-[#0012FF]"
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <rect
+                            x="3"
+                            y="4"
+                            width="18"
+                            height="18"
+                            rx="2"
+                            ry="2"
+                          />
+                          <line x1="16" y1="2" x2="16" y2="6" />
+                          <line x1="8" y1="2" x2="8" y2="6" />
+                          <line x1="3" y1="10" x2="21" y2="10" />
+                        </svg>
                         <span>{activeConv.shortDate}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <svg className="text-[#0012FF]" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                        <svg
+                          className="text-[#0012FF]"
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <circle cx="12" cy="12" r="10" />
+                          <polyline points="12 6 12 12 16 14" />
+                        </svg>
                         <span>{activeConv.time}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <svg className="text-[#0012FF]" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                        <svg
+                          className="text-[#0012FF]"
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <circle cx="12" cy="12" r="10" />
+                          <polyline points="12 6 12 12 16 14" />
+                        </svg>
                         <span>{activeConv.duration}</span>
                       </div>
                     </div>
@@ -1411,8 +1875,10 @@ export default function UserChatsPage() {
                 ) : (
                   <>
                     {/* Chat Messages */}
-                    <div id="chat-messages-container" className="flex-1 overflow-y-auto p-6 sm:p-8 flex flex-col gap-6 bg-white">
-
+                    <div
+                      id="chat-messages-container"
+                      className="flex-1 overflow-y-auto p-6 sm:p-8 flex flex-col gap-6 bg-white"
+                    >
                       {loadingMessages ? (
                         <div className="flex-grow flex items-center justify-center">
                           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0012FF]"></div>
@@ -1420,38 +1886,48 @@ export default function UserChatsPage() {
                       ) : messages.length > 0 ? (
                         messages.map((msg, index) => {
                           // User dashboard: creator always left; all joiners/users always right
-                          const isMe = msg.senderRole === 'user';
-                          const isOwn = Boolean(userId && msg.senderId === userId);
-                          const isBroadcast = activeConv?.type === 'broadcast';
+                          const isMe = msg.senderRole === "user";
+                          const isOwn = Boolean(
+                            userId && msg.senderId === userId,
+                          );
+                          const isBroadcast = activeConv?.type === "broadcast";
                           const isAudio = isAudioMsg(msg.content);
 
-                          const prevMsg = index > 0 ? messages[index - 1] : null;
+                          const prevMsg =
+                            index > 0 ? messages[index - 1] : null;
                           const currentDateStr = formatMsgDate(msg.createdAt);
-                          const prevDateStr = prevMsg ? formatMsgDate(prevMsg.createdAt) : null;
-                          const showDateSeparator = currentDateStr !== prevDateStr;
+                          const prevDateStr = prevMsg
+                            ? formatMsgDate(prevMsg.createdAt)
+                            : null;
+                          const showDateSeparator =
+                            currentDateStr !== prevDateStr;
 
                           const profileFromMap = msg.senderId
                             ? participantProfiles[msg.senderId]
                             : undefined;
                           const creatorName = isBroadcast
-                            ? (activeConv?.creatorName || 'Creator')
-                            : (activeConv?.creator || 'Creator');
+                            ? activeConv?.creatorName || "Creator"
+                            : activeConv?.creator || "Creator";
                           const creatorAvatar = isBroadcast
-                            ? (activeConv?.creatorAvatar || '/avatar.png')
-                            : (activeConv?.image || '/avatar.png');
+                            ? activeConv?.creatorAvatar || "/avatar.png"
+                            : activeConv?.image || "/avatar.png";
 
                           let bubbleName: string;
                           let bubbleAvatar: string;
-                          if (msg.senderRole === 'creator') {
+                          if (msg.senderRole === "creator") {
                             bubbleName = creatorName;
                             bubbleAvatar = creatorAvatar;
                           } else if (isOwn) {
-                            bubbleName = displayName || 'You';
-                            bubbleAvatar = profilePhoto || '/avatar.png';
+                            bubbleName = displayName || "You";
+                            bubbleAvatar = profilePhoto || "/avatar.png";
                           } else {
                             // Other joiner on the right — show their real identity
-                            bubbleName = msg.senderName || profileFromMap?.name || 'User';
-                            bubbleAvatar = msg.senderAvatar || profileFromMap?.avatar || '/avatar.png';
+                            bubbleName =
+                              msg.senderName || profileFromMap?.name || "User";
+                            bubbleAvatar =
+                              msg.senderAvatar ||
+                              profileFromMap?.avatar ||
+                              "/avatar.png";
                           }
 
                           return (
@@ -1470,108 +1946,198 @@ export default function UserChatsPage() {
                                 timeLabel={formatMsgTime(msg.createdAt)}
                                 avatarUrl={bubbleAvatar}
                               >
-                                  {normalizeMessageAttachments(msg).length > 0 ? (
-                                    <ChatAttachmentBubble
-                                      attachments={normalizeMessageAttachments(msg)}
-                                      isMe={isMe}
-                                      onLoad={() => scrollToBottom('auto')}
-                                      onOpenImage={(images, index) =>
-                                        setLightboxMedia({
-                                          urls: images.map((img) => img.url),
-                                          index,
-                                          type: 'image',
-                                        })
-                                      }
-                                      onOpenVideo={(url) =>
-                                        setLightboxMedia({ urls: [url], index: 0, type: 'video' })
-                                      }
-                                      readStatus={
-                                        <span className="inline-flex shrink-0">
-                                          {msg.read ? (
-                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0057ff" strokeWidth="2.5"><path d="M17 5L9.5 12.5L6 9" /><path d="M22 5l-7.5 7.5" /></svg>
-                                          ) : isOtherUserOnline ? (
-                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A8A8A" strokeWidth="2.5"><path d="M17 5L9.5 12.5L6 9" /><path d="M22 5l-7.5 7.5" /></svg>
-                                          ) : (
-                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A8A8A" strokeWidth="2.5"><path d="M17 5L9.5 12.5L6 9" /></svg>
-                                          )}
-                                        </span>
-                                      }
-                                    />
-                                  ) : (
-                                    isAudio ? (
-                                      <VoicePlayer
-                                        url={msg.content}
-                                        isMe={isMe}
-                                        timeStr={formatMsgTime(msg.createdAt)}
-                                        readStatus={
-                                          msg.read ? (
-                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0057ff" strokeWidth="2.5"><path d="M17 5L9.5 12.5L6 9" /><path d="M22 5l-7.5 7.5" /></svg>
-                                          ) : isOtherUserOnline ? (
-                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A8A8A" strokeWidth="2.5"><path d="M17 5L9.5 12.5L6 9" /><path d="M22 5l-7.5 7.5" /></svg>
-                                          ) : (
-                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A8A8A" strokeWidth="2.5"><path d="M17 5L9.5 12.5L6 9" /></svg>
-                                          )
-                                        }
-                                      />
-                                    ) : (
-                                      <div
-                                        className={chatTextBubbleClass(isMe)}
-                                        style={{ fontFamily: 'Inter, var(--font-inter), sans-serif' }}
-                                      >
-                                        {msg.content}
-                                      </div>
-                                    )
-                                  )}
+                                {normalizeMessageAttachments(msg).length > 0 ? (
+                                  <ChatAttachmentBubble
+                                    attachments={normalizeMessageAttachments(
+                                      msg,
+                                    )}
+                                    isMe={isMe}
+                                    onLoad={() => scrollToBottom("auto")}
+                                    onOpenImage={(images, index) =>
+                                      setLightboxMedia({
+                                        urls: images.map((img) => img.url),
+                                        index,
+                                        type: "image",
+                                      })
+                                    }
+                                    onOpenVideo={(url) =>
+                                      setLightboxMedia({
+                                        urls: [url],
+                                        index: 0,
+                                        type: "video",
+                                      })
+                                    }
+                                    readStatus={
+                                      <span className="inline-flex shrink-0">
+                                        {msg.read ? (
+                                          <svg
+                                            width="15"
+                                            height="15"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="#0057ff"
+                                            strokeWidth="2.5"
+                                          >
+                                            <path d="M17 5L9.5 12.5L6 9" />
+                                            <path d="M22 5l-7.5 7.5" />
+                                          </svg>
+                                        ) : isOtherUserOnline ? (
+                                          <svg
+                                            width="15"
+                                            height="15"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="#8A8A8A"
+                                            strokeWidth="2.5"
+                                          >
+                                            <path d="M17 5L9.5 12.5L6 9" />
+                                            <path d="M22 5l-7.5 7.5" />
+                                          </svg>
+                                        ) : (
+                                          <svg
+                                            width="15"
+                                            height="15"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="#8A8A8A"
+                                            strokeWidth="2.5"
+                                          >
+                                            <path d="M17 5L9.5 12.5L6 9" />
+                                          </svg>
+                                        )}
+                                      </span>
+                                    }
+                                  />
+                                ) : isAudio ? (
+                                  <VoicePlayer
+                                    url={msg.content}
+                                    isMe={isMe}
+                                    timeStr={formatMsgTime(msg.createdAt)}
+                                    readStatus={
+                                      msg.read ? (
+                                        <svg
+                                          width="15"
+                                          height="15"
+                                          viewBox="0 0 24 24"
+                                          fill="none"
+                                          stroke="#0057ff"
+                                          strokeWidth="2.5"
+                                        >
+                                          <path d="M17 5L9.5 12.5L6 9" />
+                                          <path d="M22 5l-7.5 7.5" />
+                                        </svg>
+                                      ) : isOtherUserOnline ? (
+                                        <svg
+                                          width="15"
+                                          height="15"
+                                          viewBox="0 0 24 24"
+                                          fill="none"
+                                          stroke="#8A8A8A"
+                                          strokeWidth="2.5"
+                                        >
+                                          <path d="M17 5L9.5 12.5L6 9" />
+                                          <path d="M22 5l-7.5 7.5" />
+                                        </svg>
+                                      ) : (
+                                        <svg
+                                          width="15"
+                                          height="15"
+                                          viewBox="0 0 24 24"
+                                          fill="none"
+                                          stroke="#8A8A8A"
+                                          strokeWidth="2.5"
+                                        >
+                                          <path d="M17 5L9.5 12.5L6 9" />
+                                        </svg>
+                                      )
+                                    }
+                                  />
+                                ) : (
+                                  <div
+                                    className={chatTextBubbleClass(isMe)}
+                                    style={{
+                                      fontFamily:
+                                        "Inter, var(--font-inter), sans-serif",
+                                    }}
+                                  >
+                                    {msg.content}
+                                  </div>
+                                )}
                               </ChatMessageShell>
-                          </React.Fragment>
+                            </React.Fragment>
                           );
                         })
                       ) : (
                         <div className="flex-grow flex flex-col items-center justify-center text-center text-gray-400">
-                          <p className="text-sm">No messages yet. Send a message to start the conversation!</p>
+                          <p className="text-sm">
+                            No messages yet. Send a message to start the
+                            conversation!
+                          </p>
                         </div>
                       )}
 
                       {/* Real-time Typing Indicator Bubble */}
-                      {typingUsers.length > 0 && (() => {
-                        const creatorTyping = typingUsers.find((u) => u.role === 'creator');
-                        const displayTypers = creatorTyping ? [creatorTyping] : typingUsers;
-                        const lead = displayTypers[0];
-                        return (
-                          <div className="flex max-w-[85%] animate-fade-in select-none items-end gap-3 self-start">
-                            <div className="flex shrink-0 -space-x-2">
-                              {(displayTypers.length > 1 ? displayTypers.slice(0, 2) : [lead]).map((u) => (
-                                <div
-                                  key={u.id}
-                                  className="overflow-hidden rounded-full bg-gray-200 ring-2 ring-white"
-                                  style={{ width: 44, height: 44, minWidth: 44, minHeight: 44 }}
-                                >
-                                  <img
-                                    src={u.avatar || '/avatar.png'}
-                                    alt=""
-                                    className="object-cover"
-                                    style={{ width: 44, height: 44 }}
+                      {typingUsers.length > 0 &&
+                        (() => {
+                          const creatorTyping = typingUsers.find(
+                            (u) => u.role === "creator",
+                          );
+                          const displayTypers = creatorTyping
+                            ? [creatorTyping]
+                            : typingUsers;
+                          const lead = displayTypers[0];
+                          return (
+                            <div className="flex max-w-[85%] animate-fade-in select-none items-end gap-3 self-start">
+                              <div className="flex shrink-0 -space-x-2">
+                                {(displayTypers.length > 1
+                                  ? displayTypers.slice(0, 2)
+                                  : [lead]
+                                ).map((u) => (
+                                  <div
+                                    key={u.id}
+                                    className="overflow-hidden rounded-full bg-gray-200 ring-2 ring-white"
+                                    style={{
+                                      width: 44,
+                                      height: 44,
+                                      minWidth: 44,
+                                      minHeight: 44,
+                                    }}
+                                  >
+                                    <img
+                                      src={u.avatar || "/avatar.png"}
+                                      alt=""
+                                      className="object-cover"
+                                      style={{ width: 44, height: 44 }}
+                                    />
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="flex min-w-[70px] flex-col gap-1">
+                                <span className="text-[11px] font-medium text-gray-500">
+                                  {creatorTyping
+                                    ? `${creatorTyping.name} Typing...`
+                                    : displayTypers.length > 1
+                                      ? `${displayTypers.length} Members Typing...`
+                                      : `${lead.name} Typing...`}
+                                </span>
+                                <div className="flex items-center gap-1.5 rounded-[8px] rounded-tl-none bg-[#F8F8F8] px-5 py-3.5">
+                                  <span
+                                    className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#0012FF]"
+                                    style={{ animationDelay: "0ms" }}
+                                  />
+                                  <span
+                                    className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#0012FF]"
+                                    style={{ animationDelay: "150ms" }}
+                                  />
+                                  <span
+                                    className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#0012FF]"
+                                    style={{ animationDelay: "300ms" }}
                                   />
                                 </div>
-                              ))}
-                            </div>
-                            <div className="flex min-w-[70px] flex-col gap-1">
-                              <span className="text-[11px] font-medium text-gray-500">
-                                {creatorTyping
-                                  ? `${creatorTyping.name} Typing...`
-                                  : displayTypers.length > 1
-                                    ? `${displayTypers.length} Members Typing...`
-                                    : `${lead.name} Typing...`}
-                              </span>
-                              <div className="flex items-center gap-1.5 rounded-[8px] rounded-tl-none bg-[#F8F8F8] px-5 py-3.5">
-                                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#0012FF]" style={{ animationDelay: '0ms' }} />
-                                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#0012FF]" style={{ animationDelay: '150ms' }} />
-                                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#0012FF]" style={{ animationDelay: '300ms' }} />
                               </div>
                             </div>
-                          </div>
-                        );
-                      })()}
+                          );
+                        })()}
 
                       <div ref={messagesEndRef} />
                     </div>
@@ -1581,82 +2147,208 @@ export default function UserChatsPage() {
                       <div className="p-5 sm:p-6 bg-gray-50 border-t border-gray-100 flex items-center justify-center text-sm text-gray-400 font-medium select-none shrink-0 gap-2">
                         {isMutedForMe ? (
                           <>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 5L6 9H2v6h4l5 4V5z" /><line x1="23" y1="9" x2="17" y2="15" /><line x1="17" y1="9" x2="23" y2="15" /></svg>
+                            <svg
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                            >
+                              <path d="M11 5L6 9H2v6h4l5 4V5z" />
+                              <line x1="23" y1="9" x2="17" y2="15" />
+                              <line x1="17" y1="9" x2="23" y2="15" />
+                            </svg>
                             <span>You are muted in this event chat</span>
                           </>
                         ) : (
                           <>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
-                            <span>You can't send a message unless creator unlocks this chat</span>
+                            <svg
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                            >
+                              <rect
+                                x="3"
+                                y="11"
+                                width="18"
+                                height="11"
+                                rx="2"
+                                ry="2"
+                              />
+                              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                            </svg>
+                            <span>
+                              You can't send a message unless creator unlocks
+                              this chat
+                            </span>
                           </>
                         )}
                       </div>
                     ) : (
-                      <div className="p-3 mb-3 mx-3 bg-white border border-[#0012FF]/10 rounded-2xl shadow-[0_4px_24px_rgba(0,18,255,0.06)] shrink-0">
+                      // <div className="p-3 mb-3 mx-3 bg-green-400 border border-[#0012FF]/10 rounded-2xl shadow-[0_4px_24px_rgba(0,18,255,0.06)] shrink-0">
+                      <div className="my-3 ml-7 mr-10">
                         {/* Upload UI */}
                         {fileError && (
                           <div className="mb-2 rounded-xl border border-red-100 bg-red-50/80 px-3 py-2 text-[11px] font-semibold text-red-600">
                             {fileError}
-                            <button type="button" className="ml-2 underline" onClick={() => setFileError(null)}>Dismiss</button>
+                            <button
+                              type="button"
+                              className="ml-2 underline"
+                              onClick={() => setFileError(null)}
+                            >
+                              Dismiss
+                            </button>
                           </div>
                         )}
                         {isUploading && (
                           <div className="mb-2 w-full bg-gray-50 border border-gray-100 rounded-xl p-2.5 flex items-center justify-between shadow-xs">
                             <div className="flex items-center gap-3 min-w-0 flex-1">
                               <div className="w-8 h-8 rounded-lg bg-[#0012FF]/10 flex items-center justify-center text-[#0012FF] shrink-0">
-                                <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10" strokeDasharray="32" strokeDashoffset="16" /></svg>
+                                <svg
+                                  className="animate-spin"
+                                  width="16"
+                                  height="16"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2.5"
+                                >
+                                  <circle
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    strokeDasharray="32"
+                                    strokeDashoffset="16"
+                                  />
+                                </svg>
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex justify-between items-center mb-1 text-[11px] font-semibold text-gray-700">
                                   <span className="truncate pr-4">
                                     {uploadFiles.length > 1
                                       ? `Uploading ${uploadFiles.length} images…`
-                                      : uploadFiles[0]?.name || 'Uploading…'}
+                                      : uploadFiles[0]?.name || "Uploading…"}
                                   </span>
-                                  <span className="shrink-0">{uploadProgress}%</span>
+                                  <span className="shrink-0">
+                                    {uploadProgress}%
+                                  </span>
                                 </div>
                                 <div className="w-full bg-gray-200/60 rounded-full h-1">
-                                  <div className="bg-[#0012FF] h-1 rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%` }}></div>
+                                  <div
+                                    className="bg-[#0012FF] h-1 rounded-full transition-all duration-300"
+                                    style={{ width: `${uploadProgress}%` }}
+                                  ></div>
                                 </div>
                               </div>
                             </div>
-                            <button onClick={cancelUpload} className="ml-3 p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors shrink-0">
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                            <button
+                              onClick={cancelUpload}
+                              className="ml-3 p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors shrink-0"
+                            >
+                              <svg
+                                width="14"
+                                height="14"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2.5"
+                              >
+                                <line x1="18" y1="6" x2="6" y2="18" />
+                                <line x1="6" y1="6" x2="18" y2="18" />
+                              </svg>
                             </button>
                           </div>
                         )}
-                        {uploadError && uploadFiles.length > 0 && !isUploading && (
-                          <div className="mb-2 w-full bg-red-50/50 border border-red-100 rounded-xl p-2.5 flex items-center justify-between shadow-xs">
-                            <div className="flex items-center gap-3 min-w-0 flex-1">
-                              <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center text-red-600 shrink-0">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+                        {uploadError &&
+                          uploadFiles.length > 0 &&
+                          !isUploading && (
+                            <div className="mb-2 w-full bg-red-50/50 border border-red-100 rounded-xl p-2.5 flex items-center justify-between shadow-xs">
+                              <div className="flex items-center gap-3 min-w-0 flex-1">
+                                <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center text-red-600 shrink-0">
+                                  <svg
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2.5"
+                                  >
+                                    <circle cx="12" cy="12" r="10" />
+                                    <line x1="12" y1="8" x2="12" y2="12" />
+                                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                                  </svg>
+                                </div>
+                                <div className="flex-1 min-w-0 flex flex-col">
+                                  <span className="text-[11px] font-semibold text-red-700 truncate">
+                                    {uploadFiles.length > 1
+                                      ? `${uploadFiles.length} files`
+                                      : uploadFiles[0]?.name}
+                                  </span>
+                                  <span className="text-[10px] text-red-500 font-medium">
+                                    Upload failed or canceled
+                                  </span>
+                                </div>
                               </div>
-                              <div className="flex-1 min-w-0 flex flex-col">
-                                <span className="text-[11px] font-semibold text-red-700 truncate">
-                                  {uploadFiles.length > 1 ? `${uploadFiles.length} files` : uploadFiles[0]?.name}
-                                </span>
-                                <span className="text-[10px] text-red-500 font-medium">Upload failed or canceled</span>
+                              <div className="flex items-center gap-1 shrink-0 ml-3">
+                                <button
+                                  onClick={retryUpload}
+                                  className="p-1.5 text-red-600 hover:bg-red-100 rounded-full transition-colors"
+                                  title="Retry"
+                                >
+                                  <svg
+                                    width="14"
+                                    height="14"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2.5"
+                                  >
+                                    <path d="M2.5 2v6h6M2.66 15.57a10 10 0 1 0 .57-8.38l-5.67-5.67" />
+                                  </svg>
+                                </button>
+                                <button
+                                  onClick={clearUpload}
+                                  className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+                                >
+                                  <svg
+                                    width="14"
+                                    height="14"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2.5"
+                                  >
+                                    <line x1="18" y1="6" x2="6" y2="18" />
+                                    <line x1="6" y1="6" x2="18" y2="18" />
+                                  </svg>
+                                </button>
                               </div>
                             </div>
-                            <div className="flex items-center gap-1 shrink-0 ml-3">
-                              <button onClick={retryUpload} className="p-1.5 text-red-600 hover:bg-red-100 rounded-full transition-colors" title="Retry">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M2.5 2v6h6M2.66 15.57a10 10 0 1 0 .57-8.38l-5.67-5.67" /></svg>
-                              </button>
-                              <button onClick={clearUpload} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-                              </button>
-                            </div>
-                          </div>
-                        )}
+                          )}
                         {previewFiles.length > 0 && !isUploading && (
                           <MediaPreviewBar
                             files={previewFiles}
-                            onRemove={(index) => setPreviewFiles((prev) => prev.filter((_, i) => i !== index))}
+                            onRemove={(index) =>
+                              setPreviewFiles((prev) =>
+                                prev.filter((_, i) => i !== index),
+                              )
+                            }
                             onClear={() => setPreviewFiles([])}
                             onAddMore={() => triggerFileInput(true)}
                           />
                         )}
-                        <input type="file" ref={fileInputRef} hidden multiple accept="image/*,video/*,application/pdf,.doc,.docx,.xls,.xlsx" onChange={handleFileInput} />
+                        <input
+                          type="file"
+                          ref={fileInputRef}
+                          hidden
+                          multiple
+                          accept="image/*,video/*,application/pdf,.doc,.docx,.xls,.xlsx"
+                          onChange={handleFileInput}
+                        />
 
                         <div className="flex items-center gap-3">
                           {isRecording ? (
@@ -1664,7 +2356,9 @@ export default function UserChatsPage() {
                             <div className="flex-1 bg-red-50 border border-red-100 rounded-full py-3 px-6 flex items-center justify-between text-sm select-none animate-pulse">
                               <div className="flex items-center gap-2 text-red-600 font-semibold">
                                 <span className="w-2.5 h-2.5 bg-red-600 rounded-full animate-ping"></span>
-                                <span>Recording... ({formatTimer(recordingSeconds)})</span>
+                                <span>
+                                  Recording... ({formatTimer(recordingSeconds)})
+                                </span>
                               </div>
                               <div className="flex items-center gap-3">
                                 <button
@@ -1679,7 +2373,15 @@ export default function UserChatsPage() {
                                   title="Send Voice Note"
                                   className="w-8 h-8 rounded-full bg-red-600 hover:bg-red-700 active:scale-95 text-white flex items-center justify-center shadow-md shadow-red-200 transition-all cursor-pointer"
                                 >
-                                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="translate-x-[1px]">
+                                  <svg
+                                    width="15"
+                                    height="15"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2.5"
+                                    className="translate-x-[1px]"
+                                  >
                                     <line x1="22" y1="2" x2="11" y2="13" />
                                     <polygon points="22 2 15 22 11 13 2 9 22 2" />
                                   </svg>
@@ -1692,14 +2394,20 @@ export default function UserChatsPage() {
                               <input
                                 type="text"
                                 value={message}
-                                onChange={(e) => handleInputChange(e.target.value)}
+                                onChange={(e) =>
+                                  handleInputChange(e.target.value)
+                                }
                                 onKeyDown={(e) => {
-                                  if (e.key === 'Enter') {
+                                  if (e.key === "Enter") {
                                     e.preventDefault();
                                     handleSendMessage();
                                   }
                                 }}
-                                placeholder={previewFiles.length > 0 ? "Add a caption..." : "Type a message..."}
+                                placeholder={
+                                  previewFiles.length > 0
+                                    ? "Add a caption..."
+                                    : "Type a message..."
+                                }
                                 className="w-full bg-[#F8F8F8] border border-transparent rounded-full py-3 pl-5 pr-20 text-xs sm:text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0012FF]/10 focus:border-[#0012FF]/20 transition-all"
                               />
                               <button
@@ -1707,21 +2415,54 @@ export default function UserChatsPage() {
                                 className="absolute right-10 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                                 title="Attach File"
                               >
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+                                <svg
+                                  width="16"
+                                  height="16"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                >
+                                  <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                                </svg>
                               </button>
                               <button
                                 onClick={startRecording}
                                 className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                                 title="Record Voice Note"
                               >
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" y1="19" x2="12" y2="23" /><line x1="8" y1="23" x2="16" y2="23" /></svg>
+                                <svg
+                                  width="16"
+                                  height="16"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                >
+                                  <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" />
+                                  <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                                  <line x1="12" y1="19" x2="12" y2="23" />
+                                  <line x1="8" y1="23" x2="16" y2="23" />
+                                </svg>
                               </button>
                             </div>
                           )}
                           {!isRecording && (
-                            <button onClick={handleSendMessage} className="w-10 h-10 rounded-full bg-[#0012FF] hover:bg-[#0010d0] flex items-center justify-center text-white shrink-0 shadow-md transition-transform active:scale-95">
-                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginLeft: '-1.5px' }}>
-                                <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
+                            <button
+                              onClick={handleSendMessage}
+                              className="w-10 h-10 rounded-full bg-[#0012FF] hover:bg-[#0010d0] flex items-center justify-center text-white shrink-0 shadow-md transition-transform active:scale-95"
+                            >
+                              <svg
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                style={{ marginLeft: "-1.5px" }}
+                              >
+                                <line x1="22" y1="2" x2="11" y2="13" />
+                                <polygon points="22 2 15 22 11 13 2 9 22 2" />
                               </svg>
                             </button>
                           )}
@@ -1742,13 +2483,22 @@ export default function UserChatsPage() {
                 />
                 {conversations.length > 0 ? (
                   <>
-                    <h3 className="text-lg font-bold text-gray-800 mb-1">Select a Conversation</h3>
-                    <p className="text-sm text-gray-400 max-w-[280px]">Choose a chat from the list on the left to start messaging.</p>
+                    <h3 className="text-lg font-bold text-gray-800 mb-1">
+                      Select a Conversation
+                    </h3>
+                    <p className="text-sm text-gray-400 max-w-[280px]">
+                      Choose a chat from the list on the left to start
+                      messaging.
+                    </p>
                   </>
                 ) : (
                   <>
-                    <h3 className="text-lg font-bold text-gray-800 mb-1">No Bookings Today</h3>
-                    <p className="text-sm text-gray-400 max-w-[280px]">There are no sessions booked for the selected date.</p>
+                    <h3 className="text-lg font-bold text-gray-800 mb-1">
+                      No Bookings Today
+                    </h3>
+                    <p className="text-sm text-gray-400 max-w-[280px]">
+                      There are no sessions booked for the selected date.
+                    </p>
                   </>
                 )}
               </div>
@@ -1759,12 +2509,28 @@ export default function UserChatsPage() {
 
       {/* Lightbox Modal */}
       {lightboxMedia && (
-        <div className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity animate-fade-in" onClick={() => setLightboxMedia(null)}>
-          <button className="absolute top-6 right-6 text-white/70 hover:text-white transition-colors bg-white/10 hover:bg-white/20 p-2.5 rounded-full z-[110]" onClick={() => setLightboxMedia(null)}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+        <div
+          className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity animate-fade-in"
+          onClick={() => setLightboxMedia(null)}
+        >
+          <button
+            className="absolute top-6 right-6 text-white/70 hover:text-white transition-colors bg-white/10 hover:bg-white/20 p-2.5 rounded-full z-[110]"
+            onClick={() => setLightboxMedia(null)}
+          >
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
           </button>
 
-          {lightboxMedia.type === 'image' && lightboxMedia.urls.length > 1 && (
+          {lightboxMedia.type === "image" && lightboxMedia.urls.length > 1 && (
             <>
               <button
                 type="button"
@@ -1773,12 +2539,26 @@ export default function UserChatsPage() {
                   e.stopPropagation();
                   setLightboxMedia((prev) =>
                     prev
-                      ? { ...prev, index: (prev.index - 1 + prev.urls.length) % prev.urls.length }
-                      : prev
+                      ? {
+                          ...prev,
+                          index:
+                            (prev.index - 1 + prev.urls.length) %
+                            prev.urls.length,
+                        }
+                      : prev,
                   );
                 }}
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6" /></svg>
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                >
+                  <polyline points="15 18 9 12 15 6" />
+                </svg>
               </button>
               <button
                 type="button"
@@ -1786,11 +2566,22 @@ export default function UserChatsPage() {
                 onClick={(e) => {
                   e.stopPropagation();
                   setLightboxMedia((prev) =>
-                    prev ? { ...prev, index: (prev.index + 1) % prev.urls.length } : prev
+                    prev
+                      ? { ...prev, index: (prev.index + 1) % prev.urls.length }
+                      : prev,
                   );
                 }}
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6" /></svg>
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                >
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
               </button>
               <span className="absolute bottom-6 left-1/2 z-[110] -translate-x-1/2 rounded-full bg-black/50 px-3 py-1 text-xs font-semibold text-white">
                 {lightboxMedia.index + 1} / {lightboxMedia.urls.length}
@@ -1798,11 +2589,24 @@ export default function UserChatsPage() {
             </>
           )}
 
-          <div className="relative max-w-6xl max-h-[90vh] flex items-center justify-center w-full h-full" onClick={(e) => e.stopPropagation()}>
-            {lightboxMedia.type === 'image' ? (
-              <img src={lightboxMedia.urls[lightboxMedia.index]} alt="Fullscreen Attachment" className="max-w-full max-h-full object-contain select-none drop-shadow-2xl rounded-sm" />
+          <div
+            className="relative max-w-6xl max-h-[90vh] flex items-center justify-center w-full h-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {lightboxMedia.type === "image" ? (
+              <img
+                src={lightboxMedia.urls[lightboxMedia.index]}
+                alt="Fullscreen Attachment"
+                className="max-w-full max-h-full object-contain select-none drop-shadow-2xl rounded-sm"
+              />
             ) : (
-              <video controls autoPlay playsInline src={lightboxMedia.urls[0]} className="max-w-full max-h-full outline-none drop-shadow-2xl rounded-sm" />
+              <video
+                controls
+                autoPlay
+                playsInline
+                src={lightboxMedia.urls[0]}
+                className="max-w-full max-h-full outline-none drop-shadow-2xl rounded-sm"
+              />
             )}
           </div>
         </div>

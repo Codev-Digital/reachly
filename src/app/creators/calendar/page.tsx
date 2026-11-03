@@ -675,7 +675,7 @@ export default function CreatorCalendar() {
         />
 
         {/* Date filter — shared DaysOfMonth calendar */}
-        <div className="mb-8 w-full rounded-2xl border border-gray-100 bg-white p-3 shadow-xs sm:p-4">
+        <div className="mb-8 w-full rounded-xl border border-[#e2e2e2] bg-white p-3  sm:p-4">
           <DaysOfMonth
             selectedDates={[selectedDateIso]}
             activeDate={selectedDateIso}
@@ -944,7 +944,7 @@ export default function CreatorCalendar() {
             })}
           </div>
         ) : (
-          <div className="bg-white rounded-3xl border border-gray-200 shadow-sm p-16 flex flex-col items-center justify-center text-center">
+          <div className="bg-white rounded-xl border border-[#e2e2e2] p-16 flex flex-col items-center justify-center text-center">
             <Image
               src="/assets/no-appointment.webp"
               alt="No Appointments"

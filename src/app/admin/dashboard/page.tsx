@@ -922,7 +922,7 @@ const AdminDashboard = () => {
           {/* Stats Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             {/* Card 1 */}
-            <div className="bg-[#BAC4FF] rounded-xl p-4 sm:p-6 flex flex-col justify-between min-h-[160px]">
+            <div className="bg-[#B7C0FF] rounded-[10px] p-4 sm:p-6 flex flex-col justify-between min-h-[160px]">
               <div className="w-10 h-10 shrink-0 self-start bg-white/70 backdrop-blur-sm rounded-lg flex items-center justify-center mb-4 sm:mb-6">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0012FF" strokeWidth="2">
                   <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -939,7 +939,7 @@ const AdminDashboard = () => {
             </div>
 
             {/* Card 2 */}
-            <div className="bg-[#A3E5A5] rounded-xl p-4 sm:p-6 flex flex-col justify-between min-h-[160px]">
+            <div className="bg-[#AFE8B9] rounded-[10px] p-4 sm:p-6 flex flex-col justify-between min-h-[160px]">
               <div className="w-10 h-10 shrink-0 self-start bg-white/70 backdrop-blur-sm rounded-lg flex items-center justify-center mb-4 sm:mb-6">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#12B76A" strokeWidth="2">
                   <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -956,7 +956,7 @@ const AdminDashboard = () => {
             </div>
 
             {/* Card 3 */}
-            <div className="bg-[#FFADAD] rounded-xl p-4 sm:p-6 flex flex-col justify-between min-h-[160px]">
+            <div className="bg-[#FFB3B3] rounded-[10px] p-4 sm:p-6 flex flex-col justify-between min-h-[160px]">
               <div className="w-10 h-10 shrink-0 self-start bg-white/70 backdrop-blur-sm rounded-lg flex items-center justify-center mb-4 sm:mb-6">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.2">
                   <line x1="12" y1="1" x2="12" y2="23" />
@@ -973,7 +973,7 @@ const AdminDashboard = () => {
             </div>
 
             {/* Card 4 */}
-            <div className="bg-[#FFE199] rounded-xl p-4 sm:p-6 flex flex-col justify-between min-h-[160px]">
+            <div className="bg-[#FFEDB5] rounded-[10px] p-4 sm:p-6 flex flex-col justify-between min-h-[160px]">
               <div className="w-10 h-10 shrink-0 self-start bg-white/70 backdrop-blur-sm rounded-lg flex items-center justify-center mb-4 sm:mb-6">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2">
                   <circle cx="12" cy="12" r="10" />
@@ -993,7 +993,7 @@ const AdminDashboard = () => {
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.3 }}
           >
-            <Card className="rounded-[32px] border border-gray-100 bg-white p-2 sm:p-4 shadow-sm overflow-hidden">
+            <Card className="rounded-[12px] border border-[#e2e2e2] bg-white p-2 sm:p-2 overflow-hidden">
               <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 gap-4">
                 <div>
                   <CardTitle className="text-2xl font-bold font-sans text-black">Earnings</CardTitle>
@@ -1150,15 +1150,15 @@ const AdminDashboard = () => {
         {/* Right Column: Top Categories & Top Creators */}
         <div className="lg:col-span-5 space-y-8">
           {/* Top Categories Card */}
-          <div className="bg-white rounded-[32px] p-6 border border-gray-100 shadow-sm">
-            <h2 className="text-xl font-bold text-black mb-6 font-sans">Top Categories</h2>
+          <div className="bg-white rounded-[12px] p-6 border border-[#e2e2e2]">
+            <h2 className="text-[16px] leading-4 font-semibold text-black mb-6 font-anton">Top Categories</h2>
             {categories.length === 0 ? (
               <p className="text-gray-400 text-xs py-4 text-center">No categories found yet.</p>
             ) : (
               <div className="space-y-4">
                 {categories.map((cat) => (
                   <div key={cat.name} className="flex items-center justify-between text-xs sm:text-sm">
-                    <div className="w-16 sm:w-20 font-semibold text-gray-600 truncate">{cat.name}</div>
+                    <div className="w-16 sm:w-20 font-medium text-[14px] leading-3 text-[#8E8E8E] truncate">{cat.name}</div>
                     <div className="flex-1 mx-4">
                       <div className="h-2.5 w-full bg-gray-50 rounded-full overflow-hidden">
                         <div
@@ -1167,9 +1167,12 @@ const AdminDashboard = () => {
                         />
                       </div>
                     </div>
-                    <div className="text-right flex items-center gap-4">
-                      <span className="text-gray-400 font-semibold">{cat.count}</span>
-                      <span className="font-bold text-gray-900 w-24">{cat.revenue}</span>
+                    <div className="flex items-center gap-2 text-right">
+                      <span className="w-4 text-[14px] font-medium leading-3 text-[#8E8E8E]">{cat.count}</span>
+                      <span className="flex w-[108px] shrink-0 items-center whitespace-nowrap text-[14px] font-medium leading-3 text-[#8E8E8E]">
+                        <span className="mr-2 font-bold text-black">PKR</span>
+                        {cat.revenue.split(" ")[1]}
+                      </span>
                     </div>
                   </div>
                 ))}
@@ -1180,7 +1183,7 @@ const AdminDashboard = () => {
           {/* Top Creators section with Pagination */}
           <div>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-black font-sans">Top Creators</h2>
+              <h2 className="text-[20px] font-semibold leading-5 text-black font-anton">Top Creators</h2>
 
               {/* Pagination Controls */}
               {topCreators.length > creatorsPerPage && (
@@ -1290,7 +1293,7 @@ const AdminDashboard = () => {
         transition={{ delay: 0.35 }}
         className="mt-8 w-full"
       >
-        <div className="rounded-[32px] border border-gray-100 bg-white p-6 sm:p-8 shadow-sm">
+        <div className="rounded-[12px] border border-[#e2e2e2] bg-white p-4 sm:p-6">
           <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h2 className="text-xl sm:text-2xl font-bold font-sans text-black">

@@ -910,7 +910,7 @@ const CreatorDashboard = () => {
               transition={{ delay: 0.2 }}
               className="h-full"
             >
-              <Card className="rounded-[20px] border border-gray-100 bg-white p-4 sm:p-6 shadow-sm overflow-hidden h-full flex flex-col justify-between">
+              <Card className="rounded-[12px] border border-[#e2e2e2] bg-white p-4 sm:p-6 overflow-hidden h-full flex flex-col justify-between">
                 <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-3 sm:pb-2 pt-0 px-0 space-y-3 sm:space-y-0 flex-wrap gap-2">
                   <CardTitle className="text-xl font-bold font-sans text-black">Earnings</CardTitle>
 
@@ -1041,7 +1041,7 @@ const CreatorDashboard = () => {
         </div>
 
         {/* Date filter — shared DaysOfMonth calendar */}
-        <div className="mb-8 w-full rounded-2xl border border-gray-100 bg-white p-3 shadow-xs sm:p-4">
+        <div className="mb-8 w-full rounded-[12px] border border-[#e2e2e2] bg-white p-3 shadow-xs sm:p-4">
           <DaysOfMonth
             selectedDates={[selectedDateIso]}
             activeDate={selectedDateIso}
@@ -1056,7 +1056,7 @@ const CreatorDashboard = () => {
         {/* Upcoming Bookings Section */}
         <div className="space-y-6">
           {filteredBookingsList.length === 0 ? (
-            <div className="bg-white rounded-3xl border border-gray-200 shadow-sm p-16 flex flex-col items-center justify-center text-center">
+            <div className="bg-white rounded-[12px] border border-[#e2e2e2] p-16 flex flex-col items-center justify-center text-center">
               <Image
                 src="/assets/no-appointment.webp"
                 alt="No Appointments"

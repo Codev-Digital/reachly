@@ -1297,7 +1297,7 @@ export default function ChatsPage() {
                         <div
                           key={chat.id}
                           onClick={() => setActiveChat(chat.id)}
-                          className={`py-5 px-4 cursor-pointer transition-all flex flex-col justify-center ${activeChat === chat.id ? 'rounded-2xl border border-[#0012FF]/30 bg-[#F4F5FF] ring-1 ring-[#0012FF]/10 my-1' : 'border-b border-gray-200 hover:bg-gray-50 bg-transparent'}`}
+                          className={`my-2 flex cursor-pointer flex-col justify-center rounded-[14px] px-4 py-5 transition-all ${activeChat === chat.id ? 'border-2 border-[#B7C0FF] bg-white shadow-[4px_4px_10px_0px_#00000024]' : 'border border-[#e2e2e2] bg-white hover:bg-gray-50'}`}
                         >
                           <div className="flex justify-between items-start mb-1">
                             <div className="flex gap-3 items-center">
@@ -1345,7 +1345,7 @@ export default function ChatsPage() {
                     <div
                       key={chat.id}
                       onClick={() => setActiveChat(chat.id)}
-                      className={`py-5 px-4 cursor-pointer transition-all flex flex-col justify-center ${activeChat === chat.id ? 'rounded-2xl border border-[#0012FF]/30 bg-[#F4F5FF] ring-1 ring-[#0012FF]/10 my-1' : 'border-b border-gray-200 hover:bg-gray-50 bg-transparent'}`}
+                      className={`my-2 flex cursor-pointer flex-col justify-center rounded-[14px] px-4 py-5 transition-all ${activeChat === chat.id ? 'border-2 border-[#B7C0FF] bg-white shadow-[4px_4px_10px_0px_#00000024]' : 'border border-[#e2e2e2] bg-white hover:bg-gray-50'}`}
                     >
                       <div className="flex justify-between items-start">
                         <div className="flex gap-3">

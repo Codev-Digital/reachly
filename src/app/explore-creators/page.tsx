@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import UserNavbar from '@/components/UserNavbar';
 import CreatorDashboardNav from '@/components/CreatorDashboardNav';
@@ -92,6 +93,7 @@ function getCategoryIcon(name: string) {
 
 export default function ExploreCreatorsPage() {
   const router = useRouter();
+  const { status: sessionStatus } = useSession();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [showFavouritesOnly, setShowFavouritesOnly] = useState(false);
   const [favourites, setFavourites] = useState<string[]>([]); // creator usernames
@@ -135,6 +137,11 @@ export default function ExploreCreatorsPage() {
   const [loginModalMode, setLoginModalMode] = useState<'booking' | 'favourite'>('booking');
   const [loginCallbackUrl, setLoginCallbackUrl] = useState('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // NextAuth resolves immediately during client navigation, before /api/user/me
+  // returns the profile details needed to choose the final authenticated navbar.
+  const hasAuthenticatedSession =
+    isAuthenticated || sessionStatus !== 'unauthenticated';
 
   const handleCreatorBooking = (e: React.MouseEvent, username: string) => {
     e.stopPropagation();
@@ -393,7 +400,7 @@ export default function ExploreCreatorsPage() {
   return (
     <div className="min-h-screen bg-[#F7F7FA] text-[#1a1a1a]">
       {/* Navbar */}
-      {isAuthenticated ? (
+      {hasAuthenticatedSession ? (
         isAdmin ? (
           <AdminNavbar />
         ) : isCreator ? (
@@ -1036,7 +1043,7 @@ export default function ExploreCreatorsPage() {
                   className="flex flex-col w-[275px] h-[465px] justify-between group"
                 >
                   {/* Top Image Container */}
-                  <div className="relative w-[275px] h-[300px] rounded-[20px] overflow-hidden bg-gray-100 shrink-0 shadow-xs transition-transform duration-300 group-hover:scale-[1.01]">
+                  <div className="relative w-[275px] h-[300px] rounded-t-[12px] overflow-hidden bg-gray-100 shrink-0 shadow-xs transition-transform duration-300 group-hover:scale-[1.01]">
                     <img
                       src={creator.profilePhoto || '/avatar.png'}
                       alt={creator.displayName || creator.name}
