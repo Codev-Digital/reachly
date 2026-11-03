@@ -531,6 +531,7 @@ const AdminDashboard = () => {
                   const clipId = `cardClip-admin-${creator.id || index}`;
                   return (
                     <div key={creator.id || index} className="group cursor-pointer">
+                      
                       {/* Top Image Container */}
                       <div className="relative w-full aspect-[4/5] overflow-hidden rounded-[24px] mb-4 shadow-sm">
                         <img
