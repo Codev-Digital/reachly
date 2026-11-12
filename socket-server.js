@@ -2,6 +2,7 @@ const WebSocket = require('ws');
 const mongoose = require('mongoose');
 const fs = require('fs');
 const path = require('path');
+const { evaluateConversationBookingState } = require('./src/lib/chatSessionState');
 
 // 1. Load Environment Variables from .env and .env.local manually
 try {
@@ -112,6 +113,34 @@ const CreatorProfileLite =
       profilePhoto: String,
     })
   );
+const SessionTypeLite =
+  mongoose.models.SessionType ||
+  mongoose.model(
+    'SessionType',
+    new mongoose.Schema({
+      duration: Number,
+      title: String,
+    })
+  );
+const BookingLite =
+  mongoose.models.Booking ||
+  mongoose.model(
+    'Booking',
+    new mongoose.Schema(
+      {
+        creatorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        sessionTypeId: { type: mongoose.Schema.Types.ObjectId, ref: 'SessionType' },
+        scheduledDate: Date,
+        scheduledTime: String,
+        status: String,
+        paymentStatus: String,
+        meetingEndsAt: Date,
+        meetingEndedAt: Date,
+      },
+      { timestamps: true }
+    )
+  );
 
 async function resolveSenderProfile(senderId, senderRole) {
   try {
@@ -147,7 +176,7 @@ async function resolveSenderProfile(senderId, senderRole) {
 }
 
 // 3. Start WebSocket Server
-const PORT = 3001;
+const PORT = Number(process.env.WS_PORT) || 3001;
 const wss = new WebSocket.Server({ port: PORT });
 console.log(`WebSocket server starting on port ${PORT}...`);
 
@@ -212,25 +241,45 @@ wss.on('connection', (ws) => {
 
         const roomClients = rooms.get(conversationId);
 
-        // Enforce mute for ticket holders in broadcast chats (creator always allowed)
+        // Enforce mute, lock, cancelled-session, and expired-deadline guards for users
         if (senderRole === 'user') {
           try {
             const conv = await Conversation.findById(conversationId)
-              .select('type muteAll mutedUserIds isLocked')
+              .select('type muteAll mutedUserIds isLocked creatorId userId')
               .lean();
             if (conv) {
               const mutedIds = (conv.mutedUserIds || []).map((id) => id.toString());
               const isMuted =
                 conv.type === 'broadcast' &&
                 (Boolean(conv.muteAll) || mutedIds.includes(String(senderId)));
-              if (isMuted || conv.isLocked) {
+
+              let rejectionReason = isMuted ? 'muted' : conv.isLocked ? 'locked' : null;
+
+              if (conv.type !== 'broadcast' && conv.creatorId) {
+                const targetUserId = conv.userId || senderId;
+                const pairBookings = await BookingLite.find({
+                  creatorId: conv.creatorId,
+                  userId: targetUserId,
+                })
+                  .populate({ path: 'sessionTypeId', model: SessionTypeLite, select: 'duration title' })
+                  .lean();
+
+                const bookingState = evaluateConversationBookingState(pairBookings);
+                if (bookingState.isCancelled) {
+                  rejectionReason = 'cancelled';
+                } else if (bookingState.isDeadlinePassed) {
+                  rejectionReason = 'deadline_passed';
+                }
+              }
+
+              if (rejectionReason) {
                 if (ws.readyState === WebSocket.OPEN) {
                   ws.send(
                     JSON.stringify({
                       type: 'message_rejected',
                       conversationId,
                       tempId: tempId || data.tempId || undefined,
-                      reason: isMuted ? 'muted' : 'locked',
+                      reason: rejectionReason,
                     })
                   );
                 }
@@ -238,7 +287,7 @@ wss.on('connection', (ws) => {
               }
             }
           } catch (muteErr) {
-            console.error('Mute check error:', muteErr);
+            console.error('Chat guard check error:', muteErr);
           }
         }
 

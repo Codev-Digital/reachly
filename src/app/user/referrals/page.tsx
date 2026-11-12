@@ -375,6 +375,12 @@ import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import UserNavbar from '@/components/UserNavbar';
+import {
+  filterAndSearchReferrals,
+  getReferralShortId,
+  normalizeReferralPaymentMethod,
+  normalizeReferralStatus,
+} from '@/lib/referralHelpers';
 
 interface BuyActivity {
   _id: string;
@@ -382,6 +388,7 @@ interface BuyActivity {
   activityTime: string;
   totalAmount: number;
   status: string;
+  paymentMethod?: string;
 }
 
 interface Joinnee {
@@ -396,6 +403,15 @@ interface ReferralItem {
   joinnee: Joinnee;
   totalBuyActivities: number;
   buyActivity: BuyActivity;
+  paymentMethod?: string;
+  normalizedStatus?: string;
+}
+
+interface ReferralSummary {
+  totalReferrals: number;
+  successfulReferrals: number;
+  totalRewardsEarned: number;
+  pendingRewards: number;
 }
 
 interface PaginationInfo {
@@ -420,6 +436,12 @@ export default function UserReferrals() {
   // Referral data state
   const [referrals, setReferrals] = useState<ReferralItem[]>([]);
   const [totalReferrals, setTotalReferrals] = useState(0);
+  const [summary, setSummary] = useState<ReferralSummary>({
+    totalReferrals: 0,
+    successfulReferrals: 0,
+    totalRewardsEarned: 0,
+    pendingRewards: 0,
+  });
   const [pagination, setPagination] = useState<PaginationInfo>({
     page: 1,
     limit: 10,
@@ -428,6 +450,7 @@ export default function UserReferrals() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   //copy referral link function
   const CopyReferralLink = async () => {
@@ -473,30 +496,76 @@ export default function UserReferrals() {
   }, []);
 
   // Fetch referrals from API
-  const fetchReferrals = async (page: number) => {
+  const fetchReferrals = async (
+    page: number,
+    filters = { search: searchQuery, method: methodFilter, status: statusFilter }
+  ) => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch(`/api/referral?page=${page}&limit=10`);
+      const params = new URLSearchParams({
+        page: String(page),
+        limit: '10',
+      });
+      if (filters.search.trim()) params.set('search', filters.search.trim());
+      if (filters.method && filters.method !== 'All') params.set('method', filters.method);
+      if (filters.status && filters.status !== 'All') params.set('status', filters.status);
+
+      const res = await fetch(`/api/referral?${params.toString()}`, {
+        signal: controller.signal,
+      });
       const data = await res.json();
 
       if (data.success) {
         setReferrals(data.referrals || []);
-        setTotalReferrals(data.pagination?.total || 0);
+        const nextSummary = data.summary || {
+          totalReferrals: data.pagination?.total || 0,
+          successfulReferrals: 0,
+          totalRewardsEarned: 0,
+          pendingRewards: 0,
+        };
+        setSummary(nextSummary);
+        setTotalReferrals(nextSummary.totalReferrals ?? data.pagination?.total ?? 0);
         setPagination(data.pagination || { page: 1, limit: 10, total: 0, totalPages: 1 });
       } else {
         setError(data.error || 'Failed to load referrals');
       }
-    } catch (err) {
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name === 'AbortError') return;
       console.error('Error fetching referrals:', err);
       setError('Failed to load referrals');
     } finally {
-      setLoading(false);
+      if (!controller.signal.aborted) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
-    fetchReferrals(1);
+    const timer = setTimeout(() => {
+      fetchReferrals(1, {
+        search: searchQuery,
+        method: methodFilter,
+        status: statusFilter,
+      });
+    }, searchQuery ? 250 : 0);
+
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery, methodFilter, statusFilter]);
+
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, []);
 
   const goToPage = (page: number) => {
@@ -505,9 +574,7 @@ export default function UserReferrals() {
   };
 
   // Helpers
-  const getShortId = (id: string) => `REF-${id.slice(-5).toUpperCase()}`;
-
-  const getCleanStatus = (status: string) => status.trim().toLowerCase();
+  const getShortId = (id: string) => getReferralShortId(id);
 
   const formatDate = (isoString: string) =>
     new Date(isoString).toLocaleDateString('en-GB', {
@@ -535,14 +602,10 @@ export default function UserReferrals() {
     rejected: 'Rejected',
   };
 
-  const filteredReferrals = referrals.filter((ref) => {
-    const status = getCleanStatus(ref.buyActivity?.status || '');
-    const matchesSearch =
-      getShortId(ref._id).toLowerCase().includes(searchQuery.toLowerCase()) ||
-      ref.joinnee?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      ref.joinnee?.email?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === 'All' || statusLabels[status] === statusFilter;
-    return matchesSearch && matchesStatus;
+  const filteredReferrals = filterAndSearchReferrals(referrals, {
+    search: searchQuery,
+    method: methodFilter,
+    status: statusFilter,
   });
 
   return (
@@ -650,7 +713,13 @@ export default function UserReferrals() {
               </div>
               <div>
                 <p className="text-[11px] font-sans mb-1 text-gray-700 font-bold uppercase tracking-wider">Successful Referrals</p>
-                <p className="text-3xl font-black text-[#16A34A] font-sans leading-none">0</p>
+                <p className="text-3xl font-black text-[#16A34A] font-sans leading-none">
+                  {loading ? (
+                    <span className="inline-block h-7 w-10 bg-white/50 rounded-md animate-pulse align-middle" />
+                  ) : (
+                    summary.successfulReferrals
+                  )}
+                </p>
               </div>
             </div>
 
@@ -663,7 +732,13 @@ export default function UserReferrals() {
               </div>
               <div>
                 <p className="text-[11px] font-sans mb-1 text-gray-700 font-bold uppercase tracking-wider">Total Rewards Earned</p>
-                <p className="text-3xl font-black text-[#E11D48] font-sans leading-none">0 PKR</p>
+                <p className="text-3xl font-black text-[#E11D48] font-sans leading-none">
+                  {loading ? (
+                    <span className="inline-block h-7 w-20 bg-white/50 rounded-md animate-pulse align-middle" />
+                  ) : (
+                    `${summary.totalRewardsEarned.toLocaleString()} PKR`
+                  )}
+                </p>
               </div>
             </div>
 
@@ -677,7 +752,13 @@ export default function UserReferrals() {
               </div>
               <div>
                 <p className="text-[11px] font-sans mb-1 text-gray-700 font-bold uppercase tracking-wider">Pending Rewards</p>
-                <p className="text-3xl font-black text-[#D97706] font-sans leading-none">0 PKR</p>
+                <p className="text-3xl font-black text-[#D97706] font-sans leading-none">
+                  {loading ? (
+                    <span className="inline-block h-7 w-20 bg-white/50 rounded-md animate-pulse align-middle" />
+                  ) : (
+                    `${summary.pendingRewards.toLocaleString()} PKR`
+                  )}
+                </p>
               </div>
             </div>
           </div>
@@ -777,6 +858,7 @@ export default function UserReferrals() {
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Referral ID</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Referral Name</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Email</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Payment Method</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Joined Date</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Time</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Reward</th>
@@ -800,6 +882,9 @@ export default function UserReferrals() {
                           <div className="h-3.5 w-24 bg-gray-200 rounded-md animate-pulse" />
                         </td>
                         <td className="px-6 py-4">
+                          <div className="h-3.5 w-24 bg-gray-200 rounded-md animate-pulse" />
+                        </td>
+                        <td className="px-6 py-4">
                           <div className="h-3.5 w-16 bg-gray-200 rounded-md animate-pulse" />
                         </td>
                         <td className="px-6 py-4">
@@ -812,21 +897,24 @@ export default function UserReferrals() {
                     ))
                   ) : error ? (
                     <tr>
-                      <td colSpan={7} className="px-6 py-10 text-center text-sm text-red-500 font-medium">
+                      <td colSpan={8} className="px-6 py-10 text-center text-sm text-red-500 font-medium">
                         {error}
                       </td>
                     </tr>
                   ) : filteredReferrals.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-6 py-10 text-center text-sm text-gray-400 font-medium">
+                      <td colSpan={8} className="px-6 py-10 text-center text-sm text-gray-400 font-medium">
                         No referrals found.
                       </td>
                     </tr>
                   ) : (
-                    filteredReferrals.map((ref) => {
-                      const status = getCleanStatus(ref.buyActivity?.status || '');
+                    filteredReferrals.map((ref, idx) => {
+                      const status = normalizeReferralStatus(ref.buyActivity?.status || '');
+                      const methodDisplay = normalizeReferralPaymentMethod(
+                        ref.paymentMethod || ref.buyActivity?.paymentMethod
+                      );
                       return (
-                        <tr key={ref._id} className="hover:bg-gray-50/50 transition-colors">
+                        <tr key={`${ref._id}-${ref.buyActivity?._id || idx}`} className="hover:bg-gray-50/50 transition-colors">
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-medium">
                             {getShortId(ref._id)}
                           </td>
@@ -835,6 +923,9 @@ export default function UserReferrals() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {ref.joinnee?.email || '—'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">
+                            {methodDisplay}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {formatDate(ref.buyActivity.activityTime)}
@@ -866,7 +957,7 @@ export default function UserReferrals() {
           {/* Pagination */}
           <div className="flex items-center justify-between mt-6 px-2">
             <p className="text-sm text-gray-400 font-medium">
-              {loading ? 'Loading...' : `Showing ${referrals.length} of ${pagination.total}`}
+              {loading ? 'Loading...' : `Showing ${filteredReferrals.length} of ${pagination.total}`}
             </p>
             <div className="flex items-center gap-2">
               <button

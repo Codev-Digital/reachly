@@ -10,6 +10,7 @@ import User from '@/models/User';
 import CreatorProfile from '@/models/CreatorProfile';
 import EventPurchase from '@/models/EventPurchase';
 import { backfillConversationsForUser } from '@/lib/sessionChat';
+import { evaluateConversationBookingState } from '@/lib/chatSessionState';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -240,13 +241,14 @@ export async function GET(request: NextRequest) {
             unreadMap.set(key, item.count);
         });
 
-        // Booking map: pick the most recent booking per conversation pair
-        const pairBookingMap = new Map<string, any>();
+        // Group bookings per conversation pair so we can accurately detect active, expired, or cancelled sessions
+        const pairBookingsMap = new Map<string, any[]>();
         (bookingsList as any[]).forEach((b) => {
             const key = `${b.creatorId.toString()}-${b.userId?.toString()}`;
-            if (!pairBookingMap.has(key)) {
-                pairBookingMap.set(key, b);
+            if (!pairBookingsMap.has(key)) {
+                pairBookingsMap.set(key, []);
             }
+            pairBookingsMap.get(key)!.push(b);
         });
 
         const enriched = filteredConversations.map((conv) => {
@@ -329,7 +331,11 @@ export async function GET(request: NextRequest) {
             const creatorProfile = otherUserId ? creatorProfilesMap.get(otherUserId) : null;
 
             const pairKey = `${conv.creatorId.toString()}-${conv.userId?.toString()}`;
-            const targetBooking = dateParam ? dateBookingMap.get(pairKey) : pairBookingMap.get(pairKey);
+            const pairBookings = dateParam
+                ? (dateBookingMap.get(pairKey) ? [dateBookingMap.get(pairKey)] : [])
+                : (pairBookingsMap.get(pairKey) || []);
+            const bookingState = evaluateConversationBookingState(pairBookings);
+            const targetBooking = bookingState.targetBooking;
 
             const displayName = creatorProfile?.displayName || otherUser?.name || 'Unknown';
             const username = creatorProfile?.username || '';
@@ -376,6 +382,10 @@ export async function GET(request: NextRequest) {
                 creatorId: conv.creatorId.toString(),
                 userId: conv.userId?.toString() || null,
                 isLocked: conv.isLocked,
+                bookingStatus: bookingState.bookingStatus,
+                hasActiveSession: bookingState.hasActiveSession,
+                isDeadlinePassed: bookingState.isDeadlinePassed,
+                isCancelled: bookingState.isCancelled,
                 isCreator,
                 follower: displayName,
                 creator: displayName,

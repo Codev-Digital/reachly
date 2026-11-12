@@ -231,24 +231,28 @@ export async function PUT(
           if (referralDoc) {
             const referrerId = referralDoc.referrer;
             const referrerUser = await User.findById(referrerId).exec();
-            referralDoc.buyActivities.map(async (activity: any) => {
-              if (activity.type === "buy_session") {
-                const ammount = activity.totalAmount;
-                if (referrerUser) {
-                  referrerUser.totalAmountEarnedFromReferrals =
-                    (referrerUser.totalAmountEarnedFromReferrals || 0) - ammount;
-                  await referrerUser.save();
-                }
-                referralDoc.totalBuyActivities += 1;
-                referralDoc.buyActivities.push({
-                  type: "cancel_session",
-                  activityTime: new Date(),
-                  totalAmount: ammount,
-                  status: "rejected",
-                });
-                await referralDoc.save();
+            const buyActivity = referralDoc.buyActivities.find(
+              (activity: any) => activity.type === "buy_session"
+            );
+            if (buyActivity) {
+              const ammount = buyActivity.totalAmount;
+              if (referrerUser) {
+                referrerUser.totalAmountEarnedFromReferrals =
+                  Math.max(0, (referrerUser.totalAmountEarnedFromReferrals || 0) - ammount);
+                await referrerUser.save();
               }
-            });
+              referralDoc.totalBuyActivities += 1;
+              referralDoc.buyActivities.push({
+                type: "cancel_session",
+                activityTime: new Date(),
+                totalAmount: ammount,
+                status: "rejected",
+                sessionId: booking.sessionTypeId,
+                bookingId: booking._id,
+                paymentMethod: booking.paymentMethod,
+              });
+              await referralDoc.save();
+            }
           }
           updatePayload.paymentStatus = "refunded";
         } else {

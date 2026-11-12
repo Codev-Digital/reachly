@@ -13,6 +13,8 @@ interface IBuyActivity {
   totalAmount: number;
   status: string;
   sessionId?: mongoose.Types.ObjectId;
+  bookingId?: mongoose.Types.ObjectId;
+  paymentMethod?: string;
 }
 //Buy Activities model
 const buyActivitiesSchema = new mongoose.Schema<IBuyActivity>({
@@ -37,7 +39,15 @@ const buyActivitiesSchema = new mongoose.Schema<IBuyActivity>({
   sessionId:{
     type: mongoose.Schema.Types.ObjectId,
     ref: "Session",
-  }
+  },
+  bookingId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Booking",
+  },
+  paymentMethod: {
+    type: String,
+    trim: true,
+  },
 });
 // Create referral schema
 

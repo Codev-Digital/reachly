@@ -253,6 +253,8 @@ export async function PATCH(request: NextRequest) {
                     totalAmount: reward,
                     status: 'completed',
                     sessionId: proof.sessionTypeId,
+                    bookingId: booking._id,
+                    paymentMethod: proof.method,
                   },
                 },
               }

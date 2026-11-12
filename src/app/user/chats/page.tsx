@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { toast } from "sonner";
 import UserNavbar from "@/components/UserNavbar";
 import VoicePlayer from "@/components/VoicePlayer";
@@ -41,6 +42,10 @@ interface ConversationInfo {
   image: string;
   meetingUrl?: string | null;
   isLocked: boolean;
+  bookingStatus?: string | null;
+  hasActiveSession?: boolean;
+  isDeadlinePassed?: boolean;
+  isCancelled?: boolean;
   /** Broadcast: this user cannot send (mute all or individually muted). */
   isMutedForMe?: boolean;
   lastMessage: string;
@@ -526,6 +531,10 @@ export default function UserChatsPage() {
             image: c.image || c.avatar || "/avatar.png",
             meetingUrl: c.meetingUrl || null,
             isLocked: c.isLocked,
+            bookingStatus: c.bookingStatus || null,
+            hasActiveSession: Boolean(c.hasActiveSession),
+            isDeadlinePassed: Boolean(c.isDeadlinePassed),
+            isCancelled: Boolean(c.isCancelled),
             isMutedForMe: Boolean(c.isMutedForMe),
             lastMessage: c.lastMessage || "",
             lastMessageTime: c.lastMessageTime || null,
@@ -931,6 +940,20 @@ export default function UserChatsPage() {
                 c.id === data.conversationId ? { ...c, isMutedForMe: true } : c,
               ),
             );
+          } else if (data.reason === "cancelled") {
+            setConversations((prev) =>
+              prev.map((c) =>
+                c.id === data.conversationId ? { ...c, isCancelled: true } : c,
+              ),
+            );
+            toast.error("You cannot send messages because this session was cancelled.");
+          } else if (data.reason === "deadline_passed") {
+            setConversations((prev) =>
+              prev.map((c) =>
+                c.id === data.conversationId ? { ...c, isDeadlinePassed: true } : c,
+              ),
+            );
+            toast.error("Your meeting deadline has crossed. Book a new session to chat.");
           }
         } else if (
           data.type === "chat_cleared" &&
@@ -956,6 +979,15 @@ export default function UserChatsPage() {
   }, [activeChat]);
 
   const handleSendMessage = () => {
+    if (!canSendMessages) {
+      if (isCancelled) {
+        toast.error("You cannot send messages because this session was cancelled.");
+      } else if (isDeadlinePassed) {
+        toast.error("Your meeting deadline has crossed. Please book a new session.");
+      }
+      return;
+    }
+
     if (previewFiles.length) {
       startUpload(previewFiles);
       setPreviewFiles([]);
@@ -1260,7 +1292,12 @@ export default function UserChatsPage() {
   const activeConv = conversations.find((c) => c.id === activeChat);
   const isChatLocked = activeConv?.isLocked ?? false;
   const isMutedForMe = activeConv?.isMutedForMe ?? false;
-  const canSendMessages = !isChatLocked && !isMutedForMe;
+  const isCancelled = activeConv?.type !== "broadcast" && Boolean(activeConv?.isCancelled);
+  const isDeadlinePassed = activeConv?.type !== "broadcast" && Boolean(activeConv?.isDeadlinePassed);
+  const canSendMessages = !isChatLocked && !isMutedForMe && !isCancelled && !isDeadlinePassed;
+  const bookSessionHref = activeConv?.username
+    ? `/creators/${activeConv.username}/book-session`
+    : "/explore-creators";
 
   const handleArchiveChat = async (archive: boolean) => {
     if (!activeChat) return;
@@ -1300,6 +1337,20 @@ export default function UserChatsPage() {
     chat: ConversationInfo,
     myRole: "creator" | "user",
   ) => {
+    if (chat.type !== "broadcast" && chat.isCancelled) {
+      return (
+        <span className="flex items-center gap-1 text-red-500 font-semibold">
+          Session cancelled
+        </span>
+      );
+    }
+    if (chat.type !== "broadcast" && chat.isDeadlinePassed) {
+      return (
+        <span className="flex items-center gap-1 text-amber-600 font-semibold">
+          Meeting deadline crossed
+        </span>
+      );
+    }
     if (chat.isLocked) {
       return (
         <span className="flex items-center gap-1 text-gray-600 font-semibold">
@@ -1795,24 +1846,69 @@ export default function UserChatsPage() {
                   </div>
                 </div>
 
-                {/* Conditional View: lock screen ONLY if empty */}
-                {isChatLocked && messages.length === 0 && !loadingMessages ? (
+                {/* Conditional View: lock/expired/cancelled screen ONLY if empty */}
+                {(isChatLocked || isCancelled || isDeadlinePassed) &&
+                messages.length === 0 &&
+                !loadingMessages ? (
                   <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-[#FAFAFA]">
                     <div className="mb-6 mt-4 w-[240px] h-[180px] relative">
                       <Image
                         src="/assets/lock-chat.webp"
-                        alt="Lock Chat"
+                        alt={
+                          isCancelled
+                            ? "Cancelled Session"
+                            : isDeadlinePassed
+                              ? "Meeting Deadline Crossed"
+                              : "Lock Chat"
+                        }
                         fill
                         className="object-contain"
                       />
                     </div>
-                    <h3 className="text-xl font-bold text-gray-800 mb-1">
-                      Creator has locked this chat
-                    </h3>
-                    <p className="text-sm text-gray-400 max-w-[340px] mb-6">
-                      The creator has locked this chat. You'll be able to send
-                      messages once they unlock it. Please check back later.
-                    </p>
+                    {isCancelled ? (
+                      <>
+                        <h3 className="text-xl font-bold text-gray-800 mb-1">
+                          This session was cancelled
+                        </h3>
+                        <p className="text-sm text-gray-400 max-w-[360px] mb-5">
+                          You cannot send messages because this session has been
+                          cancelled. Book a new session to chat with this creator.
+                        </p>
+                        <Link
+                          href={bookSessionHref}
+                          className="mb-6 inline-flex items-center justify-center rounded-full bg-[#0012FF] px-6 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-[#0012FF]/90 transition-colors"
+                        >
+                          Book New Session
+                        </Link>
+                      </>
+                    ) : isDeadlinePassed ? (
+                      <>
+                        <h3 className="text-xl font-bold text-gray-800 mb-1">
+                          Your meeting deadline has crossed
+                        </h3>
+                        <p className="text-sm text-gray-400 max-w-[360px] mb-5">
+                          Your meeting deadline has crossed, so this chat is no
+                          longer active. Now book a new session to continue
+                          messaging.
+                        </p>
+                        <Link
+                          href={bookSessionHref}
+                          className="mb-6 inline-flex items-center justify-center rounded-full bg-[#0012FF] px-6 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-[#0012FF]/90 transition-colors"
+                        >
+                          Book New Session
+                        </Link>
+                      </>
+                    ) : (
+                      <>
+                        <h3 className="text-xl font-bold text-gray-800 mb-1">
+                          Creator has locked this chat
+                        </h3>
+                        <p className="text-sm text-gray-400 max-w-[340px] mb-6">
+                          The creator has locked this chat. You&apos;ll be able to send
+                          messages once they unlock it. Please check back later.
+                        </p>
+                      </>
+                    )}
 
                     {/* Booking Details */}
                     <div className="bg-white border border-gray-100 rounded-2xl p-4 flex flex-col gap-3 max-w-[360px] w-full text-left text-xs text-gray-500 font-medium">
@@ -2144,7 +2240,7 @@ export default function UserChatsPage() {
 
                     {/* Input Area / Recording Panel */}
                     {!canSendMessages ? (
-                      <div className="p-5 sm:p-6 bg-gray-50 border-t border-gray-100 flex items-center justify-center text-sm text-gray-400 font-medium select-none shrink-0 gap-2">
+                      <div className="p-5 sm:p-6 bg-gray-50 border-t border-gray-100 flex flex-wrap items-center justify-center text-sm text-gray-500 font-medium select-none shrink-0 gap-3 text-center">
                         {isMutedForMe ? (
                           <>
                             <svg
@@ -2160,6 +2256,32 @@ export default function UserChatsPage() {
                               <line x1="17" y1="9" x2="23" y2="15" />
                             </svg>
                             <span>You are muted in this event chat</span>
+                          </>
+                        ) : isCancelled ? (
+                          <>
+                            <span>
+                              This session has been cancelled. You cannot send
+                              messages for a cancelled session.
+                            </span>
+                            <Link
+                              href={bookSessionHref}
+                              className="inline-flex items-center rounded-full bg-[#0012FF] px-4 py-1.5 text-xs font-bold text-white hover:bg-[#0012FF]/90 transition-colors"
+                            >
+                              Book New Session
+                            </Link>
+                          </>
+                        ) : isDeadlinePassed ? (
+                          <>
+                            <span>
+                              Your meeting deadline has crossed. Now book a new
+                              session to chat.
+                            </span>
+                            <Link
+                              href={bookSessionHref}
+                              className="inline-flex items-center rounded-full bg-[#0012FF] px-4 py-1.5 text-xs font-bold text-white hover:bg-[#0012FF]/90 transition-colors"
+                            >
+                              Book New Session
+                            </Link>
                           </>
                         ) : (
                           <>
@@ -2182,7 +2304,7 @@ export default function UserChatsPage() {
                               <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                             </svg>
                             <span>
-                              You can't send a message unless creator unlocks
+                              You can&apos;t send a message unless creator unlocks
                               this chat
                             </span>
                           </>

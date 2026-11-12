@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import UserNavbar from '@/components/UserNavbar';
 import { CreditCard, DollarSign, Clock, Calendar, TrendingUp, ArrowUpRight } from 'lucide-react';
+import { downloadPaymentReceipt } from '@/lib/receipt';
 
 export default function UserPayments() {
   const [displayName, setDisplayName] = useState('');
@@ -18,6 +19,22 @@ export default function UserPayments() {
 
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showTopUpTooltip, setShowTopUpTooltip] = useState(false);
+  const topUpTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleTopUpTouchOrClick = () => {
+    setShowTopUpTooltip(true);
+    if (topUpTimerRef.current) clearTimeout(topUpTimerRef.current);
+    topUpTimerRef.current = setTimeout(() => {
+      setShowTopUpTooltip(false);
+    }, 2500);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (topUpTimerRef.current) clearTimeout(topUpTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     // Read cached user details immediately
@@ -132,7 +149,7 @@ export default function UserPayments() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 mb-8 items-stretch">
 
             {/* Card 1 - Available Balance (Longer Card with 3D Ball/Bubble Effects) */}
-            <div className="lg:col-span-5 relative bg-[#0012FF] text-white rounded-[10px] p-5 shadow-sm flex flex-col justify-between h-[160px] hover:scale-[1.01] transition-all duration-300 overflow-hidden cursor-default">
+            <div className="lg:col-span-5 relative bg-[#0012FF] text-white rounded-[10px] p-5 shadow-sm flex flex-col justify-between h-[160px] hover:scale-[1.01] transition-all duration-300 cursor-default">
 
               {/* 3D Ball / Bubble Background Overlay Effects */}
               <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-[10px]">
@@ -158,13 +175,36 @@ export default function UserPayments() {
                   <h3 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight font-sans my-0.5">{availableBalance.toLocaleString()} PKR</h3>
                 </div>
 
-                {/* Top Up Button */}
-                <button className="bg-white hover:bg-gray-50 text-black pl-4 pr-1.5 py-1.5 rounded-full text-xs font-bold transition-all shadow-md active:scale-95 flex items-center gap-2 cursor-pointer shrink-0">
-                  <span>Top Up</span>
-                  <div className="w-5 h-5 bg-[#0012FF] rounded-full flex items-center justify-center text-white">
-                    <ArrowUpRight className="w-3.5 h-3.5 stroke-[3]" />
-                  </div>
-                </button>
+                {/* Top Up Button with Coming Soon tooltip on hover or touch */}
+                <div
+                  className="relative shrink-0"
+                  onMouseEnter={() => setShowTopUpTooltip(true)}
+                  onMouseLeave={() => setShowTopUpTooltip(false)}
+                >
+                  {showTopUpTooltip && (
+                    <div
+                      role="tooltip"
+                      className="absolute bottom-full right-0 mb-2 px-3 py-1.5 rounded-lg bg-gray-900 text-white text-xs font-semibold whitespace-nowrap shadow-lg z-30 pointer-events-none"
+                    >
+                      Coming Soon
+                      <span className="absolute top-full right-5 -mt-1 border-4 border-transparent border-t-gray-900" />
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    aria-label="Top Up - Coming Soon"
+                    onFocus={() => setShowTopUpTooltip(true)}
+                    onBlur={() => setShowTopUpTooltip(false)}
+                    onTouchStart={handleTopUpTouchOrClick}
+                    onClick={handleTopUpTouchOrClick}
+                    className="bg-white hover:bg-gray-50 text-black pl-4 pr-1.5 py-1.5 rounded-full text-xs font-bold transition-all shadow-md active:scale-95 flex items-center gap-2 cursor-pointer"
+                  >
+                    <span>Top Up</span>
+                    <div className="w-5 h-5 bg-[#0012FF] rounded-full flex items-center justify-center text-white">
+                      <ArrowUpRight className="w-3.5 h-3.5 stroke-[3]" />
+                    </div>
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -367,7 +407,11 @@ export default function UserPayments() {
                           </span>
                         </td>
                         <td className="px-6 py-4.5 whitespace-nowrap text-sm">
-                          <button className="border border-gray-200 rounded-full px-4 py-1 text-xs font-semibold text-[#0012FF] hover:bg-[#0012FF]/5 transition-all">
+                          <button
+                            type="button"
+                            onClick={() => downloadPaymentReceipt(txn, displayName)}
+                            className="border border-gray-200 rounded-full px-4 py-1 text-xs font-semibold text-[#0012FF] hover:bg-[#0012FF]/5 transition-all cursor-pointer"
+                          >
                             Download
                           </button>
                         </td>

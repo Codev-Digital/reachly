@@ -285,6 +285,7 @@ export async function POST(request: NextRequest) {
                   totalAmount: Number(referralReward),
                   status: "completed",
                   sessionId: new mongoose.Types.ObjectId(sessionId),
+                  paymentMethod: paymentMethod || undefined,
                 }
               }
             }
