@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Calendar, Clock, Eye, EyeOff, MapPin, Pencil } from 'lucide-react';
+import { Calendar, Clock, Eye, EyeOff, MapPin, Pencil, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
 export interface EventCardData {
@@ -23,6 +23,8 @@ interface EventCardProps {
   event: EventCardData;
   /** Opens hide / unhide confirmation (creator manage view). */
   onToggleVisibility?: (id: string) => void;
+  /** Opens delete confirmation (admin view). */
+  onDelete?: (id: string) => void;
   /** When true, shows the edit control linking to the edit page. */
   showEdit?: boolean;
   /** Shows a text preview action linking to the customer-facing event page. */
@@ -34,6 +36,7 @@ interface EventCardProps {
 export default function EventCard({
   event,
   onToggleVisibility,
+  onDelete,
   showEdit = false,
   showPreview = false,
   onClick,
@@ -81,8 +84,8 @@ export default function EventCard({
       {/* Readability overlay: dark on top, brand blue at the bottom */}
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/45 via-black/30 to-[#0012FF]/55" />
 
-      {/* Creator actions */}
-      {(onToggleVisibility || showEdit || showPreview) && (
+      {/* Creator / Admin actions */}
+      {(onToggleVisibility || onDelete || showEdit || showPreview) && (
         <div className="absolute right-3 top-3 z-10 flex items-center gap-2">
           {showPreview && (
             <Link
@@ -118,6 +121,20 @@ export default function EventCard({
               className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-white/25 text-white backdrop-blur-sm transition-colors hover:bg-white/45"
             >
               {event.visible ? <Eye size={14} /> : <EyeOff size={14} />}
+            </button>
+          )}
+          {onDelete && (
+            <button
+              type="button"
+              aria-label={`Delete ${event.title}`}
+              title="Delete event"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(event.id);
+              }}
+              className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-red-600/85 text-white backdrop-blur-sm transition-colors hover:bg-red-600"
+            >
+              <Trash2 size={14} />
             </button>
           )}
         </div>

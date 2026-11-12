@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { usePreloadImages } from '@/lib/usePreloadImages';
+import ActionDialog from '@/components/ActionDialog';
 import CreatorStatusActions from '@/components/admin/CreatorStatusActions';
 import FormInput from '@/components/FormInput';
 import {
@@ -98,11 +99,13 @@ export default function AdminCreatorsPage() {
 
   const [creators, setCreators] = useState<Creator[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [creatorToDelete, setCreatorToDelete] = useState<Creator | null>(null);
 
   // Dynamic stats
   const totalCreators = creators.filter(c => c.status !== 'Deleted').length;
   const activeCreators = creators.filter(c => c.status === 'Active').length;
-  const inactiveCreators = creators.filter(c => c.status === 'Inactive' || c.status === 'Suspended' || c.status === 'Rejected' || c.status === 'Deleted').length;
+  const inactiveCreators = creators.filter(c => c.status === 'Inactive' || c.status === 'Suspended' || c.status === 'Rejected').length;
   const pendingCreators = creators.filter(c => c.status === 'Pending').length;
 
   const loadCreators = async () => {
@@ -134,6 +137,26 @@ export default function AdminCreatorsPage() {
 
     return matchesSearch && matchesStatus;
   });
+
+  const handleConfirmDeleteCreator = async () => {
+    if (!creatorToDelete) return;
+    try {
+      const res = await fetch(`/api/admin/creators?userId=${creatorToDelete.dbId || creatorToDelete.id}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        await loadCreators();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(err.error || 'Failed to delete creator.');
+      }
+    } catch {
+      alert('Error deleting creator.');
+    } finally {
+      setShowDeleteModal(false);
+      setCreatorToDelete(null);
+    }
+  };
 
   // Pagination logic (10 creators per page)
   const itemsPerPage = 10;
@@ -436,11 +459,19 @@ export default function AdminCreatorsPage() {
 
                     {/* Actions */}
                     <td className="py-4 px-4" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <CreatorStatusActions userId={creator.dbId || creator.id} status={creator.status} onChanged={loadCreators} />
+                        {creator.status !== 'Deleted' && (
+                          <button
+                            onClick={() => { setCreatorToDelete(creator); setShowDeleteModal(true); }}
+                            className="px-3.5 py-1.5 bg-white border border-red-200 rounded-full text-[10px] font-bold text-red-500 hover:bg-red-50 hover:border-red-300 transition-colors cursor-pointer"
+                          >
+                            Delete
+                          </button>
+                        )}
                         <button
                           onClick={() => openDetail(creator)}
-                          className="px-3.5 py-1 bg-gray-100 rounded-full text-xs font-medium text-gray-600 hover:bg-gray-200 hover:text-gray-800 transition-colors"
+                          className="px-3.5 py-1.5 bg-gray-100 rounded-full text-[10px] font-bold text-gray-600 hover:bg-gray-200 hover:text-gray-800 transition-colors cursor-pointer"
                         >
                           View Details
                         </button>
@@ -611,6 +642,18 @@ export default function AdminCreatorsPage() {
               </form>
         </DialogContent>
       </Dialog>
+
+      <ActionDialog
+        open={showDeleteModal}
+        onOpenChange={setShowDeleteModal}
+        image={{ src: '/assets/cancel-appointment-sm.webp', alt: 'Delete creator' }}
+        title="Delete Creator"
+        description={['Are you sure you want to delete this creator?', 'Their account will move to Deleted and can be restored to Pending later.']}
+        actions={[
+          { label: 'Cancel', variant: 'outline', onClick: () => setShowDeleteModal(false) },
+          { label: 'Delete Creator', variant: 'destructive', onClick: handleConfirmDeleteCreator },
+        ]}
+      />
     </motion.div>
   );
 }

@@ -1217,14 +1217,28 @@ export default function UserDashboard() {
                               );
                             }
 
-                            if (isCancelled || isPast) {
+                            if (isCancelled) {
                               return (
+                                <div className="w-full py-2 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1.5 bg-gray-100 text-gray-500 border border-gray-200 select-none">
+                                  Booking Cancelled — Chat Disabled
+                                </div>
+                              );
+                            }
+
+                            if (isPast) {
+                              return booking.hasReviewed ? (
+                                <div className="w-full py-2 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1.5 bg-gray-100 text-gray-500 border border-gray-200 select-none">
+                                  <CheckCircle className="size-3.5 shrink-0" />
+                                  Meeting Completed
+                                </div>
+                              ) : (
                                 <button
-                                  onClick={() => router.push(`/user/chats?bookingRef=${booking.bookingRef}`)}
-                                  className="w-full py-2 bg-[#0012FF] hover:bg-[#0012FF]/90 text-white rounded-lg text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs shadow-[#0012FF]/20"
+                                  type="button"
+                                  onClick={() => openReviewForBooking(booking)}
+                                  className="w-full py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                                 >
-                                  <MessageSquare className="size-3.5 shrink-0" />
-                                  Chat now
+                                  <Star className="size-3.5 shrink-0" />
+                                  Review {booking.name || 'Creator'}
                                 </button>
                               );
                             }
@@ -1257,14 +1271,23 @@ export default function UserDashboard() {
                                   )
                                 ) : (
                                   <>
-                                    <button
-                                      onClick={() => void handleUserJoinMeeting(booking)}
-                                      disabled={joiningMeetingId === String(booking.id)}
-                                      className="w-full py-2 bg-[#0012FF] hover:bg-[#0012FF]/90 text-white rounded-lg text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm disabled:opacity-60"
-                                    >
-                                      <Video className="size-3.5 shrink-0" />
-                                      {joiningMeetingId === String(booking.id) ? 'Checking…' : 'Join Meeting'}
-                                    </button>
+                                    <div className="flex items-center gap-2">
+                                      <button
+                                        onClick={() => void handleUserJoinMeeting(booking)}
+                                        disabled={joiningMeetingId === String(booking.id)}
+                                        className="flex-1 py-2 bg-[#0012FF] hover:bg-[#0012FF]/90 text-white rounded-lg text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm disabled:opacity-60"
+                                      >
+                                        <Video className="size-3.5 shrink-0" />
+                                        {joiningMeetingId === String(booking.id) ? 'Checking…' : 'Join Meeting'}
+                                      </button>
+                                      <button
+                                        onClick={() => router.push(`/user/chats?bookingRef=${booking.bookingRef}`)}
+                                        className="flex-1 py-2 border border-[#0012FF] text-[#0012FF] hover:bg-[#EEF2FF] rounded-lg text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                                      >
+                                        <MessageSquare className="size-3.5 shrink-0" />
+                                        Chat now
+                                      </button>
+                                    </div>
                                     <div className="flex items-center gap-2">
                                       <button
                                         onClick={() => handleRescheduleNav(booking)}

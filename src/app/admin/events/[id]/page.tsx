@@ -281,7 +281,6 @@ export default function AdminEventDetailPage() {
               <button
                 type="button"
                 onClick={() => setPendingAction('delete')}
-                disabled={event.status === 'cancelled'}
                 className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Trash2 size={16} /> Delete
@@ -427,8 +426,8 @@ export default function AdminEventDetailPage() {
         description={
           pendingAction === 'delete'
             ? [
-                'This event will be soft deleted and its record retained.',
-                'Events with ticket purchases cannot be deleted. Hide the event instead.',
+                'This event will be soft deleted and removed from public and admin listings.',
+                'Any active ticket orders will be cancelled.',
               ]
             : pendingAction === 'hide'
               ? 'The event will be removed from public view. The creator will receive an email with the event title and image.'

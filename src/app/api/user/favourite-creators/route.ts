@@ -5,6 +5,12 @@ import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
 import { verifyToken } from '@/lib/jwt';
 
+const ADMIN_EMAILS = ['abdullahgotaccess@gmail.com', 'admin@reachly.com'];
+
+function isAdminEmail(email?: string | null) {
+  return Boolean(email && ADMIN_EMAILS.includes(email.toLowerCase().trim()));
+}
+
 async function getEmailFromRequest(request: NextRequest): Promise<string | null> {
   const session = await getServerSession(authOptions);
   if (session?.user?.email) return session.user.email.toLowerCase().trim();
@@ -17,6 +23,7 @@ export async function GET(request: NextRequest) {
   try {
     const email = await getEmailFromRequest(request);
     if (!email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (isAdminEmail(email)) return NextResponse.json({ favouriteCreators: [] });
     await connectDB();
     const user = await User.findOne({ email }).select('favouriteCreators').lean() as any;
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -30,6 +37,9 @@ export async function POST(request: NextRequest) {
   try {
     const email = await getEmailFromRequest(request);
     if (!email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (isAdminEmail(email)) {
+      return NextResponse.json({ error: 'Admin accounts cannot favourite creators' }, { status: 403 });
+    }
     const { username } = await request.json();
     const trimmedUsername = typeof username === 'string' ? username.trim() : '';
     if (!trimmedUsername) return NextResponse.json({ error: 'Username required' }, { status: 400 });
@@ -49,6 +59,9 @@ export async function DELETE(request: NextRequest) {
   try {
     const email = await getEmailFromRequest(request);
     if (!email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (isAdminEmail(email)) {
+      return NextResponse.json({ error: 'Admin accounts cannot favourite creators' }, { status: 403 });
+    }
     const { username } = await request.json();
     const trimmedUsername = typeof username === 'string' ? username.trim() : '';
     if (!trimmedUsername) return NextResponse.json({ error: 'Username required' }, { status: 400 });

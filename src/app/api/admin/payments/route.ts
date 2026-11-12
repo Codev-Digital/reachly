@@ -771,7 +771,7 @@ export async function GET(req: Request) {
         id: `TXN-${booking._id.toString().slice(-5).toUpperCase()}`,
         dbId: booking._id.toString(),
         user: {
-          name: user?.name || booking.guestDetails?.name || 'Guest User',
+          name: user?.name || booking.guestDetails?.fullName || booking.guestDetails?.name || 'Guest User',
           username: user?.name ? `@${user.name.toLowerCase().replace(/\s+/g, '')}` : '@guest',
           avatar: user?.profilePhoto || '/avatar.png'
         },
@@ -788,7 +788,8 @@ export async function GET(req: Request) {
         platformFee: `${platformFeeNum.toLocaleString()} PKR`,
         commissionPercent,
         creatorEarnings: `${creatorEarningsNum.toLocaleString()} PKR`,
-        status: displayStatus
+        status: displayStatus,
+        createdAtMs: d.getTime(),
       };
     });
 
@@ -821,6 +822,7 @@ export async function GET(req: Request) {
           creatorEarnings: `${payout.withdrawAmount.toLocaleString()} PKR`,
           status,
           isCreatorPayout: true,
+          createdAtMs: requestedAt.getTime(),
         };
       });
     });
@@ -852,6 +854,7 @@ export async function GET(req: Request) {
         creatorEarnings: `${(amount - platformFee).toLocaleString()} PKR`,
         status,
         isEventPayment: true,
+        createdAtMs: createdAt.getTime(),
         event: {
           title: purchase.eventTitle,
           bannerUrl: purchase.eventBannerUrl || '',
@@ -1122,7 +1125,10 @@ export async function GET(req: Request) {
       return NextResponse.json({ success: true, payment: paymentDetail });
     }
 
-    return NextResponse.json({ success: true, payments: [...payoutPayments, ...eventPayments, ...enrichedPayments] });
+    const combinedPayments = [...payoutPayments, ...eventPayments, ...enrichedPayments].sort(
+      (a: any, b: any) => (b.createdAtMs || 0) - (a.createdAtMs || 0)
+    );
+    return NextResponse.json({ success: true, payments: combinedPayments });
   } catch (error: any) {
     console.error('Admin payments GET error:', error);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });

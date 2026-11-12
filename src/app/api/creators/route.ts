@@ -39,6 +39,7 @@ export async function GET(request: NextRequest) {
             CreatorProfile.find({
                 userId: { $in: creatorUserIds },
                 isDeactivated: { $ne: true },
+                isProfileComplete: true,
             })
                 .select('userId username displayName shortBio niches profilePhoto isDeactivated')
                 .lean(),

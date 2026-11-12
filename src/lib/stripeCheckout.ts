@@ -38,9 +38,20 @@ export async function finalizeStripeCheckout(session: Stripe.Checkout.Session) {
     let booking = pendingBooking;
     let newlyPaid = false;
     if (pendingBooking.paymentStatus !== 'paid') {
+      const paymentIntentId =
+        typeof session.payment_intent === 'string'
+          ? session.payment_intent
+          : session.payment_intent?.id;
       const updatedBooking = await Booking.findOneAndUpdate(
         { _id: pendingBooking._id, status: { $ne: 'cancelled' }, paymentStatus: { $ne: 'paid' } },
-        { $set: { paymentStatus: 'paid', status: 'confirmed' } },
+        {
+          $set: {
+            paymentStatus: 'paid',
+            status: 'confirmed',
+            stripeCheckoutSessionId: session.id,
+            ...(paymentIntentId ? { stripePaymentIntentId: paymentIntentId } : {}),
+          },
+        },
         { new: true }
       );
       if (updatedBooking) {

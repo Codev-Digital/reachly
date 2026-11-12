@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
 import CreatorProfile from '@/models/CreatorProfile';
@@ -8,6 +10,7 @@ import Review from '@/models/Review';
 import Event from '@/models/Event';
 import { sanitizeRichText } from '@/lib/sanitizeRichText';
 import { summarizeCreatorRating } from '@/lib/creatorRating';
+import { verifyToken } from '@/lib/jwt';
 
 /** Today as YYYY-MM-DD in local time (matches event date storage). */
 function todayISODate() {
@@ -54,7 +57,7 @@ export async function GET(
         // Fetch User, Sessions, Bookings, reviews, and published events concurrently
         const [user, sessions, allBookings, clientReviews, publishedEvents] = (await Promise.all([
             User.findById(profile.userId).select('name isVerified email approvalStatus').lean(),
-            SessionType.find({ userId: profile.userId }).sort({ order: 1 }).lean(),
+            SessionType.find({ userId: profile.userId, isActive: { $ne: false } }).sort({ order: 1 }).lean(),
             Booking.find({ creatorId: profile.userId, status: { $ne: 'cancelled' } })
                 .select('scheduledDate scheduledTime guestDetails.email')
                 .lean(),
@@ -78,9 +81,13 @@ export async function GET(
             return NextResponse.json({ error: 'User data not found' }, { status: 404 });
         }
 
-        // Deleted / suspended / rejected creators are not publicly bookable
-        if (['deleted', 'suspended', 'rejected'].includes(user.approvalStatus)) {
-            return NextResponse.json({ error: 'Creator not found' }, { status: 404 });
+        // Only completed, approved, and active creators are publicly bookable
+        if (
+            user.approvalStatus !== 'approved' ||
+            !profile.isProfileComplete ||
+            profile.isDeactivated
+        ) {
+            return NextResponse.json({ error: 'Creator profile is not complete or available for booking' }, { status: 404 });
         }
 
         // Total session types this creator offers
@@ -141,6 +148,43 @@ export async function GET(
         const reviewerProfileMap = new Map(
             (reviewerProfiles as any[]).map((p) => [String(p.userId), p])
         );
+
+        let alreadyBookedFreeConsultation = false;
+        const freeSessionIds = sessions
+            .filter((s: any) => s.isFreeConsultation)
+            .map((s: any) => s._id);
+        if (freeSessionIds.length > 0) {
+            let callerEmail: string | undefined;
+            const authSession = await getServerSession(authOptions);
+            if (authSession?.user?.email) {
+                callerEmail = authSession.user.email;
+            } else {
+                const token = request.cookies.get('auth_token')?.value;
+                const payload = token ? verifyToken(token) : null;
+                callerEmail = payload?.email;
+            }
+            if (callerEmail) {
+                const normalizedCallerEmail = callerEmail.toLowerCase().trim();
+                const escapedCaller = normalizedCallerEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const callerUser = await User.findOne({ email: normalizedCallerEmail })
+                    .select('_id')
+                    .lean() as any;
+                const callerOr: any[] = [
+                    { 'guestDetails.email': { $regex: new RegExp(`^${escapedCaller}$`, 'i') } },
+                ];
+                if (callerUser?._id) callerOr.push({ userId: callerUser._id });
+                const existingFree = await Booking.findOne({
+                    creatorId: profile.userId,
+                    sessionTypeId: { $in: freeSessionIds },
+                    status: { $ne: 'cancelled' },
+                    paymentStatus: { $ne: 'failed' },
+                    $or: callerOr,
+                })
+                    .select('_id')
+                    .lean();
+                alreadyBookedFreeConsultation = Boolean(existingFree);
+            }
+        }
 
         const reviews = clientReviews.map((r: any, index: number) => {
             const uid = String(r.reviewerId);
@@ -212,6 +256,9 @@ export async function GET(
                     features: s.features,
                     isPackage: !!s.isPackage,
                     isFreeConsultation: !!s.isFreeConsultation,
+                    alreadyBookedFreeConsultation: Boolean(
+                        s.isFreeConsultation && alreadyBookedFreeConsultation
+                    ),
                     packageSessions: s.packageSessions,
                     packagePeriod: s.packagePeriod,
                 })),

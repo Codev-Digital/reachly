@@ -50,55 +50,96 @@ export async function POST(request: NextRequest) {
     }
 
     await connectDB();
-    await ContactMessage.create({ fullName, email, subject, message });
+    const ticket = await ContactMessage.create({ fullName, email, subject, message });
+    const ticketRef = `SUP-${String(ticket._id).slice(-6).toUpperCase()}`;
 
-    await sendEmail(
-      SUPPORT_EMAIL,
-      `Contact Support: ${subject}`,
-      `
-        <div style="margin:0;background:#f4f7fb;padding:32px 16px;font-family:Arial,Helvetica,sans-serif;color:#172033;">
-          <div style="max-width:640px;margin:0 auto;">
-            <div style="background:linear-gradient(135deg,#011f7a 0%,#011139 55%,#4e1f40 100%);padding:28px 32px;border-radius:16px 16px 0 0;">
-              <div style="font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#b9c9ff;font-weight:700;">Reachly Support</div>
-              <h1 style="margin:10px 0 0;color:#ffffff;font-size:26px;line-height:1.25;font-weight:700;">New Contact Support Message</h1>
-              <p style="margin:8px 0 0;color:#d9e1ff;font-size:14px;">A visitor submitted a message through the contact form.</p>
-            </div>
-
-            <div style="background:#ffffff;padding:30px 32px;border:1px solid #e3e8f0;border-top:0;border-radius:0 0 16px 16px;">
-              <div style="border-left:4px solid #4e1f40;background:#faf7fb;padding:16px 18px;margin-bottom:24px;">
-                <div style="font-size:12px;color:#697386;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:6px;">Subject</div>
-                <div style="font-size:20px;color:#172033;font-weight:700;line-height:1.35;">${escapeHtml(subject)}</div>
+    await Promise.all([
+      sendEmail(
+        SUPPORT_EMAIL,
+        `[${ticketRef}] Contact Support: ${subject}`,
+        `
+          <div style="margin:0;background:#f4f7fb;padding:32px 16px;font-family:Arial,Helvetica,sans-serif;color:#172033;">
+            <div style="max-width:640px;margin:0 auto;">
+              <div style="background:linear-gradient(135deg,#011f7a 0%,#011139 55%,#4e1f40 100%);padding:28px 32px;border-radius:16px 16px 0 0;">
+                <div style="font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#b9c9ff;font-weight:700;">Reachly Support · ${ticketRef}</div>
+                <h1 style="margin:10px 0 0;color:#ffffff;font-size:26px;line-height:1.25;font-weight:700;">New Contact Support Message</h1>
+                <p style="margin:8px 0 0;color:#d9e1ff;font-size:14px;">A customer submitted a support query through the contact form.</p>
               </div>
 
-              <table role="presentation" style="width:100%;border-collapse:collapse;margin-bottom:26px;">
-                <tr>
-                  <td style="width:50%;padding:0 12px 0 0;vertical-align:top;">
-                    <div style="font-size:11px;color:#697386;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:6px;">From</div>
-                    <div style="font-size:15px;color:#172033;font-weight:600;">${escapeHtml(fullName)}</div>
-                  </td>
-                  <td style="width:50%;padding:0 0 0 12px;vertical-align:top;">
-                    <div style="font-size:11px;color:#697386;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:6px;">Email</div>
-                    <a href="mailto:${escapeHtml(email)}" style="font-size:15px;color:#2454c6;text-decoration:none;word-break:break-word;">${escapeHtml(email)}</a>
-                  </td>
-                </tr>
-              </table>
+              <div style="background:#ffffff;padding:30px 32px;border:1px solid #e3e8f0;border-top:0;border-radius:0 0 16px 16px;">
+                <div style="border-left:4px solid #4e1f40;background:#faf7fb;padding:16px 18px;margin-bottom:24px;">
+                  <div style="font-size:12px;color:#697386;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:6px;">Subject</div>
+                  <div style="font-size:20px;color:#172033;font-weight:700;line-height:1.35;">${escapeHtml(subject)}</div>
+                </div>
 
-              <div style="border-top:1px solid #e8ecf2;padding-top:22px;">
-                <div style="font-size:11px;color:#697386;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:10px;">Message</div>
-                <div style="background:#f7f9fc;border:1px solid #e5eaf2;border-radius:10px;padding:18px;color:#354052;font-size:15px;line-height:1.7;white-space:normal;">${escapeHtml(message).replace(/\n/g, "<br />")}</div>
+                <table role="presentation" style="width:100%;border-collapse:collapse;margin-bottom:26px;">
+                  <tr>
+                    <td style="width:50%;padding:0 12px 0 0;vertical-align:top;">
+                      <div style="font-size:11px;color:#697386;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:6px;">From</div>
+                      <div style="font-size:15px;color:#172033;font-weight:600;">${escapeHtml(fullName)}</div>
+                    </td>
+                    <td style="width:50%;padding:0 0 0 12px;vertical-align:top;">
+                      <div style="font-size:11px;color:#697386;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:6px;">Email</div>
+                      <a href="mailto:${escapeHtml(email)}" style="font-size:15px;color:#2454c6;text-decoration:none;word-break:break-word;">${escapeHtml(email)}</a>
+                    </td>
+                  </tr>
+                </table>
+
+                <div style="border-top:1px solid #e8ecf2;padding-top:22px;">
+                  <div style="font-size:11px;color:#697386;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:10px;">Message</div>
+                  <div style="background:#f7f9fc;border:1px solid #e5eaf2;border-radius:10px;padding:18px;color:#354052;font-size:15px;line-height:1.7;white-space:normal;">${escapeHtml(message).replace(/\n/g, "<br />")}</div>
+                </div>
+
+                <p style="margin:26px 0 0;color:#8993a5;font-size:12px;line-height:1.5;">Reply directly to the customer at <a href="mailto:${escapeHtml(email)}" style="color:#2454c6;text-decoration:none;">${escapeHtml(email)}</a>.</p>
               </div>
-
-              <p style="margin:26px 0 0;color:#8993a5;font-size:12px;line-height:1.5;">Reply directly to the visitor at <a href="mailto:${escapeHtml(email)}" style="color:#2454c6;text-decoration:none;">${escapeHtml(email)}</a>.</p>
             </div>
-
-            <p style="margin:18px 0 0;text-align:center;color:#8993a5;font-size:12px;">Reachly contact support</p>
           </div>
-        </div>
-      `,
-    );
+        `,
+        { replyTo: email }
+      ),
+      // Automated no-reply confirmation copy sent directly to the customer stating their submitted query
+      sendEmail(
+        email,
+        `[${ticketRef}] We received your support request: ${subject}`,
+        `
+          <div style="margin:0;background:#f4f7fb;padding:32px 16px;font-family:Arial,Helvetica,sans-serif;color:#172033;">
+            <div style="max-width:640px;margin:0 auto;">
+              <div style="background:linear-gradient(135deg,#011f7a 0%,#011139 55%,#4e1f40 100%);padding:28px 32px;border-radius:16px 16px 0 0;">
+                <div style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#b9c9ff;font-weight:700;">Reachly Automated Confirmation · ${ticketRef}</div>
+                <h1 style="margin:10px 0 0;color:#ffffff;font-size:24px;line-height:1.25;font-weight:700;">Thanks for contacting Reachly Support</h1>
+                <p style="margin:8px 0 0;color:#d9e1ff;font-size:14px;">Hi ${escapeHtml(fullName)}, we have logged your support query below and our team will respond shortly.</p>
+              </div>
+
+              <div style="background:#ffffff;padding:28px 32px;border:1px solid #e3e8f0;border-top:0;border-radius:0 0 16px 16px;">
+                <p style="margin:0 0 16px;font-size:14px;color:#354052;line-height:1.6;">
+                  Here is a summary of your submitted support query for reference:
+                </p>
+
+                <div style="border-left:4px solid #0012FF;background:#f7f9fc;padding:14px 16px;margin-bottom:18px;border-radius:0 10px 10px 0;">
+                  <div style="font-size:11px;color:#697386;text-transform:uppercase;letter-spacing:1px;font-weight:700;">Ticket Reference</div>
+                  <div style="font-size:15px;color:#172033;font-weight:700;margin-top:3px;">${ticketRef}</div>
+                  <div style="font-size:11px;color:#697386;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-top:12px;">Subject</div>
+                  <div style="font-size:16px;color:#172033;font-weight:700;margin-top:3px;">${escapeHtml(subject)}</div>
+                </div>
+
+                <div style="background:#f7f9fc;border:1px solid #e5eaf2;border-radius:10px;padding:16px;color:#354052;font-size:14px;line-height:1.65;">
+                  <div style="font-size:11px;color:#697386;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px;">Your Query</div>
+                  <div>${escapeHtml(message).replace(/\n/g, "<br />")}</div>
+                </div>
+
+                <p style="margin:22px 0 0;color:#8993a5;font-size:12px;line-height:1.5;">
+                  This is an automated no-reply confirmation email. If you need to follow up urgently, please reference <strong>${ticketRef}</strong> or reach us at <a href="mailto:${SUPPORT_EMAIL}" style="color:#2454c6;text-decoration:none;">${SUPPORT_EMAIL}</a>.
+                </p>
+              </div>
+            </div>
+          </div>
+        `,
+        { fromName: 'Reachly Support (No-Reply)', replyTo: 'noreply@reachly.pk' }
+      ),
+    ]);
 
     return NextResponse.json(
-      { success: true, message: "Your message has been sent successfully." },
+      { success: true, ticketRef, message: "Your message has been sent successfully." },
       { status: 201 },
     );
   } catch (error) {

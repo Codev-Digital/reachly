@@ -139,23 +139,40 @@ export async function PUT(req: NextRequest) {
 
     if (action === 'approve') {
       user.approvalStatus = 'approved';
+      user.deletedAt = undefined;
     } else if (action === 'reject') {
       user.approvalStatus = 'rejected';
     } else if (action === 'suspend') {
       user.approvalStatus = 'suspended';
     } else if (action === 'activate') {
       user.approvalStatus = 'approved';
+      user.deletedAt = undefined;
+    } else if (action === 'restore') {
+      // Restored accounts must return to Pending review, never directly Active.
+      user.approvalStatus = 'pending';
+      user.deletedAt = undefined;
     }
 
     await user.save();
 
     // Keep the approval request in sync so /admin/user-requests matches
-    if (action === 'approve' || action === 'reject') {
+    if (action === 'approve' || action === 'reject' || action === 'restore') {
       await UserApprovalRequest.updateOne(
         { userId: user._id },
-        { status: action === 'approve' ? 'approved' : 'rejected', reviewedAt: new Date() },
+        {
+          status: action === 'approve' ? 'approved' : action === 'reject' ? 'rejected' : 'pending',
+          reviewedAt: action === 'restore' ? null : new Date(),
+        },
       );
     }
+
+    if (action === 'approve' || action === 'activate') {
+      await CreatorProfile.updateOne({ userId: user._id }, { $set: { isDeactivated: false } });
+    } else if (action === 'suspend' || action === 'reject') {
+      await CreatorProfile.updateOne({ userId: user._id }, { $set: { isDeactivated: true } });
+    }
+    const { invalidateCreatorsListCache } = await import('@/lib/creatorsListCache');
+    invalidateCreatorsListCache();
 
     return NextResponse.json({ success: true, message: `User status changed to ${action}d successfully` });
   } catch (error: any) {

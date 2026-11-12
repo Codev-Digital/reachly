@@ -146,9 +146,19 @@ export async function POST(request: NextRequest) {
         { status: 404 },
       );
 
-    if ((creatorProfile as any).isDeactivated) {
+    if ((creatorProfile as any).isDeactivated || !(creatorProfile as any).isProfileComplete) {
       return NextResponse.json(
-        { error: "This creator is currently not accepting bookings." },
+        { error: "This creator profile is not complete or currently accepting bookings." },
+        { status: 400 },
+      );
+    }
+
+    const creatorUser = await User.findById((creatorProfile as any).userId)
+      .select("approvalStatus")
+      .lean() as any;
+    if (!creatorUser || creatorUser.approvalStatus !== "approved") {
+      return NextResponse.json(
+        { error: "This creator is not approved to accept bookings yet." },
         { status: 400 },
       );
     }
@@ -305,6 +315,46 @@ export async function POST(request: NextRequest) {
         // Automatically create somewhat of an unverified user
         // But for simplicity in this booking flow, let's just keep userToAttachId null
         // and rely on guestDetails.
+      }
+    }
+
+    // 2b. One-time-only enforcement for Free Consultation sessions
+    if ((sessionType as any).isFreeConsultation) {
+      const normalizedBuyerEmail = String(userDetails.email).toLowerCase().trim();
+      const escapedEmail = normalizedBuyerEmail.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const freeSessions = await SessionType.find({
+        userId: creatorProfile.userId,
+        isFreeConsultation: true,
+      })
+        .select("_id")
+        .lean();
+      const freeSessionIds = freeSessions.map((s: any) => s._id);
+      if (!freeSessionIds.some((id: any) => id.toString() === sessionType._id.toString())) {
+        freeSessionIds.push(sessionType._id);
+      }
+
+      const buyerConditions: any[] = [
+        { "guestDetails.email": { $regex: new RegExp(`^${escapedEmail}$`, "i") } },
+      ];
+      if (userToAttachId) {
+        buyerConditions.push({ userId: userToAttachId });
+      }
+
+      const existingFreeBooking = await Booking.findOne({
+        creatorId: creatorProfile.userId,
+        sessionTypeId: { $in: freeSessionIds },
+        status: { $ne: "cancelled" },
+        paymentStatus: { $ne: "failed" },
+        $or: buyerConditions,
+      })
+        .select("_id bookingRef")
+        .lean();
+
+      if (existingFreeBooking) {
+        return NextResponse.json(
+          { error: "You have already used your one-time free consultation with this creator." },
+          { status: 400 },
+        );
       }
     }
 
@@ -556,6 +606,10 @@ export async function POST(request: NextRequest) {
           expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
         });
         if (!checkout.client_secret) throw new Error("Stripe did not return an embedded checkout client secret.");
+        await Booking.updateOne(
+          { _id: booking._id },
+          { $set: { stripeCheckoutSessionId: checkout.id } }
+        );
         checkoutClientSecret = checkout.client_secret;
       } catch (error) {
         await Booking.deleteOne({ _id: booking._id });

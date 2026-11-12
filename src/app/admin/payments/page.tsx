@@ -3,7 +3,7 @@
 import { AdminPaymentsSkeleton } from '@/components/admin/AdminSkeletons';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { CreditCard, DollarSign, Clock, Calendar, ArrowUpRight } from 'lucide-react';
 import ManualPaymentProofs from '@/components/admin/ManualPaymentProofs';
@@ -41,23 +41,24 @@ export default function AdminPaymentsPage() {
   const [payments, setPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function loadPayments() {
-      try {
-        setLoading(true);
-        const res = await fetch('/api/admin/payments');
-        if (res.ok) {
-          const data = await res.json();
-          setPayments(data.payments || []);
-        }
-      } catch (err) {
-        console.error('Failed to load payments:', err);
-      } finally {
-        setLoading(false);
+  const loadPayments = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await fetch('/api/admin/payments');
+      if (res.ok) {
+        const data = await res.json();
+        setPayments(data.payments || []);
       }
+    } catch (err) {
+      console.error('Failed to load payments:', err);
+    } finally {
+      setLoading(false);
     }
-    loadPayments();
   }, []);
+
+  useEffect(() => {
+    loadPayments();
+  }, [loadPayments]);
 
   // Calculate dynamic stats
   const totalRevenue = payments
@@ -95,7 +96,7 @@ export default function AdminPaymentsPage() {
           <span className="text-gray-400 font-normal text-sm sm:text-base">Overview</span>
         </h1>
       </div>
-      <ManualPaymentProofs />
+      <ManualPaymentProofs onReviewed={loadPayments} />
       {/* Metrics Cards (Wallet Style) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 mb-10 items-stretch">
         {/* Card 1 - Available Balance (Longer Card with 3D Ball/Bubble Effects) */}

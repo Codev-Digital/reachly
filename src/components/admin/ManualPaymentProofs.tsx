@@ -32,7 +32,7 @@ type PaymentProof = {
   createdAt: string;
 };
 
-export default function ManualPaymentProofs() {
+export default function ManualPaymentProofs({ onReviewed }: { onReviewed?: () => void } = {}) {
   const [proofs, setProofs] = useState<PaymentProof[]>([]);
   const [loading, setLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
@@ -96,6 +96,7 @@ export default function ManualPaymentProofs() {
       setProofToApprove(null);
       setProofToReject(null);
       setRejectRemarks('');
+      onReviewed?.();
     } catch (reviewError) {
       setError(reviewError instanceof Error ? reviewError.message : 'Unable to review payment proof.');
     } finally {

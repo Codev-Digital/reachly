@@ -43,7 +43,13 @@ export async function GET(request: NextRequest) {
             const user = await User.findOne({ email }).select('_id').lean() as any;
             if (user) {
                 userId = user._id;
-                bookingsQuery = { userId: user._id };
+                const escapedEmail = email.toLowerCase().trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                bookingsQuery = {
+                    $or: [
+                        { userId: user._id },
+                        { 'guestDetails.email': { $regex: new RegExp(`^${escapedEmail}$`, 'i') } },
+                    ],
+                };
             } else if (guestEmail) {
                 bookingsQuery = { 'guestDetails.email': guestEmail };
             } else {

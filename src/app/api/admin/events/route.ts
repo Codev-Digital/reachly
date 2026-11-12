@@ -4,6 +4,7 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
 import Event from '@/models/Event';
 import CreatorProfile from '@/models/CreatorProfile';
+import User from '@/models/User';
 import { richTextPreview } from '@/lib/richText';
 import { formatEventCardDate, formatEventCardTime } from '@/lib/eventDisplay';
 
@@ -78,11 +79,12 @@ export async function GET(req: NextRequest) {
       ];
     }
 
-    const [kpiRows, profiles, total, pageEvents, categoryRows] = await Promise.all([
+    const [kpiRows, profiles, approvedUsers, total, pageEvents, categoryRows] = await Promise.all([
       Event.find({ deletedAt: null })
         .select('status dates createdAt')
         .lean(),
-      CreatorProfile.find({}).select('userId username displayName profilePhoto createdAt').lean(),
+      CreatorProfile.find({}).select('userId username displayName profilePhoto isDeactivated isProfileComplete createdAt').lean(),
+      User.find({ approvalStatus: 'approved' }).select('_id createdAt').lean(),
       Event.countDocuments(mongoFilter),
       Event.find(mongoFilter)
         .sort({ createdAt: -1 })
@@ -92,6 +94,10 @@ export async function GET(req: NextRequest) {
       Event.distinct('category', { deletedAt: null }),
     ]);
 
+    const approvedUserIds = new Set((approvedUsers as any[]).map((u) => String(u._id)));
+    const activeCreatorProfiles = (profiles as any[]).filter(
+      (p) => approvedUserIds.has(String(p.userId)) && !p.isDeactivated
+    );
     const profileMap = new Map((profiles as any[]).map((p) => [String(p.userId), p]));
 
     let upcoming = 0;
@@ -125,10 +131,10 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const creatorsThisMonth = (profiles as any[]).filter(
+    const creatorsThisMonth = activeCreatorProfiles.filter(
       (p) => new Date(p.createdAt || 0) >= startOfCurrentMonth
     ).length;
-    const creatorsLastMonth = (profiles as any[]).filter((p) => {
+    const creatorsLastMonth = activeCreatorProfiles.filter((p) => {
       const d = new Date(p.createdAt || 0);
       return d >= startOfLastMonth && d < startOfCurrentMonth;
     }).length;
@@ -177,7 +183,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       success: true,
       kpis: {
-        totalCreators: (profiles as any[]).length,
+        totalCreators: activeCreatorProfiles.length,
         totalCreatorsTrend: growthLabel(creatorsThisMonth, creatorsLastMonth),
         upcomingEvents: upcoming,
         upcomingEventsTrend: growthLabel(upcomingThisMonth, upcomingLastMonth),

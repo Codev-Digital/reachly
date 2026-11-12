@@ -107,7 +107,13 @@ export default function UserPayments() {
   const filteredTransactions = transactions.filter(txn => {
     const matchesSearch = txn.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       txn.creator.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesMethod = methodFilter === 'All' || txn.method.toLowerCase().replace(/\s+/g, '') === methodFilter.toLowerCase().replace(/\s+/g, '');
+    const normalizedTxnMethod = (txn.method || '').toLowerCase().replace(/\s+/g, '');
+    const normalizedFilterMethod = methodFilter.toLowerCase().replace(/\s+/g, '');
+    const matchesMethod =
+      methodFilter === 'All' ||
+      normalizedTxnMethod === normalizedFilterMethod ||
+      (normalizedFilterMethod === 'bankcard' &&
+        (normalizedTxnMethod === 'stripe' || normalizedTxnMethod === 'card'));
     const matchesStatus = statusFilter === 'All' || txn.status.toLowerCase() === statusFilter.toLowerCase();
     return matchesSearch && matchesMethod && matchesStatus;
   });

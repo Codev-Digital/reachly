@@ -192,8 +192,10 @@ export async function GET(req: NextRequest) {
     const [incomingBookings, outgoingBookings] = (await Promise.all([
       Booking.find({
         creatorId: user._id,
-        status: { $ne: 'pending' },
-        paymentStatus: { $nin: ['pending', 'failed'] },
+        $or: [
+          { status: { $ne: 'pending' }, paymentStatus: { $nin: ['pending', 'failed'] } },
+          { paymentMethod: { $in: ['jazzcash', 'easypaisa'] }, paymentStatus: 'pending', status: { $ne: 'cancelled' } },
+        ],
       })
         .populate({ path: 'sessionTypeId', model: SessionType, select: 'title' })
         .sort({ createdAt: -1 })
@@ -271,7 +273,8 @@ export async function GET(req: NextRequest) {
         time: formattedTime,
         amount: `${amount.toLocaleString()} PKR`,
         status: displayStatus,
-        rawAmount: amount
+        rawAmount: amount,
+        rawTimestamp: d.getTime()
       };
     });
 
@@ -305,14 +308,14 @@ export async function GET(req: NextRequest) {
         time: formattedTime,
         amount: `-${amount.toLocaleString()} PKR`,
         status: displayStatus,
-        rawAmount: -amount
+        rawAmount: -amount,
+        rawTimestamp: d.getTime()
       };
     });
 
-    const allTransactions = [...incomingTransactions, ...outgoingTransactions].sort((a, b) => {
-      // Sort by id (bookingRef is date-ish); fallback keeps original order
-      return 0;
-    });
+    const allTransactions = [...incomingTransactions, ...outgoingTransactions].sort(
+      (a: any, b: any) => (b.rawTimestamp || 0) - (a.rawTimestamp || 0)
+    );
 
     const creatorProfile = await CreatorProfile.findOne({ userId: user._id })
       .select('_id updated_totall_earning updated_life_time_earning')

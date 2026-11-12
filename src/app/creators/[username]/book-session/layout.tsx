@@ -29,6 +29,7 @@ export interface SessionType {
   minAdvanceDays?: number;
   isPackage?: boolean;
   isFreeConsultation?: boolean;
+  alreadyBookedFreeConsultation?: boolean;
   packageSessions?: number;
   packagePeriod?: 'week' | 'month';
 }

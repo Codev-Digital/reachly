@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
+import mongoose from 'mongoose';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
 import Message from '@/models/Message';
@@ -7,32 +8,45 @@ import Conversation from '@/models/Conversation';
 import User from '@/models/User';
 import CreatorProfile from '@/models/CreatorProfile';
 import { decodeAttachmentsFromContent } from '@/lib/chatAttachments';
+import { verifyToken } from '@/lib/jwt';
 
 export async function GET(request: NextRequest) {
     try {
+        let authEmail: string | undefined;
         const session = await getServerSession(authOptions);
-        if (!session?.user?.email) {
+        if (session?.user?.email) {
+            authEmail = session.user.email.toLowerCase().trim();
+        } else {
+            const token = request.cookies.get('auth_token')?.value;
+            const payload = token ? verifyToken(token) : null;
+            authEmail = payload?.email?.toLowerCase().trim();
+        }
+        if (!authEmail) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
         const conversationId = request.nextUrl.searchParams.get('conversationId');
-        if (!conversationId) {
-            return NextResponse.json({ error: 'conversationId is required' }, { status: 400 });
+        if (!conversationId || !mongoose.isValidObjectId(conversationId)) {
+            return NextResponse.json({ error: 'Valid conversationId is required' }, { status: 400 });
         }
 
         await connectDB();
 
-        // Resolve by email (same as /api/conversations) — session.user.id can be empty/stale
-        const user = await User.findOne({ email: session.user.email }).select('_id').lean() as any;
+        // Fetch current user and conversation in parallel to save a DB round-trip
+        const [user, conversation] = await Promise.all([
+            User.findOne({ email: authEmail }).select('_id').lean() as Promise<any>,
+            Conversation.findById(conversationId)
+                .select('type creatorId userId participantIds creatorClearedAt userClearedAt')
+                .lean() as Promise<any>,
+        ]);
+
         if (!user?._id) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }
-        const uid = user._id.toString();
-
-        const conversation = await Conversation.findById(conversationId).lean() as any;
         if (!conversation) {
             return NextResponse.json({ error: 'Conversation not found' }, { status: 404 });
         }
+        const uid = user._id.toString();
 
         const isBroadcast = conversation.type === 'broadcast';
         const isCreator = conversation.creatorId?.toString() === uid;
@@ -47,36 +61,60 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 
-        let query: any = { conversationId };
-
+        const query: any = { conversationId };
         if (isCreator && conversation.creatorClearedAt) {
             query.createdAt = { $gt: conversation.creatorClearedAt };
         } else if (!isCreator && conversation.userClearedAt) {
             query.createdAt = { $gt: conversation.userClearedAt };
         }
 
-        const messages = await Message.find(query)
-            .sort({ createdAt: 1 })
-            .lean();
+        const knownDmIds = !isBroadcast
+            ? Array.from(
+                  new Set(
+                      [conversation.creatorId, conversation.userId]
+                          .filter(Boolean)
+                          .map((id: any) => id.toString())
+                  )
+              )
+            : [];
 
-        // Resolve display name/avatar only for senders in this thread (avoid huge participantIds $in)
+        // For 1:1 DM chats, fetch messages and participant profiles simultaneously
+        const [messages, preloadedUsers, preloadedCreators] = await Promise.all([
+            Message.find(query)
+                .select('conversationId bookingId senderId senderRole content read createdAt attachment attachments')
+                .sort({ createdAt: 1 })
+                .lean(),
+            knownDmIds.length > 0
+                ? User.find({ _id: { $in: knownDmIds } }).select('_id name profilePhoto').lean()
+                : Promise.resolve([]),
+            knownDmIds.length > 0
+                ? CreatorProfile.find({ userId: { $in: knownDmIds } })
+                      .select('userId displayName username profilePhoto')
+                      .lean()
+                : Promise.resolve([]),
+        ]);
+
         const profileIds = Array.from(
             new Set([
                 ...messages.map((m: any) => m.senderId.toString()),
                 conversation.creatorId.toString(),
             ])
         );
+        const knownSet = new Set(knownDmIds);
+        const missingIds = profileIds.filter((id) => !knownSet.has(id));
 
-        const [users, creatorProfiles] = await Promise.all([
-            profileIds.length
-                ? User.find({ _id: { $in: profileIds } }).select('_id name profilePhoto').lean()
-                : Promise.resolve([]),
-            profileIds.length
-                ? CreatorProfile.find({ userId: { $in: profileIds } })
-                      .select('userId displayName username profilePhoto')
-                      .lean()
-                : Promise.resolve([]),
-        ]);
+        let users = preloadedUsers as any[];
+        let creatorProfiles = preloadedCreators as any[];
+        if (missingIds.length > 0) {
+            const [extraUsers, extraCreators] = await Promise.all([
+                User.find({ _id: { $in: missingIds } }).select('_id name profilePhoto').lean(),
+                CreatorProfile.find({ userId: { $in: missingIds } })
+                    .select('userId displayName username profilePhoto')
+                    .lean(),
+            ]);
+            users = [...users, ...(extraUsers as any[])];
+            creatorProfiles = [...creatorProfiles, ...(extraCreators as any[])];
+        }
 
         const usersMap = new Map<string, any>((users as any[]).map((u) => [u._id.toString(), u]));
         const creatorProfilesMap = new Map<string, any>(

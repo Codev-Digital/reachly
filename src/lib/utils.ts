@@ -457,6 +457,34 @@ export const generateUserBookingApprovedEmail = (details: BookingEmailDetails) =
 export const generateCreatorNewBookingEmail = (details: BookingEmailDetails) =>
   bookingEmailLayout(`You have a new booking on ${details.date}`, `A new session has been booked and paid for by ${details.buyerName}.`, details, 'creator');
 
+export const generateSessionRescheduledEmail = (
+  details: BookingEmailDetails & { actorLabel: string; recipientRole: 'user' | 'creator' }
+) =>
+  bookingEmailLayout(
+    'Your session has been rescheduled',
+    details.recipientRole === 'user'
+      ? `Hi ${details.buyerName}, ${details.actorLabel} rescheduled your "${details.sessionTitle}" session. Please use the updated date and time below — the previous session time is no longer active.`
+      : `${details.actorLabel} rescheduled the "${details.sessionTitle}" session to the updated date and time below.`,
+    details,
+    details.recipientRole
+  );
+
+export const generateSessionCancelledEmail = (
+  details: BookingEmailDetails & {
+    actorLabel: string;
+    recipientRole: 'user' | 'creator';
+    refundNote: string;
+  }
+) =>
+  bookingEmailLayout(
+    'Session Cancelled',
+    details.recipientRole === 'user'
+      ? `Hi ${details.buyerName}, your "${details.sessionTitle}" session scheduled for ${details.date} at ${details.time} has been cancelled (${details.actorLabel}). ${details.refundNote}`
+      : `The "${details.sessionTitle}" session with ${details.buyerName} on ${details.date} at ${details.time} has been cancelled (${details.actorLabel}). ${details.refundNote}`,
+    details,
+    details.recipientRole
+  );
+
 export const generateOTPEmail = (
   name: string,
   otp: string,
@@ -532,7 +560,8 @@ let lastTransporterConfigKey = '';
 export const sendEmail = async (
   to: string,
   subject: string,
-  html: string
+  html: string,
+  options?: { replyTo?: string; fromName?: string }
 ): Promise<void> => {
   // Strip any surrounding quotes that .env parsers sometimes leave in
   const clean = (value?: string) => (value || '').trim().replace(/^["']|["']$/g, '');
@@ -546,6 +575,8 @@ export const sendEmail = async (
   const user = clean(process.env.EMAIL_USER);
   const pass = clean(process.env.EMAIL_PASS);
   const fromAddress = clean(process.env.EMAIL_FROM) || user;
+  const senderName = options?.fromName || 'Reachly';
+  const replyToAddress = options?.replyTo || clean(process.env.EMAIL_REPLY_TO) || fromAddress;
 
   if (!host || !user || !pass) {
     console.log('------- EMAIL (EMAIL_* not configured) -------');
@@ -575,8 +606,8 @@ export const sendEmail = async (
     }
 
     await cachedTransporter.sendMail({
-      from: `"Reachly" <${fromAddress}>`,
-      replyTo: clean(process.env.EMAIL_REPLY_TO) || fromAddress,
+      from: `"${senderName}" <${fromAddress}>`,
+      replyTo: replyToAddress,
       to,
       subject,
       html,

@@ -6,6 +6,11 @@ import connectDB from '@/lib/mongodb';
 import Booking from '@/models/Booking';
 import User from '@/models/User';
 import { checkSessionModificationWindow, checkNewSessionTime, parseDateToNoonUTC } from '@/lib/time';
+import {
+    processBookingCancellationRefund,
+    sendBookingCancelledEmails,
+    sendBookingRescheduledEmails,
+} from '@/lib/bookingRefund';
 import SessionType from '@/models/SessionType';
 import CalendarBlock from '@/models/CalendarBlock';
 import SlotReservation from '@/models/SlotReservation';
@@ -44,7 +49,7 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
         }
 
         const body = await request.json();
-        const { status, selectedDate, selectedTime, isLocked, startMeeting, endMeeting } = body;
+        const { status, selectedDate, selectedTime, isLocked, startMeeting, endMeeting, reservationToken } = body;
 
         if (status && !['confirmed', 'cancelled', 'completed'].includes(status)) {
             return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
@@ -153,6 +158,7 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
                     creatorId: booking.creatorId,
                     dateKey,
                     expiresAt: { $gt: new Date() },
+                    ...(reservationToken ? { token: { $ne: reservationToken } } : {}),
                 }).select('time duration bufferTime').lean(),
             ]);
 
@@ -198,11 +204,28 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
             }
         }
 
+        let refundResult: {
+            refunded: boolean;
+            refundAmount: number;
+        } | null = null;
+
         const updatePayload: any = {};
         if (status) {
             updatePayload.status = status;
             if (status === 'cancelled') {
-                updatePayload.paymentStatus = booking.paymentStatus === 'paid' ? 'refunded' : 'failed';
+                const resRefund = await processBookingCancellationRefund(booking);
+                updatePayload.paymentStatus = resRefund.paymentStatus;
+                if (resRefund.refunded) {
+                    updatePayload.refundAmount = resRefund.refundAmount;
+                    updatePayload.refundedAt = resRefund.refundedAt;
+                    if (resRefund.stripeRefundId) {
+                        updatePayload.stripeRefundId = resRefund.stripeRefundId;
+                    }
+                }
+                refundResult = {
+                    refunded: resRefund.refunded,
+                    refundAmount: resRefund.refundAmount,
+                };
             }
         }
         if (selectedDate) {
@@ -321,6 +344,32 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
             } catch (recErr) {
                 console.error('Error finalizing meeting recording:', recErr);
             }
+        }
+
+        // Clear temporary slot reservation (if any) once rescheduled
+        const scheduledDateForRelease = updatePayload.scheduledDate || booking.scheduledDate;
+        if (isRescheduling && reservationToken && booking.creatorId && scheduledDateForRelease) {
+            const dateIso = new Date(scheduledDateForRelease).toISOString().split('T')[0];
+            await SlotReservation.deleteOne({
+                creatorId: booking.creatorId,
+                dateKey: dateIso,
+                token: reservationToken,
+            }).catch(() => {});
+        }
+
+        // Send confirmation emails for cancellation / reschedule
+        if (status === 'cancelled') {
+            await sendBookingCancelledEmails(booking, {
+                refunded: Boolean(refundResult?.refunded),
+                refundAmount: Number(refundResult?.refundAmount ?? 0),
+                actor: 'creator',
+            });
+        } else if (selectedDate || selectedTime) {
+            await sendBookingRescheduledEmails(booking, {
+                scheduledDate: updatePayload.scheduledDate || booking.scheduledDate,
+                scheduledTime: selectedTime || booking.scheduledTime,
+                actor: 'creator',
+            });
         }
 
         // Notify user if booking is rescheduled or cancelled or meeting started

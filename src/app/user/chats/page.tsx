@@ -54,6 +54,9 @@ interface ConversationInfo {
   ref: string;
   unreadCount: number;
   scheduledDate: string;
+  creatorId?: string | null;
+  userId?: string | null;
+  isCreator?: boolean;
   isArchivedByUser?: boolean;
   isOnline?: boolean;
   participantCount?: number;
@@ -503,9 +506,12 @@ export default function UserChatsPage() {
   }, []);
 
   // Fetch conversations
-  const fetchConversations = async () => {
+  const fetchConversations = async (skipBackfill = false) => {
     try {
-      const res = await fetch("/api/conversations");
+      const url = skipBackfill
+        ? "/api/conversations?scope=user&skipBackfill=1"
+        : "/api/conversations?scope=user";
+      const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
         const list: ConversationInfo[] = (data.conversations || [])
@@ -542,6 +548,9 @@ export default function UserChatsPage() {
             ref: c.ref || "",
             unreadCount: c.unreadCount || 0,
             scheduledDate: c.scheduledDate || "",
+            creatorId: c.creatorId ? String(c.creatorId) : null,
+            userId: c.userId ? String(c.userId) : null,
+            isCreator: Boolean(c.isCreator),
             isArchivedByUser: c.isArchivedByUser ?? false,
             isOnline: c.isOnline || false,
             participantCount: Number(c.participantCount) || 0,
@@ -596,11 +605,11 @@ export default function UserChatsPage() {
 
   // Load once on mount, then poll (single interval — do not add a second poller)
   useEffect(() => {
-    void fetchConversations();
-    const id = setInterval(() => void fetchConversations(), 15000);
+    void fetchConversations(false);
+    const id = setInterval(() => void fetchConversations(true), 15000);
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
-        void fetchConversations();
+        void fetchConversations(true);
       }
     };
     document.addEventListener("visibilitychange", handleVisibilityChange);
@@ -635,7 +644,8 @@ export default function UserChatsPage() {
   useEffect(() => {
     const currentConv = conversations.find((c) => c.id === activeChat);
 
-    setIsOtherUserOnline(false);
+    const currentSelectedConv = conversations.find((c) => c.id === activeChat);
+    setIsOtherUserOnline(Boolean(currentSelectedConv?.isOnline));
     setOnlineCount(0);
     setTypingUsers([]);
     setIsOtherUserTyping(false);
@@ -767,6 +777,7 @@ export default function UserChatsPage() {
           type: "join",
           conversationId: activeChat,
           senderRole: "user",
+          userId: userId || undefined,
         }),
       );
     };
@@ -861,13 +872,45 @@ export default function UserChatsPage() {
                 return 0;
               }),
           );
+        } else if (data.type === "presence_snapshot" && Array.isArray(data.onlineUserIds)) {
+          const onlineSet = new Set(data.onlineUserIds.map(String));
+          setConversations((prev) =>
+            prev.map((c) => {
+              if (c.type === "broadcast") return c;
+              const peerId = c.isCreator ? c.userId : c.creatorId;
+              return peerId && onlineSet.has(String(peerId))
+                ? { ...c, isOnline: true }
+                : c;
+            }),
+          );
+        } else if (data.type === "user_presence" && data.userId) {
+          const targetUid = String(data.userId);
+          const nextOnline = Boolean(data.isOnline);
+          setConversations((prev) =>
+            prev.map((c) => {
+              if (c.type === "broadcast") return c;
+              const peerId = c.isCreator ? c.userId : c.creatorId;
+              if (peerId && String(peerId) === targetUid) {
+                if (c.id === activeChat) setIsOtherUserOnline(nextOnline);
+                return { ...c, isOnline: nextOnline };
+              }
+              return c;
+            }),
+          );
         } else if (
           data.type === "presence" &&
           data.conversationId === activeChat
         ) {
           const count = Number(data.count) || 0;
           setOnlineCount(count);
-          setIsOtherUserOnline(count > 1);
+          if (count > 1) {
+            setIsOtherUserOnline(true);
+            setConversations((prev) =>
+              prev.map((c) =>
+                c.id === data.conversationId ? { ...c, isOnline: true } : c,
+              ),
+            );
+          }
         } else if (
           data.type === "typing" &&
           data.conversationId === activeChat
@@ -1339,14 +1382,14 @@ export default function UserChatsPage() {
   ) => {
     if (chat.type !== "broadcast" && chat.isCancelled) {
       return (
-        <span className="flex items-center gap-1 text-red-500 font-semibold">
+        <span className="block text-[13px] leading-snug text-red-500 font-semibold whitespace-normal mt-0.5">
           Session cancelled
         </span>
       );
     }
     if (chat.type !== "broadcast" && chat.isDeadlinePassed) {
       return (
-        <span className="flex items-center gap-1 text-amber-600 font-semibold">
+        <span className="block text-[13px] leading-snug text-amber-600 font-semibold whitespace-normal mt-0.5">
           Meeting deadline crossed
         </span>
       );
@@ -1539,25 +1582,25 @@ export default function UserChatsPage() {
                           onClick={() => setActiveChat(chat.id)}
                           className={`my-2 flex cursor-pointer flex-col justify-center rounded-[14px] px-4 py-5 transition-all ${activeChat === chat.id ? "border-2 border-[#B7C0FF] bg-white shadow-[4px_4px_10px_0px_#00000024]" : "border border-[#e2e2e2] bg-white hover:bg-gray-50"}`}
                         >
-                          <div className="flex justify-between items-start mb-1">
-                            <div className="flex gap-3 items-center">
-                              <div className="w-[50px] h-[50px] rounded-full overflow-hidden bg-gray-200">
+                          <div className="flex justify-between items-start gap-2 mb-1">
+                            <div className="flex gap-3 items-center min-w-0 flex-1">
+                              <div className="w-[50px] h-[50px] rounded-full overflow-hidden bg-gray-200 shrink-0">
                                 <img
                                   src={chat.image}
                                   alt={sidebarChatName(chat)}
                                   className="object-cover w-full h-full"
                                 />
                               </div>
-                              <div>
-                                <div className="flex items-center gap-1">
-                                  <h4 className="text-[16px] font-semibold text-gray-900">
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-1 min-w-0">
+                                  <h4 className="text-[16px] font-semibold text-gray-900 truncate">
                                     {sidebarChatName(chat)}
                                   </h4>
-                                  <span className="text-[10px] bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded-full font-medium">
+                                  <span className="text-[10px] bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded-full font-medium shrink-0">
                                     Archived
                                   </span>
                                 </div>
-                                <div className="max-w-[200px] truncate">
+                                <div className="min-w-0">
                                   {renderMessagePreview(chat, "user")}
                                 </div>
                               </div>
@@ -1611,8 +1654,8 @@ export default function UserChatsPage() {
                       onClick={() => setActiveChat(chat.id)}
                       className={`my-2 flex cursor-pointer flex-col justify-center rounded-[14px] px-4 py-5 transition-all ${activeChat === chat.id ? "border-2 border-[#B7C0FF] bg-white shadow-[4px_4px_10px_0px_#00000024]" : "border border-[#e2e2e2] bg-white hover:bg-gray-50"}`}
                     >
-                      <div className="flex justify-between items-start">
-                        <div className="flex gap-3">
+                      <div className="flex justify-between items-start gap-2">
+                        <div className="flex gap-3 min-w-0 flex-1">
                           <div className="relative w-[50px] h-[50px] shrink-0">
                             <div className="w-full h-full rounded-full overflow-hidden bg-gray-200">
                               <img
@@ -1622,12 +1665,16 @@ export default function UserChatsPage() {
                               />
                             </div>
                             <div
-                              className={`absolute bottom-0 right-0 w-3.5 h-3.5 border-2 border-white rounded-full ${chat.isOnline ? "bg-[#12B76A]" : "bg-gray-400"}`}
+                              className={`absolute bottom-0 right-0 w-3.5 h-3.5 border-2 border-white rounded-full ${
+                                chat.isOnline || (chat.id === activeChat && onlineCount > 1)
+                                  ? "bg-[#12B76A]"
+                                  : "bg-gray-400"
+                              }`}
                             ></div>
                           </div>
-                          <div>
-                            <div className="flex items-center gap-1">
-                              <h4 className="text-[16px] font-semibold text-gray-900">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1 min-w-0">
+                              <h4 className="text-[16px] font-semibold text-gray-900 truncate">
                                 {sidebarChatName(chat)}
                               </h4>
                               {/* <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1639,6 +1686,7 @@ export default function UserChatsPage() {
                                 width="24"
                                 height="24"
                                 viewBox="0 0 24 24"
+                                className="shrink-0"
                               >
                                 <path
                                   d="M12 2.5
@@ -1667,7 +1715,7 @@ export default function UserChatsPage() {
                               </svg>
                               {/* <BadgeCheck className='text-green-500' size={15} strokeWidth={3}/> */}
                             </div>
-                            <div className="max-w-[200px] truncate">
+                            <div className="min-w-0">
                               {renderMessagePreview(chat, "user")}
                             </div>
                           </div>
@@ -1740,7 +1788,11 @@ export default function UserChatsPage() {
                       </div>
                       {activeConv.type !== "broadcast" && (
                         <div
-                          className={`absolute bottom-0 right-0 w-3.5 h-3.5 border-3 border-white rounded-full ${onlineCount > 1 ? "bg-[#12B76A]" : "bg-gray-400"}`}
+                          className={`absolute bottom-0 right-0 w-3.5 h-3.5 border-3 border-white rounded-full ${
+                            onlineCount > 1 || isOtherUserOnline || activeConv.isOnline
+                              ? "bg-[#12B76A]"
+                              : "bg-gray-400"
+                          }`}
                         ></div>
                       )}
                     </div>

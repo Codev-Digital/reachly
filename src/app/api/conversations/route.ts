@@ -11,31 +11,50 @@ import CreatorProfile from '@/models/CreatorProfile';
 import EventPurchase from '@/models/EventPurchase';
 import { backfillConversationsForUser } from '@/lib/sessionChat';
 import { evaluateConversationBookingState } from '@/lib/chatSessionState';
+import { verifyToken } from '@/lib/jwt';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export async function GET(request: NextRequest) {
     try {
+        let authEmail: string | undefined;
         const session = await getServerSession(authOptions);
-        if (!session?.user?.email) {
+        if (session?.user?.email) {
+            authEmail = session.user.email.toLowerCase().trim();
+        } else {
+            const token = request.cookies.get('auth_token')?.value;
+            const payload = token ? verifyToken(token) : null;
+            authEmail = payload?.email?.toLowerCase().trim();
+        }
+        if (!authEmail) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
         // Optional date filter (YYYY-MM-DD) — used by creator chats page
-        const dateParam = request.nextUrl.searchParams.get('date');
+        const searchParams = request.nextUrl.searchParams;
+        const dateParam = searchParams.get('date');
+        const skipBackfill = searchParams.get('skipBackfill') === '1';
+        const scopeParam = searchParams.get('scope');
 
         await connectDB();
 
-        const user = await User.findOne({ email: session.user.email }).lean() as any;
+        const user = await User.findOne({ email: authEmail })
+            .select('_id email')
+            .lean() as any;
         if (!user) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }
 
         const userId = user._id.toString();
 
-        // Auto-heal / backfill any missing conversations for confirmed bookings
-        await backfillConversationsForUser(user._id, user.email);
+        // Update online heartbeat asynchronously without adding write latency to chat loading
+        void User.updateOne({ _id: user._id }, { $set: { lastActiveAt: new Date() } }).catch(() => {});
+
+        // Auto-heal / backfill missing conversations on initial load (skip on periodic polls)
+        if (!skipBackfill) {
+            await backfillConversationsForUser(user._id, user.email);
+        }
 
         // If a date is provided, find bookings on that date first and use them to
         // determine which conversations to show and which booking details to display.
@@ -103,10 +122,13 @@ export async function GET(request: NextRequest) {
         // Also load creator profiles for broadcast channels (buyer side shows creator)
         const broadcastConversations = filteredConversations.filter((c) => c.type === 'broadcast');
         const broadcastCreatorIds = broadcastConversations.map((c) => c.creatorId.toString());
-        // Full participant lists only for chats this user owns (creator dashboard)
-        const creatorOwnedBroadcasts = broadcastConversations.filter(
-            (c) => c.creatorId.toString() === userId && c.eventId
-        );
+        // Full participant lists only for broadcasts this creator manages when not scoped to user view
+        const creatorOwnedBroadcasts =
+            scopeParam === 'user'
+                ? []
+                : broadcastConversations.filter(
+                      (c) => c.creatorId.toString() === userId && c.eventId
+                  );
         const creatorOwnedEventIds = creatorOwnedBroadcasts.map((c) => c.eventId);
         const allProfileUserIds = Array.from(new Set([...otherUserIds, ...broadcastCreatorIds]));
 
@@ -127,11 +149,15 @@ export async function GET(request: NextRequest) {
             bookingsList,
             eventPurchases,
         ] = await Promise.all([
-            User.find({ _id: { $in: otherUserIds } }).select('_id name email profilePhoto lastActiveAt').lean(),
-            CreatorProfile.find({ userId: { $in: allProfileUserIds } }).select('userId displayName username profilePhoto').lean(),
+            otherUserIds.length > 0
+                ? User.find({ _id: { $in: otherUserIds } }).select('_id name email profilePhoto lastActiveAt').lean()
+                : Promise.resolve([]),
+            allProfileUserIds.length > 0
+                ? CreatorProfile.find({ userId: { $in: allProfileUserIds } }).select('userId displayName username profilePhoto').lean()
+                : Promise.resolve([]),
             Message.aggregate([
                 { $match: { conversationId: { $in: convIds } } },
-                { $sort: { createdAt: -1 } },
+                { $sort: { conversationId: 1, createdAt: -1 } },
                 { $group: {
                     _id: '$conversationId',
                     content: { $first: '$content' },
@@ -158,10 +184,11 @@ export async function GET(request: NextRequest) {
                         }
                     ]
                   })
+                    .select('creatorId userId sessionTypeId scheduledDate scheduledTime status paymentStatus meetingUrl bookingRef finalPrice price meetingEndsAt meetingEndedAt')
                     .sort({ scheduledDate: -1 })
                     .populate({ path: 'sessionTypeId', model: SessionType, select: 'title duration' })
                     .lean()
-                : [],
+                : Promise.resolve([]),
             creatorOwnedEventIds.length > 0
                 ? EventPurchase.find({
                     eventId: { $in: creatorOwnedEventIds },
@@ -170,7 +197,7 @@ export async function GET(request: NextRequest) {
                     .select('eventId userId buyerEmail tierTitle quantity createdAt')
                     .sort({ createdAt: -1 })
                     .lean()
-                : [],
+                : Promise.resolve([]),
         ]);
 
         const buyerIds = Array.from(
@@ -371,7 +398,7 @@ export async function GET(request: NextRequest) {
                 : '';
 
             const isOnline = otherUser?.lastActiveAt
-                ? Date.now() - new Date(otherUser.lastActiveAt).getTime() < 2 * 60 * 1000
+                ? Date.now() - new Date(otherUser.lastActiveAt).getTime() < 3 * 60 * 1000
                 : false;
 
             return {

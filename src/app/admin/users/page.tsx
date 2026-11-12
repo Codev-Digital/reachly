@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { usePreloadImages } from '@/lib/usePreloadImages';
 import ActionDialog from '@/components/ActionDialog';
+import CreatorStatusActions from '@/components/admin/CreatorStatusActions';
 import UserDetailDialog, { AdminUser as User } from '@/components/admin/UserDetailDialog';
 
 export default function UsersPage() {
@@ -84,26 +85,7 @@ export default function UsersPage() {
     }
   };
 
-  const handleRestoreUser = async (user: User) => {
-    try {
-      const res = await fetch('/api/admin/users', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.dbId || user.id, action: 'restore' }),
-      });
-      if (res.ok) {
-        setUsers(prev => prev.map(u => (u.id === user.id || u.dbId === user.dbId ? { ...u, status: 'Active' } : u)));
-      } else {
-        const err = await res.json();
-        alert(err.error || 'Failed to restore user.');
-      }
-    } catch (err) {
-      console.error('Failed to restore user:', err);
-      alert('Error restoring user.');
-    }
-  };
-
-  const handleStatusAction = async (user: User, action: 'approve' | 'reject' | 'suspend' | 'activate') => {
+  const handleStatusAction = async (user: User, action: 'approve' | 'reject' | 'suspend' | 'activate' | 'restore') => {
     try {
       const res = await fetch('/api/admin/users', {
         method: 'PUT',
@@ -111,7 +93,14 @@ export default function UsersPage() {
         body: JSON.stringify({ userId: user.dbId || user.id, action }),
       });
       if (!res.ok) return (await res.json()).error || 'Failed to update status.';
-      const status = action === 'approve' || action === 'activate' ? 'Active' : action === 'reject' ? 'Rejected' : 'Suspended';
+      const status: User['status'] =
+        action === 'approve' || action === 'activate'
+          ? 'Active'
+          : action === 'reject'
+            ? 'Rejected'
+            : action === 'restore'
+              ? 'Pending'
+              : 'Suspended';
       setUsers(prev => prev.map(u => (u.id === user.id ? { ...u, status } : u)));
       setActiveUser(null);
       return null;
@@ -308,7 +297,7 @@ export default function UsersPage() {
                 <th className="py-4 px-4 text-xs font-semibold text-gray-500">{selectedStatusFilter === 'Deleted' ? 'Deleted Date' : 'Joined Date'}</th>
                 <th className="py-4 px-4 text-xs font-semibold text-gray-500">{selectedStatusFilter === 'Deleted' ? 'Deleted Time' : 'Time'}</th>
                 <th className="py-4 px-4 text-xs font-semibold text-gray-500">Status</th>
-                <th className="py-4 px-4 text-xs font-semibold text-gray-500 text-center">Actions</th>
+                <th className="py-4 px-4 text-xs font-semibold text-gray-500">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 bg-[#F8F8F8] border-b border-gray-200">
@@ -372,25 +361,25 @@ export default function UsersPage() {
 
                     {/* Actions */}
                     <td className="py-4 px-4" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center justify-center gap-2">
-                        {user.status === 'Deleted' ? (
-                          <button
-                            onClick={() => handleRestoreUser(user)}
-                            className="px-3.5 py-1 bg-white border border-emerald-300 rounded-full text-xs font-medium text-emerald-600 hover:bg-emerald-50 transition-colors"
-                          >
-                            Restore
-                          </button>
-                        ) : (
+                      <div className="flex flex-wrap items-center gap-2">
+                        <CreatorStatusActions
+                          userId={user.dbId || user.id}
+                          status={user.status}
+                          endpoint="/api/admin/users"
+                          entityLabel="User"
+                          onChanged={loadUsers}
+                        />
+                        {user.status !== 'Deleted' && (
                           <button
                             onClick={() => handleDeleteClick(user)}
-                            className="px-3.5 py-1 bg-white border border-red-200 rounded-full text-xs font-medium text-red-500 hover:bg-red-50 hover:border-red-300 transition-colors"
+                            className="px-3.5 py-1.5 bg-white border border-red-200 rounded-full text-[10px] font-bold text-red-500 hover:bg-red-50 hover:border-red-300 transition-colors cursor-pointer"
                           >
                             Delete
                           </button>
                         )}
                         <button
                           onClick={() => openDetail(user)}
-                          className="px-3.5 py-1 bg-gray-100 rounded-full text-xs font-medium text-gray-600 hover:bg-gray-200 hover:text-gray-800 transition-colors"
+                          className="px-3.5 py-1.5 bg-gray-100 rounded-full text-[10px] font-bold text-gray-600 hover:bg-gray-200 hover:text-gray-800 transition-colors cursor-pointer"
                         >
                           View Details
                         </button>

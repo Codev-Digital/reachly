@@ -55,6 +55,7 @@ export default function BookSessionStep1() {
   const [reviews, setReviews] = useState<PublicReview[]>([]);
   const [creatorEvents, setCreatorEvents] = useState<CreatorEventRaw[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [notAvailable, setNotAvailable] = useState<boolean>(false);
   const [isLoadingContinue, setIsLoadingContinue] = useState(false);
   const [isLoadingBack, setIsLoadingBack] = useState(false);
   const [hasScrolled, setHasScrolled] = useState(false);
@@ -204,7 +205,12 @@ export default function BookSessionStep1() {
         const res = await fetch(`/api/creators/${username}`);
         const data = await res.json();
         if (cancelled) return;
+        if (!res.ok || !data.success) {
+          setNotAvailable(true);
+          return;
+        }
         if (data.success) {
+          setNotAvailable(false);
           setSessions(data.sessions || []);
           try {
             sessionStorage.setItem(`reachly_sessions_${username}`, JSON.stringify(data.sessions || []));
@@ -214,9 +220,10 @@ export default function BookSessionStep1() {
           setCreatorEvents(Array.isArray(data.events) ? data.events : []);
           setBooking((b) => {
             const sid = wantedSessionId || b.selectedSession?.id;
-            const sessionMatch = sid
+            const rawMatch = sid
               ? (data.sessions || []).find((s: SessionType) => s.id === sid) || b.selectedSession
               : null;
+            const sessionMatch = rawMatch?.alreadyBookedFreeConsultation ? null : rawMatch;
             return {
               ...b,
               creator: {
@@ -256,6 +263,10 @@ export default function BookSessionStep1() {
   }, [params.username, setBooking, wantedSessionId, router]);
 
   const handleSelectSession = (session: SessionType) => {
+    if (session.isFreeConsultation && session.alreadyBookedFreeConsultation) {
+      toast.error('You have already used your one-time free consultation with this creator.');
+      return;
+    }
     if (booking.reservationToken) void releaseReservation(booking.reservationToken);
     setBooking((b) => ({
       ...b,
@@ -346,6 +357,26 @@ export default function BookSessionStep1() {
     { text: 'text-[#B86B00]', stroke: 'stroke-[#B86B00]', bg: 'bg-[#FFEDB5]', title: 'text-[#4A3B18]', desc: 'text-[#5C4D26]', feature: 'text-[#4A3B18]', divider: 'bg-[#4A3B18]/20' }, // Card 2: Yellow (Clear dark grayish text)
     { text: 'text-[#E32A2A]', stroke: 'stroke-[#E32A2A]', bg: 'bg-[#FFB3B3]', title: 'text-white', desc: 'text-white/90', feature: 'text-white/95', divider: 'bg-white/35' }, // Card 3: Pink
   ];
+
+  if (notAvailable) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-16 text-center">
+        <div className="bg-white border border-gray-200 rounded-3xl p-8 sm:p-10 shadow-sm">
+          <h1 className="text-2xl font-bold text-gray-900 mb-3">Creator Profile Not Available</h1>
+          <p className="text-sm text-gray-500 mb-6">
+            This creator has not completed their profile approval yet or is not currently accepting bookings.
+          </p>
+          <button
+            type="button"
+            onClick={() => router.push('/explore-creators')}
+            className="px-6 py-2.5 bg-[#0012FF] text-white rounded-full text-sm font-semibold hover:bg-[#0010d0] transition-colors cursor-pointer"
+          >
+            Explore Creators
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-20 pt-2">
@@ -443,6 +474,7 @@ export default function BookSessionStep1() {
                     const themeIdx = index % 3;
                     const theme = cardThemes[themeIdx];
                     const isSelected = booking.selectedSession?.id === session.id;
+                    const isFreeLocked = Boolean(session.isFreeConsultation && session.alreadyBookedFreeConsultation);
                     const payPrice = sessionPrice(session);
                     const hasDiscount = payPrice < session.price;
 
@@ -453,8 +485,12 @@ export default function BookSessionStep1() {
                       >
                         <div
                           onClick={() => handleSelectSession(session)}
-                          className={`w-[260px] lg:w-[260px] min-h-[400px] h-[400px] ${theme.bg} rounded-[10px] lg:rounded-[10px] p-6 flex flex-col justify-between select-none cursor-pointer transition-all duration-300  lg:hover:-translate-y-1 ${isSelected ? 'border-4 border-[#0012FF] scale-[1.03] shadow-lg' : 'border-4 border-transparent'
-                            } ${!hasScrolled && index >= 3 ? 'lg:opacity-0 lg:pointer-events-none' : 'opacity-100'}`}
+                          aria-disabled={isFreeLocked}
+                          className={`w-[260px] lg:w-[260px] min-h-[400px] h-[400px] ${theme.bg} rounded-[10px] lg:rounded-[10px] p-6 flex flex-col justify-between select-none transition-all duration-300 ${
+                            isFreeLocked
+                              ? 'opacity-65 cursor-not-allowed border-4 border-transparent'
+                              : `cursor-pointer lg:hover:-translate-y-1 ${isSelected ? 'border-4 border-[#0012FF] scale-[1.03] shadow-lg' : 'border-4 border-transparent'}`
+                          } ${!hasScrolled && index >= 3 ? 'lg:opacity-0 lg:pointer-events-none' : isFreeLocked ? '' : 'opacity-100'}`}
                         >
                         <div>
                           {/* Top row: Briefcase Icon + Duration */}
@@ -510,6 +546,11 @@ export default function BookSessionStep1() {
                             <div className={`mt-1.5 text-sm font-semibold line-through opacity-50 ${theme.text}`}>
                               {session.price.toLocaleString()} PKR
                             </div>
+                          )}
+                          {session.isFreeConsultation && session.alreadyBookedFreeConsultation && (
+                            <span className="mt-1.5 inline-block rounded-full bg-white/85 px-2.5 py-0.5 text-[11px] font-bold text-gray-700">
+                              Already Claimed (1 per customer)
+                            </span>
                           )}
                           {session.isPackage && (
                             <span className={`block text-[11px] font-bold normal-case tracking-normal mt-1.5 opacity-80 ${theme.text}`}>

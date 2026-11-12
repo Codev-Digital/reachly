@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { usePreloadImages } from '@/lib/usePreloadImages';
 import { EVENT_CATEGORIES } from '@/lib/eventConstants';
 import EventCard from '@/components/EventCard';
+import ActionDialog from '@/components/ActionDialog';
 
 interface EventItem {
   id: string;
@@ -74,6 +75,8 @@ export default function AdminEventsPage() {
     totalPages: 1,
   });
   const [loading, setLoading] = useState(true);
+  const [eventToDelete, setEventToDelete] = useState<EventItem | null>(null);
+  const [deletingEvent, setDeletingEvent] = useState(false);
 
   // Restore cache after hydration in useEffect to prevent SSR/hydration mismatch
   useEffect(() => {
@@ -149,6 +152,29 @@ export default function AdminEventsPage() {
       alert(`Event Type "${selectedEventType}" added successfully!`);
       setShowAddModal(false);
       setSelectedEventType('');
+    }
+  };
+
+  const handleConfirmDeleteEvent = async () => {
+    if (!eventToDelete || deletingEvent) return;
+    setDeletingEvent(true);
+    try {
+      const res = await fetch(`/api/admin/events/${eventToDelete.id}`, { method: 'DELETE' });
+      if (res.ok) {
+        try {
+          sessionStorage.removeItem('reachly_admin_events_cache');
+          sessionStorage.removeItem('reachly_admin_kpis_cache');
+        } catch {}
+        setEventToDelete(null);
+        await loadEvents();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(err.error || 'Failed to delete event.');
+      }
+    } catch {
+      alert('Failed to delete event.');
+    } finally {
+      setDeletingEvent(false);
     }
   };
 
@@ -357,6 +383,7 @@ export default function AdminEventsPage() {
                   visible: true,
                   statusLabel: evt.status,
                 }}
+                onDelete={() => setEventToDelete(evt)}
                 onClick={() => openEventDetail(evt)}
               />
             </motion.div>
@@ -527,6 +554,20 @@ export default function AdminEventsPage() {
           </div>
         )}
       </AnimatePresence>
+      <ActionDialog
+        open={!!eventToDelete}
+        onOpenChange={(open) => { if (!open && !deletingEvent) setEventToDelete(null); }}
+        image={{ src: '/assets/cancel-appointment-sm.webp', alt: 'Delete event' }}
+        title="Delete Event"
+        description={[
+          `Are you sure you want to delete "${eventToDelete?.title || 'this event'}"?`,
+          'It will be removed from public and admin listings and any active ticket orders will be cancelled.',
+        ]}
+        actions={[
+          { label: 'Cancel', variant: 'outline', onClick: () => setEventToDelete(null), disabled: deletingEvent },
+          { label: deletingEvent ? 'Deleting...' : 'Delete Event', variant: 'destructive', onClick: handleConfirmDeleteEvent, disabled: deletingEvent },
+        ]}
+      />
     </motion.div>
   );
 }

@@ -6,6 +6,7 @@ import Event from '@/models/Event';
 import CreatorProfile from '@/models/CreatorProfile';
 import User from '@/models/User';
 import EventPurchase from '@/models/EventPurchase';
+import EventPaymentProof from '@/models/EventPaymentProof';
 import { isValidObjectId } from '@/lib/eventValidation';
 import { formatEventCardDate, formatEventCardTime } from '@/lib/eventDisplay';
 import { sendEmail, generateEventModerationEmail } from '@/lib/utils';
@@ -191,16 +192,28 @@ export async function DELETE(_req: NextRequest, context: RouteContext) {
     const event = await Event.findOne({ _id: id, deletedAt: null });
     if (!event) return NextResponse.json({ error: 'Event not found.' }, { status: 404 });
 
-    const hasTicketOrders = await EventPurchase.exists({
+    // Cancel active ticket orders and mark pending payment proofs rejected cleanly when admin deletes an event
+    const activeOrders = await EventPurchase.find({
       eventId: event._id,
-      status: { $in: ['pending', 'confirmed', 'completed'] },
-      paymentStatus: { $in: ['pending', 'paid'] },
-    });
-    if (hasTicketOrders) {
-      return NextResponse.json(
-        { error: 'This event has ticket orders and cannot be deleted. Hide it instead to stop new purchases.' },
-        { status: 409 }
-      );
+      status: { $ne: 'cancelled' },
+    }).select('_id paymentStatus').lean() as any[];
+
+    if (activeOrders.length > 0) {
+      const orderIds = activeOrders.map((o) => o._id);
+      await Promise.all([
+        EventPurchase.updateMany(
+          { _id: { $in: orderIds }, paymentStatus: 'paid' },
+          { $set: { status: 'cancelled', paymentStatus: 'refunded' } }
+        ),
+        EventPurchase.updateMany(
+          { _id: { $in: orderIds }, paymentStatus: { $ne: 'paid' } },
+          { $set: { status: 'cancelled' } }
+        ),
+        EventPaymentProof.updateMany(
+          { purchaseId: { $in: orderIds }, status: 'pending' },
+          { $set: { status: 'rejected', adminRemarks: 'Event deleted by admin', reviewedAt: new Date() } }
+        ),
+      ]);
     }
 
     const [creator, profile] = await Promise.all([

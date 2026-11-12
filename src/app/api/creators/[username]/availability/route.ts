@@ -63,10 +63,16 @@ export async function GET(
                 { username: lowerUsername },
                 { username: cleanUsername }
             ]
-        }).select('userId').lean() as any;
+        }).select('userId isProfileComplete isDeactivated').lean() as any;
 
-        if (!profile) {
+        if (!profile || !profile.isProfileComplete || profile.isDeactivated) {
             return NextResponse.json({ error: 'Creator not found' }, { status: 404 });
+        }
+
+        const User = (await import('@/models/User')).default;
+        const creatorUser = await User.findById(profile.userId).select('approvalStatus').lean() as any;
+        if (!creatorUser || creatorUser.approvalStatus !== 'approved') {
+            return NextResponse.json({ error: 'Creator not available for booking' }, { status: 404 });
         }
 
         const availability = await CreatorAvailability.findOne({ userId: profile.userId }).lean() as any;

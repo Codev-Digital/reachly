@@ -653,23 +653,36 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    if (action === 'approve' && user.approvalStatus !== 'pending') {
-      return NextResponse.json({ error: 'This creator has not submitted their application yet.' }, { status: 400 });
+    if (action === 'approve' && user.approvalStatus !== 'pending' && user.approvalStatus !== 'none') {
+      return NextResponse.json({ error: 'This creator cannot be approved from its current status.' }, { status: 400 });
     }
 
     if (action === 'approve') {
       user.approvalStatus = 'approved';
+      user.deletedAt = undefined;
+      await CreatorProfile.updateOne({ userId: user._id }, { $set: { isDeactivated: false } });
     } else if (action === 'reject') {
       user.approvalStatus = 'rejected';
+      await CreatorProfile.updateOne({ userId: user._id }, { $set: { isDeactivated: true } });
     } else if (action === 'suspend') {
       user.approvalStatus = 'suspended';
+      await CreatorProfile.updateOne({ userId: user._id }, { $set: { isDeactivated: true } });
     } else if (action === 'activate') {
       user.approvalStatus = 'approved';
+      user.deletedAt = undefined;
+      await CreatorProfile.updateOne({ userId: user._id }, { $set: { isDeactivated: false } });
+    } else if (action === 'restore') {
+      // Restored creator accounts must return to Pending review, never directly Active.
+      user.approvalStatus = 'pending';
+      user.deletedAt = undefined;
+      await CreatorProfile.updateOne({ userId: user._id }, { $set: { isDeactivated: false } });
     }
 
     await user.save();
+    const { invalidateCreatorsListCache } = await import('@/lib/creatorsListCache');
+    invalidateCreatorsListCache();
 
-    return NextResponse.json({ success: true, message: `Creator status changed to ${action}d successfully` });
+    return NextResponse.json({ success: true, message: `Creator status updated (${action}) successfully` });
   } catch (error: any) {
     console.error('Admin creators PUT error:', error);
     return NextResponse.json({ error: error.message || 'Something went wrong' }, { status: 500 });

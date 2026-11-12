@@ -113,6 +113,7 @@ export default function UserBookingsPage() {
   const [bookingToReschedule, setBookingToReschedule] = useState<Booking | null>(null);
   const [rescheduleDate, setRescheduleDate] = useState<Date | null>(null);
   const [selectedRescheduleTimeSlot, setSelectedRescheduleTimeSlot] = useState<string>('');
+  const [rescheduleReservationToken, setRescheduleReservationToken] = useState<string | undefined>(undefined);
   const [isRescheduling, setIsRescheduling] = useState<boolean>(false);
 
   // Custom Cancel / Reschedule Alerts to Modals
@@ -366,6 +367,19 @@ export default function UserBookingsPage() {
     setShowRescheduleModal(true);
   };
 
+  const closeRescheduleModal = () => {
+    if (rescheduleReservationToken && bookingToReschedule?.username) {
+      const uname = bookingToReschedule.username.replace('@', '');
+      fetch(`/api/creators/${encodeURIComponent(uname)}/availability/reservations`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: rescheduleReservationToken }),
+      }).catch(() => {});
+    }
+    setRescheduleReservationToken(undefined);
+    setShowRescheduleModal(false);
+  };
+
   const handleConfirmReschedule = async () => {
     if (!bookingToReschedule || !selectedRescheduleTimeSlot || !rescheduleDate || isRescheduling) {
       if (!selectedRescheduleTimeSlot || !rescheduleDate) {
@@ -383,10 +397,12 @@ export default function UserBookingsPage() {
         body: JSON.stringify({
           selectedDate: dateStr,
           selectedTime: selectedRescheduleTimeSlot,
+          reservationToken: rescheduleReservationToken,
         })
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
+        setRescheduleReservationToken(undefined);
         setShowRescheduleModal(false);
         setSuccessModalType('rescheduled');
         setShowSuccessModal(true);
@@ -394,7 +410,7 @@ export default function UserBookingsPage() {
       } else {
         if (data.error?.includes('24 hours')) {
           openBlockedWindow(bookingToReschedule, 'reschedule');
-          setShowRescheduleModal(false);
+          closeRescheduleModal();
         } else {
           toast.error(data.error || 'Failed to reschedule appointment');
         }
@@ -826,30 +842,45 @@ export default function UserBookingsPage() {
                           );
                         }
 
-                        if (isCancelled || isPast) {
-                          if (booking.isEvent) {
-                            return (
-                              <button
-                                onClick={() =>
-                                  router.push(
-                                    booking.eventId
-                                      ? `/user/chats?eventId=${booking.eventId}`
-                                      : '/user/chats'
-                                  )
-                                }
-                                className="w-full py-2.5 bg-[#0012FF] hover:bg-[#0012FF]/90 text-white rounded-full text-xs font-bold text-center transition-all cursor-pointer shadow-md shadow-[#0012FF]/20"
-                              >
-                                View Session Chat
-                              </button>
-                            );
-                          }
+                        if (isCancelled) {
+                          return (
+                            <div className="w-full py-2.5 rounded-full text-xs font-bold flex items-center justify-center gap-1.5 bg-gray-100 text-gray-500 border border-gray-200 select-none">
+                              Booking Cancelled — Chat Disabled
+                            </div>
+                          );
+                        }
+
+                        if (isPast && !booking.isEvent) {
+                          return booking.hasReviewed ? (
+                            <div className="w-full py-2.5 rounded-full text-xs font-bold flex items-center justify-center gap-1.5 bg-gray-100 text-gray-500 border border-gray-200 select-none">
+                              <CheckCircle className="size-3.5 shrink-0" />
+                              Meeting Completed
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => openReviewForBooking(booking)}
+                              className="w-full py-2.5 rounded-full text-xs font-bold flex items-center justify-center gap-1.5 transition-all bg-gray-200 hover:bg-gray-300 text-gray-700 cursor-pointer"
+                            >
+                              <Star className="size-3.5 shrink-0" />
+                              Review {booking.creator || 'Creator'}
+                            </button>
+                          );
+                        }
+
+                        if (isPast && booking.isEvent) {
                           return (
                             <button
-                              onClick={() => router.push(`/user/chats?bookingRef=${booking.bookingRef}`)}
-                              className="w-full py-2.5 bg-[#0012FF] hover:bg-[#0012FF]/90 text-white rounded-full text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md shadow-[#0012FF]/20"
+                              onClick={() =>
+                                router.push(
+                                  booking.eventId
+                                    ? `/user/chats?eventId=${booking.eventId}`
+                                    : '/user/chats'
+                                )
+                              }
+                              className="w-full py-2.5 bg-[#0012FF] hover:bg-[#0012FF]/90 text-white rounded-full text-xs font-bold text-center transition-all cursor-pointer shadow-md shadow-[#0012FF]/20"
                             >
-                              <MessageSquare className="size-3.5 shrink-0" />
-                              Chat now
+                              View Session Chat
                             </button>
                           );
                         }
@@ -927,14 +958,23 @@ export default function UserBookingsPage() {
                               )
                             ) : (
                               <>
-                                <button
-                                  onClick={() => void handleUserJoinMeeting(booking)}
-                                  disabled={joiningMeetingId === booking.id}
-                                  className="w-full py-2.5 rounded-full text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-md bg-[#0012FF] hover:bg-[#0012FF]/90 text-white shadow-[#0012FF]/20 cursor-pointer disabled:opacity-60"
-                                >
-                                  <Video className="size-3.5 shrink-0" />
-                                  {joiningMeetingId === booking.id ? 'Checking…' : 'Join Meeting'}
-                                </button>
+                                <div className="flex items-center gap-3">
+                                  <button
+                                    onClick={() => void handleUserJoinMeeting(booking)}
+                                    disabled={joiningMeetingId === booking.id}
+                                    className="flex-1 py-2.5 rounded-full text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-md bg-[#0012FF] hover:bg-[#0012FF]/90 text-white shadow-[#0012FF]/20 cursor-pointer disabled:opacity-60"
+                                  >
+                                    <Video className="size-3.5 shrink-0" />
+                                    {joiningMeetingId === booking.id ? 'Checking…' : 'Join Meeting'}
+                                  </button>
+                                  <button
+                                    onClick={() => router.push(`/user/chats?bookingRef=${booking.bookingRef}`)}
+                                    className="flex-1 py-2.5 border border-[#0012FF] text-[#0012FF] hover:bg-[#EEF2FF] rounded-full text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                                  >
+                                    <MessageSquare className="size-3.5 shrink-0" />
+                                    Chat now
+                                  </button>
+                                </div>
                                 {booking.isPackage ? (
                                   <p className="text-[11px] text-gray-400 font-medium text-center">
                                     Package sessions can&apos;t be cancelled or rescheduled by you. Your creator can
@@ -989,7 +1029,7 @@ export default function UserBookingsPage() {
       {showRescheduleModal && (
         <div 
           className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-[100] p-4 cursor-pointer"
-          onClick={() => setShowRescheduleModal(false)}
+          onClick={closeRescheduleModal}
         >
           <div 
             className="relative bg-white rounded-[28px] sm:rounded-[36px] shadow-2xl border border-gray-100 w-full max-w-2xl p-6 sm:p-8 flex flex-col overflow-hidden cursor-default"
@@ -997,7 +1037,7 @@ export default function UserBookingsPage() {
           >
             {/* Close Button */}
             <button
-              onClick={() => setShowRescheduleModal(false)}
+              onClick={closeRescheduleModal}
               className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 transition-colors p-1.5 rounded-full hover:bg-gray-100 cursor-pointer"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -1021,6 +1061,7 @@ export default function UserBookingsPage() {
                 <AvailabilityDateTimePicker
                   username={bookingToReschedule.username.replace('@', '')}
                   sessionId={bookingToReschedule.sessionTypeId}
+                  reservationToken={rescheduleReservationToken}
                   selectedDate={rescheduleDate}
                   selectedTime={selectedRescheduleTimeSlot || null}
                   onDateChange={(d) => {
@@ -1028,6 +1069,7 @@ export default function UserBookingsPage() {
                     setSelectedRescheduleTimeSlot('');
                   }}
                   onTimeChange={setSelectedRescheduleTimeSlot}
+                  onReservationTokenChange={setRescheduleReservationToken}
                   dayCount={60}
                   compact
                 />
@@ -1037,7 +1079,7 @@ export default function UserBookingsPage() {
             {/* Bottom Actions Row */}
             <div className="flex items-center gap-4 w-full">
               <button
-                onClick={() => setShowRescheduleModal(false)}
+                onClick={closeRescheduleModal}
                 disabled={isRescheduling}
                 className="flex-1 py-3.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-full font-bold text-xs sm:text-sm text-center transition-all cursor-pointer disabled:opacity-50"
               >

@@ -213,6 +213,11 @@ export interface IBooking extends Document {
     status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
     paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
     paymentMethod?: 'jazzcash' | 'easypaisa' | 'stripe';
+    stripeCheckoutSessionId?: string;
+    stripePaymentIntentId?: string;
+    stripeRefundId?: string;
+    refundAmount?: number;
+    refundedAt?: Date | null;
     adminRemarks?: string;
 
     price: number;
@@ -304,6 +309,22 @@ const BookingSchema = new Schema<IBooking>(
         paymentMethod: {
             type: String,
             enum: ['jazzcash', 'easypaisa', 'stripe'],
+        },
+        stripeCheckoutSessionId: {
+            type: String,
+        },
+        stripePaymentIntentId: {
+            type: String,
+        },
+        stripeRefundId: {
+            type: String,
+        },
+        refundAmount: {
+            type: Number,
+        },
+        refundedAt: {
+            type: Date,
+            default: null,
         },
         adminRemarks: {
             type: String,

@@ -5,8 +5,12 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import connectDB from "@/lib/mongodb";
 import Booking from "@/models/Booking";
 import User from "@/models/User";
-import Referral from "@/models/referral.model";
 import { checkSessionModificationWindow, checkNewSessionTime, parseDateToNoonUTC } from "@/lib/time";
+import {
+  processBookingCancellationRefund,
+  sendBookingCancelledEmails,
+  sendBookingRescheduledEmails,
+} from "@/lib/bookingRefund";
 import CalendarBlock from "@/models/CalendarBlock";
 import SessionType from "@/models/SessionType";
 import SlotReservation from "@/models/SlotReservation";
@@ -48,7 +52,7 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { status, selectedDate, selectedTime } = body;
+    const { status, selectedDate, selectedTime, reservationToken } = body;
 
     if (status && !["confirmed", "cancelled", "completed"].includes(status)) {
       return NextResponse.json({ error: "Invalid status" }, { status: 400 });
@@ -165,6 +169,7 @@ export async function PUT(
           creatorId: booking.creatorId,
           dateKey,
           expiresAt: { $gt: new Date() },
+          ...(reservationToken ? { token: { $ne: reservationToken } } : {}),
         }).select("time duration bufferTime").lean(),
       ]);
 
@@ -222,41 +227,14 @@ export async function PUT(
       console.log("booking.paymentStatus:",booking.paymentStatus)
       updatePayload.status = status;
       if (status === "cancelled") {
-        if (booking.paymentStatus === "paid") {
-          //first of all check if user has referral so deduct commison of that user
-          //fetch from referral model
-          const referralDoc = await Referral.findOne({
-            joinnee: user._id,
-          }).exec();
-          if (referralDoc) {
-            const referrerId = referralDoc.referrer;
-            const referrerUser = await User.findById(referrerId).exec();
-            const buyActivity = referralDoc.buyActivities.find(
-              (activity: any) => activity.type === "buy_session"
-            );
-            if (buyActivity) {
-              const ammount = buyActivity.totalAmount;
-              if (referrerUser) {
-                referrerUser.totalAmountEarnedFromReferrals =
-                  Math.max(0, (referrerUser.totalAmountEarnedFromReferrals || 0) - ammount);
-                await referrerUser.save();
-              }
-              referralDoc.totalBuyActivities += 1;
-              referralDoc.buyActivities.push({
-                type: "cancel_session",
-                activityTime: new Date(),
-                totalAmount: ammount,
-                status: "rejected",
-                sessionId: booking.sessionTypeId,
-                bookingId: booking._id,
-                paymentMethod: booking.paymentMethod,
-              });
-              await referralDoc.save();
-            }
+        const resRefund = await processBookingCancellationRefund(booking, user._id);
+        updatePayload.paymentStatus = resRefund.paymentStatus;
+        if (resRefund.refunded) {
+          updatePayload.refundAmount = resRefund.refundAmount;
+          updatePayload.refundedAt = resRefund.refundedAt;
+          if (resRefund.stripeRefundId) {
+            updatePayload.stripeRefundId = resRefund.stripeRefundId;
           }
-          updatePayload.paymentStatus = "refunded";
-        } else {
-          updatePayload.paymentStatus = "failed";
         }
       }
     }
@@ -280,6 +258,32 @@ export async function PUT(
       { $set: updatePayload },
       { new: true },
     ).exec();
+
+    // Clear the user's temporary slot reservation (if any) once rescheduled
+    const scheduledDateForRelease = updatePayload.scheduledDate || booking.scheduledDate;
+    if (isRescheduling && reservationToken && booking.creatorId && scheduledDateForRelease) {
+      const dateIso = new Date(scheduledDateForRelease).toISOString().split("T")[0];
+      await SlotReservation.deleteOne({
+        creatorId: booking.creatorId,
+        dateKey: dateIso,
+        token: reservationToken,
+      }).catch(() => {});
+    }
+
+    // Send confirmation emails for cancellation / reschedule
+    if (status === "cancelled") {
+      await sendBookingCancelledEmails(booking, {
+        refunded: booking.paymentStatus === "paid",
+        refundAmount: Number(updatePayload.refundAmount ?? booking.updated_total_amount ?? booking.finalPrice ?? 0),
+        actor: "client",
+      });
+    } else if (selectedDate || selectedTime) {
+      await sendBookingRescheduledEmails(booking, {
+        scheduledDate: updatePayload.scheduledDate || booking.scheduledDate,
+        scheduledTime: selectedTime || booking.scheduledTime,
+        actor: "client",
+      });
+    }
 
     // Notify the creator that the user updated/cancelled/rescheduled
     try {

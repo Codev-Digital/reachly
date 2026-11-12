@@ -10,6 +10,7 @@ import UserNavbar from '@/components/UserNavbar';
 import CreatorDashboardNav from '@/components/CreatorDashboardNav';
 import AdminNavbar from '@/components/AdminNavbar';
 import CreatorNavbar from '@/components/CreatorNavbar';
+import OnboardingNavbar from '@/components/OnboardingNavbar';
 import {
   getStoredFavourites,
   setStoredFavourites,
@@ -129,6 +130,7 @@ export default function ExploreCreatorsPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isCreator, setIsCreator] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [approvalStatus, setApprovalStatus] = useState<string>('none');
   const [displayName, setDisplayName] = useState<string>('');
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [verifiedOnly, setVerifiedOnly] = useState(false);
@@ -138,15 +140,18 @@ export default function ExploreCreatorsPage() {
   const [loginCallbackUrl, setLoginCallbackUrl] = useState('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // NextAuth resolves immediately during client navigation, before /api/user/me
-  // returns the profile details needed to choose the final authenticated navbar.
+  const isRestrictedAccount = ['suspended', 'rejected', 'deleted'].includes(approvalStatus);
   const hasAuthenticatedSession =
-    isAuthenticated || sessionStatus !== 'unauthenticated';
+    isAuthenticated || sessionStatus === 'authenticated';
 
   const handleCreatorBooking = (e: React.MouseEvent, username: string) => {
     e.stopPropagation();
     e.preventDefault();
     if (isAdmin) return;
+    if (isRestrictedAccount) {
+      router.push(approvalStatus === 'suspended' ? '/suspended' : approvalStatus === 'rejected' ? '/rejected' : '/deleted');
+      return;
+    }
     const destination = `/creators/${username}/book-session`;
     if (!isAuthenticated) {
       setLoginCallbackUrl(destination);
@@ -178,6 +183,7 @@ export default function ExploreCreatorsPage() {
         if (parsed.isAuthenticated !== undefined) setIsAuthenticated(parsed.isAuthenticated);
         if (parsed.isCreator !== undefined) setIsCreator(parsed.isCreator);
         if (parsed.isAdmin !== undefined) setIsAdmin(parsed.isAdmin);
+        if (parsed.approvalStatus) setApprovalStatus(parsed.approvalStatus);
         setLoading(false);
       }
     } catch (e) {}
@@ -203,6 +209,7 @@ export default function ExploreCreatorsPage() {
         let freshAuth = false;
         let freshIsCreator = false;
         let freshIsAdmin = false;
+        let freshApprovalStatus = 'none';
         let freshDisplayName = '';
         let freshProfilePhoto: string | null = null;
 
@@ -216,6 +223,8 @@ export default function ExploreCreatorsPage() {
           const userData = await authRes.json();
           freshAuth = true;
           setIsAuthenticated(true);
+          freshApprovalStatus = userData.user?.approvalStatus || 'none';
+          setApprovalStatus(freshApprovalStatus);
           
           const email = userData.user?.email?.toLowerCase() || '';
           if (email === 'abdullahgotaccess@gmail.com' || email === 'admin@reachly.com') {
@@ -244,7 +253,7 @@ export default function ExploreCreatorsPage() {
             freshSaved = d.savedCreators || [];
             setSaved(freshSaved);
           }
-          if (favRes.ok) {
+          if (favRes.ok && !freshIsAdmin) {
             const d = await favRes.json();
             freshFavourites = d.favouriteCreators || [];
             setFavourites(freshFavourites);
@@ -276,6 +285,7 @@ export default function ExploreCreatorsPage() {
             isAuthenticated: freshAuth,
             isCreator: freshIsCreator,
             isAdmin: freshIsAdmin,
+            approvalStatus: freshApprovalStatus,
             displayName: freshDisplayName,
             profilePhoto: freshProfilePhoto
           }));
@@ -291,6 +301,7 @@ export default function ExploreCreatorsPage() {
   }, []);
 
   const toggleFavourite = useCallback(async (creatorUsername: string) => {
+    if (isAdmin || isRestrictedAccount) return;
     if (!isAuthenticated) {
       setLoginCallbackUrl('');
       setLoginModalMode('favourite');
@@ -309,7 +320,7 @@ export default function ExploreCreatorsPage() {
     } finally {
       setFavLoading(null);
     }
-  }, [isAuthenticated, favLoading]);
+  }, [isAuthenticated, isAdmin, isRestrictedAccount, favLoading]);
 
   const toggleSaved = useCallback(async (creatorUsername: string) => {
     if (!isAuthenticated) {
@@ -381,11 +392,13 @@ export default function ExploreCreatorsPage() {
   const allFilterItems = useMemo(() => {
     const items: Array<{ id: string; label: string; isFav?: boolean; isSaved?: boolean }> = [
       ...categories,
-      { id: 'favourites', label: 'Favourites', isFav: true },
-      { id: 'saved', label: 'Saved', isSaved: true },
     ];
+    if (!isAdmin && !isRestrictedAccount) {
+      items.push({ id: 'favourites', label: 'Favourites', isFav: true });
+      items.push({ id: 'saved', label: 'Saved', isSaved: true });
+    }
     return items;
-  }, [categories]);
+  }, [categories, isAdmin, isRestrictedAccount]);
 
   useEffect(() => {
     checkScroll();
@@ -401,7 +414,9 @@ export default function ExploreCreatorsPage() {
     <div className="min-h-screen bg-[#F7F7FA] text-[#1a1a1a]">
       {/* Navbar */}
       {hasAuthenticatedSession ? (
-        isAdmin ? (
+        isRestrictedAccount ? (
+          <OnboardingNavbar />
+        ) : isAdmin ? (
           <AdminNavbar />
         ) : isCreator ? (
           <CreatorDashboardNav displayName={displayName} profilePhoto={profilePhoto} />
@@ -908,6 +923,7 @@ export default function ExploreCreatorsPage() {
                 </div>
               </div>
             </div>
+            {!isAdmin && !isRestrictedAccount && (
             <div>
               <label className="block text-sm font-semibold text-[#333] mb-3">Saved & Favourites</label>
               <div className="flex gap-2 flex-wrap">
@@ -988,6 +1004,7 @@ export default function ExploreCreatorsPage() {
                 </button>
               )}
             </div>
+            )}
           </motion.div>
         )}
 
@@ -1078,24 +1095,26 @@ export default function ExploreCreatorsPage() {
                     </span>
 
                     {/* Top Right Heart Button */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleFavourite(creator.username);
-                      }}
-                      disabled={favLoading === creator.username}
-                      className="absolute top-3.5 right-3.5 z-20 hover:scale-110 active:scale-90 transition-transform cursor-pointer"
-                      aria-label={isFav ? 'Remove from favourites' : 'Add to favourites'}
-                    >
-                      <svg
-                        className={`w-6 h-6 transition-colors duration-200 ${
-                          isFav ? 'text-[#FF3B3B] fill-[#FF3B3B] drop-shadow-md' : 'text-white fill-white drop-shadow-md'
-                        }`}
-                        viewBox="0 0 24 24"
+                    {!isAdmin && !isRestrictedAccount && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleFavourite(creator.username);
+                        }}
+                        disabled={favLoading === creator.username}
+                        className="absolute top-3.5 right-3.5 z-20 hover:scale-110 active:scale-90 transition-transform cursor-pointer"
+                        aria-label={isFav ? 'Remove from favourites' : 'Add to favourites'}
                       >
-                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                      </svg>
-                    </button>
+                        <svg
+                          className={`w-6 h-6 transition-colors duration-200 ${
+                            isFav ? 'text-[#FF3B3B] fill-[#FF3B3B] drop-shadow-md' : 'text-white fill-white drop-shadow-md'
+                          }`}
+                          viewBox="0 0 24 24"
+                        >
+                          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                        </svg>
+                      </button>
+                    )}
                   </div>
 
                   {/* Info Box Below Image */}
@@ -1135,7 +1154,7 @@ export default function ExploreCreatorsPage() {
                       </div>
 
                       {/* Book Now Link */}
-                      {!isAdmin && (
+                      {!isAdmin && !isRestrictedAccount && (
                         <div className="pt-1">
                           <span
                             onClick={(e) => handleCreatorBooking(e, creator.username)}

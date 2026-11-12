@@ -5,6 +5,7 @@ export interface IContactMessage extends Document {
   email: string;
   subject: string;
   message: string;
+  status: 'open' | 'resolved';
   createdAt: Date;
   updatedAt: Date;
 }
@@ -21,6 +22,7 @@ const ContactMessageSchema = new Schema<IContactMessage>(
     },
     subject: { type: String, required: true, trim: true, maxlength: 180 },
     message: { type: String, required: true, trim: true, maxlength: 5000 },
+    status: { type: String, enum: ['open', 'resolved'], default: 'open' },
   },
   { timestamps: true },
 );

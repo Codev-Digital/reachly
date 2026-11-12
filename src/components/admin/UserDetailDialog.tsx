@@ -22,7 +22,7 @@ export interface AdminUser {
   bio?: string;
 }
 
-type Action = 'approve' | 'reject' | 'suspend' | 'activate';
+type Action = 'approve' | 'reject' | 'suspend' | 'activate' | 'restore';
 
 const statusColor: Record<AdminUser['status'], string> = {
   Active: 'text-emerald-500',
@@ -119,9 +119,24 @@ export default function UserDetailDialog({
                   Suspend User
                 </button>
               )}
-              {(user.status === 'Suspended' || user.status === 'Rejected' || user.status === 'Deleted') && (
+              {user.status === 'Inactive' && (
+                <>
+                  <button disabled={busy} onClick={() => run('activate')} className={`${btn} bg-emerald-600 hover:bg-emerald-700`}>
+                    Activate User
+                  </button>
+                  <button disabled={busy} onClick={() => run('suspend')} className={`${btn} bg-amber-600 hover:bg-amber-700`}>
+                    Suspend User
+                  </button>
+                </>
+              )}
+              {(user.status === 'Suspended' || user.status === 'Rejected') && (
                 <button disabled={busy} onClick={() => run('activate')} className={`${btn} bg-emerald-600 hover:bg-emerald-700`}>
-                  {user.status === 'Deleted' ? 'Restore User' : 'Re-activate User'}
+                  Re-activate User
+                </button>
+              )}
+              {user.status === 'Deleted' && (
+                <button disabled={busy} onClick={() => run('restore')} className={`${btn} bg-emerald-600 hover:bg-emerald-700`}>
+                  Restore User
                 </button>
               )}
               {user.status !== 'Deleted' && (

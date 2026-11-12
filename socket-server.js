@@ -100,6 +100,7 @@ const UserLite =
     new mongoose.Schema({
       name: String,
       profilePhoto: String,
+      lastActiveAt: Date,
     })
   );
 const CreatorProfileLite =
@@ -182,6 +183,44 @@ console.log(`WebSocket server starting on port ${PORT}...`);
 
 // Rooms keyed by conversationId
 const rooms = new Map(); // conversationId -> Set of sockets
+// Connected sockets keyed by userId for global inbox presence
+const onlineSocketsByUser = new Map(); // userId -> Set of sockets
+
+function registerUserSocket(ws, userId) {
+  if (!userId) return;
+  const uid = String(userId);
+  if (ws._userId && ws._userId === uid) return;
+  ws._userId = uid;
+
+  if (!onlineSocketsByUser.has(uid)) {
+    onlineSocketsByUser.set(uid, new Set());
+  }
+  const userSockets = onlineSocketsByUser.get(uid);
+  const wasOffline = userSockets.size === 0;
+  userSockets.add(ws);
+
+  if (mongoose.isValidObjectId(uid)) {
+    UserLite.updateOne({ _id: uid }, { $set: { lastActiveAt: new Date() } }).catch(() => {});
+  }
+
+  if (wasOffline) {
+    const payload = JSON.stringify({ type: 'user_presence', userId: uid, isOnline: true });
+    wss.clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(payload);
+      }
+    });
+  }
+
+  if (ws.readyState === WebSocket.OPEN) {
+    ws.send(
+      JSON.stringify({
+        type: 'presence_snapshot',
+        onlineUserIds: Array.from(onlineSocketsByUser.keys()),
+      })
+    );
+  }
+}
 
 wss.on('connection', (ws) => {
   let currentConversationId = null;
@@ -192,9 +231,16 @@ wss.on('connection', (ws) => {
       const data = JSON.parse(messageData);
       console.log('Received message:', data);
 
+      // ── PRESENCE HELLO (global online tracking without joining a room) ─────
+      if (data.type === 'presence_hello') {
+        if (data.userId) registerUserSocket(ws, data.userId);
+        return;
+      }
+
       // ── JOIN ──────────────────────────────────────────────────────────────
       if (data.type === 'join') {
-        const { conversationId, senderRole } = data;
+        const { conversationId, senderRole, userId } = data;
+        if (userId) registerUserSocket(ws, userId);
         if (!conversationId) return;
 
         currentConversationId = conversationId;
@@ -241,26 +287,30 @@ wss.on('connection', (ws) => {
 
         const roomClients = rooms.get(conversationId);
 
-        // Enforce mute, lock, cancelled-session, and expired-deadline guards for users
-        if (senderRole === 'user') {
-          try {
-            const conv = await Conversation.findById(conversationId)
-              .select('type muteAll mutedUserIds isLocked creatorId userId')
-              .lean();
-            if (conv) {
+        // Enforce mute/lock for users, and cancelled-session / expired-deadline DM guards for both users and creators
+        try {
+          const conv = await Conversation.findById(conversationId)
+            .select('type muteAll mutedUserIds isLocked creatorId userId')
+            .lean();
+          if (conv) {
+            let rejectionReason = null;
+
+            if (senderRole === 'user') {
               const mutedIds = (conv.mutedUserIds || []).map((id) => id.toString());
               const isMuted =
                 conv.type === 'broadcast' &&
                 (Boolean(conv.muteAll) || mutedIds.includes(String(senderId)));
+              rejectionReason = isMuted ? 'muted' : conv.isLocked ? 'locked' : null;
+            }
 
-              let rejectionReason = isMuted ? 'muted' : conv.isLocked ? 'locked' : null;
-
-              if (conv.type !== 'broadcast' && conv.creatorId) {
-                const targetUserId = conv.userId || senderId;
+            if (!rejectionReason && conv.type !== 'broadcast' && conv.creatorId) {
+              const targetUserId = conv.userId || (senderRole === 'user' ? senderId : null);
+              if (targetUserId) {
                 const pairBookings = await BookingLite.find({
                   creatorId: conv.creatorId,
                   userId: targetUserId,
                 })
+                  .select('status paymentStatus scheduledDate scheduledTime meetingEndsAt meetingEndedAt sessionTypeId')
                   .populate({ path: 'sessionTypeId', model: SessionTypeLite, select: 'duration title' })
                   .lean();
 
@@ -271,24 +321,24 @@ wss.on('connection', (ws) => {
                   rejectionReason = 'deadline_passed';
                 }
               }
-
-              if (rejectionReason) {
-                if (ws.readyState === WebSocket.OPEN) {
-                  ws.send(
-                    JSON.stringify({
-                      type: 'message_rejected',
-                      conversationId,
-                      tempId: tempId || data.tempId || undefined,
-                      reason: rejectionReason,
-                    })
-                  );
-                }
-                return;
-              }
             }
-          } catch (muteErr) {
-            console.error('Chat guard check error:', muteErr);
+
+            if (rejectionReason) {
+              if (ws.readyState === WebSocket.OPEN) {
+                ws.send(
+                  JSON.stringify({
+                    type: 'message_rejected',
+                    conversationId,
+                    tempId: tempId || data.tempId || undefined,
+                    reason: rejectionReason,
+                  })
+                );
+              }
+              return;
+            }
           }
+        } catch (muteErr) {
+          console.error('Chat guard check error:', muteErr);
         }
 
         const isRead = roomClients && roomClients.size > 1;
@@ -426,6 +476,23 @@ wss.on('connection', (ws) => {
 
   ws.on('close', () => {
     console.log('Client disconnected');
+    if (ws._userId && onlineSocketsByUser.has(ws._userId)) {
+      const userSockets = onlineSocketsByUser.get(ws._userId);
+      userSockets.delete(ws);
+      if (userSockets.size === 0) {
+        onlineSocketsByUser.delete(ws._userId);
+        const offlinePayload = JSON.stringify({
+          type: 'user_presence',
+          userId: ws._userId,
+          isOnline: false,
+        });
+        wss.clients.forEach((client) => {
+          if (client.readyState === WebSocket.OPEN) {
+            client.send(offlinePayload);
+          }
+        });
+      }
+    }
     if (currentConversationId && rooms.has(currentConversationId)) {
       const roomClients = rooms.get(currentConversationId);
       roomClients.delete(ws);

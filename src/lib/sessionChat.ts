@@ -88,7 +88,7 @@ export async function ensureBookingConversation(
 
 /**
  * Backfills / auto-heals missing conversations for any confirmed bookings belonging to this user or creator.
- * Called automatically by GET /api/conversations to guarantee existing bookings display their chats.
+ * Uses set-diff queries and bulk inserts instead of per-booking loops so chat loading stays fast.
  */
 export async function backfillConversationsForUser(
   userId: string | mongoose.Types.ObjectId,
@@ -116,16 +116,108 @@ export async function backfillConversationsForUser(
         },
       ],
     })
-      .select(
-        '_id creatorId userId guestDetails status paymentStatus finalPrice price'
-      )
+      .select('_id creatorId userId guestDetails.email')
       .lean()) as any[];
 
     if (!bookings.length) return;
 
-    for (const b of bookings) {
-      await ensureBookingConversation(b);
+    // Batch-resolve any bookings still missing userId via guestDetails.email
+    const missingEmails = Array.from(
+      new Set(
+        bookings
+          .filter((b) => !b.userId && b.guestDetails?.email)
+          .map((b) => String(b.guestDetails.email).toLowerCase().trim())
+          .filter(Boolean)
+      )
+    );
+
+    const emailToUserId = new Map<string, mongoose.Types.ObjectId>();
+    if (missingEmails.length > 0) {
+      const matchedUsers = (await User.find({ email: { $in: missingEmails } })
+        .select('_id email')
+        .lean()) as any[];
+      for (const u of matchedUsers) {
+        if (u?.email && u?._id) {
+          emailToUserId.set(String(u.email).toLowerCase().trim(), u._id);
+        }
+      }
+
+      const bulkBookingUpdates: any[] = [];
+      for (const b of bookings) {
+        if (!b.userId && b.guestDetails?.email) {
+          const matchedId = emailToUserId.get(
+            String(b.guestDetails.email).toLowerCase().trim()
+          );
+          if (matchedId) {
+            b.userId = matchedId;
+            bulkBookingUpdates.push({
+              updateOne: {
+                filter: { _id: b._id },
+                update: { $set: { userId: matchedId } },
+              },
+            });
+          }
+        }
+      }
+      if (bulkBookingUpdates.length > 0) {
+        void Booking.bulkWrite(bulkBookingUpdates).catch(() => {});
+      }
     }
+
+    // Collect distinct valid creator-user pairs (skip self-chats)
+    const pairMap = new Map<
+      string,
+      { creatorId: mongoose.Types.ObjectId; userId: mongoose.Types.ObjectId }
+    >();
+    for (const b of bookings) {
+      if (!b.creatorId || !b.userId) continue;
+      const cid = String(b.creatorId);
+      const bid = String(b.userId);
+      if (cid === bid) continue;
+      const key = `${cid}:${bid}`;
+      if (!pairMap.has(key)) {
+        pairMap.set(key, {
+          creatorId: new mongoose.Types.ObjectId(cid),
+          userId: new mongoose.Types.ObjectId(bid),
+        });
+      }
+    }
+
+    if (pairMap.size === 0) return;
+
+    const existingConvs = (await Conversation.find({
+      type: 'dm',
+      eventId: null,
+      $or: [{ creatorId: uid }, { userId: uid }],
+    })
+      .select('creatorId userId')
+      .lean()) as any[];
+
+    const existingKeys = new Set(
+      existingConvs.map((c) => `${String(c.creatorId)}:${String(c.userId)}`)
+    );
+
+    const missingDocs: any[] = [];
+    for (const [key, pair] of pairMap) {
+      if (!existingKeys.has(key)) {
+        missingDocs.push({
+          type: 'dm',
+          creatorId: pair.creatorId,
+          userId: pair.userId,
+          eventId: null,
+          isLocked: true,
+        });
+      }
+    }
+
+    if (missingDocs.length === 0) return;
+
+    // Ignore duplicate key errors in case concurrent requests raced
+    await Conversation.insertMany(missingDocs, { ordered: false }).catch((err: any) => {
+      if (err?.code !== 11000 && !Array.isArray(err?.writeErrors)) {
+        throw err;
+      }
+    });
   } catch (error) {
     console.error('[sessionChat] backfillConversationsForUser error:', error);
   }

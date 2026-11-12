@@ -40,7 +40,6 @@ const ConversationSchema = new Schema<IConversation>(
       type: Schema.Types.ObjectId,
       ref: 'Event',
       default: null,
-      index: true,
     },
     title: {
       type: String,
