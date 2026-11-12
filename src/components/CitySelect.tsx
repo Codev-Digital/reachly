@@ -1,70 +1,80 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Dropdown, { type DropdownProps } from '@/components/Dropdown';
+import FormInput from '@/components/FormInput';
+import { getCitiesForCountry, PAKISTAN_CITIES } from '@/lib/locations';
 
-/** Ten largest cities of Pakistan. */
-export const PAKISTAN_CITIES = [
-  'Karachi',
-  'Lahore',
-  'Faisalabad',
-  'Rawalpindi',
-  'Gujranwala',
-  'Peshawar',
-  'Multan',
-  'Hyderabad',
-  'Islamabad',
-  'Quetta',
-] as const;
+export { PAKISTAN_CITIES };
 
 export const OTHER_CITY_OPTION = 'Others';
-
-const OPTIONS = [...PAKISTAN_CITIES, OTHER_CITY_OPTION];
-
-const isListedCity = (city: string) => (PAKISTAN_CITIES as readonly string[]).includes(city);
 
 export interface CitySelectProps
   extends Pick<
     DropdownProps,
     'label' | 'required' | 'error' | 'disabled' | 'variant' | 'className' | 'menuClassName' | 'labelClassName' | 'errorClassName' | 'wrapperClassName' | 'onBlur'
   > {
-  /** The city name that is saved (either one of the top 10 or whatever the user typed under "Others"). */
+  /** The city name that is saved (either one of the country's listed cities or whatever the user typed under "Others"). */
   value: string;
   onChange: (city: string) => void;
+  /** Optional country used to choose the preset city list (defaults to 'Pakistan'). */
+  country?: string;
   placeholder?: string;
   otherPlaceholder?: string;
 }
 
 /**
- * City dropdown with the top 10 Pakistan cities. Choosing "Others" turns the same field into a
- * text input where the user types their own city; the typed value becomes the saved city.
- * The chevron still opens the list so they can switch back to a listed city.
+ * City dropdown with preset cities for the selected country (default: top 10 Pakistan cities).
+ * Choosing "Others" turns the field into a text input; for countries without preset cities it renders
+ * a text input directly so any city can be entered.
  */
 export default function CitySelect({
   value,
   onChange,
+  country = 'Pakistan',
   label = 'City',
   placeholder = 'Select your city',
   otherPlaceholder = 'Enter your city',
   ...rest
 }: CitySelectProps) {
-  // A saved city that isn't in the list means the user picked "Others" earlier
-  const [otherMode, setOtherMode] = useState(!!value && !isListedCity(value));
+  const listedCities = getCitiesForCountry(country);
+  const options = [...listedCities, OTHER_CITY_OPTION];
 
-  // Stay in sync when the value is loaded/changed from outside (e.g. profile fetched from the API)
-  useEffect(() => {
-    if (value && !isListedCity(value)) setOtherMode(true);
-    else if (isListedCity(value)) setOtherMode(false);
-  }, [value]);
+  // Track whether the user explicitly switched to "Others" while the input is still empty for this country
+  const [explicitOtherCountry, setExplicitOtherCountry] = useState<string | null>(null);
+  const otherMode =
+    (!!value && !listedCities.includes(value)) ||
+    (!value && explicitOtherCountry === country);
+
+  if (listedCities.length === 0) {
+    return (
+      <FormInput
+        label={label}
+        required={rest.required}
+        error={rest.error}
+        disabled={rest.disabled}
+        className={rest.className}
+        labelClassName={rest.labelClassName}
+        errorClassName={rest.errorClassName}
+        wrapperClassName={rest.wrapperClassName}
+        onBlur={rest.onBlur}
+        type="text"
+        value={value}
+        maxLength={60}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={otherPlaceholder}
+      />
+    );
+  }
 
   const handleSelect = (option: string) => {
     if (option === OTHER_CITY_OPTION) {
       if (!otherMode) {
-        setOtherMode(true);
+        setExplicitOtherCountry(country);
         onChange(''); // start with an empty field to type into
       }
     } else {
-      setOtherMode(false);
+      setExplicitOtherCountry(null);
       onChange(option);
     }
   };
@@ -73,7 +83,7 @@ export default function CitySelect({
     <Dropdown
       {...rest}
       label={label}
-      options={OPTIONS}
+      options={options}
       value={value}
       selectedOption={otherMode ? OTHER_CITY_OPTION : value}
       editable={otherMode}

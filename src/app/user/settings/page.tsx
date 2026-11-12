@@ -5,8 +5,13 @@ import UserNavbar from '@/components/UserNavbar';
 import Image from 'next/image';
 import { User, Shield } from 'lucide-react';
 import { logout } from '@/lib/logout';
-import FormInput from '@/components/FormInput';
+import FormInput, { FormError } from '@/components/FormInput';
 import CitySelect from '@/components/CitySelect';
+import CountrySelect from '@/components/CountrySelect';
+import { isMismatchedPresetCity } from '@/lib/locations';
+import { validatePassword } from '@/lib/password';
+
+const USER_SETTINGS_CACHE_KEY = 'reachly_user_settings_cache';
 
 export default function UserSettings() {
   const [activeTab, setActiveTab] = useState('Profile');
@@ -18,45 +23,72 @@ export default function UserSettings() {
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [emailAddress, setEmailAddress] = useState('');
   const [bio, setBio] = useState('');
-  const [city, setCity] = useState('Karachi');
+  const [city, setCity] = useState('');
   const [country, setCountry] = useState('Pakistan');
-  const [selectedLanguage, setSelectedLanguage] = useState('English');
+  const [selectedLanguages, setSelectedLanguages] = useState<string[]>(['English']);
+  const [displayNameError, setDisplayNameError] = useState('');
+  const [profileError, setProfileError] = useState('');
 
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [oldPasswordError, setOldPasswordError] = useState('');
+  const [newPasswordError, setNewPasswordError] = useState('');
+  const [confirmPasswordError, setConfirmPasswordError] = useState('');
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const passwordValidation = validatePassword(newPassword);
+
+  const applyUserState = (u: {
+    name?: string;
+    email?: string;
+    profilePhoto?: string | null;
+    shortBio?: string;
+    city?: string;
+    country?: string;
+    languages?: string[];
+  }) => {
+    if (u.name !== undefined) setDisplayName(u.name || '');
+    if (u.email !== undefined) setEmailAddress(u.email || '');
+    if (u.profilePhoto !== undefined) setProfilePhoto(u.profilePhoto || null);
+    if (u.shortBio !== undefined) setBio(u.shortBio || '');
+    if (u.city !== undefined) setCity(u.city || '');
+    if (u.country !== undefined) setCountry(u.country || 'Pakistan');
+    if (Array.isArray(u.languages)) setSelectedLanguages(u.languages);
+  };
 
   useEffect(() => {
-    try {
-      const cached = sessionStorage.getItem('reachly_user_settings_cache');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (parsed.name) setDisplayName(parsed.name);
-        if (parsed.email) setEmailAddress(parsed.email);
-        if (parsed.profilePhoto) setProfilePhoto(parsed.profilePhoto);
-      }
-    } catch (e) {}
+    let active = true;
+    const cacheTimer = window.setTimeout(() => {
+      if (!active) return;
+      try {
+        const cached = sessionStorage.getItem(USER_SETTINGS_CACHE_KEY);
+        if (cached) {
+          applyUserState(JSON.parse(cached));
+        }
+      } catch {}
+    }, 0);
 
     async function loadUser() {
       try {
-        const res = await fetch('/api/user/settings');
-        if (res.ok) {
+        const res = await fetch('/api/user/settings', { cache: 'no-store' });
+        if (res.ok && active) {
           const data = await res.json();
           if (data.user) {
-            setDisplayName(data.user.name || '');
-            setEmailAddress(data.user.email || '');
-            setProfilePhoto(data.user.profilePhoto || null);
+            applyUserState(data.user);
             try {
-              sessionStorage.setItem('reachly_user_settings_cache', JSON.stringify({
+              sessionStorage.setItem(USER_SETTINGS_CACHE_KEY, JSON.stringify({
                 name: data.user.name || '',
                 email: data.user.email || '',
-                profilePhoto: data.user.profilePhoto || null
+                profilePhoto: data.user.profilePhoto || null,
+                shortBio: data.user.shortBio ?? '',
+                city: data.user.city ?? '',
+                country: data.user.country || 'Pakistan',
+                languages: Array.isArray(data.user.languages) ? data.user.languages : ['English'],
               }));
-            } catch (e) {}
+            } catch {}
           }
         }
       } catch (err) {
@@ -64,6 +96,10 @@ export default function UserSettings() {
       }
     }
     loadUser();
+    return () => {
+      active = false;
+      window.clearTimeout(cacheTimer);
+    };
   }, []);
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -81,10 +117,36 @@ export default function UserSettings() {
     }
   };
 
+  const handleCountryChange = (nextCountry: string) => {
+    setCountry(nextCountry);
+    if (isMismatchedPresetCity(city, nextCountry)) {
+      setCity('');
+    }
+  };
+
+  const toggleLanguage = (lang: string) => {
+    setSelectedLanguages((prev) =>
+      prev.includes(lang) ? prev.filter((l) => l !== lang) : [...prev, lang]
+    );
+  };
+
   const handleSaveChanges = async () => {
+    setDisplayNameError('');
+    setProfileError('');
+    if (!displayName.trim()) {
+      setDisplayNameError('Display name is required.');
+      return;
+    }
+
     setIsSavingProfile(true);
     try {
-      const payload: Record<string, any> = { displayName };
+      const payload: Record<string, unknown> = {
+        displayName: displayName.trim(),
+        shortBio: bio,
+        city: city.trim(),
+        country: country.trim(),
+        languages: selectedLanguages,
+      };
       if (profilePhoto) payload.profilePhoto = profilePhoto;
 
       const res = await fetch('/api/user/settings', {
@@ -93,37 +155,60 @@ export default function UserSettings() {
         body: JSON.stringify(payload)
       });
 
-      if (res.ok) {
+      const data = await res.json();
+      if (res.ok && data.success) {
+        const savedUser = data.user || {
+          name: displayName.trim(),
+          email: emailAddress,
+          profilePhoto,
+          shortBio: bio,
+          city: city.trim(),
+          country: country.trim(),
+          languages: selectedLanguages,
+        };
+        applyUserState(savedUser);
         try {
-          sessionStorage.setItem('reachly_user_settings_cache', JSON.stringify({
-            name: displayName,
-            email: emailAddress,
-            profilePhoto: profilePhoto
-          }));
-        } catch (e) {}
+          sessionStorage.setItem(USER_SETTINGS_CACHE_KEY, JSON.stringify(savedUser));
+        } catch {}
         setSuccessModalMessage('Your profile changes have been saved successfully.');
         setShowSuccessModal(true);
       } else {
-        const err = await res.json();
-        alert(err.error || 'Failed to save changes');
+        setProfileError(data.error || 'Failed to save changes');
       }
     } catch (err) {
       console.error(err);
-      alert('Error saving changes');
+      setProfileError('Error saving changes. Please try again.');
     } finally {
       setIsSavingProfile(false);
     }
   };
 
   const handleUpdatePassword = async () => {
-    if (!oldPassword || !newPassword || !confirmPassword) {
-      alert('Please fill all password fields');
-      return;
+    setOldPasswordError('');
+    setNewPasswordError('');
+    setConfirmPasswordError('');
+
+    let hasError = false;
+    if (!oldPassword) {
+      setOldPasswordError('Please enter your current password.');
+      hasError = true;
     }
-    if (newPassword !== confirmPassword) {
-      alert('Passwords do not match');
-      return;
+    if (!newPassword) {
+      setNewPasswordError('Please enter a new password.');
+      hasError = true;
+    } else if (!passwordValidation.isValid) {
+      setNewPasswordError(passwordValidation.message);
+      hasError = true;
     }
+    if (!confirmPassword) {
+      setConfirmPasswordError('Please confirm your new password.');
+      hasError = true;
+    } else if (newPassword && newPassword !== confirmPassword) {
+      setConfirmPasswordError('Passwords do not match.');
+      hasError = true;
+    }
+    if (hasError) return;
+
     setIsUpdatingPassword(true);
     try {
       const res = await fetch('/api/user/settings', {
@@ -136,19 +221,26 @@ export default function UserSettings() {
         })
       });
 
-      if (res.ok) {
+      const data = await res.json();
+      if (res.ok && data.success) {
         setSuccessModalMessage('Your password has been changed successfully.');
         setShowSuccessModal(true);
         setOldPassword('');
         setNewPassword('');
         setConfirmPassword('');
       } else {
-        const err = await res.json();
-        alert(err.error || 'Failed to update password');
+        const message = data.error || 'Failed to update password';
+        if (data.field === 'oldPassword' || message.toLowerCase().includes('old password')) {
+          setOldPasswordError(message);
+        } else if (data.field === 'newPassword') {
+          setNewPasswordError(message);
+        } else {
+          setNewPasswordError(message);
+        }
       }
     } catch (err) {
       console.error(err);
-      alert('Error updating password');
+      setNewPasswordError('Error updating password. Please try again.');
     } finally {
       setIsUpdatingPassword(false);
     }
@@ -294,7 +386,11 @@ export default function UserSettings() {
                   label="Display Name"
                   type="text"
                   value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
+                  error={displayNameError}
+                  onChange={(e) => {
+                    setDisplayName(e.target.value);
+                    if (displayNameError) setDisplayNameError('');
+                  }}
                 />
                 <FormInput
                   label="Email Address"
@@ -321,55 +417,56 @@ export default function UserSettings() {
                 </div>
               </div>
 
-              {/* City and Country */}
+              {/* Country and City */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <div>
-                  <CitySelect label="City" value={city} onChange={setCity} />
+                  <CountrySelect label="Country" value={country} onChange={handleCountryChange} />
                 </div>
-                <div className="relative">
-                  <label className="font-bold text-xs text-gray-900 block mb-2 font-sans">Country</label>
-                  <select
-                    value={country}
-                    onChange={(e) => setCountry(e.target.value)}
-                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-700 focus:outline-none appearance-none"
-                  >
-                    <option value="Pakistan">Pakistan</option>
-                    <option value="United States">United States</option>
-                    <option value="United Kingdom">United Kingdom</option>
-                  </select>
-                  <div className="absolute right-4 top-[42px] pointer-events-none text-gray-400">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <polyline points="6 9 12 15 18 9" />
-                    </svg>
-                  </div>
+                <div>
+                  <CitySelect label="City" value={city} onChange={setCity} country={country} />
                 </div>
               </div>
 
               {/* Languages */}
               <div className="mb-8">
-                <label className="font-bold text-xs text-gray-900 block mb-3 font-sans">Languages Spoken</label>
+                <label className="font-bold text-xs text-gray-900 block mb-3 font-sans">
+                  Languages Spoken <span className="font-normal text-gray-400">(Select one or more)</span>
+                </label>
                 <div className="flex flex-wrap gap-2.5">
-                  {languages.map((lang) => (
-                    <button
-                      key={lang}
-                      onClick={() => setSelectedLanguage(lang)}
-                      className={`px-5 py-2 rounded-xl text-xs font-semibold border transition-all ${selectedLanguage === lang
-                        ? 'bg-[#0012FF] border-[#0012FF] text-white shadow-sm'
-                        : 'bg-white border-gray-200 text-gray-400 hover:border-gray-300'
+                  {languages.map((lang) => {
+                    const isSelected = selectedLanguages.includes(lang);
+                    return (
+                      <button
+                        key={lang}
+                        type="button"
+                        aria-pressed={isSelected}
+                        onClick={() => toggleLanguage(lang)}
+                        className={`px-5 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-[#0012FF] border-[#0012FF] text-white shadow-sm'
+                            : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'
                         }`}
-                    >
-                      {lang}
-                    </button>
-                  ))}
+                      >
+                        {lang}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
+
+              {profileError && (
+                <div className="mb-4">
+                  <FormError>{profileError}</FormError>
+                </div>
+              )}
 
               {/* Action Buttons */}
               <div className="flex justify-end border-t border-[#e2e2e2] pt-6">
                 <button
+                  type="button"
                   onClick={handleSaveChanges}
                   disabled={isSavingProfile}
-                  className="bg-[#0012FF] text-white px-8 py-3 rounded-2xl text-sm font-bold hover:bg-[#0010d0] transition-all disabled:bg-gray-400 active:scale-98 shadow-md flex items-center justify-center gap-2 min-w-[130px]"
+                  className="bg-[#0012FF] text-white px-8 py-3 rounded-2xl text-sm font-bold hover:bg-[#0010d0] transition-all disabled:bg-gray-400 active:scale-98 shadow-md flex items-center justify-center gap-2 min-w-[130px] cursor-pointer"
                 >
                   {isSavingProfile ? (
                     <>
@@ -402,7 +499,11 @@ export default function UserSettings() {
                     type="password"
                     placeholder="••••••••"
                     value={oldPassword}
-                    onChange={(e) => setOldPassword(e.target.value)}
+                    error={oldPasswordError}
+                    onChange={(e) => {
+                      setOldPassword(e.target.value);
+                      if (oldPasswordError) setOldPasswordError('');
+                    }}
                   />
                 </div>
 
@@ -413,14 +514,37 @@ export default function UserSettings() {
                       type="password"
                       placeholder="Enter new password"
                       value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
+                      error={newPasswordError}
+                      onChange={(e) => {
+                        setNewPassword(e.target.value);
+                        if (newPasswordError) setNewPasswordError('');
+                      }}
                     />
                     <div className="grid grid-cols-4 gap-2 mt-2.5">
-                      <div className={`h-1.5 rounded-full transition-all duration-300 ${newPassword.length > 0 ? 'bg-[#0012FF]' : 'bg-gray-200'}`} />
-                      <div className={`h-1.5 rounded-full transition-all duration-300 ${newPassword.length >= 6 ? 'bg-[#0012FF]' : 'bg-gray-200'}`} />
-                      <div className={`h-1.5 rounded-full transition-all duration-300 ${newPassword.length >= 8 ? 'bg-[#0012FF]' : 'bg-gray-200'}`} />
-                      <div className={`h-1.5 rounded-full transition-all duration-300 ${newPassword.length >= 10 && /[A-Z]/.test(newPassword) ? 'bg-[#0012FF]' : 'bg-gray-200'}`} />
+                      {[0, 1, 2, 3].map((i) => (
+                        <div
+                          key={i}
+                          className={`h-1.5 rounded-full transition-all duration-300 ${
+                            i < passwordValidation.score ? 'bg-[#0012FF]' : 'bg-gray-200'
+                          }`}
+                        />
+                      ))}
                     </div>
+                    {newPassword && (
+                      <div className="mt-2 space-y-1">
+                        <p className="text-xs font-bold text-gray-800">{passwordValidation.label}</p>
+                        <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-[11px]">
+                          {passwordValidation.criteria.map((c) => (
+                            <li
+                              key={c.key}
+                              className={c.met ? 'text-[#0012FF] font-medium' : 'text-gray-400'}
+                            >
+                              {c.met ? '✓' : '○'} {c.label}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
                   <div>
                     <FormInput
@@ -428,16 +552,21 @@ export default function UserSettings() {
                       type="password"
                       placeholder="Confirm new password"
                       value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      error={confirmPasswordError}
+                      onChange={(e) => {
+                        setConfirmPassword(e.target.value);
+                        if (confirmPasswordError) setConfirmPasswordError('');
+                      }}
                     />
                   </div>
                 </div>
 
                 <div className="flex justify-end border-t border-[#e2e2e2] pt-6">
                   <button
+                    type="button"
                     onClick={handleUpdatePassword}
                     disabled={isUpdatingPassword}
-                    className="bg-[#0012FF] text-white px-8 py-3 rounded-2xl text-sm font-bold hover:bg-[#0010d0] transition-all disabled:bg-gray-400 active:scale-98 shadow-md flex items-center justify-center gap-2 min-w-[150px]"
+                    className="bg-[#0012FF] text-white px-8 py-3 rounded-2xl text-sm font-bold hover:bg-[#0010d0] transition-all disabled:bg-gray-400 active:scale-98 shadow-md flex items-center justify-center gap-2 min-w-[150px] cursor-pointer"
                   >
                     {isUpdatingPassword ? 'Updating...' : 'Change Password'}
                   </button>

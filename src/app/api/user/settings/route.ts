@@ -4,9 +4,10 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
 import CreatorProfile from '@/models/CreatorProfile';
-import bcrypt from 'bcryptjs';
+import UserApprovalRequest from '@/models/UserApprovalRequest';
 import { sanitizeRichText } from '@/lib/sanitizeRichText';
 import { DETAILED_BIO_MAX_LENGTH, richTextLength } from '@/lib/richText';
+import { validatePassword } from '@/lib/password';
 
 // GET the current user's profile and account settings
 export async function GET(req: NextRequest) {
@@ -18,15 +19,32 @@ export async function GET(req: NextRequest) {
 
     await connectDB();
     const user = await User.findOne({ email: session.user.email })
-      .select('name email profilePhoto')
+      .select('name email profilePhoto shortBio city country languages')
       .lean() as any;
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const creatorProfile = await CreatorProfile.findOne({ userId: user._id })
-      .select('username displayName shortBio longBio city country languages niches socialLinks coverPhoto profilePhoto')
-      .lean() as any;
+    const [creatorProfile, approvalRequest] = await Promise.all([
+      CreatorProfile.findOne({ userId: user._id })
+        .select('username displayName shortBio longBio city country languages niches socialLinks coverPhoto profilePhoto')
+        .lean() as Promise<any>,
+      UserApprovalRequest.findOne({ userId: user._id })
+        .select('city country')
+        .lean() as Promise<any>,
+    ]);
+
+    const resolvedShortBio =
+      user.shortBio !== undefined ? user.shortBio : (creatorProfile?.shortBio ?? '');
+    const resolvedCity =
+      user.city !== undefined ? user.city : (creatorProfile?.city || approvalRequest?.city || '');
+    const resolvedCountry =
+      user.country !== undefined && user.country !== ''
+        ? user.country
+        : (creatorProfile?.country || approvalRequest?.country || 'Pakistan');
+    const resolvedLanguages = Array.isArray(user.languages)
+      ? user.languages
+      : (creatorProfile?.languages?.length ? creatorProfile.languages : ['English']);
 
     return NextResponse.json({
       success: true,
@@ -34,6 +52,10 @@ export async function GET(req: NextRequest) {
         name: user.name,
         email: user.email,
         profilePhoto: user.profilePhoto || null,
+        shortBio: resolvedShortBio,
+        city: resolvedCity,
+        country: resolvedCountry,
+        languages: resolvedLanguages,
       },
       profile: creatorProfile ? {
         username: creatorProfile.username,
@@ -86,31 +108,59 @@ export async function PUT(req: NextRequest) {
 
       const isMatch = await user.comparePassword(oldPassword);
       if (!isMatch) {
-        return NextResponse.json({ error: 'Incorrect old password' }, { status: 400 });
+        return NextResponse.json({ error: 'Incorrect old password', field: 'oldPassword' }, { status: 400 });
       }
 
-      const salt = await bcrypt.genSalt(10);
-      user.password = await bcrypt.hash(newPassword, salt);
+      const passwordCheck = validatePassword(newPassword);
+      if (!passwordCheck.isValid) {
+        return NextResponse.json(
+          { error: passwordCheck.message, field: 'newPassword' },
+          { status: 400 }
+        );
+      }
+
+      // UserSchema.pre('save') hashes modified passwords once; never pre-hash here.
+      user.password = newPassword;
       await user.save();
 
       return NextResponse.json({ success: true, message: 'Password updated successfully' });
     }
 
     // Default: Profile Update
-    const { displayName, shortBio, longBio, city, country, languages, niches, socialLinks, profilePhoto, coverPhoto } = body;
+    const { displayName, shortBio, bio, longBio, city, country, languages, niches, socialLinks, profilePhoto, coverPhoto } = body;
 
-    // Update User Name
-    if (displayName) {
-      user.name = displayName;
+    if (displayName !== undefined) {
+      const trimmedName = String(displayName).trim();
+      if (!trimmedName) {
+        return NextResponse.json({ error: 'Display name is required' }, { status: 400 });
+      }
+      user.name = trimmedName;
     }
+
+    const incomingShortBio = shortBio !== undefined ? shortBio : bio;
+    const normalizedShortBio =
+      incomingShortBio !== undefined ? String(incomingShortBio).trim().slice(0, 140) : undefined;
+    const normalizedCity = city !== undefined ? String(city).trim().slice(0, 60) : undefined;
+    const normalizedCountry = country !== undefined ? String(country).trim().slice(0, 60) : undefined;
+    const normalizedLanguages =
+      languages !== undefined
+        ? Array.isArray(languages)
+          ? Array.from(new Set(languages.map((l) => String(l).trim()).filter(Boolean)))
+          : []
+        : undefined;
+
+    if (normalizedShortBio !== undefined) user.shortBio = normalizedShortBio;
+    if (normalizedCity !== undefined) user.city = normalizedCity;
+    if (normalizedCountry !== undefined) user.country = normalizedCountry;
+    if (normalizedLanguages !== undefined) user.languages = normalizedLanguages;
 
     // Check if the user is already a creator (i.e. has a CreatorProfile)
     let creatorProfile = await CreatorProfile.findOne({ userId: user._id });
 
     // ONLY UPDATE CreatorProfile IF IT EXISTS! Do NOT create one here.
     if (creatorProfile) {
-      if (displayName !== undefined) creatorProfile.displayName = displayName;
-      if (shortBio !== undefined) creatorProfile.shortBio = shortBio;
+      if (displayName !== undefined) creatorProfile.displayName = user.name;
+      if (normalizedShortBio !== undefined) creatorProfile.shortBio = normalizedShortBio;
       if (longBio !== undefined) {
         const cleanLongBio = sanitizeRichText(longBio);
         if (richTextLength(cleanLongBio) > DETAILED_BIO_MAX_LENGTH) {
@@ -121,9 +171,9 @@ export async function PUT(req: NextRequest) {
         }
         creatorProfile.longBio = cleanLongBio;
       }
-      if (city !== undefined) creatorProfile.city = city;
-      if (country !== undefined) creatorProfile.country = country;
-      if (languages !== undefined) creatorProfile.languages = languages;
+      if (normalizedCity !== undefined) creatorProfile.city = normalizedCity;
+      if (normalizedCountry !== undefined) creatorProfile.country = normalizedCountry;
+      if (normalizedLanguages !== undefined) creatorProfile.languages = normalizedLanguages;
       if (niches !== undefined) creatorProfile.niches = niches;
       if (socialLinks !== undefined) creatorProfile.socialLinks = socialLinks;
 
@@ -182,6 +232,15 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'Profile updated successfully',
+      user: {
+        name: user.name,
+        email: user.email,
+        profilePhoto: user.profilePhoto || null,
+        shortBio: user.shortBio ?? '',
+        city: user.city ?? '',
+        country: user.country ?? 'Pakistan',
+        languages: Array.isArray(user.languages) ? user.languages : ['English'],
+      },
       profile: creatorProfile
     });
   } catch (error: any) {

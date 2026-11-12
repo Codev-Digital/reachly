@@ -109,11 +109,11 @@ function formatUser(user: any, request?: any) {
     deletedTime,
     status,
     avatar: user.profilePhoto || '/avatar.png',
-    city: request?.city || '',
-    country: request?.country || '',
+    city: user.city || request?.city || '',
+    country: user.country || request?.country || '',
     phone: request?.phone || '',
-    languages: 'English',
-    bio: request?.reason || ''
+    languages: Array.isArray(user.languages) && user.languages.length > 0 ? user.languages.join(', ') : 'English',
+    bio: user.shortBio || request?.reason || ''
   };
 }
 

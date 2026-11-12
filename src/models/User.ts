@@ -20,6 +20,10 @@ export interface IUser extends Document {
   lastActiveAt?: Date;
   createdAt: Date;
   profilePhoto?: string;
+  shortBio?: string;
+  city?: string;
+  country?: string;
+  languages?: string[];
   savedCreators: string[];     // bookmark — "save for later"
   favouriteCreators: string[]; // heart — "favourites"
   comparePassword(candidatePassword: string): Promise<boolean>;
@@ -62,6 +66,10 @@ const UserSchema = new Schema<IUser>(
     deletedAt: { type: Date },
     lastActiveAt: { type: Date },
     profilePhoto: { type: String },
+    shortBio: { type: String, default: '', trim: true, maxlength: 140 },
+    city: { type: String, default: '', trim: true, maxlength: 60 },
+    country: { type: String, default: '', trim: true, maxlength: 60 },
+    languages: { type: [String], default: undefined },
     savedCreators: { type: [String], default: [] },
     favouriteCreators: { type: [String], default: [] },
     //referral info

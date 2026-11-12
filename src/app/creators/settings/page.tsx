@@ -16,6 +16,7 @@ import { isRichTextEmpty, richTextPreview } from '@/lib/richText';
 import ActionDialog from '@/components/ActionDialog';
 import PriceTag from '@/components/PriceTag';
 import { usePreloadImages } from '@/lib/usePreloadImages';
+import { validatePassword } from '@/lib/password';
 import { toast } from 'sonner';
 
 interface ClientReviewItem {
@@ -642,9 +643,15 @@ export default function CreatorSettings() {
     }
   };
 
+  const passwordValidation = validatePassword(newPassword);
+
   const handleUpdatePassword = async () => {
     if (!oldPassword || !newPassword || !confirmPassword) {
       alert('Please fill out all password fields');
+      return;
+    }
+    if (!passwordValidation.isValid) {
+      alert(passwordValidation.message);
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -1452,11 +1459,30 @@ export default function CreatorSettings() {
                     />
                     {/* Password Strength Indicator Lines */}
                     <div className="grid grid-cols-4 gap-2 mt-2.5">
-                      <div className={`h-1.5 rounded-full transition-all duration-300 ${newPassword.length > 0 ? 'bg-[#0012FF]' : 'bg-gray-200'}`} />
-                      <div className={`h-1.5 rounded-full transition-all duration-300 ${newPassword.length >= 6 ? 'bg-[#0012FF]' : 'bg-gray-200'}`} />
-                      <div className={`h-1.5 rounded-full transition-all duration-300 ${newPassword.length >= 8 ? 'bg-[#0012FF]' : 'bg-gray-200'}`} />
-                      <div className={`h-1.5 rounded-full transition-all duration-300 ${newPassword.length >= 10 && /[A-Z]/.test(newPassword) ? 'bg-[#0012FF]' : 'bg-gray-200'}`} />
+                      {[0, 1, 2, 3].map((i) => (
+                        <div
+                          key={i}
+                          className={`h-1.5 rounded-full transition-all duration-300 ${
+                            i < passwordValidation.score ? 'bg-[#0012FF]' : 'bg-gray-200'
+                          }`}
+                        />
+                      ))}
                     </div>
+                    {newPassword && (
+                      <div className="mt-2 space-y-1">
+                        <p className="text-xs font-bold text-gray-800">{passwordValidation.label}</p>
+                        <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-[11px]">
+                          {passwordValidation.criteria.map((c) => (
+                            <li
+                              key={c.key}
+                              className={c.met ? 'text-[#0012FF] font-medium' : 'text-gray-400'}
+                            >
+                              {c.met ? '✓' : '○'} {c.label}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
                   <div>
                     <FormInput
