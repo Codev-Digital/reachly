@@ -703,7 +703,7 @@ export async function GET(req: Request) {
 
     // A package is ONE payment of the whole price, made with its first session
     const purchaseIds = [...new Set(bookings.map((b: any) => b.packagePurchaseId?.toString()).filter(Boolean))];
-    const [purchases, payoutRecords, eventPurchases, eventProofs] = await Promise.all([
+    const [purchases, payoutRecords, eventPurchases, eventProofs, sessionProofs] = await Promise.all([
       purchaseIds.length
         ? PackagePurchase.find({ _id: { $in: purchaseIds } }).select('price paymentStatus').lean()
         : Promise.resolve([]),
@@ -712,15 +712,21 @@ export async function GET(req: Request) {
         .lean(),
       EventPurchase.find({}).sort({ createdAt: -1 }).lean(),
       EventPaymentProof.find({}).sort({ createdAt: -1 }).lean(),
-    ]) as [any[], any[], any[], any[]];
+      SessionPaymentProof.find({}).sort({ createdAt: -1 }).lean(),
+    ]) as [any[], any[], any[], any[], any[]];
     const purchaseMap = new Map(purchases.map((p) => [String(p._id), p]));
     const eventProofMap = new Map(eventProofs.map((proof: any) => [String(proof.purchaseId), proof]));
+    const sessionProofByBookingId = new Map(sessionProofs.map((sp: any) => [String(sp.bookingId), sp]));
+    const sessionProofByBookingRef = new Map(sessionProofs.map((sp: any) => [String(sp.bookingRef), sp]));
     const payableBookings = bookings.filter((b: any) => !b.packagePurchaseId || b.sessionNumber === 1);
 
     const enrichedPayments = payableBookings.map((booking: any) => {
       const user = userMap.get(booking.userId?.toString());
       const creatorProfile = creatorMap.get(booking.creatorId?.toString());
       const creatorUser = userMap.get(booking.creatorId?.toString()); // in case we need their basic user details
+
+      const proof = sessionProofByBookingId.get(String(booking._id)) ||
+        (booking.bookingRef ? sessionProofByBookingRef.get(String(booking.bookingRef)) : null);
 
       const d = new Date(booking.createdAt);
       const formattedDate = d.toLocaleDateString('en-GB', {
@@ -741,7 +747,7 @@ export async function GET(req: Request) {
         displayStatus = 'Completed';
       } else if (booking.paymentStatus === 'refunded' || booking.status === 'refunded') {
         displayStatus = 'Refunded';
-      } else if (booking.paymentStatus === 'failed' || booking.status === 'cancelled') {
+      } else if (booking.paymentStatus === 'failed' || booking.status === 'cancelled' || proof?.status === 'rejected') {
         displayStatus = 'Rejected';
       }
 
@@ -751,6 +757,10 @@ export async function GET(req: Request) {
         else if (purchase.paymentStatus === 'refunded') displayStatus = 'Refunded';
         else if (purchase.paymentStatus === 'failed') displayStatus = 'Rejected';
         else displayStatus = 'Pending';
+      }
+
+      if (proof?.status === 'pending' && booking.paymentStatus !== 'paid') {
+        displayStatus = 'Pending';
       }
 
       // Parse amount (assume finalPrice is string like "25,000" or number)
@@ -767,20 +777,36 @@ export async function GET(req: Request) {
       const platformFeeNum = booking.updated_platform_amount ?? numericAmount * (commissionPercent / 100);
       const creatorEarningsNum = numericAmount - platformFeeNum;
 
+      const rawMethod = (booking.paymentMethod || proof?.paymentMethod || 'Card').toLowerCase();
+      const isManual = ['jazzcash', 'easypaisa', 'manual', 'bank'].includes(rawMethod) || Boolean(proof);
+
+      let formattedMethod = booking.paymentMethod || proof?.paymentMethod || 'Card';
+      if (rawMethod === 'jazzcash') formattedMethod = 'JazzCash';
+      else if (rawMethod === 'easypaisa') formattedMethod = 'EasyPaisa';
+      else if (rawMethod === 'stripe') formattedMethod = 'Stripe (Card)';
+
       return {
         id: `TXN-${booking._id.toString().slice(-5).toUpperCase()}`,
         dbId: booking._id.toString(),
+        bookingRef: booking.bookingRef || null,
         user: {
           name: user?.name || booking.guestDetails?.fullName || booking.guestDetails?.name || 'Guest User',
           username: user?.name ? `@${user.name.toLowerCase().replace(/\s+/g, '')}` : '@guest',
-          avatar: user?.profilePhoto || '/avatar.png'
+          avatar: user?.profilePhoto || '/avatar.png',
+          email: user?.email || booking.guestDetails?.email || '',
         },
         creator: {
           name: creatorProfile?.displayName || creatorUser?.name || 'Unknown Creator',
           username: creatorProfile?.username || '@unknown',
-          avatar: creatorProfile?.profilePhoto || creatorUser?.profilePhoto || '/avatar.png'
+          avatar: creatorProfile?.profilePhoto || creatorUser?.profilePhoto || '/avatar.png',
+          email: creatorUser?.email || '',
         },
-        paymentMethod: booking.paymentMethod || 'Card',
+        paymentMethod: formattedMethod,
+        rawPaymentMethod: rawMethod,
+        isManual,
+        hasProof: Boolean(proof),
+        proofStatus: proof?.status || null,
+        proofId: proof?._id?.toString() || null,
         date: formattedDate,
         time: time,
         amount: `${numericAmount.toLocaleString()} PKR`,
@@ -790,6 +816,7 @@ export async function GET(req: Request) {
         creatorEarnings: `${creatorEarningsNum.toLocaleString()} PKR`,
         status: displayStatus,
         createdAtMs: d.getTime(),
+        isoDate: d.toISOString(),
       };
     });
 
@@ -803,17 +830,26 @@ export async function GET(req: Request) {
         return {
           id: `PAYOUT-${payout._id.toString().slice(-6).toUpperCase()}`,
           dbId: `PAYOUT-${payout._id.toString()}`,
+          bookingRef: `PAYOUT-${payout._id.toString().slice(-6).toUpperCase()}`,
           user: {
             name: creatorName,
             username: profile?.username ? `@${profile.username}` : '@creator',
             avatar: profile?.profilePhoto || creatorUser?.profilePhoto || '/avatar.png',
+            email: creatorUser?.email || '',
           },
           creator: {
             name: creatorName,
             username: profile?.username ? `@${profile.username}` : '@creator',
             avatar: profile?.profilePhoto || creatorUser?.profilePhoto || '/avatar.png',
+            email: creatorUser?.email || '',
           },
           paymentMethod: `Payout · ${payout.bankName}`,
+          rawPaymentMethod: 'payout',
+          isCreatorPayout: true,
+          isPayout: true,
+          isManual: false,
+          hasProof: false,
+          proofStatus: null,
           date: requestedAt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
           time: requestedAt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
           amount: `${payout.withdrawAmount.toLocaleString()} PKR`,
@@ -821,8 +857,8 @@ export async function GET(req: Request) {
           platformFee: '0 PKR',
           creatorEarnings: `${payout.withdrawAmount.toLocaleString()} PKR`,
           status,
-          isCreatorPayout: true,
           createdAtMs: requestedAt.getTime(),
+          isoDate: requestedAt.toISOString(),
         };
       });
     });
@@ -835,17 +871,27 @@ export async function GET(req: Request) {
       const createdAt = new Date(purchase.createdAt);
       const status = purchase.paymentStatus === 'paid'
         ? 'Completed'
-        : purchase.paymentStatus === 'failed' || purchase.status === 'cancelled'
+        : purchase.paymentStatus === 'failed' || purchase.status === 'cancelled' || proof?.status === 'rejected'
           ? 'Rejected'
           : 'Pending';
       const amount = purchase.updated_total_amount ?? Number(purchase.tierPrice || 0) * Number(purchase.quantity || 1);
       const platformFee = purchase.updated_platform_amount ?? 0;
 
+      const rawMethod = (proof?.paymentMethod || 'Manual event payment').toLowerCase();
+      let formattedMethod = proof?.paymentMethod || 'Manual event payment';
+      if (rawMethod === 'jazzcash') formattedMethod = 'JazzCash (Event)';
+      else if (rawMethod === 'easypaisa') formattedMethod = 'EasyPaisa (Event)';
+
       return {
         id: `EVENT-${purchase._id.toString().slice(-5).toUpperCase()}`,
         dbId: `EVENT-${purchase._id.toString()}`,
         bookingRef: purchase.ticketRef,
-        paymentMethod: proof?.paymentMethod || 'Manual event payment',
+        paymentMethod: formattedMethod,
+        rawPaymentMethod: rawMethod,
+        isManual: true,
+        isEventPayment: true,
+        hasProof: Boolean(proof),
+        proofStatus: proof?.status || null,
         date: createdAt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
         time: createdAt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
         amount: `${amount.toLocaleString()} PKR`,
@@ -853,8 +899,8 @@ export async function GET(req: Request) {
         platformFee: `${platformFee.toLocaleString()} PKR`,
         creatorEarnings: `${(amount - platformFee).toLocaleString()} PKR`,
         status,
-        isEventPayment: true,
         createdAtMs: createdAt.getTime(),
+        isoDate: createdAt.toISOString(),
         event: {
           title: purchase.eventTitle,
           bannerUrl: purchase.eventBannerUrl || '',
@@ -868,11 +914,13 @@ export async function GET(req: Request) {
           name: buyer?.name || purchase.buyerEmail || 'Event buyer',
           username: buyer?.name ? `@${buyer.name.toLowerCase().replace(/\s+/g, '')}` : '@buyer',
           avatar: buyer?.profilePhoto || '/avatar.png',
+          email: buyer?.email || purchase.buyerEmail || '',
         },
         creator: {
           name: creatorProfile?.displayName || creatorUser?.name || 'Creator',
           username: creatorProfile?.username ? `@${creatorProfile.username}` : '@creator',
           avatar: creatorProfile?.profilePhoto || creatorUser?.profilePhoto || '/avatar.png',
+          email: creatorUser?.email || '',
         },
       };
     });
@@ -967,6 +1015,18 @@ export async function GET(req: Request) {
         booking = allBookings.find((b: any) => b._id.toString().slice(-5).toUpperCase() === id.slice(-5).toUpperCase() || b.bookingRef === id);
       } else {
         booking = await Booking.findOne({ bookingRef: id }).populate('sessionTypeId').lean();
+      }
+
+      if (!booking && mongoose.isValidObjectId(id)) {
+        const proofDoc = await SessionPaymentProof.findById(id).lean() as any;
+        if (proofDoc) {
+          booking = await Booking.findOne({
+            $or: [
+              { _id: proofDoc.bookingId },
+              { bookingRef: proofDoc.bookingRef },
+            ],
+          }).populate('sessionTypeId').lean();
+        }
       }
 
       if (!booking) {

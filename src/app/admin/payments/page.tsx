@@ -1,15 +1,24 @@
 'use client';
 
 import { AdminPaymentsSkeleton } from '@/components/admin/AdminSkeletons';
-
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { CreditCard, DollarSign, Clock, Calendar, ArrowUpRight } from 'lucide-react';
+import {
+  CreditCard,
+  DollarSign,
+  Clock,
+  Calendar,
+  ArrowUpRight,
+  ArrowUpDown,
+  Check,
+} from 'lucide-react';
 import ManualPaymentProofs from '@/components/admin/ManualPaymentProofs';
 
 interface Payment {
   id: string;
+  dbId: string;
+  bookingRef?: string | null;
   user: {
     name: string;
     username: string;
@@ -24,21 +33,41 @@ interface Payment {
   date: string;
   time: string;
   amount: string;
+  rawAmount: number;
   platformFee: string;
   creatorEarnings: string;
   status: 'Completed' | 'Pending' | 'Refunded' | 'Rejected';
+  createdAtMs?: number;
+  isoDate?: string;
 }
+
+type StatusFilter = 'All Statuses' | 'Completed' | 'Pending' | 'Refunded' | 'Rejected';
+type SortOption = 'newest' | 'oldest' | 'amount-high' | 'amount-low';
+type DatePreset = 'all' | 'today' | 'yesterday' | 'last7' | 'thisMonth' | 'lastMonth' | 'custom';
 
 export default function AdminPaymentsPage() {
   const router = useRouter();
   const openDetail = (p: any) => router.push(`/admin/payments/${p.dbId || p.id}`);
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedStatusFilter, setSelectedStatusFilter] = useState<'All Statuses' | 'Completed' | 'Pending' | 'Refunded' | 'Rejected'>('All Statuses');
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState<StatusFilter>('All Statuses');
+  const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
 
-  const [payments, setPayments] = useState<any[]>([]);
+  // Date / Calendar Filter
+  const [datePreset, setDatePreset] = useState<DatePreset>('all');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [isDateDropdownOpen, setIsDateDropdownOpen] = useState(false);
+
+  // Sort Filter
+  const [sortBy, setSortBy] = useState<SortOption>('newest');
+  const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 25;
+
+  const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadPayments = useCallback(async () => {
@@ -57,27 +86,155 @@ export default function AdminPaymentsPage() {
   }, []);
 
   useEffect(() => {
-    loadPayments();
+    void loadPayments();
   }, [loadPayments]);
 
   // Calculate dynamic stats
-  const totalRevenue = payments
-    .filter(p => p.status === 'Completed')
-    .reduce((sum, p) => sum + (p.rawAmount || 0), 0);
-  const successfulPayments = payments.filter(p => p.status === 'Completed').length;
-  const refundIssued = payments.filter(p => p.status === 'Refunded').reduce((sum, p) => sum + (p.rawAmount || 0), 0);
-  const pendingPayments = payments.filter(p => p.status === 'Pending').length;
+  const totalRevenue = useMemo(
+    () =>
+      payments
+        .filter((p) => p.status === 'Completed')
+        .reduce((sum, p) => sum + (p.rawAmount || 0), 0),
+    [payments]
+  );
+  const successfulPayments = useMemo(
+    () => payments.filter((p) => p.status === 'Completed').length,
+    [payments]
+  );
+  const refundIssued = useMemo(
+    () =>
+      payments
+        .filter((p) => p.status === 'Refunded')
+        .reduce((sum, p) => sum + (p.rawAmount || 0), 0),
+    [payments]
+  );
+  const pendingPayments = useMemo(
+    () => payments.filter((p) => p.status === 'Pending').length,
+    [payments]
+  );
 
-  // Filter logic
-  const filteredPayments = payments.filter(payment => {
-    const matchesSearch = payment.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      payment.user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      payment.creator.name.toLowerCase().includes(searchQuery.toLowerCase());
+  // Date preset selector
+  const handleSelectDatePreset = (preset: DatePreset) => {
+    setDatePreset(preset);
+    const now = new Date();
 
-    const matchesStatus = selectedStatusFilter === 'All Statuses' || payment.status === selectedStatusFilter;
+    if (preset === 'all') {
+      setStartDate('');
+      setEndDate('');
+      setIsDateDropdownOpen(false);
+      return;
+    }
+    if (preset === 'today') {
+      const todayStr = now.toISOString().split('T')[0];
+      setStartDate(todayStr);
+      setEndDate(todayStr);
+      setIsDateDropdownOpen(false);
+      return;
+    }
+    if (preset === 'yesterday') {
+      const y = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      setStartDate(y.toISOString().split('T')[0]);
+      setEndDate(y.toISOString().split('T')[0]);
+      setIsDateDropdownOpen(false);
+      return;
+    }
+    if (preset === 'last7') {
+      const past7 = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      setStartDate(past7.toISOString().split('T')[0]);
+      setEndDate(now.toISOString().split('T')[0]);
+      setIsDateDropdownOpen(false);
+      return;
+    }
+    if (preset === 'thisMonth') {
+      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      setStartDate(firstDay.toISOString().split('T')[0]);
+      setEndDate(lastDay.toISOString().split('T')[0]);
+      setIsDateDropdownOpen(false);
+      return;
+    }
+    if (preset === 'lastMonth') {
+      const firstDay = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const lastDay = new Date(now.getFullYear(), now.getMonth(), 0);
+      setStartDate(firstDay.toISOString().split('T')[0]);
+      setEndDate(lastDay.toISOString().split('T')[0]);
+      setIsDateDropdownOpen(false);
+      return;
+    }
+  };
 
-    return matchesSearch && matchesStatus;
-  });
+  const dateFilterLabel = useMemo(() => {
+    if (startDate && endDate) {
+      if (startDate === endDate) return startDate;
+      return `${startDate} → ${endDate}`;
+    }
+    if (startDate) return `From ${startDate}`;
+    if (endDate) return `Until ${endDate}`;
+    return 'Filter by Date';
+  }, [startDate, endDate]);
+
+  const sortLabel = useMemo(() => {
+    if (sortBy === 'newest') return 'Newest';
+    if (sortBy === 'oldest') return 'Oldest';
+    if (sortBy === 'amount-high') return 'Amount: High';
+    if (sortBy === 'amount-low') return 'Amount: Low';
+    return 'Newest';
+  }, [sortBy]);
+
+  // Filter & Sort logic
+  const filteredPayments = useMemo(() => {
+    return payments
+      .filter((payment) => {
+        // Search matches ID, bookingRef, user name, creator name, or paymentMethod
+        const q = searchQuery.toLowerCase().trim();
+        const matchesSearch =
+          !q ||
+          payment.id.toLowerCase().includes(q) ||
+          (payment.bookingRef || '').toLowerCase().includes(q) ||
+          (payment.user?.name || '').toLowerCase().includes(q) ||
+          (payment.creator?.name || '').toLowerCase().includes(q) ||
+          (payment.paymentMethod || '').toLowerCase().includes(q);
+
+        const matchesStatus =
+          selectedStatusFilter === 'All Statuses' || payment.status === selectedStatusFilter;
+
+        // Date filter
+        let matchesDate = true;
+        if (startDate || endDate) {
+          const itemTime =
+            payment.createdAtMs ||
+            (payment.isoDate ? new Date(payment.isoDate).getTime() : 0);
+          if (startDate) {
+            const startMs = new Date(`${startDate}T00:00:00`).getTime();
+            if (itemTime < startMs) matchesDate = false;
+          }
+          if (endDate) {
+            const endMs = new Date(`${endDate}T23:59:59.999`).getTime();
+            if (itemTime > endMs) matchesDate = false;
+          }
+        }
+
+        return matchesSearch && matchesStatus && matchesDate;
+      })
+      .sort((a, b) => {
+        if (sortBy === 'newest') return (b.createdAtMs || 0) - (a.createdAtMs || 0);
+        if (sortBy === 'oldest') return (a.createdAtMs || 0) - (b.createdAtMs || 0);
+        if (sortBy === 'amount-high') return (b.rawAmount || 0) - (a.rawAmount || 0);
+        if (sortBy === 'amount-low') return (a.rawAmount || 0) - (b.rawAmount || 0);
+        return 0;
+      });
+  }, [payments, searchQuery, selectedStatusFilter, startDate, endDate, sortBy]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedStatusFilter, startDate, endDate, sortBy]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredPayments.length / pageSize));
+  const paginatedPayments = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredPayments.slice(start, start + pageSize);
+  }, [filteredPayments, currentPage, pageSize]);
 
   if (loading) return <AdminPaymentsSkeleton />;
 
@@ -97,6 +254,7 @@ export default function AdminPaymentsPage() {
         </h1>
       </div>
       <ManualPaymentProofs onReviewed={loadPayments} />
+
       {/* Metrics Cards (Wallet Style) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 mb-10 items-stretch">
         {/* Card 1 - Available Balance (Longer Card with 3D Ball/Bubble Effects) */}
@@ -121,8 +279,12 @@ export default function AdminPaymentsPage() {
           {/* Bottom Row: Balance Meta + Top Up Button */}
           <div className="flex items-end justify-between gap-4 z-10">
             <div>
-              <p className="text-[11px] font-medium text-white/80 uppercase tracking-wide font-sans mb-0.5">Total Revenue</p>
-              <h3 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight font-sans my-0.5">{totalRevenue.toLocaleString()} PKR</h3>
+              <p className="text-[11px] font-medium text-white/80 uppercase tracking-wide font-sans mb-0.5">
+                Total Revenue
+              </p>
+              <h3 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight font-sans my-0.5">
+                {totalRevenue.toLocaleString()} PKR
+              </h3>
             </div>
 
             {/* Payout Button */}
@@ -145,8 +307,12 @@ export default function AdminPaymentsPage() {
               </div>
             </div>
             <div>
-              <p className="text-[11px] font-medium opacity-80 uppercase tracking-wide font-sans mb-0.5">Successful Payments</p>
-              <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-sans my-0.5">{successfulPayments}</h3>
+              <p className="text-[11px] font-medium opacity-80 uppercase tracking-wide font-sans mb-0.5">
+                Successful Payments
+              </p>
+              <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-sans my-0.5">
+                {successfulPayments}
+              </h3>
             </div>
           </div>
 
@@ -158,8 +324,12 @@ export default function AdminPaymentsPage() {
               </div>
             </div>
             <div>
-              <p className="text-[11px] font-medium opacity-80 uppercase tracking-wide font-sans mb-0.5">Refund Issued</p>
-              <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-sans my-0.5">{refundIssued.toLocaleString()} PKR</h3>
+              <p className="text-[11px] font-medium opacity-80 uppercase tracking-wide font-sans mb-0.5">
+                Refund Issued
+              </p>
+              <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-sans my-0.5">
+                {refundIssued.toLocaleString()} PKR
+              </h3>
             </div>
           </div>
 
@@ -171,8 +341,12 @@ export default function AdminPaymentsPage() {
               </div>
             </div>
             <div>
-              <p className="text-[11px] font-medium opacity-80 uppercase tracking-wide font-sans mb-0.5">Pending Payments</p>
-              <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-sans my-0.5">{pendingPayments}</h3>
+              <p className="text-[11px] font-medium opacity-80 uppercase tracking-wide font-sans mb-0.5">
+                Pending Payments
+              </p>
+              <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-sans my-0.5">
+                {pendingPayments}
+              </h3>
             </div>
           </div>
         </div>
@@ -184,7 +358,7 @@ export default function AdminPaymentsPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <h2 className="text-2xl font-black text-black font-sans">All Payments</h2>
 
-          <div className="flex items-center gap-3 w-full md:w-auto">
+          <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
             {/* Search Input */}
             <div className="relative flex-1 md:w-80">
               <input
@@ -208,11 +382,142 @@ export default function AdminPaymentsPage() {
               </svg>
             </div>
 
-            {/* Custom Interactive Dropdown Filter */}
+            {/* ── 1. Filter by Date Dropdown ── */}
             <div className="relative">
               <button
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="flex items-center justify-between gap-8 px-4 py-2.5 bg-white border border-gray-200 rounded-2xl text-sm font-semibold text-gray-800 hover:bg-gray-50 transition-all min-w-[150px]"
+                type="button"
+                onClick={() => setIsDateDropdownOpen(!isDateDropdownOpen)}
+                className={`flex items-center gap-2.5 px-4 py-2.5 bg-white border rounded-full text-sm font-semibold transition-all cursor-pointer ${
+                  startDate || endDate || datePreset !== 'all'
+                    ? 'border-[#0012FF] text-[#0012FF]'
+                    : 'border-gray-200 text-gray-800 hover:bg-gray-50'
+                }`}
+              >
+                <Calendar className="w-4 h-4 text-[#0012FF]" />
+                <span>{dateFilterLabel}</span>
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  className={`transition-transform duration-200 ${
+                    isDateDropdownOpen ? 'rotate-180' : ''
+                  }`}
+                >
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
+
+              <AnimatePresence>
+                {isDateDropdownOpen && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-10"
+                      onClick={() => setIsDateDropdownOpen(false)}
+                    />
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      className="absolute right-0 mt-2 bg-white border border-gray-100 rounded-2xl shadow-xl z-20 p-4 w-[280px] sm:w-[320px]"
+                    >
+                      <div className="flex items-center justify-between pb-2 mb-2 border-b border-gray-100">
+                        <span className="text-xs font-bold text-gray-800">Date Range</span>
+                        {(startDate || endDate || datePreset !== 'all') && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setDatePreset('all');
+                              setStartDate('');
+                              setEndDate('');
+                              setIsDateDropdownOpen(false);
+                            }}
+                            className="text-[11px] font-semibold text-rose-600 hover:underline"
+                          >
+                            Reset
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-1.5 mb-3">
+                        {[
+                          { key: 'all', label: 'All Time' },
+                          { key: 'today', label: 'Today' },
+                          { key: 'yesterday', label: 'Yesterday' },
+                          { key: 'last7', label: 'Last 7 Days' },
+                          { key: 'thisMonth', label: 'This Month' },
+                          { key: 'lastMonth', label: 'Last Month' },
+                        ].map((preset) => (
+                          <button
+                            key={preset.key}
+                            type="button"
+                            onClick={() => handleSelectDatePreset(preset.key as DatePreset)}
+                            className={`px-2.5 py-1.5 text-xs font-semibold rounded-xl text-left transition-all ${
+                              datePreset === preset.key
+                                ? 'bg-[#0012FF] text-white'
+                                : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                            }`}
+                          >
+                            {preset.label}
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="space-y-1.5 pt-2 border-t border-gray-100">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                          Custom Date
+                        </p>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <span className="block text-[10px] text-gray-500 mb-0.5">From</span>
+                            <input
+                              type="date"
+                              value={startDate}
+                              onChange={(e) => {
+                                setStartDate(e.target.value);
+                                setDatePreset('custom');
+                              }}
+                              className="w-full px-2 py-1 text-xs bg-gray-50 border border-gray-200 rounded-lg text-gray-800 focus:outline-none"
+                            />
+                          </div>
+                          <div>
+                            <span className="block text-[10px] text-gray-500 mb-0.5">To</span>
+                            <input
+                              type="date"
+                              value={endDate}
+                              onChange={(e) => {
+                                setEndDate(e.target.value);
+                                setDatePreset('custom');
+                              }}
+                              className="w-full px-2 py-1 text-xs bg-gray-50 border border-gray-200 rounded-lg text-gray-800 focus:outline-none"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end gap-2 mt-3 pt-2 border-t border-gray-100">
+                        <button
+                          type="button"
+                          onClick={() => setIsDateDropdownOpen(false)}
+                          className="px-3 py-1 text-xs font-bold bg-[#0012FF] text-white rounded-lg hover:bg-[#0010d0]"
+                        >
+                          Apply
+                        </button>
+                      </div>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* ── 2. All Statuses Dropdown ── */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
+                className="flex items-center justify-between gap-6 px-4 py-2.5 bg-white border border-gray-200 rounded-full text-sm font-semibold text-gray-800 hover:bg-gray-50 transition-all min-w-[140px]"
               >
                 <span>{selectedStatusFilter}</span>
                 <svg
@@ -222,40 +527,122 @@ export default function AdminPaymentsPage() {
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2.5"
-                  className={`transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`}
+                  className={`transition-transform duration-200 ${
+                    isStatusDropdownOpen ? 'rotate-180' : ''
+                  }`}
                 >
                   <polyline points="6 9 12 15 18 9" />
                 </svg>
               </button>
 
               <AnimatePresence>
-                {isDropdownOpen && (
+                {isStatusDropdownOpen && (
                   <>
-                    <div className="fixed inset-0 z-10" onClick={() => setIsDropdownOpen(false)} />
+                    <div
+                      className="fixed inset-0 z-10"
+                      onClick={() => setIsStatusDropdownOpen(false)}
+                    />
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 10 }}
                       className="absolute right-0 mt-2 bg-white border border-gray-100 rounded-2xl shadow-xl z-20 py-1.5 min-w-[170px] overflow-hidden"
                     >
-                      {(['All Statuses', 'Completed', 'Pending', 'Rejected', 'Refunded'] as const).map((filter) => {
+                      {(
+                        [
+                          'All Statuses',
+                          'Completed',
+                          'Pending',
+                          'Rejected',
+                          'Refunded',
+                        ] as const
+                      ).map((filter) => {
                         const isSelected = selectedStatusFilter === filter;
                         return (
                           <button
                             key={filter}
+                            type="button"
                             onClick={() => {
                               setSelectedStatusFilter(filter);
-                              setIsDropdownOpen(false);
+                              setIsStatusDropdownOpen(false);
                             }}
-                            className={`w-full text-left px-4 py-2 text-sm font-semibold transition-all ${isSelected
-                              ? 'bg-[#0012FF] text-white'
-                              : 'text-gray-500 hover:bg-gray-50'
-                              }`}
+                            className={`w-full text-left px-4 py-2 text-sm font-semibold transition-all ${
+                              isSelected
+                                ? 'bg-[#0012FF] text-white'
+                                : 'text-gray-500 hover:bg-gray-50'
+                            }`}
                           >
                             {filter}
                           </button>
                         );
                       })}
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* ── 3. Sort: Newest Dropdown ── */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
+                className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-full text-sm font-semibold text-gray-800 hover:bg-gray-50 transition-all cursor-pointer"
+              >
+                <ArrowUpDown className="w-4 h-4 text-gray-400" />
+                <span className="text-gray-400 font-normal">Sort:</span>
+                <span className="text-gray-800 font-bold">{sortLabel}</span>
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  className={`transition-transform duration-200 ${
+                    isSortDropdownOpen ? 'rotate-180' : ''
+                  }`}
+                >
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
+
+              <AnimatePresence>
+                {isSortDropdownOpen && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-10"
+                      onClick={() => setIsSortDropdownOpen(false)}
+                    />
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      className="absolute right-0 mt-2 bg-white border border-gray-100 rounded-2xl shadow-xl z-20 py-1.5 min-w-[190px] overflow-hidden"
+                    >
+                      {[
+                        { key: 'newest', label: 'Newest' },
+                        { key: 'oldest', label: 'Oldest' },
+                        { key: 'amount-high', label: 'Amount: High to low' },
+                        { key: 'amount-low', label: 'Amount: Low to high' },
+                      ].map((item) => (
+                        <button
+                          key={item.key}
+                          type="button"
+                          onClick={() => {
+                            setSortBy(item.key as SortOption);
+                            setIsSortDropdownOpen(false);
+                          }}
+                          className={`w-full text-left px-4 py-2 text-sm font-semibold transition-all flex items-center justify-between ${
+                            sortBy === item.key
+                              ? 'bg-[#0012FF] text-white'
+                              : 'text-gray-600 hover:bg-gray-50'
+                          }`}
+                        >
+                          <span>{item.label}</span>
+                          {sortBy === item.key && <Check className="w-3.5 h-3.5" />}
+                        </button>
+                      ))}
                     </motion.div>
                   </>
                 )}
@@ -269,37 +656,72 @@ export default function AdminPaymentsPage() {
           <table className="w-full text-left border-collapse min-w-[800px]">
             <thead className="bg-white">
               <tr className="border-b border-gray-200">
-                <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Transaction ID</th>
-                <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">User</th>
-                <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Creator</th>
-                <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Payment Method</th>
-                <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Joined Date</th>
-                <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Time</th>
-                <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Amount</th>
-                <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Status</th>
-                <th className="py-4 px-4 text-xs font-bold text-gray-400 text-center uppercase tracking-wider">Actions</th>
+                <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">
+                  Transaction ID
+                </th>
+                <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">
+                  User
+                </th>
+                <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">
+                  Creator
+                </th>
+                <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">
+                  Payment Method
+                </th>
+                <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">
+                  Payment Date
+                </th>
+                <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">
+                  Time
+                </th>
+                <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">
+                  Amount
+                </th>
+                <th className="py-4 px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="py-4 px-4 text-xs font-bold text-gray-400 text-center uppercase tracking-wider">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 bg-[#F8F8F8] border-b border-gray-200">
-              {filteredPayments.length > 0 ? (
-                filteredPayments.map((payment) => (
+              {paginatedPayments.length > 0 ? (
+                paginatedPayments.map((payment) => (
                   <tr
                     key={payment.id}
                     onClick={() => openDetail(payment)}
                     className="hover:bg-[#EFEFEF] transition-colors cursor-pointer"
                   >
                     {/* ID */}
-                    <td className="py-4 px-4 text-sm font-semibold text-gray-500">{payment.id}</td>
+                    <td className="py-4 px-4 text-sm font-semibold text-gray-500">
+                      <div>
+                        <span>{payment.id}</span>
+                        {payment.bookingRef && (
+                          <span className="block text-[11px] font-mono text-gray-400 font-normal">
+                            {payment.bookingRef}
+                          </span>
+                        )}
+                      </div>
+                    </td>
 
                     {/* User */}
                     <td className="py-4 px-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-100 flex-shrink-0">
-                          <img src={payment.user.avatar} alt={payment.user.name} className="w-full h-full object-cover" />
+                          <img
+                            src={payment.user.avatar || '/avatar.png'}
+                            alt={payment.user.name}
+                            className="w-full h-full object-cover"
+                          />
                         </div>
                         <div>
-                          <p className="text-sm font-bold text-black leading-none mb-0.5">{payment.user.name}</p>
-                          <p className="text-xs text-gray-400 font-medium">{payment.user.username}</p>
+                          <p className="text-sm font-bold text-black leading-none mb-0.5">
+                            {payment.user.name}
+                          </p>
+                          <p className="text-xs text-gray-400 font-medium">
+                            {payment.user.username}
+                          </p>
                         </div>
                       </div>
                     </td>
@@ -308,38 +730,55 @@ export default function AdminPaymentsPage() {
                     <td className="py-4 px-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-100 flex-shrink-0">
-                          <img src={payment.creator.avatar} alt={payment.creator.name} className="w-full h-full object-cover" />
+                          <img
+                            src={payment.creator.avatar || '/avatar.png'}
+                            alt={payment.creator.name}
+                            className="w-full h-full object-cover"
+                          />
                         </div>
                         <div>
-                          <p className="text-sm font-bold text-black leading-none mb-0.5">{payment.creator.name}</p>
-                          <p className="text-xs text-gray-400 font-medium">{payment.creator.username}</p>
+                          <p className="text-sm font-bold text-black leading-none mb-0.5">
+                            {payment.creator.name}
+                          </p>
+                          <p className="text-xs text-gray-400 font-medium">
+                            {payment.creator.username}
+                          </p>
                         </div>
                       </div>
                     </td>
 
                     {/* Method */}
-                    <td className="py-4 px-4 text-sm font-semibold text-gray-500">{payment.paymentMethod}</td>
+                    <td className="py-4 px-4 text-sm font-semibold text-gray-500">
+                      {payment.paymentMethod}
+                    </td>
 
                     {/* Date */}
-                    <td className="py-4 px-4 text-sm font-semibold text-gray-500">{payment.date}</td>
+                    <td className="py-4 px-4 text-sm font-semibold text-gray-500">
+                      {payment.date}
+                    </td>
 
                     {/* Time */}
-                    <td className="py-4 px-4 text-sm font-semibold text-gray-500">{payment.time}</td>
+                    <td className="py-4 px-4 text-sm font-semibold text-gray-500">
+                      {payment.time}
+                    </td>
 
                     {/* Amount */}
-                    <td className="py-4 px-4 text-sm font-semibold text-gray-500">{payment.amount}</td>
+                    <td className="py-4 px-4 text-sm font-semibold text-gray-500">
+                      {payment.amount}
+                    </td>
 
                     {/* Status */}
                     <td className="py-4 px-4">
                       <span
-                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${payment.status === 'Completed'
-                          ? 'bg-emerald-50 text-[#10B981] border border-emerald-200'
-                          : payment.status === 'Pending'
+                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${
+                          payment.status === 'Completed'
+                            ? 'bg-emerald-50 text-[#10B981] border border-emerald-200'
+                            : payment.status === 'Pending'
                             ? 'bg-amber-50 text-[#F59E0B] border border-amber-200'
                             : payment.status === 'Rejected'
-                              ? 'bg-rose-50 text-rose-600 border border-rose-200'
-                              : 'bg-blue-50 text-blue-500 border border-blue-200'
-                          }`}
+                            ? 'bg-rose-50 text-rose-600 border border-rose-200'
+                            : 'bg-blue-50 text-blue-500 border border-blue-200'
+                        }`}
                       >
                         {payment.status}
                       </span>
@@ -349,6 +788,7 @@ export default function AdminPaymentsPage() {
                     <td className="py-4 px-4" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-center">
                         <button
+                          type="button"
                           onClick={() => openDetail(payment)}
                           className="px-4 py-1.5 bg-gray-100 rounded-full text-xs font-bold text-gray-400 hover:bg-gray-200 hover:text-gray-500 transition-colors"
                         >
@@ -360,7 +800,10 @@ export default function AdminPaymentsPage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={9} className="py-8 text-center text-sm font-semibold text-gray-400">
+                  <td
+                    colSpan={9}
+                    className="py-8 text-center text-sm font-semibold text-gray-400"
+                  >
                     No transactions found matching filter criteria.
                   </td>
                 </tr>
@@ -371,39 +814,76 @@ export default function AdminPaymentsPage() {
 
         {/* Pagination Footer */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-4 border-t border-gray-200">
-          <p className="text-xs font-semibold text-gray-400">Showing {filteredPayments.length} of {payments.length}</p>
+          <p className="text-xs font-semibold text-gray-400">
+            Showing{' '}
+            {filteredPayments.length > 0 ? (currentPage - 1) * pageSize + 1 : 0} to{' '}
+            {Math.min(currentPage * pageSize, filteredPayments.length)} of{' '}
+            {filteredPayments.length}
+          </p>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setCurrentPage(1)}
-              className="w-8 h-8 rounded-full border border-gray-100 flex items-center justify-center text-gray-400 hover:bg-gray-50 transition-colors"
+              type="button"
+              disabled={currentPage <= 1}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              className="w-8 h-8 rounded-full border border-gray-100 flex items-center justify-center text-gray-400 hover:bg-gray-50 transition-colors disabled:opacity-40"
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+              >
                 <polyline points="15 18 9 12 15 6" />
               </svg>
             </button>
+
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter((page) => {
+                if (totalPages <= 5) return true;
+                return (
+                  page === 1 ||
+                  page === totalPages ||
+                  Math.abs(page - currentPage) <= 1
+                );
+              })
+              .map((page, idx, arr) => {
+                const prevPage = arr[idx - 1];
+                const showEllipsis = prevPage && page - prevPage > 1;
+
+                return (
+                  <div key={page} className="flex items-center gap-1">
+                    {showEllipsis && <span className="text-xs text-gray-400">…</span>}
+                    <button
+                      type="button"
+                      className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
+                        currentPage === page
+                          ? 'bg-[#0012FF] text-white shadow-md shadow-[#0012FF]/20'
+                          : 'text-gray-500 hover:bg-gray-50'
+                      }`}
+                      onClick={() => setCurrentPage(page)}
+                    >
+                      {page}
+                    </button>
+                  </div>
+                );
+              })}
+
             <button
-              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${currentPage === 1
-                ? 'bg-[#0012FF] text-white shadow-md shadow-[#0012FF]/20'
-                : 'text-gray-500 hover:bg-gray-50'
-                }`}
-              onClick={() => setCurrentPage(1)}
+              type="button"
+              disabled={currentPage >= totalPages}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              className="w-8 h-8 rounded-full border border-gray-100 flex items-center justify-center text-gray-400 hover:bg-gray-50 transition-colors disabled:opacity-40"
             >
-              1
-            </button>
-            <button
-              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${currentPage === 2
-                ? 'bg-[#0012FF] text-white shadow-md shadow-[#0012FF]/20'
-                : 'text-gray-500 hover:bg-gray-50'
-                }`}
-              onClick={() => setCurrentPage(2)}
-            >
-              2
-            </button>
-            <button
-              onClick={() => setCurrentPage(2)}
-              className="w-8 h-8 rounded-full border border-gray-100 flex items-center justify-center text-gray-400 hover:bg-gray-50 transition-colors"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+              >
                 <polyline points="9 18 15 12 9 6" />
               </svg>
             </button>
