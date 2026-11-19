@@ -48,5 +48,4 @@ db-backup/
 test-connections.mjs
 export-source-data.mjs
 migrate-to-target.mjs
-config.bat
 .env
